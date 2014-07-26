@@ -1,0 +1,281 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>InstrumentControl API &mdash; Lab Instrument Control and Automation Framework 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="index.html" />
+    <link rel="next" title="Instrument Manager Developer Guide" href="developers.html" />
+    <link rel="prev" title="Smart Lab Application" href="application.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="developers.html" title="Instrument Manager Developer Guide"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="application.html" title="Smart Lab Application"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="instrumentcontrol-api">
+<h1>InstrumentControl API<a class="headerlink" href="#instrumentcontrol-api" title="Permalink to this headline">¶</a></h1>
+<p>The InstrumentControl API is the core of the Application GUI. It simplifies script development by abstracting local and remote instruments as simple Python objects and providing helper functions to handle all of the low-level communication with InstrumentManagers</p>
+<p>The InstrumentControl API can be imported from an existing install of the Application GUI or using the slim installer that integrates the necessary files directly into your local Python installation.</p>
+<p>To use the InstrumentControl API:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">InstrumentControl</span>
+
+<span class="n">ic</span> <span class="o">=</span> <span class="n">InstrumentControl</span><span class="o">.</span><span class="n">InstrumentControl</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">To import InstrumentControl from an Application GUI install, the folder must be in your PYTHONPATH</p>
+</div>
+<dl class="class">
+<dt id="InstrumentControl.InstrumentControl">
+<em class="property">class </em><tt class="descclassname">InstrumentControl.</tt><tt class="descname">InstrumentControl</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Smart Instrument Control and Automation framework</p>
+<p>InstrumentControl wraps InstrumentManager objects and provides 
+a framework for connecting to and controlling test instruments 
+on both local and remote systems.</p>
+<p><em>Module author: Kevin Kennedy &lt;<a class="reference external" href="mailto:kennedy&#46;kevin&#37;&#52;&#48;gmail&#46;com">kennedy<span>&#46;</span>kevin<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</em></p>
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.addManager">
+<tt class="descname">addManager</tt><big>(</big><em>address</em>, <em>port=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.addManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.addManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attempts to find a manager instance at the given address</p>
+<p>If a manager is found, get the list of resources</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd><ul class="first last simple">
+<li>True if manager found, false if connection failed</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.addResource">
+<tt class="descname">addResource</tt><big>(</big><em>address</em>, <em>controller</em>, <em>VendorID</em>, <em>ProductID</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.addResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.addResource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manually create a resources on an instrument manager</p>
+<p>If the controller does not support manually adding resources, this 
+function will return False</p>
+<p>Parameters:
+- address: str IP Address
+- controller: str
+- VendorID: str
+- ProductID: str</p>
+<p>Returns:
+- bool: True if success or False if failed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.createInstrument">
+<tt class="descname">createInstrument</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.createInstrument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.createInstrument" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a resource has loaded a driver and started a RPC server</p>
+<p>If so, creates a RPC Client, adds it to the instrument dictionary and
+returns a reference to the RPC Client object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.destroyInstrument">
+<tt class="descname">destroyInstrument</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.destroyInstrument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.destroyInstrument" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unloads an instrument RPC Client</p>
+<p>Returns True if an instrument was deleted, otherwise False</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.getAddressFromHostname">
+<tt class="descname">getAddressFromHostname</tt><big>(</big><em>hostname</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getAddressFromHostname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getAddressFromHostname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resolves a hostname.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hostname</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Machine hostname to resolve</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">str &#8211; IPv4 Address</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.getInstrument_list">
+<tt class="descname">getInstrument_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getInstrument_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getInstrument_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of all enumerated instruments</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.getInstrument_model">
+<tt class="descname">getInstrument_model</tt><big>(</big><em>model_number</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getInstrument_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getInstrument_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of enumerated instruments with the given model</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.getInstrument_serial">
+<tt class="descname">getInstrument_serial</tt><big>(</big><em>serial_number</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getInstrument_serial"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getInstrument_serial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an enumerated instrument that matches the serial number provided</p>
+<p>Return the first matching device</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.getInstrument_type">
+<tt class="descname">getInstrument_type</tt><big>(</big><em>d_type</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getInstrument_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getInstrument_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterates of the list of enumerated instruments and returns a list of instruments that have types which match</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.getProperties">
+<tt class="descname">getProperties</tt><big>(</big><em>ResUUID=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getProperties" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the properties dictionary for all connected instruments</p>
+<p>If ResUUID is specified, a single dictionary will be returned</p>
+<p>If ResUUID is not specified, property dictionaries will be nested by UUID</p>
+<p>Returns None if the UUID is invalid or no properties have been queried
+for that UUID</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.getResource">
+<tt class="descname">getResource</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getResource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the contents of the resource dictionary for the given UUID</p>
+<p>Returns:
+- Tuple (controller, resID)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.getResources">
+<tt class="descname">getResources</tt><big>(</big><em>address=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getResources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a dictionary of resources from one or all connected instrument
+managers</p>
+<p>Parameters:
+- address (optional): str IP Address</p>
+<p>Returns:
+-dict of resource objects by uuid</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.managerRunning">
+<tt class="descname">managerRunning</tt><big>(</big><em>address</em>, <em>port=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.managerRunning"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.managerRunning" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attempts to connect to a manager instance. If no connection can be made,
+return False.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.refreshManager">
+<tt class="descname">refreshManager</tt><big>(</big><em>address=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.refreshManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.refreshManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the list of resources for the device. If no address is
+provided, recursively refresh all managers</p>
+<p>TODO: Create logic to group items by hostname, type, vendor or model</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.refreshProperties">
+<tt class="descname">refreshProperties</tt><big>(</big><em>ResUUID=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.refreshProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.refreshProperties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Will attempt to create instruments for all resources to refresh property
+dictionaries</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.removeManager">
+<tt class="descname">removeManager</tt><big>(</big><em>address</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.removeManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.removeManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disconnects from the given manager</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.startManager">
+<tt class="descname">startManager</tt><big>(</big><em>block=True</em>, <em>timeout=5.0</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.startManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.startManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start a new process using subprocess</p>
+<p>TODO: This depends on knowing the absolute path of the manager source</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="application.html"
+                        title="previous chapter">Smart Lab Application</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="developers.html"
+                        title="next chapter">Instrument Manager Developer Guide</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/api.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="developers.html" title="Instrument Manager Developer Guide"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="application.html" title="Smart Lab Application"
+             >previous</a> |</li>
+        <li><a href="index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, KKENNEDY.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
