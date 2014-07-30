@@ -71,8 +71,11 @@ class a_Main(object):
         +-----------------------------------+
         """
         master = self.myTk
+        ttk.Style().theme_use('vista')
         #master = Tk.Toplevel(self.myTk)
         master.wm_title("Instrument Control")
+        master.minsize(500, 500)
+        master.geometry("800x600")
         
         #=======================================================================
         # Menubar
@@ -95,7 +98,7 @@ class a_Main(object):
         self.m_File_LogLevel.add_radiobutton(label='Debug',     command=lambda: self.cb_setLogLevel(logging.DEBUG))
         
         self.m_File.add_separator()
-        self.m_File.add_command(label='Close', command=self.cb_exitWindow)
+        self.m_File.add_command(label='Exit', command=self.cb_exitWindow)
         # Help
         self.m_Help = Tk.Menu(self.menubar, name='help')
         self.menubar.add_cascade(menu=self.m_Help, label='Help')
@@ -122,10 +125,8 @@ class a_Main(object):
         #     Treeview Frame
         #     Min size: 400px
         #=======================================================================
-        self.treeFrame = Tk.Frame(self.VPane)
-        self.treeFrame.config(highlightbackground='green')
-        self.treeFrame.config(highlightthickness=2)
-        self.VPane.add(self.treeFrame, minsize=400)
+        self.treeFrame = Tk.Frame(self.VPane, highlightcolor='green', highlightthickness=2)
+        self.VPane.add(self.treeFrame, width=400, minsize=400)
         
         Tk.Label(self.treeFrame, text='Instruments', anchor='w').pack(side=Tk.TOP)
         self.tree = ttk.Treeview(self.treeFrame)
@@ -154,7 +155,7 @@ class a_Main(object):
         # Min size: 200px
         #=======================================================================
         self.logFrame = Tk.Frame(self.HPane)
-        self.HPane.add(self.logFrame, minsize=200)
+        self.HPane.add(self.logFrame, width=200, minsize=200)
         
         Tk.Label(self.logFrame, text='Log').pack(side=Tk.TOP)
         self.logConsole = Tk.Text(self.logFrame)
@@ -272,9 +273,9 @@ class a_Main(object):
             
     def cb_managerConnect(self):
         # Spawn a window to get address and port
-        t = Tk.Toplevel(self.myTk)
-        t.wm_title('Connect to host...')
-        Tk.Label(t, text='Address or Hostname').grid(row=0, column=0)
+        from include.a_managerHelpers import a_ConnectToHost
+        
+        w_connectToHost = a_ConnectToHost(self.myTk)
         
         # Attempt a connection to the manager
         connStat = self.ICF.addManager(address, port)
@@ -332,7 +333,7 @@ class a_Main(object):
             menu.add_command(label='Refresh', command=lambda: self.cb_refreshTree(address))
             menu.add_command(label='Disconnect', command=lambda: self.cb_managerDisconnect(address))
             
-        elif res_props is not None:
+        elif len(res_props) > 0:
             # Context is Resource, elem is the UUID
             
             # Context menu:
@@ -349,7 +350,7 @@ class a_Main(object):
         
         else:
             # Something else maybe empty space?
-            pass
+            menu.add_command(label='Connect to host...', command=lambda: self.cb_managerConnect())
         
         menu.post(event.x_root, event.y_root)
 
