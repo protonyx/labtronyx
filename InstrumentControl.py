@@ -1,4 +1,5 @@
 import sys
+# System Imports
 import os
 import importlib
 import subprocess
@@ -8,26 +9,33 @@ import logging.handlers
 
 # Instrument Control Classes
 import common
-from common.manager import InstrumentManager
-import controllers
-import models
 from common import is_valid_ipv4_address, resolve_hostname
 from common.rpc import RpcClient
 
-# Global variables
-#logger = None
-#config = None
-
-
 class InstrumentControl(object):
     """
-    Smart Instrument Control and Automation framework
-      
-    InstrumentControl wraps InstrumentManager objects and provides 
-    a framework for connecting to and controlling test instruments 
-    on both local and remote systems. 
+    InstrumentControl is a helper class that provides functionality to 
+    communicate with any number of local or remote InstrumentManager instances.
     
-    .. moduleauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
+    InstrumentControl simplifies the process of writing test instrument
+    automation and control scripts. This is accomplished by abstracting the
+    communication with :class:`InstrumentManager` instances that contain the device
+    interface code. 
+    
+    Dependencies:
+    - InstrumentManager must be running on the local or remote machine that you
+    are trying to connect to. :func:`InstrumentControl.startWaitManager` can be
+    used to spawn a new process of InstrumentManager.
+    
+    Example with InstrumentManager already running: ::
+        from InstrumentControl import InstrumentControl
+        instr = InstrumentControl()
+        
+    Example with InstrumentManager not already running: ::
+        from InstrumentControl import InstrumentControl
+        instr = InstrumentControl()
+        instr.startWaitManager()
+        
     """
     managers = {} # IP Address -> Manager RPC Client object
     hostnames = {} # Hostname => IP Address [Lookup table]
@@ -120,9 +128,27 @@ class InstrumentControl(object):
         return addr
     
     def isConnectedHost(self, hostname):
-        return self.hostnames.get(hostname, None)
+        """
+        Check if a given hostname is connected
+        
+        :param hostname: hostname to check
+        :type hostname: str
+        :returns: True is hostname if connected, False otherwise
+        """
+        if self.hostnames.get(hostname, None) is not None:
+            return True
+        else:
+            return False
     
     def getAddressFromUUID(self, uuid):
+        """
+        Get the host address of a resource.
+        
+        :param uuid: Resource UUID
+        :type uuid: str
+        :returns: IP Address of host associated with the given resource or None
+        if the resource was not found
+        """
         dev_man = self._getManager_uuid(uuid)
         if dev_man is not None:
             return dev_man._getAddress()
@@ -130,17 +156,32 @@ class InstrumentControl(object):
             return None
     
     def getHostnames(self):
+        """
+        Get a list of connected hostnames
+        
+        :returns: List of connected hostnames
+        """
         return self.hostnames.keys()
     
     #===========================================================================
     # Local Manager Operations
     #===========================================================================
     
-    def startManager(self, block=True, timeout=5.0):
+    def startManager(self):
         """
-        Start a new process using subprocess
+        Start a local instance of :class:`InstrumentManager` using 
+        :func:`subprocess.Popen`.
         
-        TODO: This depends on knowing the absolute path of the manager source
+        No attempt is made to check whether an :class:`InstrumentManager`
+        process is already running. The default behavior for :class:'InstrumentManager'
+        is to exit when the port is already in use.
+        
+        See :class:'InstrumentManager' documentation for more information. 
+        
+        .. note:: 
+           This function does not block! If the :class:`InstrumentManager`
+           instance is not fully initialized before attempting to connect to it,
+           timeouts will occur. 
         """
         local = self.getAddressFromHostname('localhost')
         
@@ -154,6 +195,17 @@ class InstrumentControl(object):
             pass
             
     def startWaitManager(self, timeout=10.0):
+        """
+        Start a local instance of :class:`InstrumentManager` using 
+        :func:`subprocess.Popen`. This function will block until the manager is
+        fully initialized. 
+        
+        See :func:`startManager` for more.
+        
+        :param timeout: Maximum number of seconds to wait before timeout occurs  
+        :type timeout: float
+        :returns: Nothing
+        """
         local = self.getAddressFromHostname('localhost')
         
         self.startManager()
@@ -169,8 +221,14 @@ class InstrumentControl(object):
         
     def managerRunning(self, address, port=None):
         """
-        Attempts to connect to a manager instance. If no connection can be made,
-        return False.
+        Check if an :class:`InstrumentManager` instance is running. Attempts to
+        open a socket to the provided address and port.
+        
+        :param address: IP Address to check
+        :type address: str
+        :param port: Port
+        :type port: int
+        :returns: True if running, False if not running
         """
         man = self.getManager(address)
         if man is not None:
@@ -199,15 +257,6 @@ class InstrumentControl(object):
             else:
                 # No manager could be found at the address:port
                 pass
-        
-        #=======================================================================
-        # if hasattr(self, 'manager') and isinstance(self.manager, InstrumentManager):
-        #     if self._managerReady.is_set() or self.manager.is_alive():
-        #         self.manager.stop()
-        #         self.manager.terminate()
-        #         self.manager.join()
-        #         self.manager = None
-        #=======================================================================
     
     def addManager(self, address, port=None):
         """
