@@ -83,7 +83,7 @@ class InstrumentControl(object):
                 self.logger.addHandler(lh_console)
                 
         # Attempt to start the local manager
-        self.startWaitManager()
+        #self.startWaitManager()
                 
         # Attempt to connect to the local manager
         local = self.getAddressFromHostname('localhost')
@@ -132,6 +132,10 @@ class InstrumentControl(object):
     def getHostnames(self):
         return self.hostnames.keys()
     
+    #===========================================================================
+    # Local Manager Operations
+    #===========================================================================
+    
     def startManager(self, block=True, timeout=5.0):
         """
         Start a new process using subprocess
@@ -142,7 +146,7 @@ class InstrumentControl(object):
         
         try:
             pyExec = sys.executable
-            manPath = os.path.join(self.config.rootPath, 'common', 'manager.py')
+            manPath = os.path.join(self.rootPath, 'InstrumentManager.py')
             
             subprocess.Popen([pyExec, manPath])
             

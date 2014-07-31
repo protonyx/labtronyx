@@ -6,9 +6,7 @@ import uuid
 import importlib, inspect
 import logging, logging.handlers
 
-import rpc
-
-sys.path.append("..")
+import common.rpc as rpc
 
 class InstrumentManager(rpc.RpcBase):
     """
@@ -52,24 +50,19 @@ class InstrumentManager(rpc.RpcBase):
     def __loadConfig(self, configFile):
         # Get the root path
         can_path = os.path.dirname(os.path.realpath(__file__)) # Resolves symbolic links
-        rootPath = os.path.abspath(os.path.join(can_path, os.pardir))
-        configPath = os.path.join(rootPath, 'config')
-        configFile = os.path.join(configPath, 'default.py')
+        
+        self.rootPath = os.path.abspath(can_path)
+        self.configPath = os.path.join(self.rootPath, 'config')
+        self.configFile = os.path.join(self.configPath, '%s.py' % configFile)
         
         try:
             import imp
-            cFile = imp.load_source('default', configFile)
+            cFile = imp.load_source('config', self.configFile)
             self.config = cFile.Config()
             
         except Exception as e:
             print("FATAL ERROR: Unable to import config file")
             sys.exit()
-            
-        # Set the root path
-        self.config.rootPath = rootPath
-        
-        # Set the version as a global variable
-        self.config.version = self.VERSION
         
     def __configureLogger(self):
         self.logger = logging.getLogger(__name__)
@@ -123,7 +116,7 @@ class InstrumentManager(rpc.RpcBase):
         self.controllers = {}
         
         # Scan for controllers
-        cont_dir = os.path.join(self.config.rootPath, 'controllers')
+        cont_dir = os.path.join(self.rootPath, 'controllers')
         allcont = os.walk(cont_dir)
         for dir in allcont:
             if len(dir[2]) > 0:
@@ -170,7 +163,7 @@ class InstrumentManager(rpc.RpcBase):
         self.models = {} 
         
         # Build model map dictionary
-        model_dir = os.path.join(self.config.rootPath, 'models')
+        model_dir = os.path.join(self.rootPath, 'models')
         allmodels = os.walk(model_dir)
         for dir in allmodels:
             # Verify valid directory
@@ -242,7 +235,7 @@ class InstrumentManager(rpc.RpcBase):
                                 
     def __pathToModelName(self, path):
         # Get module name from relative path
-        com_pre = os.path.commonprefix([self.config.rootPath, path])
+        com_pre = os.path.commonprefix([self.rootPath, path])
         r_path = path.replace(com_pre + "\\", '')
         
         modulePath = r_path.replace("\\", '.')
@@ -293,19 +286,6 @@ class InstrumentManager(rpc.RpcBase):
                         
             except:
                 pass
-                
-        #=======================================================================
-        # elif self.e_startedAsProcess:
-        #     # If another instance was running, this process will die
-        #     sys.exit()
-        #     
-        # while self.rpc_isRunning():
-        #     # Stay alive!
-        #     time.sleep(1.0)
-        # 
-        # if self.e_startedAsProcess:
-        #     sys.exit()
-        #=======================================================================
         
     def getProperties(self):
         """
