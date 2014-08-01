@@ -1,19 +1,55 @@
 InstrumentControl API
 =====================
 
-The InstrumentControl API is the core of the Application GUI. It simplifies script development by abstracting local and remote instruments as simple Python objects and providing helper functions to handle all of the low-level communication with InstrumentManagers
+The InstrumentControl API is the core of the Application GUI. It simplifies 
+script development by abstracting local and remote instruments as simple Python 
+objects and providing helper functions to handle all of the low-level 
+communication with :class:`InstrumentManager` instances.
 
-The InstrumentControl API can be imported from an existing install of the Application GUI or using the slim installer that integrates the necessary files directly into your local Python installation.
+Using InstrumentControl
+-----------------------
 
 To use the InstrumentControl API::
-
-	import InstrumentControl
+   
+   from InstrumentControl import InstrumentControl
+   instr = InstrumentControl()
 	
-	ic = InstrumentControl.InstrumentControl()
+If an :class:`InstrumentManager` instance is not already running, you can start
+one using :func:`startWaitManager` or :func:`startManager`::
+
+	instr.startWaitManager()
 	
 .. note::
 
-	To import InstrumentControl from an Application GUI install, the folder must be in your PYTHONPATH
+	To import InstrumentControl, the folder must be in your PYTHONPATH
 	
+Dependencies
+------------
+
+There are no dependencies.
+
+Theory of Operation
+-------------------
+
+Some introductory text
+
+Managing Connections to InstrumentManager instances
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Useful text
+
+Cached Resources
+^^^^^^^^^^^^^^^^
+
+More useful text
+
+Instruments
+^^^^^^^^^^^
+
+Some Text
+	
+API Usage
+---------
+
 .. autoclass:: InstrumentControl.InstrumentControl
    :members:

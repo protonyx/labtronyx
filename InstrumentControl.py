@@ -22,19 +22,13 @@ class InstrumentControl(object):
     communication with :class:`InstrumentManager` instances that contain the device
     interface code. 
     
+    :param Logger: Logger instance if you wish to override the internal instance
+    :type Logger: Logging.logger
+    
     Dependencies:
     - InstrumentManager must be running on the local or remote machine that you
     are trying to connect to. :func:`InstrumentControl.startWaitManager` can be
     used to spawn a new process of InstrumentManager.
-    
-    Example with InstrumentManager already running: ::
-        from InstrumentControl import InstrumentControl
-        instr = InstrumentControl()
-        
-    Example with InstrumentManager not already running: ::
-        from InstrumentControl import InstrumentControl
-        instr = InstrumentControl()
-        instr.startWaitManager()
         
     """
     managers = {} # IP Address -> Manager RPC Client object
@@ -46,10 +40,6 @@ class InstrumentControl(object):
     properties = {} # { Resource UUID -> Properties (dict) }
     
     def __init__(self, **kwargs):
-        """
-        :param Logger: Logger instance if you wish to override the internal instance
-        :type Logger: Logging.logger
-        """
         # Get the root path
         can_path = os.path.dirname(os.path.realpath(__file__)) # Resolves symbolic links
         rootPath = os.path.abspath(can_path)
@@ -245,6 +235,19 @@ class InstrumentControl(object):
                 return False
     
     def stopManager(self, address, port=None):
+        """
+        Send a stop signal to a manager instance running on a local or remote
+        machine.
+        
+        .. note::
+           :class:`InstrumentManager` cannot be restarted once it is stopped
+           
+        :param address: IP Address to check
+        :type address: str
+        :param port: Port
+        :type port: int
+        :returns: Nothing
+        """
         man = self.getManager(address)
         if man is not None:
             man.rpc_stop()
@@ -260,12 +263,15 @@ class InstrumentControl(object):
     
     def addManager(self, address, port=None):
         """
-        Attempts to find a manager instance at the given address
+        Connect to a manager instance at the given address and port. If the
+        connection is successful, the remote resources are automatically
+        added to the pool of resources using :func:`refreshManager`
         
-        If a manager is found, get the list of resources
-        
-        Returns:
-            - True if manager found, false if connection failed
+        :param address: IP Address to check
+        :type address: str
+        :param port: Port
+        :type port: int
+        :returns: True if manager found, False if connection failed
         """
         
         seekPort = port or self.config.managerPort
@@ -293,10 +299,16 @@ class InstrumentControl(object):
         
     def refreshManager(self, address=None):
         """
-        Retrieves the list of resources for the device. If no address is
-        provided, recursively refresh all managers
+        Refresh the cached resources for the manager at `address`. If no 
+        address is provided, refreshes all resources across all managers
         
-        TODO: Create logic to group items by hostname, type, vendor or model
+        .. note::
+           Use :func:`addManager` to establish a connection to a manager
+           before calling this function.
+        
+        :param address: IP Address to check
+        :type address: str
+        :returns: True unless there is no existing connection to `address`
         """
         
         if address in self.managers:
@@ -309,7 +321,7 @@ class InstrumentControl(object):
             cached_resources = self.resources.get(address, {})
             
             # Get resources from the remote manager
-            remote_resources = man.getResources() or {}
+            remote_resources = man.getAllResources() or {}
 
             # Purge resources that are no longer available
             for uuid, res in cached_resources.items():
@@ -335,7 +347,12 @@ class InstrumentControl(object):
     
     def removeManager(self, address):
         """
-        Disconnects from the given manager
+        Disconnect from the manager instance at `address` and purge all cached
+        resources from that host.
+        
+        :param address: IP Address of manger
+        :type address: str
+        :returns: True unless there is no existing connection to `address`
         """
         if self.managers.has_key(address):
             # Remove all resources from that host
@@ -356,6 +373,21 @@ class InstrumentControl(object):
             return False
         
     def getManager(self, address):
+        """
+        Get an InstrumentManager object for the host at `address`. Object
+        returned is an :class:`common.rpc.RpcClient` object that is linked to
+        a remote InstrumentManager instance.
+        
+        .. note::
+           
+           This will always return an :class:`common.rpc.RpcClient` object, even
+           if the InstrumentManager instance is on the local machine.
+           
+        :param address: IP Address of manger
+        :type address: str
+        :returns: :class:`common.rpc.RpcClient` object or None if there is no \
+        existing connection to `address`
+        """
         return self.managers.get(address, None)
             
     def _getManager_uuid(self, res_uuid):
@@ -369,16 +401,19 @@ class InstrumentControl(object):
     # Resource Operations
     #===========================================================================
     
-    def getResources(self, address=None):
+    def getAllResources(self, address=None):
         """
-        Get a dictionary of resources from one or all connected instrument
-        managers
+        Get a listing of all cached resources from all connected 
+        :class:`InstrumentManager` instances.
         
-        Parameters:
-        - address (optional): str IP Address
+        Returned dictionary is all cached resources with the resource UUID as
+        the key. Values are resource identifier tuples: 
+        (`controller`, `resourceID`)
         
-        Returns:
-        -dict of resource objects by uuid
+        :param address: IP Address of manger
+        :type address: str
+        
+        :returns: dict
         """
         if address in self.managers:
             return self.resources.get(address, {})
@@ -395,10 +430,13 @@ class InstrumentControl(object):
         
     def getResource(self, res_uuid):
         """
-        Returns the contents of the resource dictionary for the given UUID
+        Get the resource identifier of a cached resource given a UUID
         
-        Returns:
-        - Tuple (controller, resID)
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        
+        :returns: tuple - (`controller`, `resourceID`) or None if there is no \
+                  matching UUID in the cache
         """
         # Iterate through all resources to find
         for address in self.resources:
@@ -411,19 +449,31 @@ class InstrumentControl(object):
     
     def addResource(self, address, controller, VendorID, ProductID):
         """
-        Manually create a resources on an instrument manager
+        Create a managed resource within a controller object
         
-        If the controller does not support manually adding resources, this 
-        function will return False
+        If `controller` is not a valid controller on the remote manager instance,
+        or if the controller does not support manually adding resources, this 
+        function will return False. 
         
-        Parameters:
-        - address: str IP Address
-        - controller: str
-        - VendorID: str
-        - ProductID: str
+        .. note::
         
-        Returns:
-        - bool: True if success or False if failed
+            Controllers that rely on system resources such as VISA or serial
+            can only communicate with devices that are known to the system.
+            Controllers that have no way to scan or enumerate devices depend on
+            this function to make it aware of the device. An example of this is
+            a TCP/IP based Controller, which must know an IP address before
+            communication can be established.
+        
+        :param address: IP Address of manager
+        :type address: str
+        :param controller: Name of controller to attach new resource
+        :type controller: str
+        :param VendorID: Vendor Identifier for automatic model loading
+        :type VendorID: str
+        :param ProductID: Product Identifier for automatic model loading
+        :type ProductID: str
+        
+        :returns: bool - True if success, False otherwise
         """
         if address in self.managers:
             man = self.managers.get(address)
@@ -440,14 +490,27 @@ class InstrumentControl(object):
         else:
             return False
     
-    def removeResource(self, address, res_uuid):
+    def removeResource(self, res_uuid):
+        """
+        Remove a managed resource from a remote controller.
+        
+        Unlike :func:`addResource`, this function will find the IP Address and
+        controller given `res_uuid`. If the resource cannot be found in the
+        cache, this function will return False. 
+        
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: bool - True if resource was removed, False otherwise
+        """
         if self.resources.has_key(res_uuid):
-            self.resources.pop(res_uuid, None)
+            # Instrument may not exist, but just in case
+            self.destroyInstrument(res_uuid)
             
-        # Instrument may not exist, but just in case
-        self.destroyInstrument(res_uuid)
+            if self.resources.pop(res_uuid, None) is not None:
+                return True
             
-    
+        return False
+
     #===========================================================================
     # Instrument Operations
     #
@@ -455,18 +518,54 @@ class InstrumentControl(object):
     #===========================================================================
     
     def getInstrument(self, res_uuid):
+        """
+        Get an Instrument :class:`common.rpc.RpcClient` object that is linked
+        to the remote model.
+        
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: :class:`common.rpc.RpcClient` object or None an Instrument \
+        has not yet been created for that resource
+        
+        """
         return self.instruments.get(res_uuid, None)
     
-    def loadModel(self, uuid, modelName=None, className=None):
-        dev_man = self._getManager_uuid(uuid)
+    def loadModel(self, res_uuid, modelName=None, className=None):
+        """
+        Signal the remote InstrumentManager to load a model for a given
+        resource. The InstrumentManager will attempt to identify a compatible
+        model to load automatically. To force load a particular model, provide
+        a `modelName` and `className`.
+        
+        `modelName` must be an importable module on the remote system. The
+        base folder used to locate the module is the `models` folder.
+        
+        .. note::
+        
+            If the import fails on the remote InstrumentManager, an exception 
+            will be logged (on the remote system), but this function will return
+            False with no other indication. 
+            
+        Example usage::
+        
+            instr.loadModel('360ba14f-19be-11e4-95bf-a0481c94faff', 'Tektronix.Oscilloscope.m_DigitalPhosphor', 'm_DigitalPhosphor')
+        
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: bool - True if successful, False otherwise
+        """
+        dev_man = self._getManager_uuid(res_uuid)
         
         if dev_man is not None:
-            return dev_man.loadModel(uuid, modelName, className)
+            return dev_man.loadModel(res_uuid, modelName, className)
         
         else:
             return False
         
     def unloadModel(self, uuid):
+        """
+        
+        """
         dev_man = self._getManager_uuid(uuid)
         
         if dev_man is not None:
@@ -680,7 +779,7 @@ class InstrumentControl(object):
     
 # Load GUI in interactive mode
 if __name__ == "__main__":
-    # Launch InstrumentControl GUI
+    # Load Application GUI
     try:
         #sys.path.append("..")
         from application.a_Main import a_Main

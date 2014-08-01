@@ -45,6 +45,7 @@
             
   <h1>Source code for InstrumentControl</h1><div class="highlight"><pre>
 <span class="kn">import</span> <span class="nn">sys</span>
+<span class="c"># System Imports</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">importlib</span>
 <span class="kn">import</span> <span class="nn">subprocess</span>
@@ -54,26 +55,27 @@
 
 <span class="c"># Instrument Control Classes</span>
 <span class="kn">import</span> <span class="nn">common</span>
-<span class="kn">from</span> <span class="nn">common.manager</span> <span class="kn">import</span> <span class="n">InstrumentManager</span>
-<span class="kn">import</span> <span class="nn">controllers</span>
-<span class="kn">import</span> <span class="nn">models</span>
 <span class="kn">from</span> <span class="nn">common</span> <span class="kn">import</span> <span class="n">is_valid_ipv4_address</span><span class="p">,</span> <span class="n">resolve_hostname</span>
 <span class="kn">from</span> <span class="nn">common.rpc</span> <span class="kn">import</span> <span class="n">RpcClient</span>
 
-<span class="c"># Global variables</span>
-<span class="c">#logger = None</span>
-<span class="c">#config = None</span>
-
-
 <div class="viewcode-block" id="InstrumentControl"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl">[docs]</a><span class="k">class</span> <span class="nc">InstrumentControl</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Smart Instrument Control and Automation framework</span>
-<span class="sd">      </span>
-<span class="sd">    InstrumentControl wraps InstrumentManager objects and provides </span>
-<span class="sd">    a framework for connecting to and controlling test instruments </span>
-<span class="sd">    on both local and remote systems. </span>
+<span class="sd">    InstrumentControl is a helper class that provides functionality to </span>
+<span class="sd">    communicate with any number of local or remote InstrumentManager instances.</span>
 <span class="sd">    </span>
-<span class="sd">    .. moduleauthor:: Kevin Kennedy &lt;kennedy.kevin@gmail.com&gt;</span>
+<span class="sd">    InstrumentControl simplifies the process of writing test instrument</span>
+<span class="sd">    automation and control scripts. This is accomplished by abstracting the</span>
+<span class="sd">    communication with :class:`InstrumentManager` instances that contain the device</span>
+<span class="sd">    interface code. </span>
+<span class="sd">    </span>
+<span class="sd">    :param Logger: Logger instance if you wish to override the internal instance</span>
+<span class="sd">    :type Logger: Logging.logger</span>
+<span class="sd">    </span>
+<span class="sd">    Dependencies:</span>
+<span class="sd">    - InstrumentManager must be running on the local or remote machine that you</span>
+<span class="sd">    are trying to connect to. :func:`InstrumentControl.startWaitManager` can be</span>
+<span class="sd">    used to spawn a new process of InstrumentManager.</span>
+<span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">managers</span> <span class="o">=</span> <span class="p">{}</span> <span class="c"># IP Address -&gt; Manager RPC Client object</span>
     <span class="n">hostnames</span> <span class="o">=</span> <span class="p">{}</span> <span class="c"># Hostname =&gt; IP Address [Lookup table]</span>
@@ -84,10 +86,6 @@
     <span class="n">properties</span> <span class="o">=</span> <span class="p">{}</span> <span class="c"># { Resource UUID -&gt; Properties (dict) }</span>
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        :param Logger: Logger instance if you wish to override the internal instance</span>
-<span class="sd">        :type Logger: Logging.logger</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># Get the root path</span>
         <span class="n">can_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">))</span> <span class="c"># Resolves symbolic links</span>
         <span class="n">rootPath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">can_path</span><span class="p">)</span>
@@ -129,7 +127,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">lh_console</span><span class="p">)</span>
                 
         <span class="c"># Attempt to start the local manager</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">startWaitManager</span><span class="p">()</span>
+        <span class="c">#self.startWaitManager()</span>
                 
         <span class="c"># Attempt to connect to the local manager</span>
         <span class="n">local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAddressFromHostname</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">)</span>
@@ -165,37 +163,85 @@
             
         <span class="k">return</span> <span class="n">addr</span>
     </div>
-    <span class="k">def</span> <span class="nf">isConnectedHost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hostname</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostnames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hostname</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-    
-    <span class="k">def</span> <span class="nf">getAddressFromUUID</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentControl.isConnectedHost"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.isConnectedHost">[docs]</a>    <span class="k">def</span> <span class="nf">isConnectedHost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hostname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a given hostname is connected</span>
+<span class="sd">        </span>
+<span class="sd">        :param hostname: hostname to check</span>
+<span class="sd">        :type hostname: str</span>
+<span class="sd">        :returns: True is hostname if connected, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostnames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hostname</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    </div>
+<div class="viewcode-block" id="InstrumentControl.getAddressFromUUID"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getAddressFromUUID">[docs]</a>    <span class="k">def</span> <span class="nf">getAddressFromUUID</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the host address of a resource.</span>
+<span class="sd">        </span>
+<span class="sd">        :param uuid: Resource UUID</span>
+<span class="sd">        :type uuid: str</span>
+<span class="sd">        :returns: IP Address of host associated with the given resource or None</span>
+<span class="sd">        if the resource was not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dev_man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getManager_uuid</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">dev_man</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">dev_man</span><span class="o">.</span><span class="n">_getAddress</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
-    
-    <span class="k">def</span> <span class="nf">getHostnames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    </div>
+<div class="viewcode-block" id="InstrumentControl.getHostnames"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getHostnames">[docs]</a>    <span class="k">def</span> <span class="nf">getHostnames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a list of connected hostnames</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: List of connected hostnames</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostnames</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
     
-<div class="viewcode-block" id="InstrumentControl.startManager"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.startManager">[docs]</a>    <span class="k">def</span> <span class="nf">startManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">5.0</span><span class="p">):</span>
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Local Manager Operations</span>
+    <span class="c">#===========================================================================</span>
+    </div>
+<div class="viewcode-block" id="InstrumentControl.startManager"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.startManager">[docs]</a>    <span class="k">def</span> <span class="nf">startManager</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Start a new process using subprocess</span>
+<span class="sd">        Start a local instance of :class:`InstrumentManager` using </span>
+<span class="sd">        :func:`subprocess.Popen`.</span>
 <span class="sd">        </span>
-<span class="sd">        TODO: This depends on knowing the absolute path of the manager source</span>
+<span class="sd">        No attempt is made to check whether an :class:`InstrumentManager`</span>
+<span class="sd">        process is already running. The default behavior for :class:&#39;InstrumentManager&#39;</span>
+<span class="sd">        is to exit when the port is already in use.</span>
+<span class="sd">        </span>
+<span class="sd">        See :class:&#39;InstrumentManager&#39; documentation for more information. </span>
+<span class="sd">        </span>
+<span class="sd">        .. note:: </span>
+<span class="sd">           This function does not block! If the :class:`InstrumentManager`</span>
+<span class="sd">           instance is not fully initialized before attempting to connect to it,</span>
+<span class="sd">           timeouts will occur. </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAddressFromHostname</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">)</span>
         
         <span class="k">try</span><span class="p">:</span>
             <span class="n">pyExec</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">executable</span>
-            <span class="n">manPath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">rootPath</span><span class="p">,</span> <span class="s">&#39;common&#39;</span><span class="p">,</span> <span class="s">&#39;manager.py&#39;</span><span class="p">)</span>
+            <span class="n">manPath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rootPath</span><span class="p">,</span> <span class="s">&#39;InstrumentManager.py&#39;</span><span class="p">)</span>
             
             <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="n">pyExec</span><span class="p">,</span> <span class="n">manPath</span><span class="p">])</span>
             
         <span class="k">except</span><span class="p">:</span>
             <span class="k">pass</span>
             </div>
-    <span class="k">def</span> <span class="nf">startWaitManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">10.0</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentControl.startWaitManager"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.startWaitManager">[docs]</a>    <span class="k">def</span> <span class="nf">startWaitManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">10.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Start a local instance of :class:`InstrumentManager` using </span>
+<span class="sd">        :func:`subprocess.Popen`. This function will block until the manager is</span>
+<span class="sd">        fully initialized. </span>
+<span class="sd">        </span>
+<span class="sd">        See :func:`startManager` for more.</span>
+<span class="sd">        </span>
+<span class="sd">        :param timeout: Maximum number of seconds to wait before timeout occurs  </span>
+<span class="sd">        :type timeout: float</span>
+<span class="sd">        :returns: Nothing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAddressFromHostname</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">startManager</span><span class="p">()</span>
@@ -208,11 +254,17 @@
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">waitTime</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">tryTime</span> <span class="o">&gt;=</span> <span class="n">timeout</span><span class="p">:</span>
                 <span class="k">break</span>
-        
+        </div>
 <div class="viewcode-block" id="InstrumentControl.managerRunning"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.managerRunning">[docs]</a>    <span class="k">def</span> <span class="nf">managerRunning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Attempts to connect to a manager instance. If no connection can be made,</span>
-<span class="sd">        return False.</span>
+<span class="sd">        Check if an :class:`InstrumentManager` instance is running. Attempts to</span>
+<span class="sd">        open a socket to the provided address and port.</span>
+<span class="sd">        </span>
+<span class="sd">        :param address: IP Address to check</span>
+<span class="sd">        :type address: str</span>
+<span class="sd">        :param port: Port</span>
+<span class="sd">        :type port: int</span>
+<span class="sd">        :returns: True if running, False if not running</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getManager</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">man</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
@@ -228,7 +280,20 @@
                 <span class="c"># No manager could be found at the address:port</span>
                 <span class="k">return</span> <span class="bp">False</span>
     </div>
-    <span class="k">def</span> <span class="nf">stopManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentControl.stopManager"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.stopManager">[docs]</a>    <span class="k">def</span> <span class="nf">stopManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Send a stop signal to a manager instance running on a local or remote</span>
+<span class="sd">        machine.</span>
+<span class="sd">        </span>
+<span class="sd">        .. note::</span>
+<span class="sd">           :class:`InstrumentManager` cannot be restarted once it is stopped</span>
+<span class="sd">           </span>
+<span class="sd">        :param address: IP Address to check</span>
+<span class="sd">        :type address: str</span>
+<span class="sd">        :param port: Port</span>
+<span class="sd">        :type port: int</span>
+<span class="sd">        :returns: Nothing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getManager</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">man</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">man</span><span class="o">.</span><span class="n">rpc_stop</span><span class="p">()</span>
@@ -241,24 +306,18 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="c"># No manager could be found at the address:port</span>
                 <span class="k">pass</span>
-        
-        <span class="c">#=======================================================================</span>
-        <span class="c"># if hasattr(self, &#39;manager&#39;) and isinstance(self.manager, InstrumentManager):</span>
-        <span class="c">#     if self._managerReady.is_set() or self.manager.is_alive():</span>
-        <span class="c">#         self.manager.stop()</span>
-        <span class="c">#         self.manager.terminate()</span>
-        <span class="c">#         self.manager.join()</span>
-        <span class="c">#         self.manager = None</span>
-        <span class="c">#=======================================================================</span>
-    
+    </div>
 <div class="viewcode-block" id="InstrumentControl.addManager"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.addManager">[docs]</a>    <span class="k">def</span> <span class="nf">addManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Attempts to find a manager instance at the given address</span>
+<span class="sd">        Connect to a manager instance at the given address and port. If the</span>
+<span class="sd">        connection is successful, the remote resources are automatically</span>
+<span class="sd">        added to the pool of resources using :func:`refreshManager`</span>
 <span class="sd">        </span>
-<span class="sd">        If a manager is found, get the list of resources</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            - True if manager found, false if connection failed</span>
+<span class="sd">        :param address: IP Address to check</span>
+<span class="sd">        :type address: str</span>
+<span class="sd">        :param port: Port</span>
+<span class="sd">        :type port: int</span>
+<span class="sd">        :returns: True if manager found, False if connection failed</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="n">seekPort</span> <span class="o">=</span> <span class="n">port</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">managerPort</span>
@@ -286,10 +345,16 @@
         </div>
 <div class="viewcode-block" id="InstrumentControl.refreshManager"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.refreshManager">[docs]</a>    <span class="k">def</span> <span class="nf">refreshManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves the list of resources for the device. If no address is</span>
-<span class="sd">        provided, recursively refresh all managers</span>
+<span class="sd">        Refresh the cached resources for the manager at `address`. If no </span>
+<span class="sd">        address is provided, refreshes all resources across all managers</span>
 <span class="sd">        </span>
-<span class="sd">        TODO: Create logic to group items by hostname, type, vendor or model</span>
+<span class="sd">        .. note::</span>
+<span class="sd">           Use :func:`addManager` to establish a connection to a manager</span>
+<span class="sd">           before calling this function.</span>
+<span class="sd">        </span>
+<span class="sd">        :param address: IP Address to check</span>
+<span class="sd">        :type address: str</span>
+<span class="sd">        :returns: True unless there is no existing connection to `address`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="k">if</span> <span class="n">address</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="p">:</span>
@@ -302,7 +367,7 @@
             <span class="n">cached_resources</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="p">{})</span>
             
             <span class="c"># Get resources from the remote manager</span>
-            <span class="n">remote_resources</span> <span class="o">=</span> <span class="n">man</span><span class="o">.</span><span class="n">getResources</span><span class="p">()</span> <span class="ow">or</span> <span class="p">{}</span>
+            <span class="n">remote_resources</span> <span class="o">=</span> <span class="n">man</span><span class="o">.</span><span class="n">getAllResources</span><span class="p">()</span> <span class="ow">or</span> <span class="p">{}</span>
 
             <span class="c"># Purge resources that are no longer available</span>
             <span class="k">for</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">cached_resources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -328,7 +393,12 @@
     </div>
 <div class="viewcode-block" id="InstrumentControl.removeManager"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.removeManager">[docs]</a>    <span class="k">def</span> <span class="nf">removeManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Disconnects from the given manager</span>
+<span class="sd">        Disconnect from the manager instance at `address` and purge all cached</span>
+<span class="sd">        resources from that host.</span>
+<span class="sd">        </span>
+<span class="sd">        :param address: IP Address of manger</span>
+<span class="sd">        :type address: str</span>
+<span class="sd">        :returns: True unless there is no existing connection to `address`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">address</span><span class="p">):</span>
             <span class="c"># Remove all resources from that host</span>
@@ -348,9 +418,24 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
         </div>
-    <span class="k">def</span> <span class="nf">getManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentControl.getManager"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getManager">[docs]</a>    <span class="k">def</span> <span class="nf">getManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get an InstrumentManager object for the host at `address`. Object</span>
+<span class="sd">        returned is an :class:`common.rpc.RpcClient` object that is linked to</span>
+<span class="sd">        a remote InstrumentManager instance.</span>
+<span class="sd">        </span>
+<span class="sd">        .. note::</span>
+<span class="sd">           </span>
+<span class="sd">           This will always return an :class:`common.rpc.RpcClient` object, even</span>
+<span class="sd">           if the InstrumentManager instance is on the local machine.</span>
+<span class="sd">           </span>
+<span class="sd">        :param address: IP Address of manger</span>
+<span class="sd">        :type address: str</span>
+<span class="sd">        :returns: :class:`common.rpc.RpcClient` object or None if there is no \</span>
+<span class="sd">        existing connection to `address`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-            
+            </div>
     <span class="k">def</span> <span class="nf">_getManager_uuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
         <span class="n">dev_man</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="k">for</span> <span class="n">addr</span><span class="p">,</span> <span class="n">res_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -362,16 +447,19 @@
     <span class="c"># Resource Operations</span>
     <span class="c">#===========================================================================</span>
     
-<div class="viewcode-block" id="InstrumentControl.getResources"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getResources">[docs]</a>    <span class="k">def</span> <span class="nf">getResources</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentControl.getAllResources"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getAllResources">[docs]</a>    <span class="k">def</span> <span class="nf">getAllResources</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get a dictionary of resources from one or all connected instrument</span>
-<span class="sd">        managers</span>
+<span class="sd">        Get a listing of all cached resources from all connected </span>
+<span class="sd">        :class:`InstrumentManager` instances.</span>
 <span class="sd">        </span>
-<span class="sd">        Parameters:</span>
-<span class="sd">        - address (optional): str IP Address</span>
+<span class="sd">        Returned dictionary is all cached resources with the resource UUID as</span>
+<span class="sd">        the key. Values are resource identifier tuples: </span>
+<span class="sd">        (`controller`, `resourceID`)</span>
 <span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">        -dict of resource objects by uuid</span>
+<span class="sd">        :param address: IP Address of manger</span>
+<span class="sd">        :type address: str</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: dict</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">address</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="p">{})</span>
@@ -388,10 +476,13 @@
         </div>
 <div class="viewcode-block" id="InstrumentControl.getResource"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getResource">[docs]</a>    <span class="k">def</span> <span class="nf">getResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the contents of the resource dictionary for the given UUID</span>
+<span class="sd">        Get the resource identifier of a cached resource given a UUID</span>
 <span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">        - Tuple (controller, resID)</span>
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: tuple - (`controller`, `resourceID`) or None if there is no \</span>
+<span class="sd">                  matching UUID in the cache</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># Iterate through all resources to find</span>
         <span class="k">for</span> <span class="n">address</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="p">:</span>
@@ -404,19 +495,31 @@
     </div>
 <div class="viewcode-block" id="InstrumentControl.addResource"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.addResource">[docs]</a>    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">VendorID</span><span class="p">,</span> <span class="n">ProductID</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Manually create a resources on an instrument manager</span>
+<span class="sd">        Create a managed resource within a controller object</span>
 <span class="sd">        </span>
-<span class="sd">        If the controller does not support manually adding resources, this </span>
-<span class="sd">        function will return False</span>
+<span class="sd">        If `controller` is not a valid controller on the remote manager instance,</span>
+<span class="sd">        or if the controller does not support manually adding resources, this </span>
+<span class="sd">        function will return False. </span>
 <span class="sd">        </span>
-<span class="sd">        Parameters:</span>
-<span class="sd">        - address: str IP Address</span>
-<span class="sd">        - controller: str</span>
-<span class="sd">        - VendorID: str</span>
-<span class="sd">        - ProductID: str</span>
+<span class="sd">        .. note::</span>
 <span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">        - bool: True if success or False if failed</span>
+<span class="sd">            Controllers that rely on system resources such as VISA or serial</span>
+<span class="sd">            can only communicate with devices that are known to the system.</span>
+<span class="sd">            Controllers that have no way to scan or enumerate devices depend on</span>
+<span class="sd">            this function to make it aware of the device. An example of this is</span>
+<span class="sd">            a TCP/IP based Controller, which must know an IP address before</span>
+<span class="sd">            communication can be established.</span>
+<span class="sd">        </span>
+<span class="sd">        :param address: IP Address of manager</span>
+<span class="sd">        :type address: str</span>
+<span class="sd">        :param controller: Name of controller to attach new resource</span>
+<span class="sd">        :type controller: str</span>
+<span class="sd">        :param VendorID: Vendor Identifier for automatic model loading</span>
+<span class="sd">        :type VendorID: str</span>
+<span class="sd">        :param ProductID: Product Identifier for automatic model loading</span>
+<span class="sd">        :type ProductID: str</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: bool - True if success, False otherwise</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">address</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="p">:</span>
             <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
@@ -433,32 +536,78 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
     </div>
-    <span class="k">def</span> <span class="nf">removeResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentControl.removeResource"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.removeResource">[docs]</a>    <span class="k">def</span> <span class="nf">removeResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove a managed resource from a remote controller.</span>
+<span class="sd">        </span>
+<span class="sd">        Unlike :func:`addResource`, this function will find the IP Address and</span>
+<span class="sd">        controller given `res_uuid`. If the resource cannot be found in the</span>
+<span class="sd">        cache, this function will return False. </span>
+<span class="sd">        </span>
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :returns: bool - True if resource was removed, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="c"># Instrument may not exist, but just in case</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destroyInstrument</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
             
-        <span class="c"># Instrument may not exist, but just in case</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">destroyInstrument</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">True</span>
             
-    
+        <span class="k">return</span> <span class="bp">False</span>
+
     <span class="c">#===========================================================================</span>
     <span class="c"># Instrument Operations</span>
     <span class="c">#</span>
     <span class="c"># Instruments are RPC Client objects to local/remote instruments</span>
     <span class="c">#===========================================================================</span>
-    
-    <span class="k">def</span> <span class="nf">getInstrument</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
+    </div>
+<div class="viewcode-block" id="InstrumentControl.getInstrument"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getInstrument">[docs]</a>    <span class="k">def</span> <span class="nf">getInstrument</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get an Instrument :class:`common.rpc.RpcClient` object that is linked</span>
+<span class="sd">        to the remote model.</span>
+<span class="sd">        </span>
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :returns: :class:`common.rpc.RpcClient` object or None an Instrument \</span>
+<span class="sd">        has not yet been created for that resource</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">instruments</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-    
-    <span class="k">def</span> <span class="nf">loadModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">modelName</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="n">dev_man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getManager_uuid</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="InstrumentControl.loadModel"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.loadModel">[docs]</a>    <span class="k">def</span> <span class="nf">loadModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">modelName</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Signal the remote InstrumentManager to load a model for a given</span>
+<span class="sd">        resource. The InstrumentManager will attempt to identify a compatible</span>
+<span class="sd">        model to load automatically. To force load a particular model, provide</span>
+<span class="sd">        a `modelName` and `className`.</span>
+<span class="sd">        </span>
+<span class="sd">        `modelName` must be an importable module on the remote system. The</span>
+<span class="sd">        base folder used to locate the module is the `models` folder.</span>
+<span class="sd">        </span>
+<span class="sd">        .. note::</span>
+<span class="sd">        </span>
+<span class="sd">            If the import fails on the remote InstrumentManager, an exception </span>
+<span class="sd">            will be logged (on the remote system), but this function will return</span>
+<span class="sd">            False with no other indication. </span>
+<span class="sd">            </span>
+<span class="sd">        Example usage::</span>
+<span class="sd">        </span>
+<span class="sd">            instr.loadModel(&#39;360ba14f-19be-11e4-95bf-a0481c94faff&#39;, &#39;Tektronix.Oscilloscope.m_DigitalPhosphor&#39;, &#39;m_DigitalPhosphor&#39;)</span>
+<span class="sd">        </span>
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dev_man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getManager_uuid</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="n">dev_man</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">dev_man</span><span class="o">.</span><span class="n">loadModel</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="n">modelName</span><span class="p">,</span> <span class="n">className</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">dev_man</span><span class="o">.</span><span class="n">loadModel</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="n">modelName</span><span class="p">,</span> <span class="n">className</span><span class="p">)</span>
         
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
-        
+        </div>
     <span class="k">def</span> <span class="nf">unloadModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">):</span>
         <span class="n">dev_man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getManager_uuid</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
         
@@ -673,7 +822,7 @@
     
 <span class="c"># Load GUI in interactive mode</span></div></div>
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="c"># Launch InstrumentControl GUI</span>
+    <span class="c"># Load Application GUI</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c">#sys.path.append(&quot;..&quot;)</span>
         <span class="kn">from</span> <span class="nn">application.a_Main</span> <span class="kn">import</span> <span class="n">a_Main</span>

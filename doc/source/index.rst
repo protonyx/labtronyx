@@ -18,8 +18,9 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   application
    api
+   common
+   manager
    developers
    
    
