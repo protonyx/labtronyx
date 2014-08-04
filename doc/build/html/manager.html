@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="index.html" />
-    <link rel="next" title="Instrument Manager Developer Guide" href="developers.html" />
+    <link rel="next" title="Supported Instruments" href="supported.html" />
     <link rel="prev" title="Common Library" href="common.html" /> 
   </head>
   <body>
@@ -35,7 +35,7 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="developers.html" title="Instrument Manager Developer Guide"
+          <a href="supported.html" title="Supported Instruments"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="common.html" title="Common Library"
@@ -54,6 +54,22 @@
 <p>InstrumentManager is a self-contained class to interface with test instruments
 on the local system. Only one instance of InstrumentManager can be running at a
 time on a given machine, since it will keep a socket open on a fixed port.</p>
+<div class="section" id="resources">
+<h2>Resources<a class="headerlink" href="#resources" title="Permalink to this headline">¶</a></h2>
+<p>The core function of the InstrumentManager is to manage resources that are
+connected to that system. In general, a resource represents an instrument that
+is connected to the local machine and is known to the operating system.</p>
+<p>Internally, resources are stored using three pieces of information that make
+them uniquely identifiable and can be used to establish communication with the
+physical device:</p>
+<blockquote>
+<div><ul class="simple">
+<li>UUID (Universally Unique IDentifier)</li>
+<li><cite>Controller</cite> name</li>
+<li>String identifier</li>
+</ul>
+</div></blockquote>
+</div>
 <div class="section" id="theory-of-operation">
 <h2>Theory of Operation<a class="headerlink" href="#theory-of-operation" title="Permalink to this headline">¶</a></h2>
 <p>Test</p>
@@ -64,7 +80,136 @@ time on a given machine, since it will keep a socket open on a fixed port.</p>
 <div class="section" id="models">
 <h3>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h3>
 <p>test</p>
+<p>Each model has a <cite>properties</cite> attribute where information about each physical
+device is stored. It is formatted as a dictionary and contains (among other
+things):</p>
+<blockquote>
+<div><ul class="simple">
+<li>Vendor (deviceVendor)</li>
+<li>Serial Number (deviceSerial)</li>
+<li>Model Number (deviceModel)</li>
+<li>Firmware Revision (deviceFirmware)</li>
+<li>Device Type (deviceType)</li>
+</ul>
+</div></blockquote>
+<p>The parenthesized strings above are the keys for these standard values in the
+property dictionary. There can exist any number of properties in this dictionary,
+and there is no standard yet for how they should be named (aside from these
+five). To ease script development in the future, there may be a standardization
+of property keys that depends on the type of each device.</p>
 </div>
+</div>
+<div class="section" id="internal-api">
+<h2>Internal API<a class="headerlink" href="#internal-api" title="Permalink to this headline">¶</a></h2>
+<p>Like models, an InstrumentManager can also be connected to with a
+<tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> instance. The following functions are listed only for
+reference, as the InstrumentControl API should be used to manage all
+communication with each InstrumentManager.</p>
+<dl class="class">
+<dt id="InstrumentManager.InstrumentManager">
+<em class="property">class </em><tt class="descclassname">InstrumentManager.</tt><tt class="descname">InstrumentManager</tt><a class="reference internal" href="_modules/InstrumentManager.html#InstrumentManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>InstrumentManager manages controllers and instruments (models)</p>
+<p>Since InstrumentManagers tend to lock system resources, only one should be 
+running at a time. If an attempt is made to start the manager RPC server, 
+and the port is already locked, it will fail right away, assuming that an 
+instance of InstrumentManager is already running on the system. In this 
+case, InstrumentControl provides an easy way to connect to a running 
+manager instance using an RPC client.</p>
+<p>Controllers are like interfaces. They dictate how to talk to devices.</p>
+<p>Models are like drivers, and devices are instances of a model</p>
+<p>Methods that are generally useful and will be used the most:
+-getResources
+-loadDevice
+-unloadDevice
+-scan</p>
+<p>To identify a model to load we need:
+- Vendor
+- Product ID (Usually a model number)
+- Controller (models must specify compatible controllers)</p>
+<p>When a model is loaded, it is provided:
+- A reference to the controller object
+- A ResourceID to govern communications to the controller</p>
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getControllers">
+<tt class="descname">getControllers</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/InstrumentManager.html#InstrumentManager.getControllers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getControllers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of loaded controllers</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getProperties">
+<tt class="descname">getProperties</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/InstrumentManager.html#InstrumentManager.getProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getProperties" title="Permalink to this definition">¶</a></dt>
+<dd><p>return the properties dictionary for Instrument Manager</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getResourceModelName">
+<tt class="descname">getResourceModelName</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentManager.html#InstrumentManager.getResourceModelName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getResourceModelName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dictionary of model names for all resources</p>
+<p>If a resource does not have a model loaded, the value will be None</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getResourcePort">
+<tt class="descname">getResourcePort</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentManager.html#InstrumentManager.getResourcePort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getResourcePort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the port number for a</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getResources">
+<tt class="descname">getResources</tt><big>(</big><em>controller=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/InstrumentManager.html#InstrumentManager.getResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getResources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of resources in one or all controllers</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getValidModels">
+<tt class="descname">getValidModels</tt><big>(</big><em>controller</em>, <em>VID</em>, <em>PID</em><big>)</big><a class="reference internal" href="_modules/InstrumentManager.html#InstrumentManager.getValidModels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getValidModels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of models that are considered valid for a given resource</p>
+<p>Parameters:
+- Controller: str
+- VID: str
+- PID: str</p>
+<p>Returns:
+- ModelNames: list of tuples (ModuleName, ClassName)</p>
+<p>Models: { Controller -&gt; { VendorID -&gt; { modelName -&gt; [ ProductID ] } } }</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.loadModel">
+<tt class="descname">loadModel</tt><big>(</big><em>uuid</em>, <em>modelName=None</em>, <em>className=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentManager.html#InstrumentManager.loadModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.loadModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attempts to automatically load a model given a resource UUID.</p>
+<p>If modelName is specified (must be a valid package reference), that
+model will be loaded without any kind of compatibility checking. If
+an exception is thrown, the model will not be loaded.</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>True if success, False if failure</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.refresh">
+<tt class="descname">refresh</tt><big>(</big><em>controller=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentManager.html#InstrumentManager.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate through all open controllers and refresh all resources</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.scan">
+<tt class="descname">scan</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/InstrumentManager.html#InstrumentManager.scan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.scan" title="Permalink to this definition">¶</a></dt>
+<dd><ol class="arabic simple">
+<li>Refreshes all controller resources</li>
+<li>Orphaned models will be marked as dead</li>
+<li>Attempt to load models for new resources</li>
+</ol>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.unloadModel">
+<tt class="descname">unloadModel</tt><big>(</big><em>uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentManager.html#InstrumentManager.unloadModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.unloadModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unloads the model only, doesn&#8217;t change anything about a resource</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 
@@ -77,11 +222,13 @@ time on a given machine, since it will keep a socket open on a fixed port.</p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">InstrumentManager</a><ul>
+<li><a class="reference internal" href="#resources">Resources</a></li>
 <li><a class="reference internal" href="#theory-of-operation">Theory of Operation</a><ul>
 <li><a class="reference internal" href="#controllers">Controllers</a></li>
 <li><a class="reference internal" href="#models">Models</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#internal-api">Internal API</a></li>
 </ul>
 </li>
 </ul>
@@ -90,8 +237,8 @@ time on a given machine, since it will keep a socket open on a fixed port.</p>
   <p class="topless"><a href="common.html"
                         title="previous chapter">Common Library</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="developers.html"
-                        title="next chapter">Instrument Manager Developer Guide</a></p>
+  <p class="topless"><a href="supported.html"
+                        title="next chapter">Supported Instruments</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/manager.txt"
@@ -121,7 +268,7 @@ time on a given machine, since it will keep a socket open on a fixed port.</p>
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="developers.html" title="Instrument Manager Developer Guide"
+          <a href="supported.html" title="Supported Instruments"
              >next</a> |</li>
         <li class="right" >
           <a href="common.html" title="Common Library"

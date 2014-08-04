@@ -105,9 +105,9 @@ class InstrumentManager(rpc.RpcBase):
         Care should be taken in invoking this method, it will release all 
         currently loaded controllers, which will subsequently close and release 
         all currently loaded models. Perhaps this should only be allowed
-        to run when no models are running...
+        to _run when no models are running...
         
-        This function should only be run on startup
+        This function should only be _run on startup
         
         """
         self.logger.info("Loading Controllers...")
@@ -241,7 +241,7 @@ class InstrumentManager(rpc.RpcBase):
         modulePath = r_path.replace("\\", '.')
         return modulePath
 
-    def run(self):
+    def _run(self):
         """
         Manager startup routine
         """
@@ -587,4 +587,4 @@ class InstrumentManager(rpc.RpcBase):
     
 if __name__ == "__main__":
     man = InstrumentManager()
-    man.run()
+    man._run()

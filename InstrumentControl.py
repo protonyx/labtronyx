@@ -14,6 +14,9 @@ from common.rpc import RpcClient
 
 class InstrumentControl(object):
     """
+    :param Logger: Logger instance if you wish to override the internal instance
+    :type Logger: Logging.logger
+    
     InstrumentControl is a helper class that provides functionality to 
     communicate with any number of local or remote InstrumentManager instances.
     
@@ -22,13 +25,10 @@ class InstrumentControl(object):
     communication with :class:`InstrumentManager` instances that contain the device
     interface code. 
     
-    :param Logger: Logger instance if you wish to override the internal instance
-    :type Logger: Logging.logger
-    
-    Dependencies:
-    - InstrumentManager must be running on the local or remote machine that you
-    are trying to connect to. :func:`InstrumentControl.startWaitManager` can be
-    used to spawn a new process of InstrumentManager.
+    .. note::
+        InstrumentManager must be running on the local or remote machine that you
+        are trying to connect to. :func:`InstrumentControl.startWaitManager` can be
+        used to spawn a new process of InstrumentManager.
         
     """
     managers = {} # IP Address -> Manager RPC Client object
@@ -540,6 +540,11 @@ class InstrumentControl(object):
         `modelName` must be an importable module on the remote system. The
         base folder used to locate the module is the `models` folder.
         
+        On startup, the InstrumentManager will attempt to load models for all
+        resources automatically. This function only needs to be called to
+        override the default model. :func:`unloadModel` must be called before
+        loading a new model for a resource.
+        
         .. note::
         
             If the import fails on the remote InstrumentManager, an exception 
@@ -562,15 +567,21 @@ class InstrumentControl(object):
         else:
             return False
         
-    def unloadModel(self, uuid):
+    def unloadModel(self, res_uuid):
         """
+        Signal the remote InstrumentManager to unload the currently loaded
+        model for a given resource. This function must be called before 
+        :func:`loadModel`.
         
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: bool - True if successful, False otherwise
         """
-        dev_man = self._getManager_uuid(uuid)
+        dev_man = self._getManager_uuid(res_uuid)
         
         if dev_man is not None:
-            ret = dev_man.unloadModel(uuid)
-            self.refreshProperties(uuid)
+            ret = dev_man.unloadModel(res_uuid)
+            self.refreshProperties(res_uuid)
             return ret
         
         else:
@@ -578,10 +589,13 @@ class InstrumentControl(object):
     
     def createInstrument(self, res_uuid):
         """
-        Checks if a resource has loaded a driver and started a RPC server
+        Create a :class:`RpcClient` instance that is linked to a model on a
+        local or remote machine. :func:`createInstrument` only works with
+        resources that have models loaded. 
         
-        If so, creates a RPC Client, adds it to the instrument dictionary and
-        returns a reference to the RPC Client object
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: RpcClient object or None if no model is loaded for the resource
         """
         # Does an instrument already exist?
         instr = self.instruments.get(res_uuid, None)
@@ -599,7 +613,7 @@ class InstrumentControl(object):
                 
                 if res_model is not None:
                     # A model is loaded, get the port
-                    # The manager will automattically start the RPC server
+                    # The manager will automatically start the RPC server
                     port = dev_man.getResourcePort(res_uuid)
                     
                     try:
@@ -623,9 +637,12 @@ class InstrumentControl(object):
     
     def destroyInstrument(self, res_uuid):
         """
-        Unloads an instrument RPC Client
+        Destroys the local instance of an :class:`RpcClient` object linked to
+        a local or remote model. 
         
-        Returns True if an instrument was deleted, otherwise False
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: bool - True if successful, False otherwise
         """
         instr = self.instruments.pop(res_uuid, None)
         if instr is not None:
@@ -635,12 +652,21 @@ class InstrumentControl(object):
         
         return False
     
-    def refreshProperties(self, ResUUID=None):
+    def refreshProperties(self, res_uuid=None):
         """
-        Will attempt to create instruments for all resources to refresh property
-        dictionaries
+        Refresh the cached property dictionary for a given resource. If no
+        Resource UUID is provided, all resources properties will be updated.
+        
+        .. note::
+        
+            Properties should be refreshed when loading new models for a 
+            resource.
+            
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: dict - updated resource properties
         """
-        if ResUUID is None:
+        if res_uuid is None:
             ret = {}
             for addr, res_dict in self.resources.items():
                 for uuid in res_dict:
@@ -650,24 +676,24 @@ class InstrumentControl(object):
         
         else:
             ret = {}
-            instr = self.getInstrument(ResUUID)
+            instr = self.getInstrument(res_uuid)
             
             # Prevent the manager from maintaining an unreasonable number of
             # connections if we only need to grab properties data
             instr_destroyOnCompletion = False
             if instr is None:
                 instr_destroyOnCompletion = True
-                instr = self.createInstrument(ResUUID)
+                instr = self.createInstrument(res_uuid)
             
             if instr is None:
                 # Model is not loaded for that resource
-                ret['uuid'] = ResUUID
-                c_name, res_id = self.getResource(ResUUID)
+                ret['uuid'] = res_uuid
+                c_name, res_id = self.getResource(res_uuid)
                 ret['controller'] = c_name
                 ret['resourceID'] = res_id
                 # Get address and hostname from manager
                 try:
-                    dev_man = self._getManager_uuid(ResUUID)
+                    dev_man = self._getManager_uuid(res_uuid)
                     ret['address'] = dev_man._getAddress()
                     ret['hostname'] = dev_man._getHostname()
                     
@@ -690,26 +716,28 @@ class InstrumentControl(object):
             self.properties[ResUUID] = ret
             return ret
             
-    def getProperties(self, ResUUID=None):
+    def getProperties(self, res_uuid=None):
         """
-        return the properties dictionary for all connected instruments
+        Get the cached property dictionary for a given resource. If no
+        Resource UUID is provided, returns the resources properties for all
+        resources in nested dictionaries by Resource UUID.
         
-        If ResUUID is specified, a single dictionary will be returned
-        
-        If ResUUID is not specified, property dictionaries will be nested by UUID
-        
-        Returns None if the UUID is invalid or no properties have been queried
-        for that UUID
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: dict - updated resource properties or None if invalid UUID
         """
-        if ResUUID in self.properties:
-            return self.properties.get(ResUUID, None)
+        if res_uuid in self.properties:
+            return self.properties.get(res_uuid, None)
         
         else:
             return self.properties
     
     def getInstrument_list(self):
         """
-        Returns a list of all enumerated instruments
+        Get a list of :class:`RpcClient` objects for all resources with models
+        loaded
+        
+        :returns: list of :class:`RpcClient` objects
         """
         for addr, res_dict in self.resources.items():
             for uuid in res_dict:
@@ -719,9 +747,14 @@ class InstrumentControl(object):
     
     def getInstrument_serial(self, serial_number):
         """
-        Returns an enumerated instrument that matches the serial number provided
+        Get a :class:`RpcClient` object for the resource with the given serial
+        number.
         
-        Return the first matching device
+        .. note::
+        
+            Only resources that have a model loaded will report a serial number.
+        
+        :returns: :class:`RpcClient` object
         """
         self.refreshProperties()
         
@@ -733,7 +766,14 @@ class InstrumentControl(object):
     
     def getInstrument_model(self, model_number):
         """
-        Returns a list of enumerated instruments with the given model
+        Get a list of :class:`RpcClient` objects for resources with the given 
+        model number.
+        
+        .. note::
+        
+            Only resources that have a model loaded will report a model number.
+        
+        :returns: list of :class:`RpcClient` objects
         """
         self.refreshProperties()
         ret = []
@@ -746,7 +786,14 @@ class InstrumentControl(object):
     
     def getInstrument_type(self, d_type):
         """
-        Iterates of the list of enumerated instruments and returns a list of instruments that have types which match
+        Get a list of :class:`RpcClient` objects for resources with the given 
+        device type.
+        
+        .. note::
+        
+            Only resources that have a model loaded will report a device type.
+        
+        :returns: list of :class:`RpcClient` objects
         """
         self.refreshProperties()
         ret = []
@@ -756,26 +803,6 @@ class InstrumentControl(object):
                 ret.append(self.createInstrument(res_uuid))
                 
         return ret
-    
-    #===========================================================================
-    # def startGUI(self):
-    #     """
-    #     Blocking operations which starts the InstrumentControl manager GUI.
-    #     
-    #     Depends on a manager running with RPC
-    #     """
-    #     try:
-    #         man = self.getLocalManager()
-    #         man.rpc_start()
-    #         man_port = man.rpc_getPort()
-    #         
-    #         main = importlib.import_module('views.v_Main')
-    #         main_gui = getattr(main, 'v_Main')(port=man_port)
-    #         main_gui.start()
-    #     except:
-    #         self.logger.exception('Unable to start Instrument Control GUI')
-    #===========================================================================
-    
     
 # Load GUI in interactive mode
 if __name__ == "__main__":

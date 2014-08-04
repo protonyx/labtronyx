@@ -60,6 +60,9 @@
 
 <div class="viewcode-block" id="InstrumentControl"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl">[docs]</a><span class="k">class</span> <span class="nc">InstrumentControl</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param Logger: Logger instance if you wish to override the internal instance</span>
+<span class="sd">    :type Logger: Logging.logger</span>
+<span class="sd">    </span>
 <span class="sd">    InstrumentControl is a helper class that provides functionality to </span>
 <span class="sd">    communicate with any number of local or remote InstrumentManager instances.</span>
 <span class="sd">    </span>
@@ -68,13 +71,10 @@
 <span class="sd">    communication with :class:`InstrumentManager` instances that contain the device</span>
 <span class="sd">    interface code. </span>
 <span class="sd">    </span>
-<span class="sd">    :param Logger: Logger instance if you wish to override the internal instance</span>
-<span class="sd">    :type Logger: Logging.logger</span>
-<span class="sd">    </span>
-<span class="sd">    Dependencies:</span>
-<span class="sd">    - InstrumentManager must be running on the local or remote machine that you</span>
-<span class="sd">    are trying to connect to. :func:`InstrumentControl.startWaitManager` can be</span>
-<span class="sd">    used to spawn a new process of InstrumentManager.</span>
+<span class="sd">    .. note::</span>
+<span class="sd">        InstrumentManager must be running on the local or remote machine that you</span>
+<span class="sd">        are trying to connect to. :func:`InstrumentControl.startWaitManager` can be</span>
+<span class="sd">        used to spawn a new process of InstrumentManager.</span>
 <span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">managers</span> <span class="o">=</span> <span class="p">{}</span> <span class="c"># IP Address -&gt; Manager RPC Client object</span>
@@ -586,6 +586,11 @@
 <span class="sd">        `modelName` must be an importable module on the remote system. The</span>
 <span class="sd">        base folder used to locate the module is the `models` folder.</span>
 <span class="sd">        </span>
+<span class="sd">        On startup, the InstrumentManager will attempt to load models for all</span>
+<span class="sd">        resources automatically. This function only needs to be called to</span>
+<span class="sd">        override the default model. :func:`unloadModel` must be called before</span>
+<span class="sd">        loading a new model for a resource.</span>
+<span class="sd">        </span>
 <span class="sd">        .. note::</span>
 <span class="sd">        </span>
 <span class="sd">            If the import fails on the remote InstrumentManager, an exception </span>
@@ -608,23 +613,35 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
         </div>
-    <span class="k">def</span> <span class="nf">unloadModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">):</span>
-        <span class="n">dev_man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getManager_uuid</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+<div class="viewcode-block" id="InstrumentControl.unloadModel"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.unloadModel">[docs]</a>    <span class="k">def</span> <span class="nf">unloadModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Signal the remote InstrumentManager to unload the currently loaded</span>
+<span class="sd">        model for a given resource. This function must be called before </span>
+<span class="sd">        :func:`loadModel`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dev_man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getManager_uuid</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="n">dev_man</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">ret</span> <span class="o">=</span> <span class="n">dev_man</span><span class="o">.</span><span class="n">unloadModel</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">refreshProperties</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">dev_man</span><span class="o">.</span><span class="n">unloadModel</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">refreshProperties</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">ret</span>
         
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
-    
+    </div>
 <div class="viewcode-block" id="InstrumentControl.createInstrument"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.createInstrument">[docs]</a>    <span class="k">def</span> <span class="nf">createInstrument</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Checks if a resource has loaded a driver and started a RPC server</span>
+<span class="sd">        Create a :class:`RpcClient` instance that is linked to a model on a</span>
+<span class="sd">        local or remote machine. :func:`createInstrument` only works with</span>
+<span class="sd">        resources that have models loaded. </span>
 <span class="sd">        </span>
-<span class="sd">        If so, creates a RPC Client, adds it to the instrument dictionary and</span>
-<span class="sd">        returns a reference to the RPC Client object</span>
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :returns: RpcClient object or None if no model is loaded for the resource</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># Does an instrument already exist?</span>
         <span class="n">instr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instruments</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
@@ -642,7 +659,7 @@
                 
                 <span class="k">if</span> <span class="n">res_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
                     <span class="c"># A model is loaded, get the port</span>
-                    <span class="c"># The manager will automattically start the RPC server</span>
+                    <span class="c"># The manager will automatically start the RPC server</span>
                     <span class="n">port</span> <span class="o">=</span> <span class="n">dev_man</span><span class="o">.</span><span class="n">getResourcePort</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
                     
                     <span class="k">try</span><span class="p">:</span>
@@ -666,9 +683,12 @@
     </div>
 <div class="viewcode-block" id="InstrumentControl.destroyInstrument"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.destroyInstrument">[docs]</a>    <span class="k">def</span> <span class="nf">destroyInstrument</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Unloads an instrument RPC Client</span>
+<span class="sd">        Destroys the local instance of an :class:`RpcClient` object linked to</span>
+<span class="sd">        a local or remote model. </span>
 <span class="sd">        </span>
-<span class="sd">        Returns True if an instrument was deleted, otherwise False</span>
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">instr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instruments</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">instr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
@@ -678,12 +698,21 @@
         
         <span class="k">return</span> <span class="bp">False</span>
     </div>
-<div class="viewcode-block" id="InstrumentControl.refreshProperties"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.refreshProperties">[docs]</a>    <span class="k">def</span> <span class="nf">refreshProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ResUUID</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentControl.refreshProperties"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.refreshProperties">[docs]</a>    <span class="k">def</span> <span class="nf">refreshProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Will attempt to create instruments for all resources to refresh property</span>
-<span class="sd">        dictionaries</span>
+<span class="sd">        Refresh the cached property dictionary for a given resource. If no</span>
+<span class="sd">        Resource UUID is provided, all resources properties will be updated.</span>
+<span class="sd">        </span>
+<span class="sd">        .. note::</span>
+<span class="sd">        </span>
+<span class="sd">            Properties should be refreshed when loading new models for a </span>
+<span class="sd">            resource.</span>
+<span class="sd">            </span>
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :returns: dict - updated resource properties</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">ResUUID</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">res_uuid</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">ret</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">addr</span><span class="p">,</span> <span class="n">res_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">for</span> <span class="n">uuid</span> <span class="ow">in</span> <span class="n">res_dict</span><span class="p">:</span>
@@ -693,24 +722,24 @@
         
         <span class="k">else</span><span class="p">:</span>
             <span class="n">ret</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="n">instr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrument</span><span class="p">(</span><span class="n">ResUUID</span><span class="p">)</span>
+            <span class="n">instr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrument</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
             
             <span class="c"># Prevent the manager from maintaining an unreasonable number of</span>
             <span class="c"># connections if we only need to grab properties data</span>
             <span class="n">instr_destroyOnCompletion</span> <span class="o">=</span> <span class="bp">False</span>
             <span class="k">if</span> <span class="n">instr</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="n">instr_destroyOnCompletion</span> <span class="o">=</span> <span class="bp">True</span>
-                <span class="n">instr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">createInstrument</span><span class="p">(</span><span class="n">ResUUID</span><span class="p">)</span>
+                <span class="n">instr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">createInstrument</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
             
             <span class="k">if</span> <span class="n">instr</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="c"># Model is not loaded for that resource</span>
-                <span class="n">ret</span><span class="p">[</span><span class="s">&#39;uuid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ResUUID</span>
-                <span class="n">c_name</span><span class="p">,</span> <span class="n">res_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getResource</span><span class="p">(</span><span class="n">ResUUID</span><span class="p">)</span>
+                <span class="n">ret</span><span class="p">[</span><span class="s">&#39;uuid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">res_uuid</span>
+                <span class="n">c_name</span><span class="p">,</span> <span class="n">res_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getResource</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
                 <span class="n">ret</span><span class="p">[</span><span class="s">&#39;controller&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">c_name</span>
                 <span class="n">ret</span><span class="p">[</span><span class="s">&#39;resourceID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">res_id</span>
                 <span class="c"># Get address and hostname from manager</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="n">dev_man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getManager_uuid</span><span class="p">(</span><span class="n">ResUUID</span><span class="p">)</span>
+                    <span class="n">dev_man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getManager_uuid</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
                     <span class="n">ret</span><span class="p">[</span><span class="s">&#39;address&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev_man</span><span class="o">.</span><span class="n">_getAddress</span><span class="p">()</span>
                     <span class="n">ret</span><span class="p">[</span><span class="s">&#39;hostname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev_man</span><span class="o">.</span><span class="n">_getHostname</span><span class="p">()</span>
                     
@@ -733,26 +762,28 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="n">ResUUID</span><span class="p">]</span> <span class="o">=</span> <span class="n">ret</span>
             <span class="k">return</span> <span class="n">ret</span>
             </div>
-<div class="viewcode-block" id="InstrumentControl.getProperties"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getProperties">[docs]</a>    <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ResUUID</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentControl.getProperties"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getProperties">[docs]</a>    <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        return the properties dictionary for all connected instruments</span>
+<span class="sd">        Get the cached property dictionary for a given resource. If no</span>
+<span class="sd">        Resource UUID is provided, returns the resources properties for all</span>
+<span class="sd">        resources in nested dictionaries by Resource UUID.</span>
 <span class="sd">        </span>
-<span class="sd">        If ResUUID is specified, a single dictionary will be returned</span>
-<span class="sd">        </span>
-<span class="sd">        If ResUUID is not specified, property dictionaries will be nested by UUID</span>
-<span class="sd">        </span>
-<span class="sd">        Returns None if the UUID is invalid or no properties have been queried</span>
-<span class="sd">        for that UUID</span>
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :returns: dict - updated resource properties or None if invalid UUID</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">ResUUID</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ResUUID</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">res_uuid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
         
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span>
     </div>
 <div class="viewcode-block" id="InstrumentControl.getInstrument_list"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getInstrument_list">[docs]</a>    <span class="k">def</span> <span class="nf">getInstrument_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a list of all enumerated instruments</span>
+<span class="sd">        Get a list of :class:`RpcClient` objects for all resources with models</span>
+<span class="sd">        loaded</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: list of :class:`RpcClient` objects</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">addr</span><span class="p">,</span> <span class="n">res_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">uuid</span> <span class="ow">in</span> <span class="n">res_dict</span><span class="p">:</span>
@@ -762,9 +793,14 @@
     </div>
 <div class="viewcode-block" id="InstrumentControl.getInstrument_serial"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getInstrument_serial">[docs]</a>    <span class="k">def</span> <span class="nf">getInstrument_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serial_number</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns an enumerated instrument that matches the serial number provided</span>
+<span class="sd">        Get a :class:`RpcClient` object for the resource with the given serial</span>
+<span class="sd">        number.</span>
 <span class="sd">        </span>
-<span class="sd">        Return the first matching device</span>
+<span class="sd">        .. note::</span>
+<span class="sd">        </span>
+<span class="sd">            Only resources that have a model loaded will report a serial number.</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: :class:`RpcClient` object</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refreshProperties</span><span class="p">()</span>
         
@@ -776,7 +812,14 @@
     </div>
 <div class="viewcode-block" id="InstrumentControl.getInstrument_model"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getInstrument_model">[docs]</a>    <span class="k">def</span> <span class="nf">getInstrument_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_number</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a list of enumerated instruments with the given model</span>
+<span class="sd">        Get a list of :class:`RpcClient` objects for resources with the given </span>
+<span class="sd">        model number.</span>
+<span class="sd">        </span>
+<span class="sd">        .. note::</span>
+<span class="sd">        </span>
+<span class="sd">            Only resources that have a model loaded will report a model number.</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: list of :class:`RpcClient` objects</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refreshProperties</span><span class="p">()</span>
         <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
@@ -789,7 +832,14 @@
     </div>
 <div class="viewcode-block" id="InstrumentControl.getInstrument_type"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getInstrument_type">[docs]</a>    <span class="k">def</span> <span class="nf">getInstrument_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_type</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Iterates of the list of enumerated instruments and returns a list of instruments that have types which match</span>
+<span class="sd">        Get a list of :class:`RpcClient` objects for resources with the given </span>
+<span class="sd">        device type.</span>
+<span class="sd">        </span>
+<span class="sd">        .. note::</span>
+<span class="sd">        </span>
+<span class="sd">            Only resources that have a model loaded will report a device type.</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: list of :class:`RpcClient` objects</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refreshProperties</span><span class="p">()</span>
         <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
@@ -799,26 +849,6 @@
                 <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">createInstrument</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">))</span>
                 
         <span class="k">return</span> <span class="n">ret</span>
-    
-    <span class="c">#===========================================================================</span>
-    <span class="c"># def startGUI(self):</span>
-    <span class="c">#     &quot;&quot;&quot;</span>
-    <span class="c">#     Blocking operations which starts the InstrumentControl manager GUI.</span>
-    <span class="c">#     </span>
-    <span class="c">#     Depends on a manager running with RPC</span>
-    <span class="c">#     &quot;&quot;&quot;</span>
-    <span class="c">#     try:</span>
-    <span class="c">#         man = self.getLocalManager()</span>
-    <span class="c">#         man.rpc_start()</span>
-    <span class="c">#         man_port = man.rpc_getPort()</span>
-    <span class="c">#         </span>
-    <span class="c">#         main = importlib.import_module(&#39;views.v_Main&#39;)</span>
-    <span class="c">#         main_gui = getattr(main, &#39;v_Main&#39;)(port=man_port)</span>
-    <span class="c">#         main_gui.start()</span>
-    <span class="c">#     except:</span>
-    <span class="c">#         self.logger.exception(&#39;Unable to start Instrument Control GUI&#39;)</span>
-    <span class="c">#===========================================================================</span>
-    
     
 <span class="c"># Load GUI in interactive mode</span></div></div>
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
