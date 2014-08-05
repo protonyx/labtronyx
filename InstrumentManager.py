@@ -10,19 +10,7 @@ import common.rpc as rpc
 
 class InstrumentManager(rpc.RpcBase):
     """
-    InstrumentManager manages controllers and instruments (models)
-    
-    Since InstrumentManagers tend to lock system resources, only one should be 
-    running at a time. If an attempt is made to start the manager RPC server, 
-    and the port is already locked, it will fail right away, assuming that an 
-    instance of InstrumentManager is already running on the system. In this 
-    case, InstrumentControl provides an easy way to connect to a running 
-    manager instance using an RPC client.
-    
-    Controllers are like interfaces. They dictate how to talk to devices.
-    
-    Models are like drivers, and devices are instances of a model
-    
+
     Methods that are generally useful and will be used the most:
     -getResources
     -loadDevice
@@ -102,13 +90,7 @@ class InstrumentManager(rpc.RpcBase):
         """
         Scan the controllers folder and instantiate each controller found
         
-        Care should be taken in invoking this method, it will release all 
-        currently loaded controllers, which will subsequently close and release 
-        all currently loaded models. Perhaps this should only be allowed
-        to _run when no models are running...
-        
-        This function should only be _run on startup
-        
+        This function is only run on startup
         """
         self.logger.info("Loading Controllers...")
         
@@ -289,9 +271,11 @@ class InstrumentManager(rpc.RpcBase):
         
     def getProperties(self):
         """
-        return the properties dictionary for Instrument Manager
+        Get the properties dictionary for InstrumentManager
+        
+        :returns: dict
         """
-        pass
+        return {'Version': self.VERSION}
         
     #===========================================================================
     # Mass Controller Operations
@@ -299,7 +283,9 @@ class InstrumentManager(rpc.RpcBase):
     
     def getControllers(self):
         """
-        Get a list of loaded controllers
+        Get a list of controllers known to InstrumentManager
+        
+        :returns: list
         """
         return self.controllers.keys()
     
@@ -328,9 +314,11 @@ class InstrumentManager(rpc.RpcBase):
     
     def getResourceModelName(self, res_uuid):
         """
-        Returns a dictionary of model names for all resources
-        
-        If a resource does not have a model loaded, the value will be None
+        Get the class name for the model loaded for a given resource
+
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: str or None if no model loaded
         """
         dev = self.devices.get(res_uuid, None)
         
@@ -342,7 +330,11 @@ class InstrumentManager(rpc.RpcBase):
     
     def getResourcePort(self, res_uuid):
         """
-        Get the port number for a 
+        Get the RPC Port for the model loaded for a given resource
+
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: int or None if no model loaded
         """
         dev = self.devices.get(res_uuid, None)
         
@@ -358,17 +350,14 @@ class InstrumentManager(rpc.RpcBase):
 
         return None
     
-    def scan(self):
-        """
-        1. Refreshes all controller resources
-        2. Orphaned models will be marked as dead
-        3. Attempt to load models for new resources
-        """
-        pass
-    
     def refresh(self, controller=None):
         """
-        Iterate through all open controllers and refresh all resources
+        Refresh all resources for a given controller. If `controller` is None, 
+        all controllers will be refreshed
+        
+        :param controller: Controller to refresh
+        :type controller: str
+        :returns: None
         """
         if len(self.controllers) == 0:
             self.logger.error("No controllers are initialized")
@@ -413,8 +402,6 @@ class InstrumentManager(rpc.RpcBase):
                                 self.loadModel(new_uuid, moduleName, className)
                     
                     # Purge unavailable resources
-                    # TODO: Should a model be unloaded if there are connections?
-                    #       Should we be able to reconnect to an instrument later?
                     for res_uuid, res_tup in self.resources.items():
                         res_id = res_tup[1]
                         
@@ -461,18 +448,19 @@ class InstrumentManager(rpc.RpcBase):
     
     def getValidModels(self, controller, VID, PID):
         """
-        Returns a list of models that are considered valid for a given resource
+        Get a list of models that are considered valid for a given `controller`,
+        Vendor Identifier (`VID`) and Product Identifier (`PID`) combination
         
-        Parameters:
-        - Controller: str
-        - VID: str
-        - PID: str
+        :param controller: Controller name
+        :type controller: str
+        :param VID: Vendor Identifier
+        :type VID: str
+        :param PID: Product Identifier
+        :type PID: str
         
-        Returns:
-        - ModelNames: list of tuples (ModuleName, ClassName)
-        
-        Models: { Controller -> { VendorID -> { modelName -> [ ProductID ] } } }
+        :returns: list of tuples (ModuleName, ClassName)
         """
+        # Models: { Controller -> { VendorID -> { modelName -> [ ProductID ] } } }
         ret = []
         
         mod_cont = self.models.get(controller, {})

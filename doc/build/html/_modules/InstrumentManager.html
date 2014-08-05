@@ -56,19 +56,7 @@
 
 <div class="viewcode-block" id="InstrumentManager"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager">[docs]</a><span class="k">class</span> <span class="nc">InstrumentManager</span><span class="p">(</span><span class="n">rpc</span><span class="o">.</span><span class="n">RpcBase</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    InstrumentManager manages controllers and instruments (models)</span>
-<span class="sd">    </span>
-<span class="sd">    Since InstrumentManagers tend to lock system resources, only one should be </span>
-<span class="sd">    running at a time. If an attempt is made to start the manager RPC server, </span>
-<span class="sd">    and the port is already locked, it will fail right away, assuming that an </span>
-<span class="sd">    instance of InstrumentManager is already running on the system. In this </span>
-<span class="sd">    case, InstrumentControl provides an easy way to connect to a running </span>
-<span class="sd">    manager instance using an RPC client.</span>
-<span class="sd">    </span>
-<span class="sd">    Controllers are like interfaces. They dictate how to talk to devices.</span>
-<span class="sd">    </span>
-<span class="sd">    Models are like drivers, and devices are instances of a model</span>
-<span class="sd">    </span>
+
 <span class="sd">    Methods that are generally useful and will be used the most:</span>
 <span class="sd">    -getResources</span>
 <span class="sd">    -loadDevice</span>
