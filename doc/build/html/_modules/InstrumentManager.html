@@ -136,13 +136,7 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Scan the controllers folder and instantiate each controller found</span>
 <span class="sd">        </span>
-<span class="sd">        Care should be taken in invoking this method, it will release all </span>
-<span class="sd">        currently loaded controllers, which will subsequently close and release </span>
-<span class="sd">        all currently loaded models. Perhaps this should only be allowed</span>
-<span class="sd">        to _run when no models are running...</span>
-<span class="sd">        </span>
-<span class="sd">        This function should only be _run on startup</span>
-<span class="sd">        </span>
+<span class="sd">        This function is only run on startup</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Loading Controllers...&quot;</span><span class="p">)</span>
         
@@ -238,14 +232,6 @@
                         
                     <span class="c"># Verify the model</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="c"># Instantiate without calling __init__()</span>
-                        <span class="c"># TODO: Perhaps this should be done with inspect</span>
-                        <span class="c">#=======================================================</span>
-                        <span class="c"># class Empty(object):</span>
-                        <span class="c">#     pass</span>
-                        <span class="c"># instClass = Empty()</span>
-                        <span class="c"># instClass.__class__ = testClass</span>
-                        <span class="c">#=======================================================</span>
                         
                         <span class="n">validControllers</span> <span class="o">=</span> <span class="n">testClass</span><span class="o">.</span><span class="n">validControllers</span>
                         <span class="n">validVIDs</span> <span class="o">=</span> <span class="n">testClass</span><span class="o">.</span><span class="n">validVIDs</span>
@@ -277,7 +263,7 @@
 
     <span class="k">def</span> <span class="nf">_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Manager startup routine</span>
+<span class="sd">        Main InstrumentManager logic. Blocks until stopped.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># Load the config file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__loadConfig</span><span class="p">(</span><span class="s">&#39;default&#39;</span><span class="p">)</span>
@@ -323,9 +309,11 @@
         
 <div class="viewcode-block" id="InstrumentManager.getProperties"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.getProperties">[docs]</a>    <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        return the properties dictionary for Instrument Manager</span>
+<span class="sd">        Get the properties dictionary for InstrumentManager</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: dict</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;Version&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">VERSION</span><span class="p">}</span>
         
     <span class="c">#===========================================================================</span>
     <span class="c"># Mass Controller Operations</span>
@@ -333,38 +321,29 @@
     </div>
 <div class="viewcode-block" id="InstrumentManager.getControllers"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.getControllers">[docs]</a>    <span class="k">def</span> <span class="nf">getControllers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get a list of loaded controllers</span>
+<span class="sd">        Get a list of controllers known to InstrumentManager</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: list</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
     </div>
-<div class="viewcode-block" id="InstrumentManager.getResources"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.getResources">[docs]</a>    <span class="k">def</span> <span class="nf">getResources</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.getResources"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.getResources">[docs]</a>    <span class="k">def</span> <span class="nf">getResources</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a list of resources in one or all controllers</span>
+<span class="sd">        Get all resources for all controllers.</span>
+<span class="sd">        </span>
+<span class="sd">        Resources are nested by controller name</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: dict</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span>
-        <span class="c">#=======================================================================</span>
-        <span class="c"># ret = {}</span>
-        <span class="c"># </span>
-        <span class="c"># if controller is None:</span>
-        <span class="c">#     for c_name in self.controllers:</span>
-        <span class="c">#         res = self.getResources(c_name)</span>
-        <span class="c">#         </span>
-        <span class="c">#         if type(res) == dict:</span>
-        <span class="c">#             ret.update(res)</span>
-        <span class="c">#         </span>
-        <span class="c"># elif controller in self.controllers.keys():</span>
-        <span class="c">#     c_obj = self.controllers.get(controller)</span>
-        <span class="c">#     </span>
-        <span class="c">#     return c_obj.getResources()</span>
-        <span class="c"># </span>
-        <span class="c"># return ret</span>
-        <span class="c">#=======================================================================</span>
     </div>
 <div class="viewcode-block" id="InstrumentManager.getResourceModelName"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.getResourceModelName">[docs]</a>    <span class="k">def</span> <span class="nf">getResourceModelName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a dictionary of model names for all resources</span>
-<span class="sd">        </span>
-<span class="sd">        If a resource does not have a model loaded, the value will be None</span>
+<span class="sd">        Get the class name for the model loaded for a given resource</span>
+
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :returns: str or None if no model loaded</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">devices</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
         
@@ -376,7 +355,11 @@
     </div>
 <div class="viewcode-block" id="InstrumentManager.getResourcePort"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.getResourcePort">[docs]</a>    <span class="k">def</span> <span class="nf">getResourcePort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get the port number for a </span>
+<span class="sd">        Get the RPC Port for the model loaded for a given resource</span>
+
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :returns: int or None if no model loaded</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">devices</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
         
@@ -392,17 +375,14 @@
 
         <span class="k">return</span> <span class="bp">None</span>
     </div>
-<div class="viewcode-block" id="InstrumentManager.scan"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.scan">[docs]</a>    <span class="k">def</span> <span class="nf">scan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        1. Refreshes all controller resources</span>
-<span class="sd">        2. Orphaned models will be marked as dead</span>
-<span class="sd">        3. Attempt to load models for new resources</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
-    </div>
 <div class="viewcode-block" id="InstrumentManager.refresh"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Iterate through all open controllers and refresh all resources</span>
+<span class="sd">        Refresh all resources for a given controller. If `controller` is None, </span>
+<span class="sd">        all controllers will be refreshed</span>
+<span class="sd">        </span>
+<span class="sd">        :param controller: Controller to refresh</span>
+<span class="sd">        :type controller: str</span>
+<span class="sd">        :returns: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;No controllers are initialized&quot;</span><span class="p">)</span>
@@ -447,8 +427,6 @@
                                 <span class="bp">self</span><span class="o">.</span><span class="n">loadModel</span><span class="p">(</span><span class="n">new_uuid</span><span class="p">,</span> <span class="n">moduleName</span><span class="p">,</span> <span class="n">className</span><span class="p">)</span>
                     
                     <span class="c"># Purge unavailable resources</span>
-                    <span class="c"># TODO: Should a model be unloaded if there are connections?</span>
-                    <span class="c">#       Should we be able to reconnect to an instrument later?</span>
                     <span class="k">for</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">res_tup</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                         <span class="n">res_id</span> <span class="o">=</span> <span class="n">res_tup</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
                         
@@ -465,26 +443,65 @@
     <span class="c"># API Interfaces</span>
     <span class="c">#===========================================================================</span>
     </div>
-    <span class="k">def</span> <span class="nf">canEditResources</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.canEditResources"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.canEditResources">[docs]</a>    <span class="k">def</span> <span class="nf">canEditResources</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a controller supports manually adding or removing resources.</span>
+<span class="sd">        </span>
+<span class="sd">        :param controller: Controller name</span>
+<span class="sd">        :type controller: str</span>
+<span class="sd">        :returns: bool - True if supported, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">controller</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">controller</span><span class="o">.</span><span class="n">canEditResources</span><span class="p">()</span>
             
             <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">False</span>
-    
-    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">):</span>
-       <span class="k">if</span> <span class="n">controller</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">:</span>
+    </div>
+<div class="viewcode-block" id="InstrumentManager.addResource"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.addResource">[docs]</a>    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Manually add a resource to a controller</span>
+<span class="sd">        </span>
+<span class="sd">        .. note::</span>
+<span class="sd">        </span>
+<span class="sd">            This will return False if manually adding resources is not supported.</span>
+<span class="sd">            To check if the controller supports manual resource management,</span>
+<span class="sd">            use :func:`InstrumentManager.canEditResources`</span>
+<span class="sd">        </span>
+<span class="sd">        :param controller: Controller name</span>
+<span class="sd">        :type controller: str</span>
+<span class="sd">        :param VID: Vendor Identifier</span>
+<span class="sd">        :type VID: str</span>
+<span class="sd">        :param PID: Product Identifier</span>
+<span class="sd">        :type PID: str</span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">controller</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">controller</span><span class="o">.</span><span class="n">addResource</span><span class="p">(</span><span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">)</span>
             
             <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">False</span>
-    
-    <span class="k">def</span> <span class="nf">destroyResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">ResUUID</span><span class="p">):</span>
+    </div>
+<div class="viewcode-block" id="InstrumentManager.destroyResource"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.destroyResource">[docs]</a>    <span class="k">def</span> <span class="nf">destroyResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Manually destroy a resource within a controller</span>
+<span class="sd">        </span>
+<span class="sd">        .. note::</span>
+<span class="sd">        </span>
+<span class="sd">            This will return False if manually destroying resources is not supported.</span>
+<span class="sd">            To check if the controller supports manual resource management,</span>
+<span class="sd">            use :func:`InstrumentManager.canEditResources`</span>
+<span class="sd">        </span>
+<span class="sd">        :param controller: Controller name</span>
+<span class="sd">        :type controller: str</span>
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">controller</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">controller</span><span class="o">.</span><span class="n">destroyResource</span><span class="p">(</span><span class="n">ResUUID</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">controller</span><span class="o">.</span><span class="n">destroyResource</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
             
             <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">False</span>
@@ -492,21 +509,22 @@
     <span class="c">#===========================================================================</span>
     <span class="c"># Model Operations</span>
     <span class="c">#===========================================================================</span>
-    
+    </div>
 <div class="viewcode-block" id="InstrumentManager.getValidModels"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.getValidModels">[docs]</a>    <span class="k">def</span> <span class="nf">getValidModels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a list of models that are considered valid for a given resource</span>
+<span class="sd">        Get a list of models that are considered valid for a given `controller`,</span>
+<span class="sd">        Vendor Identifier (`VID`) and Product Identifier (`PID`) combination</span>
 <span class="sd">        </span>
-<span class="sd">        Parameters:</span>
-<span class="sd">        - Controller: str</span>
-<span class="sd">        - VID: str</span>
-<span class="sd">        - PID: str</span>
+<span class="sd">        :param controller: Controller name</span>
+<span class="sd">        :type controller: str</span>
+<span class="sd">        :param VID: Vendor Identifier</span>
+<span class="sd">        :type VID: str</span>
+<span class="sd">        :param PID: Product Identifier</span>
+<span class="sd">        :type PID: str</span>
 <span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">        - ModelNames: list of tuples (ModuleName, ClassName)</span>
-<span class="sd">        </span>
-<span class="sd">        Models: { Controller -&gt; { VendorID -&gt; { modelName -&gt; [ ProductID ] } } }</span>
+<span class="sd">        :returns: list of tuples (ModuleName, ClassName)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># Models: { Controller -&gt; { VendorID -&gt; { modelName -&gt; [ ProductID ] } } }</span>
         <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
         
         <span class="n">mod_cont</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">controller</span><span class="p">,</span> <span class="p">{})</span>
@@ -518,19 +536,32 @@
         <span class="k">return</span> <span class="n">ret</span>
                 
     </div>
-<div class="viewcode-block" id="InstrumentManager.loadModel"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.loadModel">[docs]</a>    <span class="k">def</span> <span class="nf">loadModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">modelName</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.loadModel"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.loadModel">[docs]</a>    <span class="k">def</span> <span class="nf">loadModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">modelName</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Attempts to automatically load a model given a resource UUID.</span>
+<span class="sd">        Load a model given a resource UUID. A model will be selected</span>
+<span class="sd">        automatically. To load a specific model, provide `modelName` </span>
+<span class="sd">        (importable python module) and `className`</span>
 <span class="sd">        </span>
-<span class="sd">        If modelName is specified (must be a valid package reference), that</span>
-<span class="sd">        model will be loaded without any kind of compatibility checking. If</span>
-<span class="sd">        an exception is thrown, the model will not be loaded.</span>
+<span class="sd">        .. note::</span>
 <span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            True if success, False if failure</span>
+<span class="sd">            If modelName is specified, that model will be loaded without any </span>
+<span class="sd">            kind of compatibility checking. If an exception is thrown during </span>
+<span class="sd">            instantiation, the model will not be loaded.</span>
+<span class="sd">            </span>
+<span class="sd">        Example::</span>
+<span class="sd">        </span>
+<span class="sd">            manager.loadModel(&#39;360ba14f-19be-11e4-95bf-a0481c94faff&#39;, &#39;Tektronix.Oscilloscope.m_DigitalPhosphor&#39;, &#39;m_DigitalPhosphor&#39;)</span>
+<span class="sd">        </span>
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :param modelName: Model package (Python module)</span>
+<span class="sd">        :type modelName: str</span>
+<span class="sd">        :param className: Class Name</span>
+<span class="sd">        :type className: str</span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">uuid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="p">(</span><span class="n">controller</span><span class="p">,</span> <span class="n">resID</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">res_uuid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="p">(</span><span class="n">controller</span><span class="p">,</span> <span class="n">resID</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
             
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">modelName</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
@@ -544,7 +575,7 @@
                     
                     <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">validModels</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">validModels</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                         <span class="n">moduleName</span><span class="p">,</span> <span class="n">className</span> <span class="o">=</span> <span class="n">validModels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> 
-                        <span class="n">loadModel</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="n">moduleName</span><span class="p">,</span> <span class="n">className</span><span class="p">)</span>
+                        <span class="n">loadModel</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="n">moduleName</span><span class="p">,</span> <span class="n">className</span><span class="p">)</span>
                         <span class="k">return</span> <span class="bp">True</span>
                     
                     <span class="k">else</span><span class="p">:</span>
@@ -558,7 +589,7 @@
                     
                     <span class="c"># Load the model and store it</span>
                     <span class="n">cont_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">controller</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-                    <span class="n">model_obj</span> <span class="o">=</span> <span class="n">testClass</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="n">cont_obj</span><span class="p">,</span> <span class="n">resID</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
+                    <span class="n">model_obj</span> <span class="o">=</span> <span class="n">testClass</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="n">cont_obj</span><span class="p">,</span> <span class="n">resID</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
                     
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">model_obj</span><span class="o">.</span><span class="n">onLoad</span><span class="p">()</span>
@@ -566,7 +597,7 @@
                     <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
                         <span class="k">pass</span>
         
-                    <span class="bp">self</span><span class="o">.</span><span class="n">devices</span><span class="p">[</span><span class="n">uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_obj</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">devices</span><span class="p">[</span><span class="n">res_uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_obj</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Loaded model for </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">resID</span><span class="p">)</span>
                     
                     <span class="k">return</span> <span class="bp">True</span>
@@ -577,32 +608,16 @@
                 
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
-            
-        <span class="c">#=======================================================================</span>
-        <span class="c">#      </span>
-        <span class="c">#     else:</span>
-        <span class="c">#         self.logger.error(&quot;No VISA model could be found for %s&quot;, deviceModel)</span>
-        <span class="c">#          </span>
-        <span class="c"># except NotImplementedError:</span>
-        <span class="c">#     self.logger.error(&quot;A model call was attempted, but the function was not implemented as required. Check model: %s&quot;, moduleName) </span>
-        <span class="c">#      </span>
-        <span class="c"># except AttributeError:</span>
-        <span class="c">#     self.logger.error(&quot;Model %s could not be instantiated&quot;, moduleName)</span>
-        <span class="c">#           </span>
-        <span class="c"># except KeyError:</span>
-        <span class="c">#     self.logger.exception(&quot;VISA Resources were opened incorrectly&quot;)</span>
-        <span class="c">#      </span>
-        <span class="c"># except:</span>
-        <span class="c">#     self.logger.exception(&quot;An unhandled exception occurred during VISA device enumeration&quot;)</span>
-        <span class="c">#      </span>
-        <span class="c"># return False</span>
-        <span class="c">#=======================================================================</span>
     </div>
-<div class="viewcode-block" id="InstrumentManager.unloadModel"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.unloadModel">[docs]</a>    <span class="k">def</span> <span class="nf">unloadModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.unloadModel"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.unloadModel">[docs]</a>    <span class="k">def</span> <span class="nf">unloadModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Unloads the model only, doesn&#39;t change anything about a resource</span>
+<span class="sd">        Unloads the model for a given resource. </span>
+<span class="sd">                </span>
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">dev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">devices</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="n">dev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">devices</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="n">dev</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
@@ -611,7 +626,7 @@
             <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
                 <span class="k">pass</span>
             
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Unloaded model for UUID </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">uuid</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Unloaded model for UUID </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">)</span>
             
             <span class="k">del</span> <span class="n">dev</span>
             
@@ -620,6 +635,7 @@
         <span class="k">return</span> <span class="bp">False</span>
     </div></div>
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c"># If InstrumentManager is run in interactive mode, just call run</span>
     <span class="n">man</span> <span class="o">=</span> <span class="n">InstrumentManager</span><span class="p">()</span>
     <span class="n">man</span><span class="o">.</span><span class="n">_run</span><span class="p">()</span>
 </pre></div>

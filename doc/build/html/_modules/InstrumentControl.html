@@ -130,8 +130,8 @@
         <span class="c">#self.startWaitManager()</span>
                 
         <span class="c"># Attempt to connect to the local manager</span>
-        <span class="n">local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAddressFromHostname</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="n">local</span><span class="p">)</span>
+        <span class="c">#local = self.getAddressFromHostname(&#39;localhost&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">)</span>
         
         <span class="c">#=======================================================================</span>
         <span class="c"># # Dependency Check</span>
@@ -597,12 +597,16 @@
 <span class="sd">            will be logged (on the remote system), but this function will return</span>
 <span class="sd">            False with no other indication. </span>
 <span class="sd">            </span>
-<span class="sd">        Example usage::</span>
+<span class="sd">        Example::</span>
 <span class="sd">        </span>
 <span class="sd">            instr.loadModel(&#39;360ba14f-19be-11e4-95bf-a0481c94faff&#39;, &#39;Tektronix.Oscilloscope.m_DigitalPhosphor&#39;, &#39;m_DigitalPhosphor&#39;)</span>
 <span class="sd">        </span>
 <span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
 <span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :param modelName: Model package (Python module)</span>
+<span class="sd">        :type modelName: str</span>
+<span class="sd">        :param className: Class Name</span>
+<span class="sd">        :type className: str</span>
 <span class="sd">        :returns: bool - True if successful, False otherwise</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dev_man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getManager_uuid</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>

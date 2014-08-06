@@ -84,8 +84,8 @@ class InstrumentControl(object):
         #self.startWaitManager()
                 
         # Attempt to connect to the local manager
-        local = self.getAddressFromHostname('localhost')
-        self.addManager(local)
+        #local = self.getAddressFromHostname('localhost')
+        self.addManager('localhost')
         
         #=======================================================================
         # # Dependency Check
@@ -551,12 +551,16 @@ class InstrumentControl(object):
             will be logged (on the remote system), but this function will return
             False with no other indication. 
             
-        Example usage::
+        Example::
         
             instr.loadModel('360ba14f-19be-11e4-95bf-a0481c94faff', 'Tektronix.Oscilloscope.m_DigitalPhosphor', 'm_DigitalPhosphor')
         
         :param res_uuid: Unique Resource Identifier (UUID)
         :type res_uuid: str
+        :param modelName: Model package (Python module)
+        :type modelName: str
+        :param className: Class Name
+        :type className: str
         :returns: bool - True if successful, False otherwise
         """
         dev_man = self._getManager_uuid(res_uuid)

@@ -186,14 +186,6 @@ class InstrumentManager(rpc.RpcBase):
                         
                     # Verify the model
                     try:
-                        # Instantiate without calling __init__()
-                        # TODO: Perhaps this should be done with inspect
-                        #=======================================================
-                        # class Empty(object):
-                        #     pass
-                        # instClass = Empty()
-                        # instClass.__class__ = testClass
-                        #=======================================================
                         
                         validControllers = testClass.validControllers
                         validVIDs = testClass.validVIDs
@@ -225,7 +217,7 @@ class InstrumentManager(rpc.RpcBase):
 
     def _run(self):
         """
-        Manager startup routine
+        Main InstrumentManager logic. Blocks until stopped.
         """
         # Load the config file
         self.__loadConfig('default')
@@ -289,28 +281,15 @@ class InstrumentManager(rpc.RpcBase):
         """
         return self.controllers.keys()
     
-    def getResources(self, controller=None, **kwargs):
+    def getResources(self):
         """
-        Returns a list of resources in one or all controllers
+        Get all resources for all controllers.
+        
+        Resources are nested by controller name
+        
+        :returns: dict
         """
         return self.resources
-        #=======================================================================
-        # ret = {}
-        # 
-        # if controller is None:
-        #     for c_name in self.controllers:
-        #         res = self.getResources(c_name)
-        #         
-        #         if type(res) == dict:
-        #             ret.update(res)
-        #         
-        # elif controller in self.controllers.keys():
-        #     c_obj = self.controllers.get(controller)
-        #     
-        #     return c_obj.getResources()
-        # 
-        # return ret
-        #=======================================================================
     
     def getResourceModelName(self, res_uuid):
         """
@@ -419,6 +398,13 @@ class InstrumentManager(rpc.RpcBase):
     #===========================================================================
     
     def canEditResources(self, controller):
+        """
+        Check if a controller supports manually adding or removing resources.
+        
+        :param controller: Controller name
+        :type controller: str
+        :returns: bool - True if supported, False otherwise
+        """
         if controller in self.controllers:
             try:
                 return controller.canEditResources()
@@ -427,17 +413,51 @@ class InstrumentManager(rpc.RpcBase):
                 return False
     
     def addResource(self, controller, VID, PID):
-       if controller in self.controllers:
+        """
+        Manually add a resource to a controller. VID and PID must be provided
+        in order to correctly identify an appropriate model to load for the
+        new resource.
+        
+        .. note::
+        
+            This will return False if manually adding resources is not supported.
+            To check if the controller supports manual resource management,
+            use :func:`InstrumentManager.canEditResources`
+        
+        :param controller: Controller name
+        :type controller: str
+        :param VID: Vendor Identifier
+        :type VID: str
+        :param PID: Product Identifier
+        :type PID: str
+        :returns: bool - True if successful, False otherwise
+        """
+        if controller in self.controllers:
             try:
                 return controller.addResource(VID, PID)
             
             except NotImplementedError:
                 return False
     
-    def destroyResource(self, controller, ResUUID):
+    def destroyResource(self, controller, res_uuid):
+        """
+        Manually destroy a resource within a controller
+        
+        .. note::
+        
+            This will return False if manually destroying resources is not supported.
+            To check if the controller supports manual resource management,
+            use :func:`InstrumentManager.canEditResources`
+        
+        :param controller: Controller name
+        :type controller: str
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: bool - True if successful, False otherwise
+        """
         if controller in self.controllers:
             try:
-                return controller.destroyResource(ResUUID)
+                return controller.destroyResource(res_uuid)
             
             except NotImplementedError:
                 return False
@@ -472,19 +492,32 @@ class InstrumentManager(rpc.RpcBase):
         return ret
                 
     
-    def loadModel(self, uuid, modelName=None, className=None):
+    def loadModel(self, res_uuid, modelName=None, className=None):
         """
-        Attempts to automatically load a model given a resource UUID.
+        Load a model given a resource UUID. A model will be selected
+        automatically. To load a specific model, provide `modelName` 
+        (importable python module) and `className`
         
-        If modelName is specified (must be a valid package reference), that
-        model will be loaded without any kind of compatibility checking. If
-        an exception is thrown, the model will not be loaded.
+        .. note::
         
-        Returns:
-            True if success, False if failure
+            If modelName is specified, that model will be loaded without any 
+            kind of compatibility checking. If an exception is thrown during 
+            instantiation, the model will not be loaded.
+            
+        Example::
+        
+            manager.loadModel('360ba14f-19be-11e4-95bf-a0481c94faff', 'Tektronix.Oscilloscope.m_DigitalPhosphor', 'm_DigitalPhosphor')
+        
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :param modelName: Model package (Python module)
+        :type modelName: str
+        :param className: Class Name
+        :type className: str
+        :returns: bool - True if successful, False otherwise
         """
-        if uuid in self.resources.keys():
-            (controller, resID) = self.resources.get(uuid)
+        if res_uuid in self.resources.keys():
+            (controller, resID) = self.resources.get(res_uuid)
             
             try:
                 if modelName is None:
@@ -498,7 +531,7 @@ class InstrumentManager(rpc.RpcBase):
                     
                     if type(validModels) is list and len(validModels) == 1:
                         moduleName, className = validModels[0] 
-                        loadModel(uuid, moduleName, className)
+                        loadModel(res_uuid, moduleName, className)
                         return True
                     
                     else:
@@ -512,7 +545,7 @@ class InstrumentManager(rpc.RpcBase):
                     
                     # Load the model and store it
                     cont_obj = self.controllers.get(controller, None)
-                    model_obj = testClass(uuid, cont_obj, resID, logger=self.logger)
+                    model_obj = testClass(res_uuid, cont_obj, resID, logger=self.logger)
                     
                     try:
                         model_obj.onLoad()
@@ -520,7 +553,7 @@ class InstrumentManager(rpc.RpcBase):
                     except NotImplementedError:
                         pass
         
-                    self.devices[uuid] = model_obj
+                    self.devices[res_uuid] = model_obj
                     self.logger.debug('Loaded model for %s', resID)
                     
                     return True
@@ -531,32 +564,16 @@ class InstrumentManager(rpc.RpcBase):
                 
         else:
             return False
-            
-        #=======================================================================
-        #      
-        #     else:
-        #         self.logger.error("No VISA model could be found for %s", deviceModel)
-        #          
-        # except NotImplementedError:
-        #     self.logger.error("A model call was attempted, but the function was not implemented as required. Check model: %s", moduleName) 
-        #      
-        # except AttributeError:
-        #     self.logger.error("Model %s could not be instantiated", moduleName)
-        #           
-        # except KeyError:
-        #     self.logger.exception("VISA Resources were opened incorrectly")
-        #      
-        # except:
-        #     self.logger.exception("An unhandled exception occurred during VISA device enumeration")
-        #      
-        # return False
-        #=======================================================================
     
-    def unloadModel(self, uuid):
+    def unloadModel(self, res_uuid):
         """
-        Unloads the model only, doesn't change anything about a resource
+        Unloads the model for a given resource. 
+                
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: bool - True if successful, False otherwise
         """
-        dev = self.devices.pop(uuid, None)
+        dev = self.devices.pop(res_uuid, None)
         
         if dev is not None:
             try:
@@ -565,7 +582,7 @@ class InstrumentManager(rpc.RpcBase):
             except NotImplementedError:
                 pass
             
-            self.logger.info('Unloaded model for UUID %s', uuid)
+            self.logger.info('Unloaded model for UUID %s', res_uuid)
             
             del dev
             
@@ -574,5 +591,6 @@ class InstrumentManager(rpc.RpcBase):
         return False
     
 if __name__ == "__main__":
+    # If InstrumentManager is run in interactive mode, just call run
     man = InstrumentManager()
     man._run()

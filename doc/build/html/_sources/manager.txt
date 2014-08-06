@@ -13,6 +13,12 @@ If an attempt is made to start a second InstrumentManager instance, the
 initialization sequence will find that the socket is in use and will exit right 
 away.
 
+.. note::
+
+	All interactions with InstrumentManager instances are handled by the
+	InstrumentControl API. This documentation is mostly for reference and to
+	aid development of instrument drivers.
+
 Startup
 -------
 

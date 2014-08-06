@@ -62,14 +62,52 @@ communication with <tt class="xref py py-class docutils literal"><span class="pr
 <span class="n">instr</span> <span class="o">=</span> <span class="n">InstrumentControl</span><span class="p">()</span>
 </pre></div>
 </div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">To import InstrumentControl, the folder must be in your PYTHONPATH</p>
+</div>
 <p>If an <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> instance is not already running, you can start
 one using <tt class="xref py py-func docutils literal"><span class="pre">startWaitManager()</span></tt> or <tt class="xref py py-func docutils literal"><span class="pre">startManager()</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">instr</span><span class="o">.</span><span class="n">startWaitManager</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">To import InstrumentControl, the folder must be in your PYTHONPATH</p>
+<p>By default, InstrumentControl will attempt to connect to a local instance of
+InstrumentManager. To connect to an InstrumentManager instance on another host:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">instr</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="s">&#39;192.168.0.1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>InstrumentControl can also resolve hostnames:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">instr</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="s">&#39;kkennedy&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="connecting-to-instruments">
+<h2>Connecting to Instruments<a class="headerlink" href="#connecting-to-instruments" title="Permalink to this headline">¶</a></h2>
+<p>InstrumentControl can connect to any instrument on any machine that has been
+added using <tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.addManager()</span></tt>. You can find instruments by:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Type</li>
+<li>Model Number</li>
+<li>Serial Number</li>
+</ul>
+</div></blockquote>
+<p>Looking up instruments by Type and Model Number may return multiple instruments
+if there are many devices connected. In these cases, InstrumentControl will
+return a list of devices that match. The programmer will have to use other
+logic to determine which device to use. The easiest way to deal with this
+situation is to identify a device by serial number.</p>
+<p>To connect to instruments by type:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">scope</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">getInstrument_type</span><span class="p">(</span><span class="s">&#39;Oscilloscope&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To connect to instruments by Model number:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">smu</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">getInstrument_model</span><span class="p">(</span><span class="s">&#39;B2902A&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To connect to instruments by Serial number:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">dev</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">getInstrument_serial</span><span class="p">(</span><span class="s">&#39;12345&#39;</span><span class="p">)</span>
+</pre></div>
 </div>
 </div>
 <div class="section" id="dependencies">
@@ -458,7 +496,7 @@ loading a new model for a resource.</p>
 will be logged (on the remote system), but this function will return
 False with no other indication.</p>
 </div>
-<p>Example usage:</p>
+<p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">instr</span><span class="o">.</span><span class="n">loadModel</span><span class="p">(</span><span class="s">&#39;360ba14f-19be-11e4-95bf-a0481c94faff&#39;</span><span class="p">,</span> <span class="s">&#39;Tektronix.Oscilloscope.m_DigitalPhosphor&#39;</span><span class="p">,</span> <span class="s">&#39;m_DigitalPhosphor&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -466,9 +504,15 @@ False with no other indication.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>res_uuid</strong> (<em>str</em>) &#8211; Unique Resource Identifier (UUID)</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>res_uuid</strong> (<em>str</em>) &#8211; Unique Resource Identifier (UUID)</li>
+<li><strong>modelName</strong> (<em>str</em>) &#8211; Model package (Python module)</li>
+<li><strong>className</strong> (<em>str</em>) &#8211; Class Name</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">bool - True if successful, False otherwise</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">bool - True if successful, False otherwise</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -671,6 +715,7 @@ model for a given resource. This function must be called before
   <ul>
 <li><a class="reference internal" href="#">InstrumentControl API</a><ul>
 <li><a class="reference internal" href="#using-instrumentcontrol">Using InstrumentControl</a></li>
+<li><a class="reference internal" href="#connecting-to-instruments">Connecting to Instruments</a></li>
 <li><a class="reference internal" href="#dependencies">Dependencies</a></li>
 <li><a class="reference internal" href="#theory-of-operation">Theory of Operation</a><ul>
 <li><a class="reference internal" href="#managing-connections-to-instrumentmanager-instances">Managing Connections to InstrumentManager instances</a></li>
