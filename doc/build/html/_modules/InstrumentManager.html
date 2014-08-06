@@ -55,23 +55,6 @@
 <span class="kn">import</span> <span class="nn">common.rpc</span> <span class="kn">as</span> <span class="nn">rpc</span>
 
 <div class="viewcode-block" id="InstrumentManager"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager">[docs]</a><span class="k">class</span> <span class="nc">InstrumentManager</span><span class="p">(</span><span class="n">rpc</span><span class="o">.</span><span class="n">RpcBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-
-<span class="sd">    Methods that are generally useful and will be used the most:</span>
-<span class="sd">    -getResources</span>
-<span class="sd">    -loadDevice</span>
-<span class="sd">    -unloadDevice</span>
-<span class="sd">    -scan</span>
-<span class="sd">    </span>
-<span class="sd">    To identify a model to load we need:</span>
-<span class="sd">    - Vendor</span>
-<span class="sd">    - Product ID (Usually a model number)</span>
-<span class="sd">    - Controller (models must specify compatible controllers)</span>
-<span class="sd">    </span>
-<span class="sd">    When a model is loaded, it is provided:</span>
-<span class="sd">    - A reference to the controller object</span>
-<span class="sd">    - A ResourceID to govern communications to the controller</span>
-<span class="sd">    &quot;&quot;&quot;</span>
     
     <span class="n">VERSION</span> <span class="o">=</span> <span class="s">&#39;0.1dev&#39;</span>
     
@@ -458,9 +441,11 @@
             <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">False</span>
     </div>
-<div class="viewcode-block" id="InstrumentManager.addResource"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.addResource">[docs]</a>    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.addResource"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.addResource">[docs]</a>    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">ResID</span><span class="p">,</span> <span class="n">VID</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">PID</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Manually add a resource to a controller</span>
+<span class="sd">        Manually add a resource to a controller. VID and PID must be provided</span>
+<span class="sd">        in order to correctly identify an appropriate model to load for the</span>
+<span class="sd">        new resource.</span>
 <span class="sd">        </span>
 <span class="sd">        .. note::</span>
 <span class="sd">        </span>
@@ -470,6 +455,8 @@
 <span class="sd">        </span>
 <span class="sd">        :param controller: Controller name</span>
 <span class="sd">        :type controller: str</span>
+<span class="sd">        :param ResID: Resource Identifier</span>
+<span class="sd">        :type ResID: str</span>
 <span class="sd">        :param VID: Vendor Identifier</span>
 <span class="sd">        :type VID: str</span>
 <span class="sd">        :param PID: Product Identifier</span>
@@ -478,9 +465,12 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">controller</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">controller</span><span class="o">.</span><span class="n">addResource</span><span class="p">(</span><span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">controller</span><span class="o">.</span><span class="n">addResource</span><span class="p">(</span><span class="n">ResID</span><span class="p">,</span> <span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">)</span>
             
             <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">False</span>
     </div>
 <div class="viewcode-block" id="InstrumentManager.destroyResource"><a class="viewcode-back" href="../manager.html#InstrumentManager.InstrumentManager.destroyResource">[docs]</a>    <span class="k">def</span> <span class="nf">destroyResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>

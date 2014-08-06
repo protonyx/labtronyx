@@ -24,8 +24,8 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="index.html" />
-    <link rel="next" title="Supported Instruments" href="supported.html" />
-    <link rel="prev" title="Common Library" href="common.html" /> 
+    <link rel="next" title="Supported Instruments" href="supported_instruments.html" />
+    <link rel="prev" title="InstrumentControl API" href="api.html" /> 
   </head>
   <body>
     <div class="related">
@@ -35,10 +35,10 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="supported.html" title="Supported Instruments"
+          <a href="supported_instruments.html" title="Supported Instruments"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="common.html" title="Common Library"
+          <a href="api.html" title="InstrumentControl API"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li> 
       </ul>
@@ -73,22 +73,6 @@ controllers. For each controller that is found, a scan will be initiated and the
 found resources indexed. Once all resources are indexed, InstrumentManager
 attempts to load models for each of them based on the Vendor and Product
 identifier returned from the controller.</p>
-</div>
-<div class="section" id="resources">
-<h2>Resources<a class="headerlink" href="#resources" title="Permalink to this headline">¶</a></h2>
-<p>The core function of the InstrumentManager is to manage resources that are
-connected to that system. In general, a resource represents an instrument that
-is connected to the local machine and is known to the operating system.</p>
-<p>Internally, resources are stored using three pieces of information that make
-them uniquely identifiable and can be used to establish communication with the
-physical device:</p>
-<blockquote>
-<div><ul class="simple">
-<li>Universally Unique IDentifier (str)</li>
-<li><cite>Controller</cite> name (str)</li>
-<li>Resource Identifier (str)</li>
-</ul>
-</div></blockquote>
 </div>
 <div class="section" id="theory-of-operation">
 <h2>Theory of Operation<a class="headerlink" href="#theory-of-operation" title="Permalink to this headline">¶</a></h2>
@@ -125,6 +109,22 @@ a UUID.</p>
 <p class="first admonition-title">Note</p>
 <p class="last">VISA, Serial (RS-232), USB are examples of controllers</p>
 </div>
+</div>
+<div class="section" id="resources">
+<h3>Resources<a class="headerlink" href="#resources" title="Permalink to this headline">¶</a></h3>
+<p>The core function of the InstrumentManager is to manage resources that are
+connected to that system. In general, a resource represents an instrument that
+is connected to the local machine and is known to the operating system.</p>
+<p>Internally, resources are stored using three pieces of information that make
+them uniquely identifiable and can be used to establish communication with the
+physical device:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Universally Unique IDentifier (str)</li>
+<li><cite>Controller</cite> name (str)</li>
+<li>Resource Identifier (str)</li>
+</ul>
+</div></blockquote>
 </div>
 <div class="section" id="models">
 <h3>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h3>
@@ -187,22 +187,12 @@ communication with each InstrumentManager.</p>
 <dl class="class">
 <dt id="InstrumentManager.InstrumentManager">
 <em class="property">class </em><tt class="descclassname">InstrumentManager.</tt><tt class="descname">InstrumentManager</tt><a class="reference internal" href="_modules/InstrumentManager.html#InstrumentManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager" title="Permalink to this definition">¶</a></dt>
-<dd><p>Methods that are generally useful and will be used the most:
--getResources
--loadDevice
--unloadDevice
--scan</p>
-<p>To identify a model to load we need:
-- Vendor
-- Product ID (Usually a model number)
-- Controller (models must specify compatible controllers)</p>
-<p>When a model is loaded, it is provided:
-- A reference to the controller object
-- A ResourceID to govern communications to the controller</p>
-<dl class="method">
+<dd><dl class="method">
 <dt id="InstrumentManager.InstrumentManager.addResource">
-<tt class="descname">addResource</tt><big>(</big><em>controller</em>, <em>VID</em>, <em>PID</em><big>)</big><a class="reference internal" href="_modules/InstrumentManager.html#InstrumentManager.addResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.addResource" title="Permalink to this definition">¶</a></dt>
-<dd><p>Manually add a resource to a controller</p>
+<tt class="descname">addResource</tt><big>(</big><em>controller</em>, <em>ResID</em>, <em>VID=None</em>, <em>PID=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentManager.html#InstrumentManager.addResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.addResource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manually add a resource to a controller. VID and PID must be provided
+in order to correctly identify an appropriate model to load for the
+new resource.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">This will return False if manually adding resources is not supported.
@@ -215,6 +205,7 @@ use <a class="reference internal" href="#InstrumentManager.InstrumentManager.can
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>controller</strong> (<em>str</em>) &#8211; Controller name</li>
+<li><strong>ResID</strong> (<em>str</em>) &#8211; Resource Identifier</li>
 <li><strong>VID</strong> (<em>str</em>) &#8211; Vendor Identifier</li>
 <li><strong>PID</strong> (<em>str</em>) &#8211; Product Identifier</li>
 </ul>
@@ -450,9 +441,9 @@ all controllers will be refreshed</p>
   <ul>
 <li><a class="reference internal" href="#">InstrumentManager</a><ul>
 <li><a class="reference internal" href="#startup">Startup</a></li>
-<li><a class="reference internal" href="#resources">Resources</a></li>
 <li><a class="reference internal" href="#theory-of-operation">Theory of Operation</a><ul>
 <li><a class="reference internal" href="#controllers">Controllers</a></li>
+<li><a class="reference internal" href="#resources">Resources</a></li>
 <li><a class="reference internal" href="#models">Models</a></li>
 <li><a class="reference internal" href="#views">Views</a></li>
 </ul>
@@ -463,10 +454,10 @@ all controllers will be refreshed</p>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="common.html"
-                        title="previous chapter">Common Library</a></p>
+  <p class="topless"><a href="api.html"
+                        title="previous chapter">InstrumentControl API</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="supported.html"
+  <p class="topless"><a href="supported_instruments.html"
                         title="next chapter">Supported Instruments</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
@@ -497,10 +488,10 @@ all controllers will be refreshed</p>
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="supported.html" title="Supported Instruments"
+          <a href="supported_instruments.html" title="Supported Instruments"
              >next</a> |</li>
         <li class="right" >
-          <a href="common.html" title="Common Library"
+          <a href="api.html" title="InstrumentControl API"
              >previous</a> |</li>
         <li><a href="index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li> 
       </ul>

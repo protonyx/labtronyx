@@ -182,7 +182,7 @@
 <span class="sd">        </span>
 <span class="sd">        :param uuid: Resource UUID</span>
 <span class="sd">        :type uuid: str</span>
-<span class="sd">        :returns: IP Address of host associated with the given resource or None</span>
+<span class="sd">        :returns: IP Address of host associated with the given resource or None \</span>
 <span class="sd">        if the resource was not found</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dev_man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getManager_uuid</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
@@ -367,7 +367,7 @@
             <span class="n">cached_resources</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="p">{})</span>
             
             <span class="c"># Get resources from the remote manager</span>
-            <span class="n">remote_resources</span> <span class="o">=</span> <span class="n">man</span><span class="o">.</span><span class="n">getAllResources</span><span class="p">()</span> <span class="ow">or</span> <span class="p">{}</span>
+            <span class="n">remote_resources</span> <span class="o">=</span> <span class="n">man</span><span class="o">.</span><span class="n">getResources</span><span class="p">()</span> <span class="ow">or</span> <span class="p">{}</span>
 
             <span class="c"># Purge resources that are no longer available</span>
             <span class="k">for</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">cached_resources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -452,11 +452,11 @@
 <span class="sd">        Get a listing of all cached resources from all connected </span>
 <span class="sd">        :class:`InstrumentManager` instances.</span>
 <span class="sd">        </span>
-<span class="sd">        Returned dictionary is all cached resources with the resource UUID as</span>
-<span class="sd">        the key. Values are resource identifier tuples: </span>
+<span class="sd">        Returned dictionary is a flat list of all cached resources with the </span>
+<span class="sd">        resource UUID as the key. Values are resource identifier tuples: </span>
 <span class="sd">        (`controller`, `resourceID`)</span>
 <span class="sd">        </span>
-<span class="sd">        :param address: IP Address of manger</span>
+<span class="sd">        :param address: IP Address of manager</span>
 <span class="sd">        :type address: str</span>
 <span class="sd">        </span>
 <span class="sd">        :returns: dict</span>
@@ -493,7 +493,7 @@
                 
         <span class="k">return</span> <span class="bp">None</span>
     </div>
-<div class="viewcode-block" id="InstrumentControl.addResource"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.addResource">[docs]</a>    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">VendorID</span><span class="p">,</span> <span class="n">ProductID</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentControl.addResource"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.addResource">[docs]</a>    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">ResID</span><span class="p">,</span> <span class="n">VendorID</span><span class="p">,</span> <span class="n">ProductID</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a managed resource within a controller object</span>
 <span class="sd">        </span>
@@ -501,19 +501,25 @@
 <span class="sd">        or if the controller does not support manually adding resources, this </span>
 <span class="sd">        function will return False. </span>
 <span class="sd">        </span>
+<span class="sd">        Additional keyword arguments may be necessary, depending on the</span>
+<span class="sd">        requirements of the controller. See the controller documentation for</span>
+<span class="sd">        further requirements.</span>
+<span class="sd">        </span>
 <span class="sd">        .. note::</span>
 <span class="sd">        </span>
 <span class="sd">            Controllers that rely on system resources such as VISA or serial</span>
 <span class="sd">            can only communicate with devices that are known to the system.</span>
 <span class="sd">            Controllers that have no way to scan or enumerate devices depend on</span>
 <span class="sd">            this function to make it aware of the device. An example of this is</span>
-<span class="sd">            a TCP/IP based Controller, which must know an IP address before</span>
+<span class="sd">            a CAN bus-based Controller, which must know a device address before</span>
 <span class="sd">            communication can be established.</span>
 <span class="sd">        </span>
 <span class="sd">        :param address: IP Address of manager</span>
 <span class="sd">        :type address: str</span>
 <span class="sd">        :param controller: Name of controller to attach new resource</span>
 <span class="sd">        :type controller: str</span>
+<span class="sd">        :param ResID: Resource Identifier</span>
+<span class="sd">        :type ResID: str</span>
 <span class="sd">        :param VendorID: Vendor Identifier for automatic model loading</span>
 <span class="sd">        :type VendorID: str</span>
 <span class="sd">        :param ProductID: Product Identifier for automatic model loading</span>
@@ -856,6 +862,12 @@
     
 <span class="c"># Load GUI in interactive mode</span></div></div>
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c"># DEBUG!</span>
+    <span class="n">instr</span> <span class="o">=</span> <span class="n">InstrumentControl</span><span class="p">()</span>
+    <span class="n">instr</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="s">&#39;DM-FALCON4-111&#39;</span><span class="p">)</span>
+    
+    <span class="n">res</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">getAllResources</span><span class="p">()</span>
+    
     <span class="c"># Load Application GUI</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c">#sys.path.append(&quot;..&quot;)</span>

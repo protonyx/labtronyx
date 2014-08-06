@@ -136,7 +136,7 @@ class InstrumentControl(object):
         
         :param uuid: Resource UUID
         :type uuid: str
-        :returns: IP Address of host associated with the given resource or None
+        :returns: IP Address of host associated with the given resource or None \
         if the resource was not found
         """
         dev_man = self._getManager_uuid(uuid)
@@ -321,7 +321,7 @@ class InstrumentControl(object):
             cached_resources = self.resources.get(address, {})
             
             # Get resources from the remote manager
-            remote_resources = man.getAllResources() or {}
+            remote_resources = man.getResources() or {}
 
             # Purge resources that are no longer available
             for uuid, res in cached_resources.items():
@@ -406,11 +406,11 @@ class InstrumentControl(object):
         Get a listing of all cached resources from all connected 
         :class:`InstrumentManager` instances.
         
-        Returned dictionary is all cached resources with the resource UUID as
-        the key. Values are resource identifier tuples: 
+        Returned dictionary is a flat list of all cached resources with the 
+        resource UUID as the key. Values are resource identifier tuples: 
         (`controller`, `resourceID`)
         
-        :param address: IP Address of manger
+        :param address: IP Address of manager
         :type address: str
         
         :returns: dict
@@ -447,7 +447,7 @@ class InstrumentControl(object):
                 
         return None
     
-    def addResource(self, address, controller, VendorID, ProductID):
+    def addResource(self, address, controller, ResID, VendorID, ProductID, **kwargs):
         """
         Create a managed resource within a controller object
         
@@ -455,19 +455,25 @@ class InstrumentControl(object):
         or if the controller does not support manually adding resources, this 
         function will return False. 
         
+        Additional keyword arguments may be necessary, depending on the
+        requirements of the controller. See the controller documentation for
+        further requirements.
+        
         .. note::
         
             Controllers that rely on system resources such as VISA or serial
             can only communicate with devices that are known to the system.
             Controllers that have no way to scan or enumerate devices depend on
             this function to make it aware of the device. An example of this is
-            a TCP/IP based Controller, which must know an IP address before
+            a CAN bus-based Controller, which must know a device address before
             communication can be established.
         
         :param address: IP Address of manager
         :type address: str
         :param controller: Name of controller to attach new resource
         :type controller: str
+        :param ResID: Resource Identifier
+        :type ResID: str
         :param VendorID: Vendor Identifier for automatic model loading
         :type VendorID: str
         :param ProductID: Product Identifier for automatic model loading
@@ -810,6 +816,12 @@ class InstrumentControl(object):
     
 # Load GUI in interactive mode
 if __name__ == "__main__":
+    # DEBUG!
+    instr = InstrumentControl()
+    instr.addManager('DM-FALCON4-111')
+    
+    res = instr.getAllResources()
+    
     # Load Application GUI
     try:
         #sys.path.append("..")

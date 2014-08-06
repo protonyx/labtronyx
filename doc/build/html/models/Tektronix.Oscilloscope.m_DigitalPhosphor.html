@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tektronix.Oscilloscope.m_DigitalPhosphor &mdash; Lab Instrument Control and Automation Framework 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="../index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="tektronix-oscilloscope-m-digitalphosphor">
+<h1>Tektronix.Oscilloscope.m_DigitalPhosphor<a class="headerlink" href="#tektronix-oscilloscope-m-digitalphosphor" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor">
+<em class="property">class </em><tt class="descclassname">models.Tektronix.Oscilloscope.m_DigitalPhosphor.</tt><tt class="descname">m_DigitalPhosphor</tt><big>(</big><em>uuid</em>, <em>controller</em>, <em>resID</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope/m_DigitalPhosphor.html#m_DigitalPhosphor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.exportWaveform">
+<tt class="descname">exportWaveform</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.exportWaveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Possible parameters:
+-Waveforms (list)
+-Filename (str)</p>
+<p>returns True if success</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getSearchMarks">
+<tt class="descname">getSearchMarks</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getSearchMarks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of mark locations</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.rpc_test">
+<tt class="descname">rpc_test</tt><big>(</big><em>connection=None</em>, <em>port=None</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.rpc_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test a port</p>
+<p>Returns True if the port is being used, false if it is free</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.saveScreenshot">
+<tt class="descname">saveScreenshot</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.saveScreenshot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:
+-Filename (str): Relative or absolute filename
+-Format (str): BMP, JPEG, PCX, PNG, TIFF
+-Palette (str): COLOR, INKSAVER, BLACKANDWHITE</p>
+<p>Returns true if success or false if failure</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.setAcquisitionSetup">
+<tt class="descname">setAcquisitionSetup</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.setAcquisitionSetup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Valid values for &#8216;State&#8217;: OFF, ON, RUN, STOP, SINGLE
+From the Tektronix Documentation:</p>
+<p>SAMple specifies that the displayed data point value is the first sampled value
+that is taken during the acquisition interval. In sample mode, all waveform data
+has 8 bits of precision. You can request 16 bit data with a CURVe query but the
+lower-order 8 bits of data will be zero. SAMple is the default mode.</p>
+<p>PEAKdetect specifies the display of high-low range of the samples taken from a
+single waveform acquisition. The high-low range is displayed as a vertical column
+that extends from the highest to the lowest value sampled during the acquisition
+interval. PEAKdetect mode can reveal the presence of aliasing or narrow spikes.</p>
+<p>HIRes specifies Hi Res mode where the displayed data point value is the
+average of all the samples taken during the acquisition interval. This is a form
+of averaging, where the average comes from a single waveform acquisition. The number 
+of samples taken during the acquisition interval determines the number of
+data values that compose the average.</p>
+<p>AVErage specifies averaging mode, in which the resulting waveform shows an
+average of SAMple data points from several separate waveform acquisitions. The
+instrument processes the number of waveforms you specify into the acquired
+waveform, creating a running exponential average of the input signal. The number
+of waveform acquisitions that go into making up the average waveform is set or
+queried using the ACQuire:NUMEnv command.</p>
+<p>WFMDB (Waveform Database) mode acquires and displays a waveform pixmap. A
+pixmap is the accumulation of one or more acquisitions.</p>
+<p>ENVelope specifies envelope mode, where the resulting waveform shows the
+PEAKdetect range of data points from several separate waveform acquisitions.
+The number of waveform acquisitions that go into making up the envelope
+waveform is set or queried using the ACQuire:NUMEnv command.</p>
+<p>The instrument acquires data after each trigger event using Sample mode; it then
+determines the pix map location of each sample point and accumulates it with
+stored data from previous acquisitions.
+A Pix map is a two dimensional array. The value at each point in the array is
+a counter that reflects the hit intensity. Infinite and noninfinite persist display
+modes affect how pix maps are accumulated. Zoom, Math, FastAcq, FastFrame,
+XY, Roll, and Interpolated Time (IT) Sampling Mode are conflicting features to
+WFMDB acqMode. Turning on one of them generally turns the other one off.
+Selection of some standard masks (for example, eye masks, which require option
+MTM) changes the acquisition mode to WFMDB.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.setSearchSetup">
+<tt class="descname">setSearchSetup</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.setSearchSetup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters
+-Search (int) search number between 1-8</p>
+<p>Returns True if success or False if failure</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.statusBusy">
+<tt class="descname">statusBusy</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.statusBusy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queries the scope to find out if it is busy</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.waitUntilReady">
+<tt class="descname">waitUntilReady</tt><big>(</big><em>interval</em>, <em>timeout</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.waitUntilReady" title="Permalink to this definition">¶</a></dt>
+<dd><p>Poll &lt;interval&gt; seconds until instrument is ready or &lt;timeout&gt; seconds have passed</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/models/Tektronix.Oscilloscope.m_DigitalPhosphor.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="../index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, KKENNEDY.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

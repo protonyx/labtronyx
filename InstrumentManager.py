@@ -9,23 +9,6 @@ import logging, logging.handlers
 import common.rpc as rpc
 
 class InstrumentManager(rpc.RpcBase):
-    """
-
-    Methods that are generally useful and will be used the most:
-    -getResources
-    -loadDevice
-    -unloadDevice
-    -scan
-    
-    To identify a model to load we need:
-    - Vendor
-    - Product ID (Usually a model number)
-    - Controller (models must specify compatible controllers)
-    
-    When a model is loaded, it is provided:
-    - A reference to the controller object
-    - A ResourceID to govern communications to the controller
-    """
     
     VERSION = '0.1dev'
     
@@ -412,7 +395,7 @@ class InstrumentManager(rpc.RpcBase):
             except NotImplementedError:
                 return False
     
-    def addResource(self, controller, VID, PID):
+    def addResource(self, controller, ResID, VID=None, PID=None):
         """
         Manually add a resource to a controller. VID and PID must be provided
         in order to correctly identify an appropriate model to load for the
@@ -426,6 +409,8 @@ class InstrumentManager(rpc.RpcBase):
         
         :param controller: Controller name
         :type controller: str
+        :param ResID: Resource Identifier
+        :type ResID: str
         :param VID: Vendor Identifier
         :type VID: str
         :param PID: Product Identifier
@@ -434,9 +419,12 @@ class InstrumentManager(rpc.RpcBase):
         """
         if controller in self.controllers:
             try:
-                return controller.addResource(VID, PID)
+                return controller.addResource(ResID, VID, PID)
             
             except NotImplementedError:
+                return False
+            
+            except AttributeError:
                 return False
     
     def destroyResource(self, controller, res_uuid):

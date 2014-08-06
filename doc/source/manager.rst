@@ -28,21 +28,6 @@ found resources indexed. Once all resources are indexed, InstrumentManager
 attempts to load models for each of them based on the Vendor and Product
 identifier returned from the controller. 
 
-Resources
----------
-
-The core function of the InstrumentManager is to manage resources that are
-connected to that system. In general, a resource represents an instrument that
-is connected to the local machine and is known to the operating system.
-
-Internally, resources are stored using three pieces of information that make 
-them uniquely identifiable and can be used to establish communication with the 
-physical device:
-
-	* Universally Unique IDentifier (str)
-	* `Controller` name (str)
-	* Resource Identifier (str)
-
 Theory of Operation
 -------------------
 
@@ -82,6 +67,21 @@ a UUID.
 
 .. note::
 	VISA, Serial (RS-232), USB are examples of controllers
+	
+Resources
+^^^^^^^^^
+
+The core function of the InstrumentManager is to manage resources that are
+connected to that system. In general, a resource represents an instrument that
+is connected to the local machine and is known to the operating system.
+
+Internally, resources are stored using three pieces of information that make 
+them uniquely identifiable and can be used to establish communication with the 
+physical device:
+
+	* Universally Unique IDentifier (str)
+	* `Controller` name (str)
+	* Resource Identifier (str)
 
 Models
 ^^^^^^

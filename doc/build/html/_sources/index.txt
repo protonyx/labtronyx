@@ -28,10 +28,11 @@ Contents:
    :maxdepth: 2
 
    api
-   common
    manager
-   supported
-   developers
+   supported_instruments
+   supported_interfaces
+   common
+   dev/dev_index
    
    
 
