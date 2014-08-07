@@ -7,6 +7,7 @@ import common.rpc
 
 import sys
 import importlib
+import logging
 
 import views
 
@@ -29,68 +30,44 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
         self.resID = resID
         
         # Check for logger
-        if 'logger' in kwargs or 'Logger' in kwargs:
-            self.logger = kwargs.get('logger', None) or kwargs.get('Logger', None)
+        self.logger = kwargs.get('Logger', logging)
             
-        else:
-            # TODO: Model default logger?
-            pass
+    #===========================================================================
+    # Virtual Functions
+    #===========================================================================
         
-    def onLoad(self):
+    def _onLoad(self):
+        """
+        Called shortly after a Model is instantiated. Since Models can be run
+        in a new thread, all member attributes in __init__ must be pickleable.
+        If there are attributes that cannot be picked, load them here.
+        """
         raise NotImplementedError
     
-    def onUnload(self):
+    def _onUnload(self):
+        """
+        Called when a Model is unloaded by the InstrumentManager. After this
+        function is called, all reference will be nulled, and the object will
+        be marked for Garbage Collection. This function should ensure that no
+        object references are orphaned.
+        """
         raise NotImplementedError
     
     #===========================================================================
-    # def _loadView(self, **kwargs):
-    #     testView = self.view
-    #     
-    #     if 'view' in kwargs:
-    #         testView = kwargs['view']
-    #         
-    #     if testView != None:
-    #         try:
-    #             self.logger.debug('Loading view: ' + testView)
-    #             
-    #             # RPC Server must be running to load a view
-    #             if self.socketThread == None:
-    #                 self._startRPC()
-    #             
-    #             testModule = importlib.import_module('views.' + testView)
-    #             testClass = getattr(testModule, testView)
-    #             if 'port' in kwargs:
-    #                 testClass = testClass(port=kwargs['port'])
-    #             else:
-    #                 testClass = testClass(port=self.socketThread.portNum)
-    #             
-    #             # View must be a child class of v_Base to load
-    #             if isinstance(testClass, views.v_Base):
-    #             #if views.v_Base in testClass.__class__.__bases__:
-    #                 # Start the view in a new thread
-    #                 testClass.start()
-    #                 return testClass
-    #             
-    #             else:
-    #                 self.logger.error('Unable to load view %s, views must inherit v_Base', testView)
-    #         
-    #         except ImportError:
-    #             self.logger.exception('Specified view does not exist')
-    #         except AttributeError:
-    #             self.logger.exception('View %s must have a class %s', self.view, self.view)
-    #         except:
-    #             self.logger.exception('An unhandled exception occurred during loadView')
-    #             
-    #     else:
-    #         self.logger.error('No view specified for this model')
-    #         
-    #     return False
+    # Inherited Functions
     #===========================================================================
     
     def getModelName(self):
         return self.__class__.__name__
 
-    # Models must implement these functions
+    def getIdentity(self):
+        """
+        Returns the Model identity information that is assigned when the
+        InstrumentManager loads the Model and attaches it to a resource
+        
+        :returns: tuple
+        """
+        return (self.uuid, self.controller, self.resID)
     
     def getProperties(self):
         return { 'uuid': self.uuid,
@@ -104,4 +81,5 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
                  'deviceSerial': 'Unknown',
                  'deviceFirmware': 'Unknown'
                 }
+
 

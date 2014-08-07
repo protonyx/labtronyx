@@ -4,10 +4,6 @@ Controllers
 Controllers are responsible for low-level communication between devices (models)
 and system drivers. 
 
-Wraps controller functions and performs some error checking to validate 
-    return values. Also includes some helper functions that can be used or
-    overridden depending on the needs of the controller.
-
 Types of Controllers
 --------------------
 

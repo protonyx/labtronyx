@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="../index.html" />
-    <link rel="up" title="Instrument Manager Developer Guide" href="dev_index.html" />
+    <link rel="up" title="InstrumentManager Developer Guide" href="dev_index.html" />
     <link rel="prev" title="Controllers" href="dev_controller.html" /> 
   </head>
   <body>
@@ -38,7 +38,7 @@
           <a href="dev_controller.html" title="Controllers"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li>
-          <li><a href="dev_index.html" accesskey="U">Instrument Manager Developer Guide</a> &raquo;</li> 
+          <li><a href="dev_index.html" accesskey="U">InstrumentManager Developer Guide</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -49,35 +49,83 @@
             
   <div class="section" id="models">
 <h1>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h1>
-<p>Models are responsible for high-level communication with devices. They should
-not make system driver calls. Models can send and recieve commands from the
-device using a controller, but the physical communication protocol is
-transparent to the model. For instruments that use the same command set but are
-capable of communicating over a variety of protocols (Serial, Ethernet, CAN,
-etc.), the same model can be used without needing knowledge of the underlying
-controller.</p>
+<p>Models are responsible for high-level communication with devices. Models send
+and receive commands from the physical device using a controller. In order to
+maintain functional abstraction, Models should limit dependencies and avoid
+making system driver calls. All code contained in Models should deal with the
+specific instrument&#8217;s command set.</p>
+<p>Models are the second highest level of abstraction. By separating system driver
+calls from the instrument command set, the code is more portable and adaptable
+to operating system changes and even various physical connections (protocols,
+connectors, etc.). By so doing, the same model can be used without needing
+knowledge of the underlying controller that is being used. The Model simply
+lists which controllers it is compatible with, and InstrumentManager takes care
+of the rest.</p>
+<div class="section" id="execution-model">
+<h2>Execution Model<a class="headerlink" href="#execution-model" title="Permalink to this headline">¶</a></h2>
+<p>When a Model is loaded, all of its data and attributes are stored in the same
+process as InstrumentManager. If no errors are raised during Model instantiation,
+an RPC Server thread is spawned for that Model by calling <tt class="xref py py-func docutils literal"><span class="pre">rpc_start()</span></tt>.
+This function is inherited from <tt class="xref py py-class docutils literal"><span class="pre">common.Rpc.RpcBase</span></tt>, which is inherited
+from <a class="reference internal" href="#models.m_Base" title="models.m_Base"><tt class="xref py py-class docutils literal"><span class="pre">models.m_Base</span></tt></a>. For information about the execution model of the
+RPC server, see <tt class="xref doc docutils literal"><span class="pre">Remote</span> <span class="pre">Procedure</span> <span class="pre">Call</span> <span class="pre">(RPC)</span> <span class="pre">Library</span></tt>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">It is not necessary to worry about thread synchronization within a Model,
+it is all handled by <tt class="xref py py-class docutils literal"><span class="pre">common.Rpc.RpcServer</span></tt>.</p>
+</div>
+<p>Models were designed from the beginning to be network transparent. The
+underlying RPC framework handles all of the function calls, regardless of the
+actual location of the object on a network (even if it is on the local machine).
+Because of this, there are limitations to the types of data that can be sent
+across the network. All functions within a Model must return serializable data
+for transport using <a class="reference external" href="http://www.jsonrpc.org/specification">JSON-RPC</a>. Serializable data types include:</p>
 <blockquote>
-<div><dl class="docutils">
-<dt>If a function returns an object that is not serializable, the function name</dt>
-<dd><p class="first">must be prefixed with &#8216;_&#8217; in order to deny access to RPC clients who try to
-call that function. RPC servers can only serialize the following types:
-- str &amp; unicode
-- int, long &amp; float
-- bool
-- None
-- list &amp; tuple
-- dict</p>
-<blockquote>
-<div>Models are responsible for managing resources properties. A</div></blockquote>
-<p>request to getResources should return a serializable dictionary with these
-keys:</p>
-<blockquote class="last">
 <div><ul class="simple">
-<li>&#8216;id&#8217;: How the resource will be identified when a load call is made</li>
-<li>&#8216;uuid&#8217;: A UUID string for reference only</li>
+<li>str</li>
+<li>unicode</li>
+<li>int</li>
+<li>long</li>
+<li>float</li>
+<li>bool</li>
+<li>list</li>
+<li>tuple</li>
+<li>dict</li>
+<li>None</li>
+</ul>
+</div></blockquote>
+<p>If a function returns an object that is not serializable, the function name
+must be prefixed with an underscore (&#8216;_&#8217;). This designates the function as a
+protected function, and the RPC library will reject calls that function.</p>
+</div>
+<div class="section" id="properties">
+<h2>Properties<a class="headerlink" href="#properties" title="Permalink to this headline">¶</a></h2>
+<p>Properties are auxiliary information about a physical device. It could include
+information such as:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Firmware Revision</li>
+<li>Serial Numbers</li>
+<li>Product Codes</li>
+<li>Number of channels</li>
+<li>Operating Frequencies</li>
+<li>Command Set Revision</li>
+<li>etc.</li>
+</ul>
+</div></blockquote>
+<p><tt class="xref py py-func docutils literal"><span class="pre">models.m_Base.getProperties()</span></tt> returns a default set of properties:</p>
+<blockquote>
+<div><ul class="simple">
+<li>&#8216;uuid&#8217;: Resource UUID</li>
 <li>&#8216;controller&#8217;: The module name for the controller</li>
+<li>&#8216;id&#8217;: Resource ID specific for the controller</li>
 <li>&#8216;driver&#8217;: The module name for the currently loaded model, None if not loaded</li>
-<li>&#8216;port&#8217;: If RPC Server port, if it is running</li>
+<li>&#8216;port&#8217;: RPC Server port</li>
+</ul>
+</div></blockquote>
+<p>There are also some recommended properties:</p>
+<blockquote>
+<div><ul class="simple">
 <li>&#8216;deviceVendor&#8217;: The device vendor</li>
 <li>&#8216;deviceModel&#8217;: The device model number</li>
 <li>&#8216;deviceSerial&#8217;: The device serial number</li>
@@ -85,9 +133,99 @@ keys:</p>
 <li>&#8216;deviceType&#8217;: The device type from the model</li>
 </ul>
 </div></blockquote>
-</dd>
-</dl>
-</div></blockquote>
+<p>Models should override <tt class="xref py py-func docutils literal"><span class="pre">getProperties()</span></tt> and add additional properties that
+may be useful for application and script development. In order to prevent errors
+in scripts that expect some or all of the default parameters, the Model should
+get the default parameters and append to the returned dict:</p>
+<div class="highlight-python"><div class="highlight"><pre>def getProperties(self):
+
+prop = models.m_Base.getProperties(self)
+
+        prop[&#39;deviceVendor&#39;] = &#39;my vendor&#39;
+        prop[&#39;deviceModel&#39;] = &#39;ABC 12345&#39;
+        prop[&#39;deviceSerial&#39;] = &#39;0123456789&#39;
+        prop[&#39;deviceFirmware&#39;] = &#39;1.0&#39;
+        prop[&#39;deviceType&#39;] = &#39;Widget&#39;
+
+        return prop
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Not returning a properties dict with the required keys may cause problems
+with scripts or applications that expect those keys. It is highly
+recommended, though not currently enforced.</p>
+</div>
+</div>
+<div class="section" id="model-inheritance">
+<h2>Model Inheritance<a class="headerlink" href="#model-inheritance" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance is good code practice and extremely useful when multiple devices
+have only small differences. It reduces risk for bugs by encouraging code reuse
+and consolidation.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">See <a class="reference external" href="https://docs.python.org/2/tutorial/classes.html#inheritance">Python Inheritance</a> for more information</p>
+</div>
+<p>Someday, this section will have examples.</p>
+</div>
+<div class="section" id="model-template">
+<h2>Model Template<a class="headerlink" href="#model-template" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">models</span>
+
+<span class="k">class</span> <span class="nc">m_Template</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">m_Base</span><span class="p">):</span>
+    
+    <span class="c"># Model device type</span>
+    <span class="n">deviceType</span> <span class="o">=</span> <span class="s">&#39;Generic&#39;</span>
+    
+    <span class="c"># List of valid Controllers that are compatible with this Model</span>
+    <span class="n">validControllers</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="c"># List of Valid Vendor Identifier (VID) and Product Identifier (PID) values</span>
+    <span class="c"># that are compatible with this Model</span>
+    <span class="n">validVIDs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">validPIDs</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">def</span> <span class="nf">_onLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+    
+    <span class="k">def</span> <span class="nf">_onUnload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+    
+    <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">prop</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">m_Base</span><span class="o">.</span><span class="n">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        
+        <span class="c"># Add any additional properties here</span>
+        <span class="k">pass</span>
+    
+    
+</pre></div>
+</div>
+</div>
+<div class="section" id="recommended-api-implementations">
+<h2>Recommended API Implementations<a class="headerlink" href="#recommended-api-implementations" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="models.m_Base">
+<em class="property">class </em><tt class="descclassname">models.</tt><tt class="descname">m_Base</tt><big>(</big><em>uuid</em>, <em>controller</em>, <em>resID</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models.html#m_Base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.m_Base" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="models.m_Base._onLoad">
+<tt class="descname">_onLoad</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/models.html#m_Base._onLoad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.m_Base._onLoad" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called shortly after a Model is instantiated. Since Models can be run
+in a new thread, all member attributes in __init__ must be pickleable.
+If there are attributes that cannot be picked, load them here.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.m_Base._onUnload">
+<tt class="descname">_onUnload</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/models.html#m_Base._onUnload"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.m_Base._onUnload" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when a Model is unloaded by the InstrumentManager. After this
+function is called, all reference will be nulled, and the object will
+be marked for Garbage Collection. This function should ensure that no
+object references are orphaned.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -96,6 +234,18 @@ keys:</p>
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Models</a><ul>
+<li><a class="reference internal" href="#execution-model">Execution Model</a></li>
+<li><a class="reference internal" href="#properties">Properties</a></li>
+<li><a class="reference internal" href="#model-inheritance">Model Inheritance</a></li>
+<li><a class="reference internal" href="#model-template">Model Template</a></li>
+<li><a class="reference internal" href="#recommended-api-implementations">Recommended API Implementations</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
   <p class="topless"><a href="dev_controller.html"
                         title="previous chapter">Controllers</a></p>
@@ -131,7 +281,7 @@ keys:</p>
           <a href="dev_controller.html" title="Controllers"
              >previous</a> |</li>
         <li><a href="../index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li>
-          <li><a href="dev_index.html" >Instrument Manager Developer Guide</a> &raquo;</li> 
+          <li><a href="dev_index.html" >InstrumentManager Developer Guide</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

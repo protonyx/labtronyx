@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Instrument Manager Developer Guide &mdash; Lab Instrument Control and Automation Framework 1.0 documentation</title>
+    <title>InstrumentManager Developer Guide &mdash; Lab Instrument Control and Automation Framework 1.0 documentation</title>
     
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -49,19 +49,25 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="instrument-manager-developer-guide">
-<h1>Instrument Manager Developer Guide<a class="headerlink" href="#instrument-manager-developer-guide" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="instrumentmanager-developer-guide">
+<h1>InstrumentManager Developer Guide<a class="headerlink" href="#instrumentmanager-developer-guide" title="Permalink to this headline">¶</a></h1>
 <p>This section of the documentation is dedicated to providing the necessary
 resources for developers to expand the capabilities of this framework to new
 lab instruments and protocols.</p>
-<div class="section" id="architecture">
-<h2>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h2>
-<p>The InstrumentManager class uses a model-view-controller design paradigm, which
-seperates the low-level system calls from the instrument drivers. By using this
-design approach, core program functionality is isolated into smaller chunks in
-order to keep errors from propagating throughout the entire program. If an
-exception is raised in a Controller or Model, it can be caught easily before
-the entire framework is destabilized.</p>
+<p>InstrumentManager is a self-contained class to interface with test instruments
+on the local system.</p>
+<p>Only one instance of InstrumentManager can be running at a time. This is because
+each InstrumentManager is attached to a fixed port to facilitate communication
+between different hosts easily. Also, InstrumentManagers tend to lock system
+resources, so only one should be running at a time.</p>
+<p>If an attempt is made to start a second InstrumentManager instance, the
+initialization sequence will find that the socket is in use and will exit right
+away.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">All interactions with InstrumentManager instances are handled by the
+InstrumentControl API. This documentation is mostly for reference and to
+aid development of instrument drivers.</p>
 </div>
 <div class="section" id="contents">
 <h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
@@ -75,9 +81,379 @@ the entire framework is destabilized.</p>
 <li class="toctree-l2"><a class="reference internal" href="dev_controller.html#optional-api-implementations">Optional API Implementations</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="dev_model.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dev_model.html">Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dev_model.html#execution-model">Execution Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev_model.html#properties">Properties</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev_model.html#model-inheritance">Model Inheritance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev_model.html#model-template">Model Template</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev_model.html#recommended-api-implementations">Recommended API Implementations</a></li>
+</ul>
+</li>
 </ul>
 </div>
+</div>
+<div class="section" id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h2>
+<p>The InstrumentManager class uses a slightly modified <a class="reference external" href="http://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller">Model-View-Controller</a>
+design paradigm, which separates the low-level system calls from the instrument
+drivers. By using this design approach, core program functionality is isolated
+into smaller chunks in order to keep errors from propagating throughout the
+entire program. If an exception is raised in a Controller or Model, it can be
+caught easily before the entire framework is destabilized.</p>
+<p>On startup, the InstrumentManager will scan the program directory for valid
+controllers. For each controller that is found, a scan will be initiated and the
+found resources indexed. Once all resources are indexed, InstrumentManager
+attempts to load models for each of them based on the Vendor and Product
+identifier returned from the controller.</p>
+<div class="section" id="controllers">
+<h3>Controllers<a class="headerlink" href="#controllers" title="Permalink to this headline">¶</a></h3>
+<p>Controllers handle operating system interactions. This may include calls to
+driver stacks and low-level hardware. Generally, controllers are just wrapped
+Python libraries.</p>
+<p>Controllers are responsible for maintaining a list of available resources that
+it has access to. Controller resources are represented as string, but are
+directly tied to some physical device attached to the system. They are different
+from the resources maintained by the <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> object, in that
+UUIDs are generated by the <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> object when the controller
+notifies it of the existence of a new resource.</p>
+<p>When <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> requests the controller&#8217;s known resources, the
+controller returns the following information:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Resource Identifier (str)</li>
+<li>Vendor Identifier (str)</li>
+<li>Product Identifier (str)</li>
+</ul>
+</div></blockquote>
+<p>With these pieces of information, the <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> should be able
+to locate a suitable model that is compatible with that particular resource.
+Resource Identifiers are unique within each controller and maps directly to a
+system resource such as a COM port. Identifiers do not have to be unique between
+controllers, as the <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> associates each resource with
+a UUID.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">VISA, Serial (RS-232), USB are examples of controllers</p>
+</div>
+</div>
+<div class="section" id="resources">
+<h3>Resources<a class="headerlink" href="#resources" title="Permalink to this headline">¶</a></h3>
+<p>The core function of the InstrumentManager is to manage resources that are
+connected to that system. In general, a resource represents an instrument that
+is connected to the local machine and is known to the operating system.</p>
+<p>Internally, resources are stored using three pieces of information that make
+them uniquely identifiable and can be used to establish communication with the
+physical device:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Universally Unique IDentifier (str)</li>
+<li><cite>Controller</cite> name (str)</li>
+<li>Resource Identifier (str)</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="models">
+<h3>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h3>
+<p>Models are the true brains of an instrument. They bridge the gap between the
+system resource and all of the commands and logic to control a physical device.
+They contains the high-level logic to interact with the instrument, like the
+commands and syntax the instrument expects. Models sends commands and receives
+data from the device using a controller. Since the physical interface is
+abstracted through a controller, models have the flexibility of being able to
+communicate with a device on a variety of physical interfaces without any
+significant changes to the code.</p>
+<p>All models extend <tt class="xref py py-class docutils literal"><span class="pre">models.mBase</span></tt>, which attaches a RpcServer thread to the
+model, allowing communication from InstrumentManagers. Remote Procedure Call
+(RPC) allows an object to be accessed from any networked machine as if it were
+a local object on the operator&#8217;s machine. This allows really easy application
+and script development, as the communication with the instrument over the
+network is taken care of by the <tt class="xref py py-mod docutils literal"><span class="pre">common.Rpc</span></tt> library.</p>
+<p>Each model has a <cite>properties</cite> attribute where information about each physical
+device is stored. It is formatted as a dictionary and contains (among other
+things):</p>
+<blockquote>
+<div><ul class="simple">
+<li>Vendor (deviceVendor)</li>
+<li>Serial Number (deviceSerial)</li>
+<li>Model Number (deviceModel)</li>
+<li>Firmware Revision (deviceFirmware)</li>
+<li>Device Type (deviceType)</li>
+</ul>
+</div></blockquote>
+<p>The parenthesized strings above are the keys for these standard values in the
+property dictionary. There can exist any number of properties in this dictionary,
+and there is no standard yet for how they should be named (aside from these
+five). To ease script development in the future, there may be a standardization
+of property keys that depends on the type of each device.</p>
+<p>When models are loaded, they are passed a reference to the parent controller and
+the Resource Identifier for the associated resource. This enables the model to
+communicate directly with the controller and get any additional information that
+is needed to send commands or receive data from the physical device.</p>
+</div>
+<div class="section" id="views">
+<h3>Views<a class="headerlink" href="#views" title="Permalink to this headline">¶</a></h3>
+<p>Views draw the graphical user interface (GUI) and handle callbacks from GUI
+elements when the user interacts with them. Views communicate with a model
+using the <tt class="xref py py-mod docutils literal"><span class="pre">common.Rpc</span></tt> library to change the physical device state or to
+retrieve data. Views are the primary interface point for an operator. The
+purpose of views is to separate the GUI elements from the application logic.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Views are not used in any of the API functions, they can only be launched in
+Application mode.</p>
+</div>
+</div>
+</div>
+<div class="section" id="internal-api">
+<h2>Internal API<a class="headerlink" href="#internal-api" title="Permalink to this headline">¶</a></h2>
+<p>Like models, an InstrumentManager can also be connected to with a
+<tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> instance. The following functions are listed only for
+reference, as the InstrumentControl API should be used to manage all
+communication with each InstrumentManager.</p>
+<dl class="class">
+<dt id="InstrumentManager.InstrumentManager">
+<em class="property">class </em><tt class="descclassname">InstrumentManager.</tt><tt class="descname">InstrumentManager</tt><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="InstrumentManager.InstrumentManager.addResource">
+<tt class="descname">addResource</tt><big>(</big><em>controller</em>, <em>ResID</em>, <em>VID=None</em>, <em>PID=None</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.addResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.addResource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manually add a resource to a controller. VID and PID must be provided
+in order to correctly identify an appropriate model to load for the
+new resource.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This will return False if manually adding resources is not supported.
+To check if the controller supports manual resource management,
+use <a class="reference internal" href="#InstrumentManager.InstrumentManager.canEditResources" title="InstrumentManager.InstrumentManager.canEditResources"><tt class="xref py py-func docutils literal"><span class="pre">InstrumentManager.canEditResources()</span></tt></a></p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>controller</strong> (<em>str</em>) &#8211; Controller name</li>
+<li><strong>ResID</strong> (<em>str</em>) &#8211; Resource Identifier</li>
+<li><strong>VID</strong> (<em>str</em>) &#8211; Vendor Identifier</li>
+<li><strong>PID</strong> (<em>str</em>) &#8211; Product Identifier</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">bool - True if successful, False otherwise</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.canEditResources">
+<tt class="descname">canEditResources</tt><big>(</big><em>controller</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.canEditResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.canEditResources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if a controller supports manually adding or removing resources.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>controller</strong> (<em>str</em>) &#8211; Controller name</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">bool - True if supported, False otherwise</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.destroyResource">
+<tt class="descname">destroyResource</tt><big>(</big><em>controller</em>, <em>res_uuid</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.destroyResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.destroyResource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manually destroy a resource within a controller</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This will return False if manually destroying resources is not supported.
+To check if the controller supports manual resource management,
+use <a class="reference internal" href="#InstrumentManager.InstrumentManager.canEditResources" title="InstrumentManager.InstrumentManager.canEditResources"><tt class="xref py py-func docutils literal"><span class="pre">InstrumentManager.canEditResources()</span></tt></a></p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>controller</strong> (<em>str</em>) &#8211; Controller name</li>
+<li><strong>res_uuid</strong> (<em>str</em>) &#8211; Unique Resource Identifier (UUID)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">bool - True if successful, False otherwise</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getControllers">
+<tt class="descname">getControllers</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getControllers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getControllers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of controllers known to InstrumentManager</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getProperties">
+<tt class="descname">getProperties</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getProperties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the properties dictionary for InstrumentManager</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getResourceModelName">
+<tt class="descname">getResourceModelName</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getResourceModelName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getResourceModelName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the class name for the model loaded for a given resource</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>res_uuid</strong> (<em>str</em>) &#8211; Unique Resource Identifier (UUID)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">str or None if no model loaded</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getResourcePort">
+<tt class="descname">getResourcePort</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getResourcePort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getResourcePort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the RPC Port for the model loaded for a given resource</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>res_uuid</strong> (<em>str</em>) &#8211; Unique Resource Identifier (UUID)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">int or None if no model loaded</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getResources">
+<tt class="descname">getResources</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getResources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all resources for all controllers.</p>
+<p>Resources are nested by controller name</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getValidModels">
+<tt class="descname">getValidModels</tt><big>(</big><em>controller</em>, <em>VID</em>, <em>PID</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getValidModels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getValidModels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of models that are considered valid for a given <cite>controller</cite>,
+Vendor Identifier (<cite>VID</cite>) and Product Identifier (<cite>PID</cite>) combination</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>controller</strong> (<em>str</em>) &#8211; Controller name</li>
+<li><strong>VID</strong> (<em>str</em>) &#8211; Vendor Identifier</li>
+<li><strong>PID</strong> (<em>str</em>) &#8211; Product Identifier</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">list of tuples (ModuleName, ClassName)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.loadModel">
+<tt class="descname">loadModel</tt><big>(</big><em>res_uuid</em>, <em>modelName=None</em>, <em>className=None</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.loadModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.loadModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a model given a resource UUID. A model will be selected
+automatically. To load a specific model, provide <cite>modelName</cite> 
+(importable python module) and <cite>className</cite></p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If modelName is specified, that model will be loaded without any 
+kind of compatibility checking. If an exception is thrown during 
+instantiation, the model will not be loaded.</p>
+</div>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">manager</span><span class="o">.</span><span class="n">loadModel</span><span class="p">(</span><span class="s">&#39;360ba14f-19be-11e4-95bf-a0481c94faff&#39;</span><span class="p">,</span> <span class="s">&#39;Tektronix.Oscilloscope.m_DigitalPhosphor&#39;</span><span class="p">,</span> <span class="s">&#39;m_DigitalPhosphor&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>res_uuid</strong> (<em>str</em>) &#8211; Unique Resource Identifier (UUID)</li>
+<li><strong>modelName</strong> (<em>str</em>) &#8211; Model package (Python module)</li>
+<li><strong>className</strong> (<em>str</em>) &#8211; Class Name</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">bool - True if successful, False otherwise</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.refresh">
+<tt class="descname">refresh</tt><big>(</big><em>controller=None</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh all resources for a given controller. If <cite>controller</cite> is None, 
+all controllers will be refreshed</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>controller</strong> (<em>str</em>) &#8211; Controller to refresh</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">None</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.unloadModel">
+<tt class="descname">unloadModel</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.unloadModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.unloadModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unloads the model for a given resource.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>res_uuid</strong> (<em>str</em>) &#8211; Unique Resource Identifier (UUID)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">bool - True if successful, False otherwise</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 
@@ -89,9 +465,16 @@ the entire framework is destabilized.</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Instrument Manager Developer Guide</a><ul>
-<li><a class="reference internal" href="#architecture">Architecture</a></li>
+<li><a class="reference internal" href="#">InstrumentManager Developer Guide</a><ul>
 <li><a class="reference internal" href="#contents">Contents</a></li>
+<li><a class="reference internal" href="#architecture">Architecture</a><ul>
+<li><a class="reference internal" href="#controllers">Controllers</a></li>
+<li><a class="reference internal" href="#resources">Resources</a></li>
+<li><a class="reference internal" href="#models">Models</a></li>
+<li><a class="reference internal" href="#views">Views</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#internal-api">Internal API</a></li>
 </ul>
 </li>
 </ul>

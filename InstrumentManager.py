@@ -301,11 +301,13 @@ class InstrumentManager(rpc.RpcBase):
         dev = self.devices.get(res_uuid, None)
         
         if dev is not None:
-            # Start the RPC server if it isn't already started
-            # TODO: Should the RPC server be started explicitly?
+            
             try:
-                if dev.rpc_start():
-                    return dev.rpc_getPort()
+                # Start the RPC server if it isn't already started
+                if not dev.rpc_isRunning():
+                    dev.rpc_start()    
+                
+                return dev.rpc_getPort()
             
             except:
                 pass
@@ -506,49 +508,56 @@ class InstrumentManager(rpc.RpcBase):
         """
         if res_uuid in self.resources.keys():
             (controller, resID) = self.resources.get(res_uuid)
-            
-            try:
-                if modelName is None:
-                    # Try to find a suitable model
-                    # Get the controller object
-                    cont_obj = self.controllers.get(controller)
-                    
-                    # Try to find a compatible model
-                    (VID, PID) = cont_obj.getResources.get(resID)
-                    validModels = self.getValidModels(controller, VID, PID)
-                    
-                    if type(validModels) is list and len(validModels) == 1:
-                        moduleName, className = validModels[0] 
-                        loadModel(res_uuid, moduleName, className)
-                        return True
-                    
-                    else:
-                        # More than one valid model exists or none found
-                        return False
+                
+            if modelName is None:
+                # Try to find a suitable model
+                # Get the controller object
+                cont_obj = self.controllers.get(controller)
+                
+                # Try to find a compatible model
+                (VID, PID) = cont_obj.getResources.get(resID)
+                validModels = self.getValidModels(controller, VID, PID)
+                
+                if type(validModels) is list and len(validModels) == 1:
+                    moduleName, className = validModels[0] 
+                    res = self.loadModel(res_uuid, moduleName, className)
+                    return res
                 
                 else:
+                    # More than one valid model exists or none found
+                    return False
+                
+            else:
+                    
+                try:
                     # Check if the specified model is valid
                     testModule = importlib.import_module(modelName)
                     testClass = getattr(testModule, className)
                     
                     # Load the model and store it
                     cont_obj = self.controllers.get(controller, None)
-                    model_obj = testClass(res_uuid, cont_obj, resID, logger=self.logger)
+                    model_obj = testClass(res_uuid, cont_obj, resID, Logger=self.logger)
+                
+                    model_obj._onLoad()
                     
-                    try:
-                        model_obj.onLoad()
-            
-                    except NotImplementedError:
-                        pass
-        
+                    # Start the model RPC server
+                    model_obj.rpc_start()
+                    
                     self.devices[res_uuid] = model_obj
                     self.logger.debug('Loaded model for %s', resID)
                     
                     return True
                 
-            except:
-                self.logger.exception('Failed to load model for %s', resID)
-                return False
+                except AttributeError:
+                    self.logger.exception('Model failed to load for %s', resID)
+                    return False
+        
+                except:
+                    model_obj.rpc_stop()
+                    model_obj._onUnload()
+    
+                    self.logger.exception('Model failed to load for %s', resID)
+                    return False
                 
         else:
             return False
@@ -565,6 +574,8 @@ class InstrumentManager(rpc.RpcBase):
         
         if dev is not None:
             try:
+                dev.rpc_stop()
+                
                 dev.onUnload()
             
             except NotImplementedError:

@@ -1,20 +1,28 @@
+import models
 
-class m_Template(object):
+class m_Template(models.m_Base):
     
-    def __init__(self):
+    # Model device type
+    deviceType = 'Generic'
+    
+    # List of valid Controllers that are compatible with this Model
+    validControllers = []
+    
+    # List of Valid Vendor Identifier (VID) and Product Identifier (PID) values
+    # that are compatible with this Model
+    validVIDs = []
+    validPIDs = []
+    
+    def _onLoad(self):
         pass
     
-    def ask(self, message):
+    def _onUnload(self):
         pass
     
-    def read(self):
+    def getProperties(self):
+        prop = models.m_Base.getProperties(self)
+        
+        # Add any additional properties here
         pass
     
-    def read_raw(self):
-        pass
     
-    def write(self, message):
-        pass
-    
-    def write_raw(self, message):
-        pass

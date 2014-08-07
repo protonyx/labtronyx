@@ -28,7 +28,6 @@ Contents:
    :maxdepth: 2
 
    api
-   manager
    supported_instruments
    supported_interfaces
    common
