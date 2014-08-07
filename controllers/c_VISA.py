@@ -1,11 +1,15 @@
 import importlib
-import controllers
-import visa
 
+import controllers
+
+# Dependency: pyVISA
+import visa
 
 class c_VISA(controllers.c_Base):
     """
-    Wrapper for PyVISA
+    VISA Controller
+    
+    Wraps PyVISA. Requires a VISA driver to be installed on the system.
     
     __Vendors dictionary:
     -KEY is the contents of the first comma-seperated segment of the identification string
@@ -18,11 +22,14 @@ class c_VISA(controllers.c_Base):
                  'TEKTRONIX':            ('Tektronix', lambda x: x[1])
                 }
     
-    # TODO: Make controller resources simpler, push model creation onto manager
     # Dict: ResID -> (VID, PID)
     resources = {}
     # Dict: ResID -> PyVISA Instrument Object
     instruments = {}
+    
+    #===========================================================================
+    # Required API Function Definitions
+    #===========================================================================
     
     def open(self):
         """
@@ -48,41 +55,17 @@ class c_VISA(controllers.c_Base):
         # Setup vendor map dictionary
         # Maps the first chunk of an identify to a function
         
-    def __identifyInstrument(self, instrument):
+    def close(self):
         """
-        Attempts to identify a resource
+        Perform housekeeping tasks and call any close functions to OS APIs
         
-        Parameters:
-        - VISAInstrument
-        
-        Returns:
-        - Tuple (VID, PID) for model identification
+        Return anything, it doesn't really matter
         """
-        # Attempt to identify
-        resp = instrument.ask("*IDN?").strip()
-
-        # Decode Identify
-        ident = resp.split(',')
-        key = c_VISA.__Vendors[ident[0]]
-        vendor = key[0]
-        deviceModel = key[1](ident)
-        
-        #=======================================================================
-        # self.resources[res] = {'identity': resp,
-        #                        'object': None,
-        #                        'instrument': instrument,
-        #                        'vendor': vendor,
-        #                        'model': deviceModel,
-        #                        'uuid': str(uuid.uuid1())}
-        #=======================================================================
-        
-        return (vendor, deviceModel)
+        return True
     
     def refresh(self):
         """
         Refresh the VISA Resource list
-        
-        TODO: Implement
         """
         if self.__rm is not None:
             self.logger.info("Refreshing VISA Resource list")
@@ -95,7 +78,15 @@ class c_VISA(controllers.c_Base):
                         self.logger.info("Identifying VISA Resource: %s", res)
                         
                         instrument = self.__rm.get_instrument(res, timeout=0.5)
-                        mid = self.__identifyInstrument(instrument)
+                        resp = instrument.ask("*IDN?").strip()
+
+                        # Decode Identify
+                        ident = resp.split(',')
+                        key = c_VISA.__Vendors[ident[0]]
+                        vendor = key[0]
+                        deviceModel = key[1](ident)
+                        
+                        mid = (vendor, deviceModel)
                         
                         self.logger.info("Found VISA Device: %s %s" % mid)
                         
@@ -120,162 +111,17 @@ class c_VISA(controllers.c_Base):
         
         else:
             return False
-    
-    #===========================================================================
-    # def scan(self):
-    #     try:
-    #         for device in self.resources:
-    #             if self.resources[device]['object'] is None:
-    #                 # Attempt to identify the device
-    #                 self.load(resource=device)
-    #                 
-    #     except:
-    #         self.logger.exception('Exception occurred during VISA scan')
-    #         return False
-    #     
-    #     return True
-    #===========================================================================
-    
-    #===========================================================================
-    # def load(self, **kwargs):
-    #     """
-    #     Enumerate the VISA Resource and attempt to find a suitable driver
-    #     
-    #     Parameters:
-    #     Required:
-    #         - resource string
-    #         
-    #     Optional:
-    #         - model (if you want to override the default)
-    #     """
-    #     
-    #     try:
-    #         res_str = kwargs.get('resource')
-    #         
-    #         # Lookup the device model number in the model map dictionary
-    #         deviceModel = self.resources[res_str]['model']
-    #         
-    #         if deviceModel in self.models:
-    #             # Get VISA Instrument
-    #             instrument = self.resources[res_str]['instrument']
-    #         
-    #             moduleName, className = self.models[deviceModel]
-    #             
-    #             testModule = importlib.import_module(moduleName)
-    #             testClass = getattr(testModule, className)
-    #             
-    #             # Instantiate the model and get the serial number
-    #             testModel = testClass(VISAInstrument=instrument, controller=self, logger=self.logger)
-    #             
-    #             self.resources[res_str]['serial'] = testModel.getSerialNumber()
-    #             self.resources[res_str]['firmware'] = testModel.getFirmwareRev()
-    #             
-    #             self.logger.debug("Serial Number: %s", str(self.resources[res_str]['serial']))
-    #             self.logger.debug("Firmware Rev: %s", str(self.resources[res_str]['firmware']))
-    #             self.logger.debug("Driver Model: %s", moduleName)
-    #             
-    #             # Add instantiated model to return list
-    #             self.resources[res_str]['object'] = testModel
-    #             
-    #             return True
-    #         
-    #         else:
-    #             self.logger.error("No VISA model could be found for %s", deviceModel)
-    #             
-    #     except NotImplementedError:
-    #         self.logger.error("A model call was attempted, but the function was not implemented as required. Check model: %s", moduleName) 
-    #         
-    #     except AttributeError:
-    #         self.logger.error("Model %s could not be instantiated", moduleName)
-    #              
-    #     except KeyError:
-    #         self.logger.exception("VISA Resources were opened incorrectly")
-    #         
-    #     except:
-    #         self.logger.exception("An unhandled exception occurred during VISA device enumeration")
-    #         
-    #     return False
-    # 
-    # def unload(self):
-    #     # TODO
-    #     pass
-    #===========================================================================
-    
-    def getModelID(self, res_id):
-        """
-        Return the ModelID information given a resource ID
-        """
-        return self.resources.get(res_id, None)
         
     def getResources(self):
         return self.resources
+    
+    #===========================================================================
+    # Protected or Private Function Definitions
+    #===========================================================================
     
     def _getInstrument(self, res_id):
         """
         Instruments are maintained by calling refresh()
         """
         return self.instruments.get(res_id, None)
-    
-    def getResources_old(self):
-        """
-        Returns: list of dict with keys:
-        - 'id': How the resource will be identified when a load call is made
-        - 'uuid': A UUID string for reference only
-        - 'controller': The module name for the controller
-        - 'driver': The module name for the currently loaded model, None if not loaded
-        - 'port': If RPC Server port, if it is running
-        - 'deviceVendor': The device vendor
-        - 'deviceModel': The device model number
-        - 'deviceSerial': The device serial number
-        - 'deviceFirmware': The device firmware revision
-        - 'deviceType': The device type from the model
-        """
-        ret = []
-        
-        for res, val in self.resources.items():
-            # These are always local resources
-            temp = {}
-            temp['id'] = res
-            temp['uuid'] = val['uuid']
-            temp['driver'] = None
             
-            if val['object'] is not None:
-                temp['controller'] = self.__class__.__name__
-                temp['driver'] = val['object'].getModelName()
-                
-                try:
-                    temp['port'] = val['object'].rpc_getPort()
-                except:
-                    temp['port'] = None
-                    
-                temp['deviceVendor'] = val['object'].getVendor()
-                temp['deviceModel'] = val['object'].getModelNumber()
-                temp['deviceSerial'] = val['object'].getSerialNumber()
-                temp['deviceFirmware'] = val['object'].getFirmwareRev()
-                temp['deviceType'] = val['object'].getDeviceType()
-                
-            ret.append(temp)
-            
-        return ret
-    
-    #===========================================================================
-    # def _getModels(self):
-    #     """
-    #     Returns a list of model objects
-    #     """
-    #     ret = []
-    #     
-    #     for res in self.resources:
-    #         if hasattr(self.resources, 'object') and res['object'] != None:
-    #             ret.append(res['object'])
-    #             
-    #     return ret
-    #===========================================================================
-                
-    def close(self):
-        """
-        Perform housekeeping tasks and call any close functions to OS APIs
-        
-        Return anything, it doesn't really matter
-        """
-        return True

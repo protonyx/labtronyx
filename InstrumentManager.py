@@ -514,7 +514,7 @@ class InstrumentManager(rpc.RpcBase):
                     cont_obj = self.controllers.get(controller)
                     
                     # Try to find a compatible model
-                    (VID, PID) = cont_obj.getModelID(resID)
+                    (VID, PID) = cont_obj.getResources.get(resID)
                     validModels = self.getValidModels(controller, VID, PID)
                     
                     if type(validModels) is list and len(validModels) == 1:

@@ -1,88 +1,18 @@
 import common
 
 class c_Base(common.IC_Common):
-    """
-    Controller Base Class
-    
-    Defines the controller API
-    
-    Wraps controller functions and performs some error checking to validate 
-    return values. Also includes some helper functions that can be used or
-    overridden depending on the needs of the controller.
-    
-    Each controller must maintain a dictionary of resource names that map to
-    system resources known internally to the controller. Available resources
-    should have the dictionary value set to None, whereas used resources should
-    contain a reference to the model object instantiated when the model is
-    created. 
-    
-    If a function returns an object that is not serializable, the function name
-    must be prefixed with '_' in order to deny access to RPC clients who try to
-    call that function. RPC servers can only serialize the following types:
-    - str & unicode
-    - int, long & float
-    - bool
-    - None
-    - list & tuple
-    - dict
-    
-    Types of Controllers
-    ====================
-    * Automatic
-      These controllers can find resources on their own without any additional
-      knowledge. This is typically achieved with a system driver that is
-      "plug-'n-play" capable and enumerates devices on insertion.
-      
-    * Manual
-      These controllers must have additional knowledge to discover a resource.
-      An example of a manual controller is a TCP/IP device. Not all devices will
-      respond to a multi-cast packet, so the user must supply an IP address to
-      find the device.
-      
-    * Hybrid
-      Hybrid controllers can discover resources, but without additional
-      information, they will not be able to match a model driver to the
-      resource. A serial port controller is an example of this, as the system
-      maintains a list of available COM ports, but the user must supply the
-      baud rate, stop bits and parity information for the controller to be able
-      to establish communication. 
-    
-    TODO:
-    Controllers will have hooks into the persistence config to "remember" how
-    a particular device is configured when the program is run in the future.
-    
-    Controllers are responsible for managing available resources accessible by
-    the system. That could be a serial port, USB device, VISA instrument, etc.
-    Resources can be managed by the controller in whatever way is best, but a
-    request to getResources should return a serializable dictionary with these
-    keys:
-        - 'id': How the resource will be identified when a load call is made
-        - 'uuid': A UUID string for reference only
-        - 'controller': The module name for the controller
-        - 'driver': The module name for the currently loaded model, None if not loaded
-        - 'port': If RPC Server port, if it is running
-        - 'deviceVendor': The device vendor
-        - 'deviceModel': The device model number
-        - 'deviceSerial': The device serial number
-        - 'deviceFirmware': The device firmware revision
-        - 'deviceType': The device type from the model
 
-    """
+    # TODO: Controllers will have hooks into the persistence config to "remember" how
+    #       a particular device is configured when the program is run in the future.
     
     resources = {}
-    
-    def __init__(self, **kwargs):
-        super(c_Base,self).__init__(**kwargs)
-        
-        if 'models' in kwargs:
-            self.models = kwargs['models']
-        
-        self.__ready = False
-        
+
     def getControllerName(self):
         return self.__class__.__name__
         
     def _open(self):
+        self.__ready = False
+        
         try:
             ret = self.open()
             if type(ret) == bool:
@@ -133,31 +63,49 @@ class c_Base(common.IC_Common):
     # Inheriting classes must implement these functions:
     def open(self):
         """
-        Makes necessary calls to system drivers to ready the necessary resources. 
-        Populates the resources variable with a list of strings that map to 
-        available resources, but does not attempt to load models for resources.
+        Controller Initialization
         
-        Calls to open are wrapped by _open() to perform limited error handling
+        Make any system driver calls necessary to initialize communication. If
+        any kind of exception occurs that will inhibit communication, this
+        function should return False to indicate an error to the 
+        InstrumentManager.
         
-        Returns:
-            True if ready, False if failure occurred
+        Any exceptions raised will be caught by the InstrumentManager, and it
+        will be assumed that the controller failed to initialize. A subsequent
+        call to :func:`close` will be made in this case.
+        
+        :returns: bool - True if ready, False if error occurred
         """
         raise NotImplementedError
     
     def close(self):
         """
-        Makes necessary system driver calls to close all open resources and
-        deallocate all open models.
+        Controller clean-up
+        
+        Make any system driver calls necessary to clean-up controller
+        operations. This function should explicitly free any system resources
+        to prevent locking errors.
+        
+        Any exceptions raised will be caught by the InstrumentManager.
         """
         raise NotImplementedError
-    
-    def getModelID(self):
-        raise NotImplementedError
-    
+
     def getResources(self):
         """
-        Returns:
-            dict: resourceID -> (VID, PID)
+        Get a listing of resources by ID. There is no requirement for how
+        resources are stored internal to the controller, but this function
+        should return a dict with the format::
+        
+            { resourceID: (VID, PID) }
+        
+        :returns: dict
+        """
+        raise NotImplementedError
+    
+    def canEditResources(self):
+        """
+        Query the controller to find out if that controller supports manually
+        adding and destroying resources. 
         """
         raise NotImplementedError
     
@@ -165,54 +113,10 @@ class c_Base(common.IC_Common):
     # Automatic Controllers
     #===========================================================================
     
-    def canScan(self):
-        raise NotImplementedError
-        
-    def scan(self):
-        """
-        Attempts to find drivers for all available resources
-        
-        Returns nothing
-        """
-        raise NotImplementedError
-    
     def refresh(self):
         """
-        Refreshes the resource list, disabling resources that a no longer
-        available
-        """
-        raise NotImplementedError
-
-    def load(self, **kwargs):
-        """
-        load should be used to manually assign a driver to an available resource.
-        
-        Params:
-           - resource - str representing the available resource
-           - model - str representing the model to use
-           
-        If no model parameter is provided, the first suitable model will be loaded.
-        
-        Returns:
-            True if success or False if failure
-        """
-        raise NotImplementedError
-    
-    def unload(self, **kwargs):
-        """
-        unload should be used to free resources and release model drivers.
-        This will call a function internal to the model before marking the model
-        for garbage collection
-        """
-        raise NotImplementedError
-
-    
-    def _getModels(self):
-        """
-        A protected method to get a list of model objects
-        
-        Returns:
-            list of model objects
+        Refreshes the resource list. If resources are no longer available,
+        they should be removed.
         """
         raise NotImplementedError
     
@@ -220,11 +124,26 @@ class c_Base(common.IC_Common):
     # Manual Controllers
     #===========================================================================
     
-    def canEditResources(self):
+    def addResource(self, ResID, VID, PID):
+        """
+        Manually add a resource to the controller
+        
+        :param ResID: Resource Identifier
+        :type ResID: str
+        :param VID: Vendor Identifier
+        :type VID: str
+        :param PID: Product Identifier
+        :type PID: str
+        :returns: bool - True if successful, False otherwise
+        """
         raise NotImplementedError
     
-    def addResource(self):
-        raise NotImplementedError
-    
-    def destroyResource(self):
+    def destroyResource(self, ResID):
+        """
+        Remove a manually added resource
+        
+        :param ResID: Resource Identifier
+        :type ResID: str
+        :returns: bool - True if successful, False otherwise
+        """
         raise NotImplementedError

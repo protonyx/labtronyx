@@ -56,6 +56,38 @@ transparent to the model. For instruments that use the same command set but are
 capable of communicating over a variety of protocols (Serial, Ethernet, CAN,
 etc.), the same model can be used without needing knowledge of the underlying
 controller.</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>If a function returns an object that is not serializable, the function name</dt>
+<dd><p class="first">must be prefixed with &#8216;_&#8217; in order to deny access to RPC clients who try to
+call that function. RPC servers can only serialize the following types:
+- str &amp; unicode
+- int, long &amp; float
+- bool
+- None
+- list &amp; tuple
+- dict</p>
+<blockquote>
+<div>Models are responsible for managing resources properties. A</div></blockquote>
+<p>request to getResources should return a serializable dictionary with these
+keys:</p>
+<blockquote class="last">
+<div><ul class="simple">
+<li>&#8216;id&#8217;: How the resource will be identified when a load call is made</li>
+<li>&#8216;uuid&#8217;: A UUID string for reference only</li>
+<li>&#8216;controller&#8217;: The module name for the controller</li>
+<li>&#8216;driver&#8217;: The module name for the currently loaded model, None if not loaded</li>
+<li>&#8216;port&#8217;: If RPC Server port, if it is running</li>
+<li>&#8216;deviceVendor&#8217;: The device vendor</li>
+<li>&#8216;deviceModel&#8217;: The device model number</li>
+<li>&#8216;deviceSerial&#8217;: The device serial number</li>
+<li>&#8216;deviceFirmware&#8217;: The device firmware revision</li>
+<li>&#8216;deviceType&#8217;: The device type from the model</li>
+</ul>
+</div></blockquote>
+</dd>
+</dl>
+</div></blockquote>
 </div>
 
 

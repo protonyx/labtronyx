@@ -55,6 +55,184 @@
 <h1>Controllers<a class="headerlink" href="#controllers" title="Permalink to this headline">¶</a></h1>
 <p>Controllers are responsible for low-level communication between devices (models)
 and system drivers.</p>
+<dl class="docutils">
+<dt>Wraps controller functions and performs some error checking to validate</dt>
+<dd>return values. Also includes some helper functions that can be used or
+overridden depending on the needs of the controller.</dd>
+</dl>
+<div class="section" id="types-of-controllers">
+<h2>Types of Controllers<a class="headerlink" href="#types-of-controllers" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Automatic - These controllers can find resources on their own without any
+additional knowledge. This is typically achieved with a system driver that is
+&#8220;plug-&#8216;n-play&#8221; capable and enumerates devices on insertion.</li>
+<li>Manual - These controllers must have additional knowledge to discover a
+resource. An example of a manual controller is a TCP/IP device. Not all
+devices will respond to a multi-cast packet, so the user must supply an IP
+address to find the device.</li>
+<li>Hybrid - These controllers can discover resources, but without additional
+information, they will not be able to match a model driver to the
+resource. A serial port controller is an example of this, as the system
+maintains a list of available COM ports, but the user must supply the
+baud rate, stop bits and parity information for the controller to be able
+to establish communication.</li>
+</ul>
+</div>
+<div class="section" id="controller-template">
+<h2>Controller Template<a class="headerlink" href="#controller-template" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">controllers</span>
+
+<span class="k">class</span> <span class="nc">c_Template</span><span class="p">(</span><span class="n">controllers</span><span class="o">.</span><span class="n">c_Base</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+    
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+    
+    <span class="k">def</span> <span class="nf">getResources</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+    
+    <span class="k">def</span> <span class="nf">canEditResources</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+    
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Optional - Automatic Controllers</span>
+    <span class="c">#===========================================================================</span>
+    
+    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+    
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Optional - Manual Controllers</span>
+    <span class="c">#===========================================================================</span>
+    
+    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+    
+    <span class="k">def</span> <span class="nf">destroyResource</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="required-api-implementations">
+<h2>Required API Implementations<a class="headerlink" href="#required-api-implementations" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="controllers.c_Base">
+<em class="property">class </em><tt class="descclassname">controllers.</tt><tt class="descname">c_Base</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/controllers.html#c_Base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#controllers.c_Base" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="controllers.c_Base.canEditResources">
+<tt class="descname">canEditResources</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/controllers.html#c_Base.canEditResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#controllers.c_Base.canEditResources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query the controller to find out if that controller supports manually
+adding and destroying resources.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="controllers.c_Base.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/controllers.html#c_Base.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#controllers.c_Base.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Controller clean-up</p>
+<p>Make any system driver calls necessary to clean-up controller
+operations. This function should explicitly free any system resources
+to prevent locking errors.</p>
+<p>Any exceptions raised will be caught by the InstrumentManager.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="controllers.c_Base.getResources">
+<tt class="descname">getResources</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/controllers.html#c_Base.getResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#controllers.c_Base.getResources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a listing of resources by ID. There is no requirement for how
+resources are stored internal to the controller, but this function
+should return a dict with the format:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span> <span class="n">resourceID</span><span class="p">:</span> <span class="p">(</span><span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">)</span> <span class="p">}</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="controllers.c_Base.open">
+<tt class="descname">open</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/controllers.html#c_Base.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#controllers.c_Base.open" title="Permalink to this definition">¶</a></dt>
+<dd><p>Controller Initialization</p>
+<p>Make any system driver calls necessary to initialize communication. If
+any kind of exception occurs that will inhibit communication, this
+function should return False to indicate an error to the 
+InstrumentManager.</p>
+<p>Any exceptions raised will be caught by the InstrumentManager, and it
+will be assumed that the controller failed to initialize. A subsequent
+call to <tt class="xref py py-func docutils literal"><span class="pre">close()</span></tt> will be made in this case.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">bool - True if ready, False if error occurred</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="optional-api-implementations">
+<h2>Optional API Implementations<a class="headerlink" href="#optional-api-implementations" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt>
+<em class="property">class </em><tt class="descclassname">controllers.</tt><tt class="descname">c_Base</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/controllers.html#c_Base"><span class="viewcode-link">[source]</span></a></dt>
+<dd><dl class="method">
+<dt id="controllers.c_Base.addResource">
+<tt class="descname">addResource</tt><big>(</big><em>ResID</em>, <em>VID</em>, <em>PID</em><big>)</big><a class="reference internal" href="../_modules/controllers.html#c_Base.addResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#controllers.c_Base.addResource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manually add a resource to the controller</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ResID</strong> (<em>str</em>) &#8211; Resource Identifier</li>
+<li><strong>VID</strong> (<em>str</em>) &#8211; Vendor Identifier</li>
+<li><strong>PID</strong> (<em>str</em>) &#8211; Product Identifier</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">bool - True if successful, False otherwise</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="controllers.c_Base.destroyResource">
+<tt class="descname">destroyResource</tt><big>(</big><em>ResID</em><big>)</big><a class="reference internal" href="../_modules/controllers.html#c_Base.destroyResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#controllers.c_Base.destroyResource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a manually added resource</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ResID</strong> (<em>str</em>) &#8211; Resource Identifier</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">bool - True if successful, False otherwise</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="controllers.c_Base.refresh">
+<tt class="descname">refresh</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/controllers.html#c_Base.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#controllers.c_Base.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refreshes the resource list. If resources are no longer available,
+they should be removed.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -63,6 +241,17 @@ and system drivers.</p>
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Controllers</a><ul>
+<li><a class="reference internal" href="#types-of-controllers">Types of Controllers</a></li>
+<li><a class="reference internal" href="#controller-template">Controller Template</a></li>
+<li><a class="reference internal" href="#required-api-implementations">Required API Implementations</a></li>
+<li><a class="reference internal" href="#optional-api-implementations">Optional API Implementations</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
   <p class="topless"><a href="conventions.html"
                         title="previous chapter">Coding Conventions</a></p>
