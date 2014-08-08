@@ -208,6 +208,8 @@ class InstrumentControl(object):
             time.sleep(waitTime)
             if tryTime >= timeout:
                 break
+            
+        self.addManager('localhost')
         
     def managerRunning(self, address, port=None):
         """

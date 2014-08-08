@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>models &mdash; Lab Instrument Control and Automation Framework 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="../index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for models</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Test</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">common</span>
+<span class="kn">import</span> <span class="nn">common.rpc</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">importlib</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">import</span> <span class="nn">views</span>
+
+<div class="viewcode-block" id="m_Base"><a class="viewcode-back" href="../dev/dev_model.html#models.m_Base">[docs]</a><span class="k">class</span> <span class="nc">m_Base</span><span class="p">(</span><span class="n">common</span><span class="o">.</span><span class="n">rpc</span><span class="o">.</span><span class="n">RpcBase</span><span class="p">,</span> <span class="n">common</span><span class="o">.</span><span class="n">IC_Common</span><span class="p">):</span>
+    
+    <span class="n">deviceType</span> <span class="o">=</span> <span class="s">&#39;Generic&#39;</span>
+    <span class="n">view</span> <span class="o">=</span> <span class="bp">None</span>
+    
+    <span class="c"># Model Lookup</span>
+    <span class="n">validControllers</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">validVIDs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">validPIDs</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">resID</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">common</span><span class="o">.</span><span class="n">rpc</span><span class="o">.</span><span class="n">RpcBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">common</span><span class="o">.</span><span class="n">IC_Common</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="n">uuid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span> <span class="o">=</span> <span class="n">controller</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resID</span> <span class="o">=</span> <span class="n">resID</span>
+        
+        <span class="c"># Check for logger</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Logger&#39;</span><span class="p">,</span> <span class="n">logging</span><span class="p">)</span>
+            
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Virtual Functions</span>
+    <span class="c">#===========================================================================</span>
+        
+<div class="viewcode-block" id="m_Base._onLoad"><a class="viewcode-back" href="../dev/dev_model.html#models.m_Base._onLoad">[docs]</a>    <span class="k">def</span> <span class="nf">_onLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called shortly after a Model is instantiated. Since Models can be run</span>
+<span class="sd">        in a new thread, all member attributes in __init__ must be pickleable.</span>
+<span class="sd">        If there are attributes that cannot be picked, load them here.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    </div>
+<div class="viewcode-block" id="m_Base._onUnload"><a class="viewcode-back" href="../dev/dev_model.html#models.m_Base._onUnload">[docs]</a>    <span class="k">def</span> <span class="nf">_onUnload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called when a Model is unloaded by the InstrumentManager. After this</span>
+<span class="sd">        function is called, all reference will be nulled, and the object will</span>
+<span class="sd">        be marked for Garbage Collection. This function should ensure that no</span>
+<span class="sd">        object references are orphaned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Inherited Functions</span>
+    <span class="c">#===========================================================================</span>
+    </div>
+    <span class="k">def</span> <span class="nf">getModelName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+
+    <span class="k">def</span> <span class="nf">getIdentity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the Model identity information that is assigned when the</span>
+<span class="sd">        InstrumentManager loads the Model and attaches it to a resource</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: tuple - (Resource UUID, Controller Name, Resource ID)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resID</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span> <span class="s">&#39;uuid&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span>
+                 <span class="s">&#39;controller&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">getControllerName</span><span class="p">(),</span>
+                 <span class="s">&#39;resourceID&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">resID</span><span class="p">,</span>
+                 <span class="s">&#39;modelName&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">getModelName</span><span class="p">(),</span>
+                 <span class="s">&#39;port&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rpc_getPort</span><span class="p">(),</span>
+                 <span class="s">&#39;deviceType&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">deviceType</span><span class="p">,</span>
+                 <span class="s">&#39;deviceVendor&#39;</span><span class="p">:</span> <span class="s">&#39;Generic&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;deviceModel&#39;</span><span class="p">:</span> <span class="s">&#39;Device&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;deviceSerial&#39;</span><span class="p">:</span> <span class="s">&#39;Unknown&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;deviceFirmware&#39;</span><span class="p">:</span> <span class="s">&#39;Unknown&#39;</span>
+                <span class="p">}</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="../index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, KKENNEDY.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

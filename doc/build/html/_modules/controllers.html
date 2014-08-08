@@ -1,0 +1,235 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>controllers &mdash; Lab Instrument Control and Automation Framework 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="../index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for controllers</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">common</span>
+
+<div class="viewcode-block" id="c_Base"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base">[docs]</a><span class="k">class</span> <span class="nc">c_Base</span><span class="p">(</span><span class="n">common</span><span class="o">.</span><span class="n">IC_Common</span><span class="p">):</span>
+
+    <span class="c"># TODO: Controllers will have hooks into the persistence config to &quot;remember&quot; how</span>
+    <span class="c">#       a particular device is configured when the program is run in the future.</span>
+    
+    <span class="n">resources</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">getControllerName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+        
+    <span class="k">def</span> <span class="nf">_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__ready</span> <span class="o">=</span> <span class="bp">False</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span> <span class="o">==</span> <span class="nb">bool</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">ret</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__ready</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__ready</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">return</span> <span class="n">ret</span>
+            
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Controller function open() must return a bool type&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            
+        <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Controller function open() is not implemented&quot;</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If an interface error occurred, clear the ready flag to alert the calling class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ready</span>
+    
+    <span class="k">def</span> <span class="nf">_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ready</span><span class="p">:</span>  
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan</span><span class="p">()</span>
+                
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span> <span class="o">==</span> <span class="nb">bool</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">True</span>
+                
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Controller function scan() must return a bool type&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="bp">False</span>
+                
+            <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
+                <span class="c"># Controllers do not have to implement scan</span>
+                <span class="k">return</span> <span class="bp">True</span>
+                
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Controller not ready&quot;</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Controller function close() is not implemented&quot;</span><span class="p">)</span>
+    
+    <span class="c"># Inheriting classes must implement these functions:</span>
+<div class="viewcode-block" id="c_Base.open"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Controller Initialization</span>
+<span class="sd">        </span>
+<span class="sd">        Make any system driver calls necessary to initialize communication. If</span>
+<span class="sd">        any kind of exception occurs that will inhibit communication, this</span>
+<span class="sd">        function should return False to indicate an error to the </span>
+<span class="sd">        InstrumentManager.</span>
+<span class="sd">        </span>
+<span class="sd">        Any exceptions raised will be caught by the InstrumentManager, and it</span>
+<span class="sd">        will be assumed that the controller failed to initialize. A subsequent</span>
+<span class="sd">        call to :func:`close` will be made in this case.</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: bool - True if ready, False if error occurred</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    </div>
+<div class="viewcode-block" id="c_Base.close"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Controller clean-up</span>
+<span class="sd">        </span>
+<span class="sd">        Make any system driver calls necessary to clean-up controller</span>
+<span class="sd">        operations. This function should explicitly free any system resources</span>
+<span class="sd">        to prevent locking errors.</span>
+<span class="sd">        </span>
+<span class="sd">        Any exceptions raised will be caught by the InstrumentManager.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+<div class="viewcode-block" id="c_Base.getResources"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base.getResources">[docs]</a>    <span class="k">def</span> <span class="nf">getResources</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a listing of resources by ID. There is no requirement for how</span>
+<span class="sd">        resources are stored internal to the controller, but this function</span>
+<span class="sd">        should return a dict with the format::</span>
+<span class="sd">        </span>
+<span class="sd">            { resourceID: (VID, PID) }</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    </div>
+<div class="viewcode-block" id="c_Base.canEditResources"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base.canEditResources">[docs]</a>    <span class="k">def</span> <span class="nf">canEditResources</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Query the controller to find out if that controller supports manually</span>
+<span class="sd">        adding and destroying resources. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Automatic Controllers</span>
+    <span class="c">#===========================================================================</span>
+    </div>
+<div class="viewcode-block" id="c_Base.refresh"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Refreshes the resource list. If resources are no longer available,</span>
+<span class="sd">        they should be removed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Manual Controllers</span>
+    <span class="c">#===========================================================================</span>
+    </div>
+<div class="viewcode-block" id="c_Base.addResource"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base.addResource">[docs]</a>    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ResID</span><span class="p">,</span> <span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Manually add a resource to the controller</span>
+<span class="sd">        </span>
+<span class="sd">        :param ResID: Resource Identifier</span>
+<span class="sd">        :type ResID: str</span>
+<span class="sd">        :param VID: Vendor Identifier</span>
+<span class="sd">        :type VID: str</span>
+<span class="sd">        :param PID: Product Identifier</span>
+<span class="sd">        :type PID: str</span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    </div>
+<div class="viewcode-block" id="c_Base.destroyResource"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base.destroyResource">[docs]</a>    <span class="k">def</span> <span class="nf">destroyResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ResID</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove a manually added resource</span>
+<span class="sd">        </span>
+<span class="sd">        :param ResID: Resource Identifier</span>
+<span class="sd">        :type ResID: str</span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="../index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, KKENNEDY.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
