@@ -367,6 +367,13 @@ class RpcBase(object):
     def rpc_whoHasExclusiveAccess(self, connection):
         # TODO
         pass
+    
+    def rpc_hasAccess(self, connection):
+        if self.exclusive == None or (isinstance(self.exclusive, RpcConnection) and timedelta(seconds=self.EXCLUSIVE_TIMEOUT) < (datetime.now() - self.exclusiveTime)):
+            return True
+        
+        else:
+            return False
         
     def rpc_getHostname(self, connection):
         """
