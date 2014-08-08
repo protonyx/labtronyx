@@ -20,7 +20,7 @@ class m_DigitalPhosphor(m_OscilloscopeBase):
                     "DPO72304DX", "DPO72504DX", "DPO73304DX"
                     ]
         
-    def onLoad(self):
+    def _onLoad(self):
         m_OscilloscopeBase.onLoad(self)
         
         self.logger.debug("Loaded Tektronix Digital Phosphor Oscilloscope Model")

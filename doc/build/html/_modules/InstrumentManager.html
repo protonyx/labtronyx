@@ -54,7 +54,7 @@
 
 <span class="kn">import</span> <span class="nn">common.rpc</span> <span class="kn">as</span> <span class="nn">rpc</span>
 
-<div class="viewcode-block" id="InstrumentManager"><a class="viewcode-back" href="../dev/dev_index.html#InstrumentManager.InstrumentManager">[docs]</a><span class="k">class</span> <span class="nc">InstrumentManager</span><span class="p">(</span><span class="n">rpc</span><span class="o">.</span><span class="n">RpcBase</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager">[docs]</a><span class="k">class</span> <span class="nc">InstrumentManager</span><span class="p">(</span><span class="n">rpc</span><span class="o">.</span><span class="n">RpcBase</span><span class="p">):</span>
     
     <span class="n">VERSION</span> <span class="o">=</span> <span class="s">&#39;0.1dev&#39;</span>
     
@@ -290,7 +290,7 @@
             <span class="k">except</span><span class="p">:</span>
                 <span class="k">pass</span>
         
-<div class="viewcode-block" id="InstrumentManager.getProperties"><a class="viewcode-back" href="../dev/dev_index.html#InstrumentManager.InstrumentManager.getProperties">[docs]</a>    <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.getProperties"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager.getProperties">[docs]</a>    <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the properties dictionary for InstrumentManager</span>
 <span class="sd">        </span>
@@ -302,7 +302,7 @@
     <span class="c"># Mass Controller Operations</span>
     <span class="c">#===========================================================================</span>
     </div>
-<div class="viewcode-block" id="InstrumentManager.getControllers"><a class="viewcode-back" href="../dev/dev_index.html#InstrumentManager.InstrumentManager.getControllers">[docs]</a>    <span class="k">def</span> <span class="nf">getControllers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.getControllers"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager.getControllers">[docs]</a>    <span class="k">def</span> <span class="nf">getControllers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get a list of controllers known to InstrumentManager</span>
 <span class="sd">        </span>
@@ -310,7 +310,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
     </div>
-<div class="viewcode-block" id="InstrumentManager.getResources"><a class="viewcode-back" href="../dev/dev_index.html#InstrumentManager.InstrumentManager.getResources">[docs]</a>    <span class="k">def</span> <span class="nf">getResources</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.getResources"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager.getResources">[docs]</a>    <span class="k">def</span> <span class="nf">getResources</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get all resources for all controllers.</span>
 <span class="sd">        </span>
@@ -320,7 +320,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span>
     </div>
-<div class="viewcode-block" id="InstrumentManager.getResourceModelName"><a class="viewcode-back" href="../dev/dev_index.html#InstrumentManager.InstrumentManager.getResourceModelName">[docs]</a>    <span class="k">def</span> <span class="nf">getResourceModelName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.getResourceModelName"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager.getResourceModelName">[docs]</a>    <span class="k">def</span> <span class="nf">getResourceModelName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the class name for the model loaded for a given resource</span>
 
@@ -336,7 +336,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
     </div>
-<div class="viewcode-block" id="InstrumentManager.getResourcePort"><a class="viewcode-back" href="../dev/dev_index.html#InstrumentManager.InstrumentManager.getResourcePort">[docs]</a>    <span class="k">def</span> <span class="nf">getResourcePort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.getResourcePort"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager.getResourcePort">[docs]</a>    <span class="k">def</span> <span class="nf">getResourcePort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the RPC Port for the model loaded for a given resource</span>
 
@@ -360,7 +360,7 @@
 
         <span class="k">return</span> <span class="bp">None</span>
     </div>
-<div class="viewcode-block" id="InstrumentManager.refresh"><a class="viewcode-back" href="../dev/dev_index.html#InstrumentManager.InstrumentManager.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.refresh"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Refresh all resources for a given controller. If `controller` is None, </span>
 <span class="sd">        all controllers will be refreshed</span>
@@ -428,7 +428,7 @@
     <span class="c"># API Interfaces</span>
     <span class="c">#===========================================================================</span>
     </div>
-<div class="viewcode-block" id="InstrumentManager.canEditResources"><a class="viewcode-back" href="../dev/dev_index.html#InstrumentManager.InstrumentManager.canEditResources">[docs]</a>    <span class="k">def</span> <span class="nf">canEditResources</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.canEditResources"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager.canEditResources">[docs]</a>    <span class="k">def</span> <span class="nf">canEditResources</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if a controller supports manually adding or removing resources.</span>
 <span class="sd">        </span>
@@ -443,7 +443,7 @@
             <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">False</span>
     </div>
-<div class="viewcode-block" id="InstrumentManager.addResource"><a class="viewcode-back" href="../dev/dev_index.html#InstrumentManager.InstrumentManager.addResource">[docs]</a>    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">ResID</span><span class="p">,</span> <span class="n">VID</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">PID</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.addResource"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager.addResource">[docs]</a>    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">ResID</span><span class="p">,</span> <span class="n">VID</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">PID</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Manually add a resource to a controller. VID and PID must be provided</span>
 <span class="sd">        in order to correctly identify an appropriate model to load for the</span>
@@ -475,7 +475,7 @@
             <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">False</span>
     </div>
-<div class="viewcode-block" id="InstrumentManager.destroyResource"><a class="viewcode-back" href="../dev/dev_index.html#InstrumentManager.InstrumentManager.destroyResource">[docs]</a>    <span class="k">def</span> <span class="nf">destroyResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.destroyResource"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager.destroyResource">[docs]</a>    <span class="k">def</span> <span class="nf">destroyResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Manually destroy a resource within a controller</span>
 <span class="sd">        </span>
@@ -502,7 +502,7 @@
     <span class="c"># Model Operations</span>
     <span class="c">#===========================================================================</span>
     </div>
-<div class="viewcode-block" id="InstrumentManager.getValidModels"><a class="viewcode-back" href="../dev/dev_index.html#InstrumentManager.InstrumentManager.getValidModels">[docs]</a>    <span class="k">def</span> <span class="nf">getValidModels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.getValidModels"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager.getValidModels">[docs]</a>    <span class="k">def</span> <span class="nf">getValidModels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get a list of models that are considered valid for a given `controller`,</span>
 <span class="sd">        Vendor Identifier (`VID`) and Product Identifier (`PID`) combination</span>
@@ -528,7 +528,7 @@
         <span class="k">return</span> <span class="n">ret</span>
                 
     </div>
-<div class="viewcode-block" id="InstrumentManager.loadModel"><a class="viewcode-back" href="../dev/dev_index.html#InstrumentManager.InstrumentManager.loadModel">[docs]</a>    <span class="k">def</span> <span class="nf">loadModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">modelName</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.loadModel"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager.loadModel">[docs]</a>    <span class="k">def</span> <span class="nf">loadModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">modelName</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Load a model given a resource UUID. A model will be selected</span>
 <span class="sd">        automatically. To load a specific model, provide `modelName` </span>
@@ -608,7 +608,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
     </div>
-<div class="viewcode-block" id="InstrumentManager.unloadModel"><a class="viewcode-back" href="../dev/dev_index.html#InstrumentManager.InstrumentManager.unloadModel">[docs]</a>    <span class="k">def</span> <span class="nf">unloadModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentManager.unloadModel"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager.unloadModel">[docs]</a>    <span class="k">def</span> <span class="nf">unloadModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Unloads the model for a given resource. </span>
 <span class="sd">                </span>

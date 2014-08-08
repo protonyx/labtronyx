@@ -65,7 +65,7 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
         Returns the Model identity information that is assigned when the
         InstrumentManager loads the Model and attaches it to a resource
         
-        :returns: tuple
+        :returns: tuple - (Resource UUID, Controller Name, Resource ID)
         """
         return (self.uuid, self.controller, self.resID)
     

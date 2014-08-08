@@ -22,7 +22,8 @@ new instruments. Developers are encouraged to contribute their drivers to the
 project.
 
 
-Contents:
+Contents
+========
 
 .. toctree::
    :maxdepth: 2
@@ -33,8 +34,6 @@ Contents:
    common
    dev/dev_index
    
-   
-
 
 Indices and tables
 ==================

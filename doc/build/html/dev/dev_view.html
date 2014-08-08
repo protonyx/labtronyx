@@ -23,7 +23,9 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="../index.html" /> 
+    <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="../index.html" />
+    <link rel="up" title="InstrumentManager Developer Guide" href="dev_index.html" />
+    <link rel="prev" title="Models" href="dev_model.html" /> 
   </head>
   <body>
     <div class="related">
@@ -32,7 +34,11 @@
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li><a href="../index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="dev_model.html" title="Models"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li>
+          <li><a href="dev_index.html" accesskey="U">InstrumentManager Developer Guide</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -43,9 +49,18 @@
             
   <div class="section" id="views">
 <h1>Views<a class="headerlink" href="#views" title="Permalink to this headline">¶</a></h1>
-<p>Views allows a seperation of visual code from instrument control code. While the
-InstrumentControl API has no visual component, the Smart Lab GUI will index
-the <cite>views</cite> folder and make them available from the application.</p>
+<p>Views allows a seperation of visual code from instrument control code.</p>
+<p>Views draw the graphical user interface (GUI) and handle callbacks from GUI
+elements when the user interacts with them. Views communicate with a model
+using the <tt class="xref py py-mod docutils literal"><span class="pre">common.Rpc</span></tt> library to change the physical device state or to
+retrieve data. Views are the primary interface point for an operator. The
+purpose of views is to separate the GUI elements from the application logic.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Views are not used in any of the API functions, they can only be launched in
+Application mode. The Application GUI will index the <cite>views</cite> folder and
+make them available. This is a feature that does not exist yet.</p>
+</div>
 </div>
 
 
@@ -54,6 +69,9 @@ the <cite>views</cite> folder and make them available from the application.</p>
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="dev_model.html"
+                        title="previous chapter">Models</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/dev/dev_view.txt"
@@ -82,7 +100,11 @@ the <cite>views</cite> folder and make them available from the application.</p>
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
              >index</a></li>
-        <li><a href="../index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="dev_model.html" title="Models"
+             >previous</a> |</li>
+        <li><a href="../index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li>
+          <li><a href="dev_index.html" >InstrumentManager Developer Guide</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

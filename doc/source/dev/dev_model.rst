@@ -14,16 +14,29 @@ connectors, etc.). By so doing, the same model can be used without needing
 knowledge of the underlying controller that is being used. The Model simply
 lists which controllers it is compatible with, and InstrumentManager takes care
 of the rest.
+
+All models extend :class:`models.mBase`, which attaches a RpcServer thread to the
+model, allowing communication from InstrumentManagers. Remote Procedure Call
+(RPC) allows an object to be accessed from any networked machine as if it were
+a local object on the operator's machine. This allows really easy application
+and script development, as the communication with the instrument over the
+network is taken care of by the :mod:`common.Rpc` library.
     
 Execution Model
 ---------------
 
-When a Model is loaded, all of its data and attributes are stored in the same
-process as InstrumentManager. If no errors are raised during Model instantiation,
+Model objects are stored in the same process and memory space as
+InstrumentManager. When models are loaded, they are passed a reference to the 
+parent controller and the Resource Identifier for the associated resource. 
+This enables the model to communicate directly with the controller and get any 
+additional information that is needed to send commands or receive data from the 
+physical device.
+
+If no errors are raised during Model instantiation,
 an RPC Server thread is spawned for that Model by calling :func:`rpc_start`.
 This function is inherited from :class:`common.Rpc.RpcBase`, which is inherited
 from :class:`models.m_Base`. For information about the execution model of the
-RPC server, see :doc:`Remote Procedure Call (RPC) Library <common>`.
+RPC server, see :doc:`Remote Procedure Call (RPC) Library <../common>`.
 
 .. note::
 	It is not necessary to worry about thread synchronization within a Model, 
@@ -122,12 +135,12 @@ and consolidation.
 Someday, this section will have examples.
         
 Model Template
--------------------
+--------------
 
 .. literalinclude:: m_Template.py
 
 Recommended API Implementations
-----------------------------
+-------------------------------
 
 .. autoclass:: models.m_Base
    :members: _onLoad, _onUnload

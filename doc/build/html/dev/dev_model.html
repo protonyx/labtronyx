@@ -25,6 +25,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="../index.html" />
     <link rel="up" title="InstrumentManager Developer Guide" href="dev_index.html" />
+    <link rel="next" title="Views" href="dev_view.html" />
     <link rel="prev" title="Controllers" href="dev_controller.html" /> 
   </head>
   <body>
@@ -34,6 +35,9 @@
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="dev_view.html" title="Views"
+             accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="dev_controller.html" title="Controllers"
              accesskey="P">previous</a> |</li>
@@ -61,14 +65,25 @@ connectors, etc.). By so doing, the same model can be used without needing
 knowledge of the underlying controller that is being used. The Model simply
 lists which controllers it is compatible with, and InstrumentManager takes care
 of the rest.</p>
+<p>All models extend <tt class="xref py py-class docutils literal"><span class="pre">models.mBase</span></tt>, which attaches a RpcServer thread to the
+model, allowing communication from InstrumentManagers. Remote Procedure Call
+(RPC) allows an object to be accessed from any networked machine as if it were
+a local object on the operator&#8217;s machine. This allows really easy application
+and script development, as the communication with the instrument over the
+network is taken care of by the <tt class="xref py py-mod docutils literal"><span class="pre">common.Rpc</span></tt> library.</p>
 <div class="section" id="execution-model">
 <h2>Execution Model<a class="headerlink" href="#execution-model" title="Permalink to this headline">¶</a></h2>
-<p>When a Model is loaded, all of its data and attributes are stored in the same
-process as InstrumentManager. If no errors are raised during Model instantiation,
+<p>Model objects are stored in the same process and memory space as
+InstrumentManager. When models are loaded, they are passed a reference to the
+parent controller and the Resource Identifier for the associated resource.
+This enables the model to communicate directly with the controller and get any
+additional information that is needed to send commands or receive data from the
+physical device.</p>
+<p>If no errors are raised during Model instantiation,
 an RPC Server thread is spawned for that Model by calling <tt class="xref py py-func docutils literal"><span class="pre">rpc_start()</span></tt>.
 This function is inherited from <tt class="xref py py-class docutils literal"><span class="pre">common.Rpc.RpcBase</span></tt>, which is inherited
 from <a class="reference internal" href="#models.m_Base" title="models.m_Base"><tt class="xref py py-class docutils literal"><span class="pre">models.m_Base</span></tt></a>. For information about the execution model of the
-RPC server, see <tt class="xref doc docutils literal"><span class="pre">Remote</span> <span class="pre">Procedure</span> <span class="pre">Call</span> <span class="pre">(RPC)</span> <span class="pre">Library</span></tt>.</p>
+RPC server, see <a class="reference internal" href="../common.html"><em>Remote Procedure Call (RPC) Library</em></a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">It is not necessary to worry about thread synchronization within a Model,
@@ -249,6 +264,9 @@ object references are orphaned.</p>
   <h4>Previous topic</h4>
   <p class="topless"><a href="dev_controller.html"
                         title="previous chapter">Controllers</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="dev_view.html"
+                        title="next chapter">Views</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/dev/dev_model.txt"
@@ -277,6 +295,9 @@ object references are orphaned.</p>
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
              >index</a></li>
+        <li class="right" >
+          <a href="dev_view.html" title="Views"
+             >next</a> |</li>
         <li class="right" >
           <a href="dev_controller.html" title="Controllers"
              >previous</a> |</li>

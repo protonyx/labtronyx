@@ -16,7 +16,7 @@ class m_MixedSignal(m_DigitalPhosphor):
                     "MSO70404C", "MSO70604C", "MSO70804C", "MSO71254C", "MSO71604C", "MSO72004C", "MSO72304DX", "MSO72504DX", "MSO73304DX", 
                     ]
 
-    def onLoad(self):
+    def _onLoad(self):
         m_DigitalPhosphor.onLoad(self)
         
         self.logger.debug("Loaded Tektronix Mixed Signal Oscilloscope Model")

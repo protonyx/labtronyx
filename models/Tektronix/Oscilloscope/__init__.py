@@ -3,8 +3,7 @@ from .. import m_Tektronix
 import time
 from struct import unpack
 import csv
-
-import numpy
+import sys
 
 class m_OscilloscopeBase(m_Tektronix):
     # Model Constants
@@ -19,7 +18,7 @@ class m_OscilloscopeBase(m_Tektronix):
     validTriggerTypes = ['EDGE', 'TRANSITION']
     validCursorTypes = ['HBARS', 'VBARS', 'SCREEN', 'WAVEFORM', 'XY']
 
-    def onLoad(self):
+    def _onLoad(self):
         m_Tektronix.onLoad(self)
         
         # Configure scope
@@ -31,7 +30,16 @@ class m_OscilloscopeBase(m_Tektronix):
             
         self.data = {}
         
+        # Attempt to import numpy
+        try:
+            import numpy
+        except:
+            pass
+        
     def defaultSetup(self):
+        """
+        Resets the Oscilloscope to the Default Setup
+        """
         self.write("FAC")
         
         # TODO: Make this not a static delay
@@ -45,6 +53,17 @@ class m_OscilloscopeBase(m_Tektronix):
             self.write('HEADER OFF')
         
     def getEnabledWaveforms(self):
+        """
+        Get a list of the enabled waveforms.
+        
+        Example::
+        
+            >> scope.getEnabledWaveforms()
+            
+            >> ['CH1', 'CH3']
+        
+        :returns: list
+        """
         en_ch = []
         
         for ch in m_OscilloscopeBase.validWaveforms:
@@ -56,51 +75,70 @@ class m_OscilloscopeBase(m_Tektronix):
     
     def setAcquisitionSetup(self, **kwargs):
         """
-        Valid values for 'State': OFF, ON, RUN, STOP, SINGLE
-        From the Tektronix Documentation:
+        Set Acquisition Modes
         
+        .. note::
         
-        SAMple specifies that the displayed data point value is the first sampled value
-        that is taken during the acquisition interval. In sample mode, all waveform data
-        has 8 bits of precision. You can request 16 bit data with a CURVe query but the
-        lower-order 8 bits of data will be zero. SAMple is the default mode.
+            Not all features are available on all models
+            
+        :param State: Run state - ['SINGLE', 'OFF', 'ON', 'RUN', 'STOP']
+        :type State: str
+        :param FastAcq: Fast Acquisition Mode - ['ON', 'OFF']
+        :type FastAcq: str
+        :param MagniVu: MagniVu Mode - ['ON', 'OFF']
+        :type MagniVu: str
+        :param Mode: Operating Mode - ['Sample', 'PeakDetect', 'HighResolution', 'Average', 'WaveformDB', 'Envelope']
+        :type Mode: str
+        :param Number: Number of samples when Mode is 'Average' or 'Envelope'
+        :type Number: int
+        :param RollMode: Horizontal Roll Mode - ['AUTO', 'ON', 'OFF']
+        :type RollMode: str
+        :param SamplingMode: Sampling Mode - ['RealTime', 'Equivalent', 'Interpolate']
+        :type SamplingMode: str
         
-        PEAKdetect specifies the display of high-low range of the samples taken from a
-        single waveform acquisition. The high-low range is displayed as a vertical column
-        that extends from the highest to the lowest value sampled during the acquisition
-        interval. PEAKdetect mode can reveal the presence of aliasing or narrow spikes.
+        Operating Modes::
         
-        HIRes specifies Hi Res mode where the displayed data point value is the
-        average of all the samples taken during the acquisition interval. This is a form
-        of averaging, where the average comes from a single waveform acquisition. The number 
-        of samples taken during the acquisition interval determines the number of
-        data values that compose the average.
-        
-        AVErage specifies averaging mode, in which the resulting waveform shows an
-        average of SAMple data points from several separate waveform acquisitions. The
-        instrument processes the number of waveforms you specify into the acquired
-        waveform, creating a running exponential average of the input signal. The number
-        of waveform acquisitions that go into making up the average waveform is set or
-        queried using the ACQuire:NUMEnv command.
-        
-        WFMDB (Waveform Database) mode acquires and displays a waveform pixmap. A
-        pixmap is the accumulation of one or more acquisitions.
-        
-        ENVelope specifies envelope mode, where the resulting waveform shows the
-        PEAKdetect range of data points from several separate waveform acquisitions.
-        The number of waveform acquisitions that go into making up the envelope
-        waveform is set or queried using the ACQuire:NUMEnv command.
-        
-        The instrument acquires data after each trigger event using Sample mode; it then
-        determines the pix map location of each sample point and accumulates it with
-        stored data from previous acquisitions.
-        A Pix map is a two dimensional array. The value at each point in the array is
-        a counter that reflects the hit intensity. Infinite and noninfinite persist display
-        modes affect how pix maps are accumulated. Zoom, Math, FastAcq, FastFrame,
-        XY, Roll, and Interpolated Time (IT) Sampling Mode are conflicting features to
-        WFMDB acqMode. Turning on one of them generally turns the other one off.
-        Selection of some standard masks (for example, eye masks, which require option
-        MTM) changes the acquisition mode to WFMDB.
+            'Sample' specifies that the displayed data point value is the first sampled value
+            that is taken during the acquisition interval. In sample mode, all waveform data
+            has 8 bits of precision. You can request 16 bit data with a CURVe query but the
+            lower-order 8 bits of data will be zero. SAMple is the default mode.
+            
+            'PeakDetect' specifies the display of high-low range of the samples taken from a
+            single waveform acquisition. The high-low range is displayed as a vertical column
+            that extends from the highest to the lowest value sampled during the acquisition
+            interval. PEAKdetect mode can reveal the presence of aliasing or narrow spikes.
+            
+            'HighResolution' specifies Hi Res mode where the displayed data point value is the
+            average of all the samples taken during the acquisition interval. This is a form
+            of averaging, where the average comes from a single waveform acquisition. The number 
+            of samples taken during the acquisition interval determines the number of
+            data values that compose the average.
+            
+            'Average' specifies averaging mode, in which the resulting waveform shows an
+            average of SAMple data points from several separate waveform acquisitions. The
+            instrument processes the number of waveforms you specify into the acquired
+            waveform, creating a running exponential average of the input signal. The number
+            of waveform acquisitions that go into making up the average waveform is set or
+            queried using the ACQuire:NUMEnv command.
+            
+            'WaveformDB' (Waveform Database) mode acquires and displays a waveform pixmap. A
+            pixmap is the accumulation of one or more acquisitions.
+            
+            'Envelope' specifies envelope mode, where the resulting waveform shows the
+            PeakDetect range of data points from several separate waveform acquisitions.
+            The number of waveform acquisitions that go into making up the envelope
+            waveform is set or queried using the ACQuire:NUMEnv command.
+            
+            The instrument acquires data after each trigger event using Sample mode; it then
+            determines the pix map location of each sample point and accumulates it with
+            stored data from previous acquisitions.
+            A Pix map is a two dimensional array. The value at each point in the array is
+            a counter that reflects the hit intensity. Infinite and noninfinite persist display
+            modes affect how pix maps are accumulated. Zoom, Math, FastAcq, FastFrame,
+            XY, Roll, and Interpolated Time (IT) Sampling Mode are conflicting features to
+            WFMDB acqMode. Turning on one of them generally turns the other one off.
+            Selection of some standard masks (for example, eye masks, which require option
+            MTM) changes the acquisition mode to WFMDB.
         """
         
         if 'State' in kwargs:
@@ -153,6 +191,37 @@ class m_OscilloscopeBase(m_Tektronix):
                 self.write('ACQ::SAMPLINGMODE IT')
                 
     def setCursorSetup(self, **kwargs):
+        """
+        Set cursor configuration.
+        
+        :param Type: Cursor Type - ['HBARS', 'VBARS', 'SCREEN', 'WAVEFORM']
+        :type Type: str
+        :param Display: Display Cursors - ['ON', 'OFF']
+        :type Display: str
+        :param Mode: Cursor Mode - ['Track', 'Independent']
+        :type Mode: str
+        :param LineStyle: Cursor Line Style - ['DASHED', 'SDASHED', 'SOLID']
+        :type LineStyle: str
+        :param Source1: Waveform for Source1 - ['CH1', 'CH2', 'CH3', 'CH4', 'MATH1', 'MATH2', 'MATH3', 'MATH4', 'REF1', 'REF2', 'REF3', 'REF4']
+        :type Source1: str
+        :param Source2: Waveform for Source2 - ['CH1', 'CH2', 'CH3', 'CH4', 'MATH1', 'MATH2', 'MATH3', 'MATH4', 'REF1', 'REF2', 'REF3', 'REF4']
+        :type Source2: str
+        :param Pos1: Pos1 in 'HBARS', 'VBARS' or 'WAVEFORM' Mode
+        :type Pos1: int or float
+        :param Pos2: Pos2 in 'HBARS', 'VBARS' or 'WAVEFORM' Mode
+        :type Pos2: int or float
+        :param X1: X1 in 'SCREEN' Mode
+        :type X1: int or float
+        :param X2: X2 in 'SCREEN' Mode
+        :type X2: int or float
+        :param Y1: Y1 in 'SCREEN' Mode
+        :type Y1: int or float
+        :param Y2: Y2 in 'SCREEN' Mode
+        :type Y2: int or float
+        :param Style: Cursor Style in 'SCREEN' Mode - ['LINE_X', 'LINES', 'X']
+        :type Style: str
+        :returns: bool - True if successful, False otherwise
+        """
         if 'Type' in kwargs and kwargs['Type'] in m_OscilloscopeBase.validCursorTypes:
             if 'Display' in kwargs:
                 self.write('CURS:STATE ' + str(kwargs['Display']))
@@ -214,6 +283,18 @@ class m_OscilloscopeBase(m_Tektronix):
         time.sleep(1.0)
     
     def setHorizontalSetup(self, **kwargs):
+        """
+        Set Horizontal configuration
+        
+        :param Mode: Horizontal Mode - ['AUTO', 'CONSTANT', 'MANUAL']
+        :type Mode: str
+        :param SampleRate: Samples per second
+        :type SampleRate: float
+        :param Scale: Horizontal scale
+        :type Scale: float
+        :param Position: Horizontal Position - Percentage of screen
+        :type Position: int between 0-100
+        """
         if 'Mode' in kwargs:
             self.write('HOR:MODE ' + kwargs['Mode'])
         if 'SampleRate' in kwargs:
@@ -229,6 +310,26 @@ class m_OscilloscopeBase(m_Tektronix):
         # Roll Mode
         
     def setVerticalSetup(self, **kwargs):
+        """
+        Set Vertical Configuration
+        
+        :param Waveform: Channel - ['CH1', 'CH2', 'CH3', 'CH4', 'REF1', 'REF2', 'REF3', 'REF4', 'MATH1', 'MATH2', 'MATH3', 'MATH4']
+        :type Waveform: str
+        :param Display: Display Channel - ['ON', 'OFF']
+        :type Display: str
+        :param Label: Channel Label
+        :type Label: str
+        :param Position: Vertical Position of channel - divisions above or below center
+        :type Position: float
+        :param Scale: Channel Vertical scale
+        :type Scale: float
+        :param Coupling: Input Attenuator Coupling Setting - ['AC', 'DC', 'DCREJECT', 'GND']
+        :type Coupling: str
+        :param Deskew: Channel Deskew time (seconds)
+        :type Deskew: float
+        :param Bandwidth: Low-Pass Bandwidth Limit Filter (Megahertz) - ['FIVE', 'FULL', 'TWENTY', 'ONEFIFTY', 'TWOFIFTY']
+        :type Bandwidth: str
+        """
         if 'Waveform' in kwargs:
             if kwargs['Waveform'] not in m_OscilloscopeBase.validWaveforms:
                 return False
@@ -257,6 +358,21 @@ class m_OscilloscopeBase(m_Tektronix):
                 pass
             
     def getProbeInformation(self, **kwargs):
+        """
+        Get Probe Data
+        
+        :param Waveform: Channel - ['CH1', 'CH2', 'CH3', 'CH4']
+        :type Waveform: str
+        :returns: dict
+        
+        Returned data has the following keys:
+        
+            * 'Type' - Probe Type
+            * 'Serial' - Serial Number
+            * 'Range' - Attenuation Range
+            * 'Resistance' - Probe Resistance
+            * 'Units' - Measurement Units (Volts or Amps)
+        """
         output = {}
         
         if 'Channel' in kwargs and kwargs['Channel'] in m_OscilloscopeBase.validWaveforms:
@@ -269,6 +385,22 @@ class m_OscilloscopeBase(m_Tektronix):
         return output
             
     def setTriggerSetup(self, **kwargs):
+        """
+        Set Trigger Configuration
+        
+        .. note::
+        
+            Only a small subset of the trigger types are supported right now.
+        
+        :param Type: Trigger Type - ['EDGE', 'TRANSITION']
+        :type Type: str
+        :param Source: Trigger Source - ['CH1', 'CH2', 'CH3', 'CH4', 'REF1', 'REF2', 'REF3', 'REF4', 'MATH1', 'MATH2', 'MATH3', 'MATH4']
+        :type Source: str
+        :param Slope: Edge to trigger on - ['RISE', 'FALL', 'EITHER']
+        :type Slope: str
+        :param Level: Level to trigger on
+        :type Level: float
+        """
         if 'Type' in kwargs and kwargs['Type'] in m_OscilloscopeBase.validTriggerTypes:
             if kwargs['Type'] == 'EDGE':
                 if 'Source' in kwargs and kwargs['Source'] in m_OscilloscopeBase.validWaveforms:
@@ -281,10 +413,31 @@ class m_OscilloscopeBase(m_Tektronix):
                     
     def setSearchSetup(self, **kwargs):
         """
-        Parameters
-        -Search (int) search number between 1-8
+        Set Search configuration
         
-        Returns True if success or False if failure
+        :param Search: Search slot number
+        :type Search: int between 1-8
+        :param Type: Search type - ['TRANSITION']
+        :type Type: str
+        :param Enable: Enable Search - ['OFF', 'ON']
+        :type Enable: str
+        :returns: bool - True if successful, False otherwise
+        
+        .. note::
+        
+            Only 'TRANSITION' Search Type is supported right now. 
+            The full range of possible Search Types are:
+            ['EDGE', 'RUNT', 'TRANSITION', 'PATTERN', 'GLITCH', 'SETHOLD', 'UNDEFINED', WIDTH', 'TIMEOUT', 'WINDOW', 'STATE', 'DDRREAD', 'DDRWRITE', 'DDRREADWRITE']
+        
+        Parameters for 'TRANSITION' Search Type:
+        
+            * 'Source' (str) - Channel source to search - ['CH1', 'CH2', 'CH3', 'CH4', 'REF1', 'REF2', 'REF3', 'REF4', 'MATH1', 'MATH2', 'MATH3', 'MATH4']
+            * 'Delta' (float) - Time delta to limit matches
+            * 'HighThreshold' (float) - High Threshold level
+            * 'LowThreshold' (float) - Low Threshold level
+            * 'Slope' (str) - Polarity setting for mark placement - ['EITHER', 'NEGATIVE', 'POSITIVE']
+            * 'Transition' (str) - Transition Trigger Condition - ['FASTERTHAN', 'SLOWERTHAN'] 
+        
         """
         if 'Search' in kwargs and int(kwargs['Search']) in range(1,8):
             if 'Type' in kwargs and kwargs['Type'] in m_OscilloscopeBase.validTriggerTypes:
@@ -326,7 +479,17 @@ class m_OscilloscopeBase(m_Tektronix):
     
     def getSearchMarks(self, **kwargs):
         """
-        Returns a list of mark locations
+        Get a list of all mark locations. Manually iterates through all marks
+        on the oscilloscope and gets the location.
+        
+        .. warning::
+        
+            Depending on the number of marks, this function can take some time
+            to complete
+            
+        :param Search: Search slot number
+        :type Search: int between 1-8
+        :returns: list of mark times (float)
         """
         # TODO: More graceful way of doing this
         if self.waitUntilReady(1.0, 10.0):
@@ -382,19 +545,24 @@ class m_OscilloscopeBase(m_Tektronix):
             
             else:
                 self.logger.error('Must specify Search between 1-8')
-                return False
+                return []
         else:
             self.logger.error("Unable to get marks while oscilloscope is busy")
-            return False
+            return []
 
         
     def singleAcquisition(self):
+        """
+        Put the Oscilloscope into Single Acquisition mode
+        """
         self.logger.info('Entering Single Acquisition Mode')
         self.setAcquisitionSetup(State='SINGLE')
         
     def statusBusy(self):
         """
         Queries the scope to find out if it is busy
+        
+        :returns: bool - True if Busy, False if not Busy
         """
         if int(self.ask('BUSY?')):
             self.logger.debug('Instrument is busy')
@@ -403,9 +571,15 @@ class m_OscilloscopeBase(m_Tektronix):
             self.logger.debug('Instrument is ready')
             return False
         
-    def waitUntilReady(self, interval, timeout):
+    def waitUntilReady(self, interval=1.0, timeout=10.0):
         """
-        Poll <interval> seconds until instrument is ready or <timeout> seconds have passed
+        Poll the oscilloscope until ready or until `timeout` seconds has passed
+        
+        :param interval: Polling interval in seconds
+        :type interval: float
+        :param timeout: Seconds until timeout occurs
+        :type timeout: float
+        :returns: bool - True if instrument becomes ready, False if timeout occurs
         """
         try:
             lapsed = 0.0
@@ -420,7 +594,14 @@ class m_OscilloscopeBase(m_Tektronix):
         except:
             self.logger.exception("An error occurred in waitUntilReady()")
             
-    def getWaveform(self, **kwargs):
+    def getWaveform(self):
+        """
+        Get the raw waveform data from the oscilloscope. Returns dictionary 
+        contains numpy arrays (if numpy is available, otherwise a list) with
+        the channel as the key.
+        
+        :returns: dict
+        """
         if not self.waitUntilReady(1.0, 10.0):
             self.logger.error("Unable to export waveform while oscilloscope is busy")
             return False
@@ -471,11 +652,15 @@ class m_OscilloscopeBase(m_Tektronix):
             elems = len(data) / data_width
             
             if data_width == 2:
-                data = numpy.array(unpack('%sH' % elems, data))
+                data = unpack('%sH' % elems, data)
             elif data_width == 1:
-                data = numpy.array(unpack('%sB' % elems, data))
+                data = unpack('%sB' % elems, data)
             else:
                 self.logger.error('Unhandled data width in getWaveform')
+                
+            # Utilize numpy if possible, its more efficient
+            if 'numpy' in sys.modules:
+                data = numpy.array(data)
                 
             data_scaled = (data - y_offset) * y_scale + y_zero
             
@@ -483,15 +668,18 @@ class m_OscilloscopeBase(m_Tektronix):
 
         
     def waveformExport(self, **kwargs):
+        """
+        Alias for :func:`m_OscilloscopeBase.exportWaveform`
+        """
         return self.exportWaveform(**kwargs)
         
     def exportWaveform(self, **kwargs):
         """
-        Possible parameters:
-        -Waveforms (list)
-        -Filename (str)
+        Export the oscilloscope waveform to a .csv file. 
         
-        returns True if success
+        :param Filename: Filename of output file
+        :type Filename: str
+        :returns: bool - True if successful, False otherwise
         """
         
         # Refresh waveform data
@@ -535,8 +723,13 @@ class m_OscilloscopeBase(m_Tektronix):
                 
     def saveScreenshot(self, **kwargs):
         """
+        Save a screenshot of the oscilloscope display onto the oscilloscope.
+        
+        :param Filename: Relative or absolute filename
+        :type Filename: str
+        :param Format:
         Parameters:
-        -Filename (str): Relative or absolute filename
+        -Filename (str): 
         -Format (str): BMP, JPEG, PCX, PNG, TIFF
         -Palette (str): COLOR, INKSAVER, BLACKANDWHITE
         

@@ -9,7 +9,7 @@ class m_Tektronix(m_Base):
     
     validVIDs = ['Tektronix']
 
-    def onLoad(self):
+    def _onLoad(self):
         self.__identity = None
         
         try:

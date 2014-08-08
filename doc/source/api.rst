@@ -59,6 +59,9 @@ InstrumentControl can also resolve hostnames::
 Connecting to Instruments
 -------------------------
 
+.. image:: media/instruments.png
+   :scale: 50%
+
 Instruments are a local instance of a Model that is running on a remote
 InstrumentManager instance. They are connected using the :mod:`common.Rpc`
 Library which handles all communication to the Model. From a programming
