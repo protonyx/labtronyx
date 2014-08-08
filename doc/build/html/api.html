@@ -391,7 +391,7 @@ resource UUID as the key. Values are resource identifier tuples:
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.getInstrument">
 <tt class="descname">getInstrument</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getInstrument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getInstrument" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get an Instrument <tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt> object that is linked
+<dd><p>Get an Instrument <a class="reference internal" href="rpc.html#common.rpc.RpcClient" title="common.rpc.RpcClient"><tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt></a> object that is linked
 to the remote model.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -399,7 +399,7 @@ to the remote model.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>res_uuid</strong> (<em>str</em>) &#8211; Unique Resource Identifier (UUID)</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt> object or None an Instrument         has not yet been created for that resource</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><a class="reference internal" href="rpc.html#common.rpc.RpcClient" title="common.rpc.RpcClient"><tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt></a> object or None an Instrument         has not yet been created for that resource</td>
 </tr>
 </tbody>
 </table>
@@ -481,11 +481,11 @@ device type.</p>
 <dt id="InstrumentControl.InstrumentControl.getManager">
 <tt class="descname">getManager</tt><big>(</big><em>address</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getManager" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get an InstrumentManager object for the host at <cite>address</cite>. Object
-returned is an <tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt> object that is linked to
+returned is an <a class="reference internal" href="rpc.html#common.rpc.RpcClient" title="common.rpc.RpcClient"><tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt></a> object that is linked to
 a remote InstrumentManager instance.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">This will always return an <tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt> object, even
+<p class="last">This will always return an <a class="reference internal" href="rpc.html#common.rpc.RpcClient" title="common.rpc.RpcClient"><tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt></a> object, even
 if the InstrumentManager instance is on the local machine.</p>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
@@ -494,7 +494,7 @@ if the InstrumentManager instance is on the local machine.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> (<em>str</em>) &#8211; IP Address of manger</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt> object or None if there is no         existing connection to <cite>address</cite></td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><a class="reference internal" href="rpc.html#common.rpc.RpcClient" title="common.rpc.RpcClient"><tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt></a> object or None if there is no         existing connection to <cite>address</cite></td>
 </tr>
 </tbody>
 </table>

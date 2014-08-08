@@ -59,8 +59,7 @@ class m_OscilloscopeBase(m_Tektronix):
         Example::
         
             >> scope.getEnabledWaveforms()
-            
-            >> ['CH1', 'CH3']
+            ['CH1', 'CH3']
         
         :returns: list
         """
@@ -727,13 +726,11 @@ class m_OscilloscopeBase(m_Tektronix):
         
         :param Filename: Relative or absolute filename
         :type Filename: str
-        :param Format:
-        Parameters:
-        -Filename (str): 
-        -Format (str): BMP, JPEG, PCX, PNG, TIFF
-        -Palette (str): COLOR, INKSAVER, BLACKANDWHITE
-        
-        Returns true if success or false if failure
+        :param Format: File format - ['BMP', 'JPEG', 'PCX', 'PNG', 'TIFF']
+        :type Format: str
+        :param Palette: Color Palette - ['COLOR', 'INKSAVER', 'BLACKANDWHITE']
+        :type Palette: str
+        :returns: bool - True if successful, False otherwise
         """
         
         if 'Filename' in kwargs and 'Format' in kwargs:
@@ -759,8 +756,14 @@ class m_OscilloscopeBase(m_Tektronix):
             self.logger.error("Save Screenshot needs parameters Filename and Format")
             
     def lock(self):
+        """
+        Lock the oscilloscope
+        """
         self.write('LOCK ALL')
         
     def unlock(self):
+        """
+        Unlock the oscilloscope
+        """
         self.write('UNLOCK ALL')
     

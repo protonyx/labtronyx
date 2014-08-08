@@ -29,13 +29,6 @@ def is_valid_ipv6_address(address):
 def resolve_hostname(hostname):
     return socket.gethostbyname(hostname)
 
-def init_globals():
-    global logger
-    logger = None
-    
-    global config
-    config = None
-
             
 class IC_Common(object):
     """

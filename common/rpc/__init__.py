@@ -10,30 +10,28 @@ import jsonrpc
 
 class RpcServer(threading.Thread):
     """
-    Flexible RPC server that opens a socket and waits for connections
+    Flexible RPC server that runs in a Python thread. Wraps any Python object
+    and allows remote machines to call functions and receive returned data.
     
-    Essentially wraps an object and provides an RPC interface for the object
+    :param Logger: Logger instance if you wish to override the internal instance
+    :type Logger: Logging.logger
+    :param target: Target object
+    :type target: object
+    :param port: Port to attach socket to
+    :type port: int 
     
-    Required parameters:
-      - target object
-      
-    Optional parameters:
-      - port
-      - logger
+    .. note::
+
+        Method calls to functions that begin with an underscore are considered 
+        protected and will no be invoked
     
-    Provides some helper function for clients to be able to populate the remote object with valid methods:
-      - rpc_getMethods
-      - rpc_getExclusiveAccess
-      - rpc_releaseExclusiveAccess
-      ...
-    See the documentation for RpcBase for more detailed information about the various RPC system helper functions
-      
-    Method calls to functions that begin with an underscore are considered protected and will no be invoked
+    .. note::
     
-    If an RPC call begins with rpc, the interpreter will check if the function exists in the RPC server class.
-    No method beginning with rpc will ever be executed in the target object, even if it exists.
-    
-    If a target object does not inherit RpcBase, the server will not allow use of any RPC system functions
+        If an RPC call begins with rpc, the function will only be called if the
+        target object extends RpcBase. These functions are considered reserved.
+        If a target object does not extend RpcBase, the RpcServer will not 
+        allow use of these reserved functions, even if they are defined in the
+        target class.
     """
     
     # Exclusive access times out after 60 seconds
@@ -63,6 +61,12 @@ class RpcServer(threading.Thread):
         self.connections = []
         self.exclusive = None
         self.exclusiveTime = None
+        
+    def start(self):
+        """
+        Start the RPC Server Thread. 
+        """
+        threading.Thread.start(self)
         
     def run(self):
         # Start socket
@@ -110,9 +114,15 @@ class RpcServer(threading.Thread):
             self.logger.debug('[%s] RPC Server thread stopped', self.name)
             
     def getPort(self):
+        """
+        Get the port that is bound by the RpcServer
+        """
         return self.socket.getsockname()[1]
         
     def stop(self):
+        """
+        Close all connections and stop the RpcServer thread
+        """
         # Close all connections
         for socket in self.connections:
             socket.join()
@@ -121,6 +131,12 @@ class RpcServer(threading.Thread):
         self.alive.clear()
         
     def attachLogger(self, loggerObj):
+        """
+        Attach a logging.Logger instance for the RpcServer to use.
+        
+        :param loggerObj: Logger instance if you wish to override the internal instance
+        :type loggerObj: Logging.logger
+        """
         if isinstance(loggerObj, logging.Logger):
             self.logger = loggerObj
       
@@ -137,7 +153,7 @@ class RpcBase(object):
     exclusive = None
     exclusiveTime = None
     
-    __identity = 'JSON RPC Server'
+    __identity = 'JSON-RPC/2.0'
         
     def __init__(self):
         self.exclusive = None
@@ -152,9 +168,11 @@ class RpcBase(object):
         
     def rpc_test(self, connection=None, port=None):
         """
-        Test a port 
+        Tests if a port on the RpcServer host is being used.
         
-        Returns True if the port is being used, false if it is free
+        :param port: Port to test
+        :type port: int
+        :returns: bool - True if the port is being used, False if it is free
         """
         if port is not None:
             try:
@@ -183,6 +201,13 @@ class RpcBase(object):
             return False
     
     def rpc_start(self, connection=None, port=None):
+        """
+        Spawns an RpcServer thread to handle connections on the given port.
+        
+        :param port: Port to bind
+        :type port: int
+        :returns: bool - True if the RpcServer starts successfully, False otherwise
+        """
         if not isinstance(self.rpc_thread, RpcServer):
             self.rpc_thread = RpcServer(target=self, port=port)
             
@@ -198,15 +223,26 @@ class RpcBase(object):
         return self.rpc_thread.alive.is_set()
         
     def rpc_stop(self, connection=None):
+        """
+        Stops a running RpcServer thread.
+        """
         if isinstance(self.rpc_thread, RpcServer):
             self.rpc_thread.join()
             self.rpc_thread = None
             
     def rpc_restart(self, connection=None):
+        """
+        Stops and restarts a running RpcServer thread
+        """
         self.rpc_stop()
         self.rpc_start()
         
     def rpc_uptime(self, connection=None):
+        """
+        Get the uptime of the RpcServer
+        
+        :returns: int - uptime in seconds
+        """
         if hasattr(self, 'rpc_startTime'):
             delta = self.rpc_startTime - datetime.now()
             return delta.total_seconds()
@@ -214,6 +250,11 @@ class RpcBase(object):
             return 0
         
     def rpc_getPort(self, connection=None):
+        """
+        Get the bound port of a running RpcServer thread.
+        
+        :returns: int - Port
+        """
         if isinstance(self.rpc_thread, RpcServer) and self.rpc_thread.alive.is_set():
             return self.rpc_thread.getPort()
         
@@ -221,6 +262,11 @@ class RpcBase(object):
             return None
         
     def rpc_isRunning(self, connection=None):
+        """
+        Check if there is an RpcServer thread running
+        
+        :returns: bool - True if running, False if not running
+        """
         if isinstance(self.rpc_thread, RpcServer):
             return self.rpc_thread.alive.is_set()
         
@@ -232,6 +278,12 @@ class RpcBase(object):
         pass
     
     def rpc_getMethods(self, connection):
+        """
+        Get a list of methods in the target object. Used by RpcClient to populate
+        remote objects.
+        
+        :returns: list of strings
+        """
         import inspect
         
         validMethods = []
@@ -246,9 +298,26 @@ class RpcBase(object):
         return validMethods
     
     def rpc_getUUID(self, connection=None):
+        """
+        Get the RpcServer UUID
+        
+        :returns: str - RpcServer UUID
+        """
         return str(self.uuid)
     
     def rpc_requestExclusiveAccess(self, connection):
+        """
+        Request exclusive access to the target object from the RPC interface. 
+        This acts as a lock on the target object, and no other connections can
+        call functions. 
+        
+        .. note::
+        
+            Exclusive Access locks expire after 60 seconds, and must be renewed
+            by another call to :func:`RpcBase.rpc_requestExclusiveAccess`
+            
+        :returns: bool - True if exclusive lock granted, False if denied
+        """
         if self.rpc_hasAccess(connection):
             # No other connection has exclusive access, or previous owner did not renew exclusive lock
             self.exclusive = connection
@@ -262,17 +331,33 @@ class RpcBase(object):
             return False
             
     def rpc_releaseExclusiveAccess(self, connection):
-          if isinstance(self.exclusive, RpcConnection) and self.exclusive == connection:
-              self.exclusive = None
+        """
+        Release exclusive access. If a connection does not have exclusive access,
+        this function does nothing.
+        
+        .. note::
+        
+            This function does not have to be called explicitly, the lock
+            will expire automatically after 60 seconds.
+            
+        :returns: bool - True if lock released, False otherwise
+        """
+        if isinstance(self.exclusive, RpcConnection) and self.exclusive == connection:
+            self.exclusive = None
               
-              self.logger.debug('[%s, %s] Released exclusive access', self.name, connection.address)
+            self.logger.debug('[%s, %s] Released exclusive access', self.name, connection.address)
               
-              return True
+            return True
           
-          else:
-              return False
+        else:
+            return False
               
     def rpc_hasExclusiveAccess(self, connection):
+        """
+        Check if the requesting connection has exclusive access.
+        
+        :returns: bool - True if requesting connection has exclusive access, False otherwise
+        """
         if isinstance(self.exclusive, RpcConnection) and self.exclusive == connection and timedelta(seconds=self.EXCLUSIVE_TIMEOUT) < (datetime.now() - self.exclusiveTime):
             return True
         
@@ -283,18 +368,21 @@ class RpcBase(object):
         # TODO
         pass
         
-    def rpc_hasAccess(self, connection):
-        if self.exclusive == None or (isinstance(self.exclusive, RpcConnection) and timedelta(seconds=self.EXCLUSIVE_TIMEOUT) < (datetime.now() - self.exclusiveTime)):
-            return True
-        
-        else:
-            return False
-        
     def rpc_getHostname(self, connection):
+        """
+        Get the hostname of the RpcServer host.
+        
+        :returns: str - hostname
+        """
         hostname = socket.gethostname()
         return hostname
       
     def rpc_getObjectName(self, connection):
+        """
+        Get the name of the object that may be extending RpcBase.
+        
+        :returns: str - Object name
+        """
         return self.__class__.__name__
     
 class RpcConnection(threading.Thread):
@@ -439,19 +527,23 @@ class RpcConnection(threading.Thread):
     
 class RpcClient(object):
     """
-    Flexible RPC client that connects to an RPC server either locally or remotely
+    Flexible RPC client that connects to an RpcServer instance either on a local
+    host or remote host. Abstracts a remote object using the magic of Python.
+    By utilizing functions from the remote RpcServer and object that extends
+    RpcBase, RpcClient can dynamically create method aliases. In this way, a
+    RpcClient object can "become" an instance of an object on a remote host.
     
-    If the remote RPC server does not extend RpcBase, then it will be impossible
-    to create aliases for remote functions. An alias method can be created
-    manually using RpcClient._methodAlias()
+    .. note::
+        If the remote RPC server does not extend RpcBase, then it will be 
+        impossible to create aliases for remote functions. An alias method can 
+        be created manually using RpcClient._methodAlias()
     
     To manually call a remote method, use the function RpcClient._rpcCall
     
-    Required parameters:
-      - port
-      
-    Optional parameters:
-      - address (will assume localhost if not provided)
+    :param address: IP Address of remote RpcServer (Defaults to 'localhost')
+    :type address: str - IPv4
+    :param port: Port of remote RpcServer
+    :type port: int
     """
     
     RPC_TIMEOUT = 3.0

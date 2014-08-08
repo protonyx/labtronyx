@@ -16,7 +16,7 @@ class m_SMU(m_Base):
     validFunc = ['VOLT', 'CURR', 'RES']
     validMode = ['SWEEP', 'FIXED', 'LIST']
 
-    def onLoad(self):
+    def _onLoad(self):
         self.__identity = None
         
         try:

@@ -56,7 +56,8 @@
 <dl class="class">
 <dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor">
 <em class="property">class </em><tt class="descclassname">models.Tektronix.Oscilloscope.m_DigitalPhosphor.</tt><tt class="descname">m_DigitalPhosphor</tt><big>(</big><em>uuid</em>, <em>controller</em>, <em>resID</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope/m_DigitalPhosphor.html#m_DigitalPhosphor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">models.Tektronix.Oscilloscope.m_OscilloscopeBase</span></tt></p>
+<dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.defaultSetup">
 <tt class="descname">defaultSetup</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.defaultSetup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Resets the Oscilloscope to the Default Setup</p>
@@ -65,10 +66,17 @@
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.exportWaveform">
 <tt class="descname">exportWaveform</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.exportWaveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Possible parameters:
--Waveforms (list)
--Filename (str)</p>
-<p>returns True if success</p>
+<dd><p>Export the oscilloscope waveform to a .csv file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Filename</strong> (<em>str</em>) &#8211; Filename of output file</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">bool - True if successful, False otherwise</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -77,8 +85,7 @@
 <dd><p>Get a list of the enabled waveforms.</p>
 <p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre>&gt;&gt; scope.getEnabledWaveforms()
-
-&gt;&gt; [&#39;CH1&#39;, &#39;CH3&#39;]
+[&#39;CH1&#39;, &#39;CH3&#39;]
 </pre></div>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
@@ -156,8 +163,25 @@ to complete</p>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getWaveform">
-<tt class="descname">getWaveform</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getWaveform" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<tt class="descname">getWaveform</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getWaveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the raw waveform data from the oscilloscope. Returns dictionary 
+contains numpy arrays (if numpy is available, otherwise a list) with
+the channel as the key.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.lock">
+<tt class="descname">lock</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.lock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lock the oscilloscope</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.rpc_test">
@@ -169,11 +193,23 @@ to complete</p>
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.saveScreenshot">
 <tt class="descname">saveScreenshot</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.saveScreenshot" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parameters:
--Filename (str): Relative or absolute filename
--Format (str): BMP, JPEG, PCX, PNG, TIFF
--Palette (str): COLOR, INKSAVER, BLACKANDWHITE</p>
-<p>Returns true if success or false if failure</p>
+<dd><p>Save a screenshot of the oscilloscope display onto the oscilloscope.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Filename</strong> (<em>str</em>) &#8211; Relative or absolute filename</li>
+<li><strong>Format</strong> (<em>str</em>) &#8211; File format - [&#8216;BMP&#8217;, &#8216;JPEG&#8217;, &#8216;PCX&#8217;, &#8216;PNG&#8217;, &#8216;TIFF&#8217;]</li>
+<li><strong>Palette</strong> (<em>str</em>) &#8211; Color Palette - [&#8216;COLOR&#8217;, &#8216;INKSAVER&#8217;, &#8216;BLACKANDWHITE&#8217;]</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">bool - True if successful, False otherwise</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -404,6 +440,12 @@ The full range of possible Search Types are:
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.unlock">
+<tt class="descname">unlock</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.unlock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unlock the oscilloscope</p>
 </dd></dl>
 
 <dl class="method">

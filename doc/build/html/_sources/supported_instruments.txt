@@ -10,6 +10,7 @@ All Models
 .. toctree::
    :maxdepth: 2
    
+   models/Tektronix.Oscilloscope.m_OscilloscopeBase
    models/Tektronix.Oscilloscope.m_DigitalPhosphor
 
 Tektronix

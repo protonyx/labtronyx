@@ -1,17 +1,14 @@
 Remote Procedure Call (RPC) Library
 ===================================
 
-RpcServer
----------
-
-Text
-
 RpcBase
 -------
 
-Text
+.. autoclass:: common.rpc.RpcBase
+   :members:
 
 RpcClient
 ---------
 
-Text
+.. autoclass:: common.rpc.RpcClient
+   :members:
