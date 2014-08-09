@@ -464,28 +464,30 @@ class RpcConnection(threading.Thread):
                                     self.logger.debug('[%s, %s, %i] RPC request for protected method: %s', self.name, self.address, req.id, req.method)
                              
                             else:
-                                if isinstance(target, RpcBase):
-                                    # Check for access first
-                                    if not target.rpc_hasAccess(self):
-                                        # Send an error if somebody has exclusive access
-                                        result.append(Rpc_Response(id=req.id, error={'code': -32001, 'message': 'Another connection has exclusive access.'}))
-                                        if hasattr(self, 'logger'):
-                                            self.logger.debug('[%s, %s, %i] RPC request denied - another user has exclusive access: %s', self.name, self.address, req.id, req.method)
-                                    else:
-                                        # Target inherits RpcBase
-                                        with self.lock:
-                                            if hasattr(self, 'logger'):
-                                                self.logger.debug('[%s, %s, %i] RPC method call: %s', self.name, self.address, req.id, req.method)
+                                allow = True
+                                
+                                if isinstance(target, RpcBase) and not target.rpc_hasAccess(self):
+                                    # Send an error if somebody has exclusive access
+                                    result.append(Rpc_Response(id=req.id, error={'code': -32001, 'message': 'Another connection has exclusive access.'}))
+                                    if hasattr(self, 'logger'):
+                                        self.logger.debug('[%s, %s, %i] RPC request denied - another user has exclusive access: %s', self.name, self.address, req.id, req.method)
+                                    
+                                    allow = False
+                                    
+                                if allow:
+                                    if hasattr(self, 'logger'):
+                                        self.logger.debug('[%s, %s, %i] RPC method call: %s', self.name, self.address, req.id, req.method)
+                                        
+                                    with self.lock:      
+                                        try:
                                             if req.method[0:3] == 'rpc':
                                                 result.append(req.call(target, self))
                                             else:
                                                 result.append(req.call(target))
-                                else:
-                                    # Target does not inherit RpcBase, remote hosts cannot request exclusive access
-                                    with self.lock:
-                                        if hasattr(self, 'logger'):
-                                            self.logger.debug('[%s, %s, %i] RPC method invoked: %s', self.name, self.address, req.id, req.method)
-                                        result.append(req.call(target))
+                                        except:
+                                            if hasattr(self, 'logger'):
+                                                self.logger.exception('[%s, %s, %i] RPC Unhandled Exception: %s', self.name, self.address, req.id, req.method)
+                                            result.append(Rpc_Response(id=self.id, error=Rpc_InternalError(message=str(e))))
                                 
                     elif request == None or isinstance(request, Rpc_Error):
                         # An invalid request was parsed, error will be passed through to encode()
@@ -653,11 +655,11 @@ class RpcClient(object):
                 response = response[0]
                 if response.isError():
                     if response.error['code'] == -32601:
-                        raise AttributeError(response.error['message'])
+                        raise AttributeError(response.error.get('message', None))
                     
                     else:
                         # An error occurred!
-                        raise RuntimeError(response.error['message'])
+                        raise RuntimeError(response.error.get('message', None))
             
                 else:
                     return response.result
@@ -748,18 +750,13 @@ class Rpc_Request(object):
                 return Rpc_Response(id=self.id, result=ret)
             else:
                 return None
-            
-        except TypeError as e:
-            # Signature mis-matches on rpc internal functions will throw this
-            raise
-            #return Rpc_Response(id=self.id, error=Rpc_InternalError(message=str(e)))
         
         except NotImplementedError:
             # Whoops, somebody didn't follow the API
             return Rpc_Response(id=self.id, error=Rpc_MethodNotFound())
             
-        except Exception as e:
-            return Rpc_Response(id=self.id, error=Rpc_InternalError(message=str(e)))
+        except:
+            raise
         
 class Rpc_Response(object):
     def __init__(self, **kwargs):

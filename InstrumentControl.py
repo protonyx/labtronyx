@@ -723,9 +723,9 @@ class InstrumentControl(object):
                     pass
                 
             if instr_destroyOnCompletion:
-                self.destroyInstrument(ResUUID)
+                self.destroyInstrument(res_uuid)
                 
-            self.properties[ResUUID] = ret
+            self.properties[res_uuid] = ret
             return ret
             
     def getProperties(self, res_uuid=None):
@@ -820,7 +820,7 @@ class InstrumentControl(object):
 if __name__ == "__main__":
     # DEBUG!
     instr = InstrumentControl()
-    instr.addManager('DM-FALCON4-111')
+    instr.addManager('DM-FALCON4-110')
     
     res = instr.getAllResources()
     
