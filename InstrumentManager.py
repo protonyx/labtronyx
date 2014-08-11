@@ -526,18 +526,11 @@ class InstrumentManager(rpc.RpcBase):
         :returns: bool - True if successful, False otherwise
         """
         if res_uuid in self.resources.keys():
-            (controller, res_uuid) = self.resources.get(res_uuid)
+            (controller, res_uuid, VID, PID) = self.resources.get(res_uuid)
                 
             # Auto
             if modelName is None:
                 # Try to find a suitable model
-                # Get the controller object
-                cont_obj = self.controllers.get(controller)
-                
-                # Try to find a compatible model
-                cont_res = cont_obj.getResources() or {}
-                
-                (VID, PID) = cont_res.get(res_uuid)
                 validModels = self.getValidModels(controller, VID, PID)
                 
                 if type(validModels) is list and len(validModels) == 1:
