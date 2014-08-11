@@ -120,8 +120,8 @@ class m_SMU(m_Base):
             source_f = self.validSource.get(source)
             self.write(':SOUR:FUNC:MODE %s' % source_f)
             
-            self.write(':SOUR:%s %f' % (source_f, float(kwargs['Base'])))
-            self.write(':SOUR:%s:TRIG %f' % (source_f, float(kwargs['Peak'])))
+            self.write(':SOUR:%s %f' % (source_f, float(base)))
+            self.write(':SOUR:%s:TRIG %f' % (source_f, float(peak)))
         
             self.setSourceSetup(**kwargs)
             
