@@ -45,22 +45,19 @@ class c_VISA(controllers.c_Base):
             self.__rm = visa.ResourceManager()
             self.logger.debug(str(self.__rm))
             
-            return self.refresh()
+            self.refresh()
+            
+            return True
             
         except:
             self.__rm = None
-            self.logger.error("Failed to initialize VISA interface")
+            self.logger.exception("Failed to initialize VISA interface")
             return False
         
         # Setup vendor map dictionary
         # Maps the first chunk of an identify to a function
         
     def close(self):
-        """
-        Perform housekeeping tasks and call any close functions to OS APIs
-        
-        Return anything, it doesn't really matter
-        """
         return True
     
     def refresh(self):
@@ -69,8 +66,13 @@ class c_VISA(controllers.c_Base):
         """
         if self.__rm is not None:
             self.logger.info("Refreshing VISA Resource list")
-            res_list = self.__rm.list_resources()
+            try:
+                res_list = self.__rm.list_resources()
             
+            except visa.VisaIOError:
+                # Exception thrown when there are no resources
+                res_list = []
+                
             # Add new resources
             for res in res_list:
                 if res not in self.resources.keys():

@@ -484,7 +484,7 @@ class RpcConnection(threading.Thread):
                                                 result.append(req.call(target, self))
                                             else:
                                                 result.append(req.call(target))
-                                        except:
+                                        except Exception as e:
                                             if hasattr(self, 'logger'):
                                                 self.logger.exception('[%s, %s, %i] RPC Unhandled Exception: %s', self.name, self.address, req.id, req.method)
                                             result.append(Rpc_Response(id=self.id, error=Rpc_InternalError(message=str(e))))
@@ -555,7 +555,7 @@ class RpcClient(object):
     :type port: int
     """
     
-    RPC_TIMEOUT = 3.0
+    RPC_TIMEOUT = 10.0
     RPC_MAX_PACKET_SIZE = 4096 # 4K
     
     def __init__(self, **kwargs):
@@ -584,6 +584,7 @@ class RpcClient(object):
         self.__rpcEncode__ = jsonrpc.encode
         
         self.nextID = self.__rpcNextID()
+        self.timeout = self.RPC_TIMEOUT
         
         # Try to open a socket
         try:
@@ -602,6 +603,7 @@ class RpcClient(object):
         # host does not inherit RpcBase
         if self.ready is True:
             try:
+                self._setTimeout(2.0)
                 self.methods = self._rpcCall('rpc_getMethods')
                 
                 for proc in self.methods:
@@ -613,6 +615,9 @@ class RpcClient(object):
                     
             except:
                 pass
+            
+    def _setTimeout(self, new_to):
+        self.timeout = new_to
             
     def _getHostname(self):
         return self.hostname
@@ -646,7 +651,7 @@ class RpcClient(object):
         self.socket.send(out_str)
         
         # Wait for return data or timeout
-        ready = select.select([self.socket], [], [], self.RPC_TIMEOUT)
+        ready = select.select([self.socket], [], [], self.timeout)
         if ready[0]:
             data = self.socket.recv(self.RPC_MAX_PACKET_SIZE)
             
@@ -659,7 +664,7 @@ class RpcClient(object):
                     
                     else:
                         # An error occurred!
-                        raise RuntimeError(response.error.get('message', None))
+                        raise Rpc_ServerException(response.error.get('message', None))
             
                 else:
                     return response.result
@@ -812,3 +817,7 @@ class Rpc_InternalError(Rpc_Error):
 
 class Rpc_Timeout(Rpc_Error):
     pass
+
+class Rpc_ServerException(Rpc_Error):
+    pass
+
