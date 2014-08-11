@@ -617,7 +617,13 @@ class RpcClient(object):
                 pass
             
     def _setTimeout(self, new_to):
-        self.timeout = new_to
+        """
+        Set the Timeout limit for an RPC Method call
+        
+        :param new_to: New Timeout time in seconds
+        :type new_to: fload
+        """
+        self.timeout = float(new_to)
             
     def _getHostname(self):
         return self.hostname
@@ -660,7 +666,7 @@ class RpcClient(object):
                 response = response[0]
                 if response.isError():
                     if response.error['code'] == -32601:
-                        raise AttributeError(response.error.get('message', None))
+                        raise Rpc_MethodNotFound(response.error.get('message', None))
                     
                     else:
                         # An error occurred!
@@ -680,7 +686,11 @@ class RpcClient(object):
 
     def _methodAlias(self, methodName):
         """
-        Used to fill the current object with methods that link to remote functions
+        Dynamically create a method internal to the RpcClient object that will
+        invoke an RPC method call when called.
+        
+        :param methodName: Name of method
+        :type methodName: str
         """
         return lambda *args, **kwargs: self._rpcCall(methodName, *args, **kwargs)
     

@@ -677,7 +677,7 @@
     <span class="k">def</span> <span class="nf">_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
     
-    <span class="k">def</span> <span class="nf">_rpcCall</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">remote_method</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcClient._rpcCall"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcClient._rpcCall">[docs]</a>    <span class="k">def</span> <span class="nf">_rpcCall</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">remote_method</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calls a function on the remote host with both positional and keyword</span>
 <span class="sd">        arguments</span>
@@ -717,19 +717,19 @@
                 
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">Rpc_Timeout</span><span class="p">()</span>
-        
+        </div>
     <span class="k">def</span> <span class="nf">__rpcNextID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">nextID</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
             <span class="k">yield</span> <span class="nb">int</span><span class="p">(</span><span class="n">nextID</span><span class="p">)</span>
             <span class="n">nextID</span> <span class="o">+=</span> <span class="mi">1</span>
 
-    <span class="k">def</span> <span class="nf">_methodAlias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">methodName</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcClient._methodAlias"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcClient._methodAlias">[docs]</a>    <span class="k">def</span> <span class="nf">_methodAlias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">methodName</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Used to fill the current object with methods that link to remote functions</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rpcCall</span><span class="p">(</span><span class="n">methodName</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    
+    </div>
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s">&#39;&lt;RPC Instance of </span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">&gt;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
     

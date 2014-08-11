@@ -16,3 +16,4 @@ RpcClient
 
 .. autoclass:: common.rpc.RpcClient
    :members:
+   :private-members:

@@ -296,6 +296,33 @@ be created manually using RpcClient._methodAlias()</p>
 </tr>
 </tbody>
 </table>
+<dl class="method">
+<dt id="common.rpc.RpcClient._methodAlias">
+<tt class="descname">_methodAlias</tt><big>(</big><em>methodName</em><big>)</big><a class="reference internal" href="_modules/common/rpc.html#RpcClient._methodAlias"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#common.rpc.RpcClient._methodAlias" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to fill the current object with methods that link to remote functions</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="common.rpc.RpcClient._rpcCall">
+<tt class="descname">_rpcCall</tt><big>(</big><em>remote_method</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/common/rpc.html#RpcClient._rpcCall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#common.rpc.RpcClient._rpcCall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls a function on the remote host with both positional and keyword
+arguments</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd><ul class="first last simple">
+<li>Whatever the remote function returns</li>
+</ul>
+</dd>
+<dt>Exceptions:</dt>
+<dd><ul class="first last simple">
+<li>AttributeError when method not found (same as if a local call)</li>
+<li>RuntimeError when the remote host sent back a server error</li>
+<li>Rpc_Timeout when the request times out</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </div>
