@@ -507,15 +507,18 @@ class InstrumentManager(rpc.RpcBase):
         :returns: bool - True if successful, False otherwise
         """
         if res_uuid in self.resources.keys():
-            (controller, resID) = self.resources.get(res_uuid)
+            (controller, res_uuid) = self.resources.get(res_uuid)
                 
+            # Auto
             if modelName is None:
                 # Try to find a suitable model
                 # Get the controller object
                 cont_obj = self.controllers.get(controller)
                 
                 # Try to find a compatible model
-                (VID, PID) = cont_obj.getResources.get(resID)
+                cont_res = cont_obj.getResources() or {}
+                
+                (VID, PID) = cont_res.get(res_uuid)
                 validModels = self.getValidModels(controller, VID, PID)
                 
                 if type(validModels) is list and len(validModels) == 1:
@@ -536,7 +539,7 @@ class InstrumentManager(rpc.RpcBase):
                     
                     # Load the model and store it
                     cont_obj = self.controllers.get(controller, None)
-                    model_obj = testClass(res_uuid, cont_obj, resID, Logger=self.logger)
+                    model_obj = testClass(res_uuid, cont_obj, res_uuid, Logger=self.logger)
                 
                     model_obj._onLoad()
                     
@@ -544,19 +547,19 @@ class InstrumentManager(rpc.RpcBase):
                     model_obj.rpc_start()
                     
                     self.devices[res_uuid] = model_obj
-                    self.logger.debug('Loaded model for %s', resID)
+                    self.logger.debug('Loaded model for %s', res_uuid)
                     
                     return True
                 
                 except AttributeError:
-                    self.logger.exception('Model failed to load for %s', resID)
+                    self.logger.exception('Model failed to load for %s', res_uuid)
                     return False
         
                 except:
                     model_obj.rpc_stop()
                     model_obj._onUnload()
     
-                    self.logger.exception('Model failed to load for %s', resID)
+                    self.logger.exception('Model failed to load for %s', res_uuid)
                     return False
                 
         else:
