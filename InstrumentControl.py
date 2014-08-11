@@ -305,7 +305,7 @@ class InstrumentControl(object):
             man.refresh()
             
             # Get the list of resources for the address
-            cached_resources = self.resources.get(address, {})
+            cached_resources = self.getResources(address)
             
             # Get resources from the remote manager
             remote_resources = man.getResources() or {}
@@ -314,19 +314,12 @@ class InstrumentControl(object):
             for res_uuid, res in remote_resources.items():
                 if res_uuid not in cached_resources.keys():
                     # Expects res == (Controller, ResID, VID, PID)
-                    if type(res) is tuple and len(res) is 4:
-                        # Attach address
-                        cached_resources[res_uuid] = (address,) + res
+                     self.resources[res_uuid] = (address,) + tuple(res)
 
             # Purge resources that are no longer available
-            for uuid, res in cached_resources.items():
-                if uuid not in remote_resources:
-                    cached_resources.pop(uuid)
-                    
-            
-                    
-            # Update the resource cache
-            self.resources[address] = cached_resources
+            for res_uuid, res in cached_resources.items():
+                if res_uuid not in remote_resources.keys():
+                    self.resources.pop(res_uuid)
 
         elif address is None:
             for addr in self.managers:
@@ -838,8 +831,10 @@ class InstrumentControl(object):
 if __name__ == "__main__":
     # DEBUG!
     instr = InstrumentControl()
-    instr.addManager('DM-FALCON4-110')
+    #instr.addManager('DM-FALCON4-110')
     instr.addManager('DM-FALCON4-111')
+    
+    man = instr.getManager('10.108.10.92')
     
     res = instr.getResources()
     
