@@ -102,7 +102,7 @@ class InstrumentManager(rpc.RpcBase):
                             testModule = importlib.import_module(contModule)
                             try:
                                 # Instantiate the controller with a link to the model dictionary
-                                testClass = getattr(testModule, className)(models=self.models[className], logger=self.logger)
+                                testClass = getattr(testModule, className)(logger=self.logger)
                                 
                                 if testClass._open():
                                     self.controllers[className] = testClass
@@ -226,6 +226,8 @@ class InstrumentManager(rpc.RpcBase):
             # Scan devices
             self.refresh()
             
+            self.getResources('c_VISA')
+            
             # Start RPC server
             # This operation will timeout after 2 seconds. If that happens,
             # this process should exit
@@ -264,15 +266,27 @@ class InstrumentManager(rpc.RpcBase):
         """
         return self.controllers.keys()
     
-    def getResources(self):
+    def getResources(self, controller=None):
         """
-        Get all resources for all controllers.
+        Get all resources for a given or all controllers.
         
-        Resources are nested by controller name
-        
-        :returns: dict
+        :param controller: Controller to filter (optional)
+        :type controller: str
+        :returns: dict - { UUID: (`controller`, `ResID`, `VendorID`, ProductID`) }
         """
-        return self.resources
+        if controller is not None:
+            ret = {}
+            
+            if controller  in self.controllers:
+
+                for res_uuid, res in self.resources.items():
+                    if res[0] is controller:
+                        ret[res_uuid] = res
+                        
+            return ret
+        
+        else:
+            return self.resources
     
     def getModels(self):
         """
@@ -359,8 +373,8 @@ class InstrumentManager(rpc.RpcBase):
                     new_res = c_obj.getResources() # { ResID -> (VID, PID) }
                     
                     # Create new resources
-                    for resID, resTup in new_res.items():
-                        int_res_id = (controller, resID) + resTup
+                    for resID, res_tup in new_res.items():
+                        int_res_id = (controller, resID) + res_tup
                         
                         if int_res_id not in self.resources.values():
                             new_uuid = str(uuid.uuid4())
@@ -386,11 +400,15 @@ class InstrumentManager(rpc.RpcBase):
                     
                     # Purge unavailable resources
                     for res_uuid, res_tup in self.resources.items():
-                        res_id = res_tup[1]
+                        res_cont, resID, _, _ = res_tup
                         
-                        if res_id not in new_res.keys():
+                        if res_cont is controller and resID not in new_res.keys():
                             self.unloadModel(res_uuid)
                             self.resources.pop(res_uuid)
+                            
+                except AttributeError:
+                    # Controller returned something invalid
+                    pass
                     
                 except NotImplementedError:
                     pass

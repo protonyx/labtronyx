@@ -130,21 +130,6 @@ class InstrumentControl(object):
         else:
             return False
     
-    def getAddressFromUUID(self, uuid):
-        """
-        Get the host address of a resource.
-        
-        :param uuid: Resource UUID
-        :type uuid: str
-        :returns: IP Address of host associated with the given resource or None \
-        if the resource was not found
-        """
-        dev_man = self._getManager_uuid(uuid)
-        if dev_man is not None:
-            return dev_man._getAddress()
-        else:
-            return None
-    
     def getHostnames(self):
         """
         Get a list of connected hostnames
@@ -324,16 +309,21 @@ class InstrumentControl(object):
             
             # Get resources from the remote manager
             remote_resources = man.getResources() or {}
+            
+            # Add new resources
+            for res_uuid, res in remote_resources.items():
+                if res_uuid not in cached_resources.keys():
+                    # Expects res == (Controller, ResID, VID, PID)
+                    if type(res) is tuple and len(res) is 4:
+                        # Attach address
+                        cached_resources[res_uuid] = (address,) + res
 
             # Purge resources that are no longer available
             for uuid, res in cached_resources.items():
                 if uuid not in remote_resources:
                     cached_resources.pop(uuid)
                     
-            # Add new resources
-            for uuid, res in remote_resources.items():
-                if uuid not in cached_resources.keys():
-                    cached_resources[uuid] = res
+            
                     
             # Update the resource cache
             self.resources[address] = cached_resources
@@ -391,65 +381,81 @@ class InstrumentControl(object):
         existing connection to `address`
         """
         return self.managers.get(address, None)
-            
-    def _getManager_uuid(self, res_uuid):
-        dev_man = None
-        for addr, res_dict in self.resources.items():
-            if res_uuid in res_dict.keys():
-                dev_man = self.managers.get(addr, None)
-        
-        return dev_man
+
     #===========================================================================
     # Resource Operations
     #===========================================================================
     
-    def getAllResources(self, address=None):
+    #===========================================================================
+    # def getAllResources(self, address=None):
+    #     """
+    #     
+    #     
+    #     Returned dictionary is a flat list of all cached resources with the 
+    #     resource UUID as the key. Values are resource identifier tuples: 
+    #     (`controller`, `resourceID`)
+    #     
+    #     :param address: IP Address of manager
+    #     :type address: str
+    #     
+    #     :returns: dict
+    #     """
+    #     if address in self.managers:
+    #         return self.resources.get(address, {})
+    #     
+    #     elif address is None:
+    #         ret = {}
+    #         for addr in self.managers:
+    #             res = self.resources.get(addr, {})
+    #             ret.update(res)
+    #         return ret
+    #     
+    #     else:
+    #         return {}
+    #===========================================================================
+        
+    def getResources(self, address=None):
         """
-        Get a listing of all cached resources from all connected 
+        Get a listing of all cached resources from the given address or from all
         :class:`InstrumentManager` instances.
         
-        Returned dictionary is a flat list of all cached resources with the 
-        resource UUID as the key. Values are resource identifier tuples: 
-        (`controller`, `resourceID`)
+        .. note::
         
-        :param address: IP Address of manager
+            `getResources` will not trigger a refresh on the InstrumentManager,
+            so resources returned may not be valid
+        
+        :param address: IP Address of host (optional)
         :type address: str
         
-        :returns: dict
+        :returns: dict of tuples - \ 
+                    (`address`, `controller`, `resourceID`, `VID`, `PID`)
         """
-        if address in self.managers:
-            return self.resources.get(address, {})
-        
-        elif address is None:
+        if address is not None:
             ret = {}
-            for addr in self.managers:
-                res = self.resources.get(addr, {})
-                ret.update(res)
-            return ret
-        
-        else:
-            return {}
-        
-    def getResource(self, res_uuid):
-        """
-        Get the resource identifier of a cached resource given a UUID
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        
-        :returns: tuple - (`controller`, `resourceID`) or None if there is no \
-                  matching UUID in the cache
-        """
-        # Iterate through all resources to find
-        for address in self.resources:
-            addr_res = self.resources.get(address, {})
-            for uuid, res in addr_res.items():
-                if uuid == res_uuid:
-                    return res
+            
+            if address in self.hostnames.values():
                 
-        return None
+                for res_uuid, res in self.resources.items():
+                    if res[0] is address:
+                        ret[res_uuid] = res
+                    
+            return ret
     
-    def addResource(self, address, controller, ResID, VendorID, ProductID, **kwargs):
+        else:
+            return self.resources
+        
+        #=======================================================================
+        # # Iterate through all resources to find
+        # for address in self.resources:
+        #     addr_res = self.resources.get(address, {})
+        #     for uuid, res in addr_res.items():
+        #         if uuid == res_uuid:
+        #             return res
+        #         
+        # return None
+        #=======================================================================
+    
+    def addResource(self, address, controller, ResID, VendorID, ProductID):
         """
         Create a managed resource within a controller object
         
@@ -532,11 +538,15 @@ class InstrumentControl(object):
         
         :param res_uuid: Unique Resource Identifier (UUID)
         :type res_uuid: str
-        :returns: :class:`common.rpc.RpcClient` object or None an Instrument \
-        has not yet been created for that resource
-        
+        :returns: :class:`common.rpc.RpcClient` object or None if unable to \
+        connect to Model
         """
-        return self.instruments.get(res_uuid, None)
+        ret = self.instruments.get(res_uuid, None)
+        
+        if ret is None:
+            ret = self.createInstrument(res_uuid)
+            
+        return ret
     
     def loadModel(self, res_uuid, modelName=None, className=None):
         """
@@ -571,10 +581,12 @@ class InstrumentControl(object):
         :type className: str
         :returns: bool - True if successful, False otherwise
         """
-        dev_man = self._getManager_uuid(res_uuid)
+        res = self.resources.get(res_uuid, None)
         
-        if dev_man is not None:
-            return dev_man.loadModel(res_uuid, modelName, className)
+        man = self.managers.get(res[0], None)
+        
+        if man is not None:
+            return man.loadModel(res_uuid, modelName, className)
         
         else:
             return False
@@ -589,10 +601,12 @@ class InstrumentControl(object):
         :type res_uuid: str
         :returns: bool - True if successful, False otherwise
         """
-        dev_man = self._getManager_uuid(res_uuid)
+        res = self.resources.get(res_uuid, None)
         
-        if dev_man is not None:
-            ret = dev_man.unloadModel(res_uuid)
+        man = self.managers.get(res[0], None)
+        
+        if man is not None:
+            ret = man.unloadModel(res_uuid)
             self.refreshProperties(res_uuid)
             return ret
         
@@ -617,16 +631,18 @@ class InstrumentControl(object):
         
         else:
             # Find out where this resource is located
-            dev_man = self._getManager_uuid(res_uuid)
+            res = self.resources.get(res_uuid, None)
+            man = self.managers.get(res[0], None)
+            
             addr = dev_man._getAddress()
                     
-            if dev_man is not None:
-                res_model = dev_man.getResourceModelName(res_uuid)
+            if man is not None:
+                res_model = man.getResourceModelName(res_uuid)
                 
                 if res_model is not None:
                     # A model is loaded, get the port
                     # The manager will automatically start the RPC server
-                    port = dev_man.getResourcePort(res_uuid)
+                    port = man.getResourcePort(res_uuid)
                     
                     try:
                         testInstrument = RpcClient(address=addr, port=port)
@@ -705,9 +721,11 @@ class InstrumentControl(object):
                 ret['resourceID'] = res_id
                 # Get address and hostname from manager
                 try:
-                    dev_man = self._getManager_uuid(res_uuid)
-                    ret['address'] = dev_man._getAddress()
-                    ret['hostname'] = dev_man._getHostname()
+                    res = self.resources.get(res_uuid, None)
+                    man = self.managers.get(res[0], None)
+                    
+                    ret['address'] = man._getAddress()
+                    ret['hostname'] = man._getHostname()
                     
                 except:
                     pass
@@ -821,8 +839,9 @@ if __name__ == "__main__":
     # DEBUG!
     instr = InstrumentControl()
     instr.addManager('DM-FALCON4-110')
+    instr.addManager('DM-FALCON4-111')
     
-    res = instr.getAllResources()
+    res = instr.getResources()
     
     # Load Application GUI
     try:
