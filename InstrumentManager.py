@@ -558,6 +558,7 @@ class InstrumentManager(rpc.RpcBase):
                 
                 else:
                     # More than one valid model exists or none found
+                    self.logger.warning('Multiple Models found for %s', res_uuid)
                     return False
                 
             else:
