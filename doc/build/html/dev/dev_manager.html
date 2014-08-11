@@ -196,22 +196,8 @@ use <a class="reference internal" href="#InstrumentManager.InstrumentManager.can
 </dd></dl>
 
 <dl class="method">
-<dt id="InstrumentManager.InstrumentManager.getProperties">
-<tt class="descname">getProperties</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getProperties" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the properties dictionary for InstrumentManager</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dict</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="InstrumentManager.InstrumentManager.getResourceModelName">
-<tt class="descname">getResourceModelName</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getResourceModelName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getResourceModelName" title="Permalink to this definition">¶</a></dt>
+<dt id="InstrumentManager.InstrumentManager.getModelName">
+<tt class="descname">getModelName</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getModelName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getModelName" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the class name for the model loaded for a given resource</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -226,8 +212,8 @@ use <a class="reference internal" href="#InstrumentManager.InstrumentManager.can
 </dd></dl>
 
 <dl class="method">
-<dt id="InstrumentManager.InstrumentManager.getResourcePort">
-<tt class="descname">getResourcePort</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getResourcePort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getResourcePort" title="Permalink to this definition">¶</a></dt>
+<dt id="InstrumentManager.InstrumentManager.getModelPort">
+<tt class="descname">getModelPort</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getModelPort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getModelPort" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the RPC Port for the model loaded for a given resource</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -242,15 +228,44 @@ use <a class="reference internal" href="#InstrumentManager.InstrumentManager.can
 </dd></dl>
 
 <dl class="method">
-<dt id="InstrumentManager.InstrumentManager.getResources">
-<tt class="descname">getResources</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getResources" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get all resources for all controllers.</p>
-<p>Resources are nested by controller name</p>
+<dt id="InstrumentManager.InstrumentManager.getModels">
+<tt class="descname">getModels</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getModels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getModels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a listing of all Models loaded</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">tuple - (<cite>ModelName</cite>, <cite>Port</cite>)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getProperties">
+<tt class="descname">getProperties</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getProperties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the properties dictionary for InstrumentManager</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getResources">
+<tt class="descname">getResources</tt><big>(</big><em>controller=None</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getResources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all resources for a given or all controllers.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>controller</strong> (<em>str</em>) &#8211; Controller to filter (optional)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dict - { UUID: (<cite>controller</cite>, <cite>ResID</cite>, <cite>VendorID</cite>, ProductID`) }</td>
 </tr>
 </tbody>
 </table>

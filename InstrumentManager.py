@@ -543,26 +543,29 @@ class InstrumentManager(rpc.RpcBase):
         :type className: str
         :returns: bool - True if successful, False otherwise
         """
-        if res_uuid in self.resources.keys():
-            (controller, res_uuid, VID, PID) = self.resources.get(res_uuid)
+        if modelName is None and className is None:
+            # Load the first compatible Model
+            
+            if res_uuid in self.resources.keys():
                 
-            # Auto
-            if modelName is None:
-                # Try to find a suitable model
+                (controller, resID, VID, PID) = self.resources.get(res_uuid)
                 validModels = self.getValidModels(controller, VID, PID)
                 
-                if type(validModels) is list and len(validModels) == 1:
+                if type(validModels) is list and len(validModels) >= 1:
                     moduleName, className = validModels[0] 
                     res = self.loadModel(res_uuid, moduleName, className)
                     return res
                 
-                else:
-                    # More than one valid model exists or none found
-                    self.logger.warning('Multiple Models found for %s', res_uuid)
-                    return False
-                
             else:
-                    
+                return False
+                
+        else:
+            # Load specified Model
+            
+            if res_uuid in self.resources.keys():
+                
+                controller, resID, _, _ = self.resources.get(res_uuid)
+                
                 try:
                     # Check if the specified model is valid
                     testModule = importlib.import_module(modelName)
@@ -570,7 +573,7 @@ class InstrumentManager(rpc.RpcBase):
                     
                     # Load the model and store it
                     cont_obj = self.controllers.get(controller, None)
-                    model_obj = testClass(res_uuid, cont_obj, res_uuid, Logger=self.logger)
+                    model_obj = testClass(res_uuid, cont_obj, resID, Logger=self.logger)
                 
                     model_obj._onLoad()
                     
@@ -581,20 +584,14 @@ class InstrumentManager(rpc.RpcBase):
                     self.logger.debug('Loaded model for %s', res_uuid)
                     
                     return True
-                
-                except AttributeError:
-                    self.logger.exception('Model failed to load for %s', res_uuid)
-                    return False
         
                 except:
-                    model_obj.rpc_stop()
-                    model_obj._onUnload()
     
                     self.logger.exception('Model failed to load for %s', res_uuid)
                     return False
                 
-        else:
-            return False
+            else:
+                return False
     
     def unloadModel(self, res_uuid):
         """

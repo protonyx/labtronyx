@@ -623,22 +623,25 @@ class InstrumentControl(object):
             return instr
         
         else:
+            # Is it a valid res_uuid?
+            if res_uuid not in self.resources.keys():
+                return False
+                
             # Find out where this resource is located
             res = self.resources.get(res_uuid, None)
-            man = self.managers.get(res[0], None)
-            
-            addr = dev_man._getAddress()
+            address = res[0]
+            man = self.getManager(address)
                     
             if man is not None:
-                res_model = man.getResourceModelName(res_uuid)
+                res_model = man.getModelName(res_uuid)
                 
                 if res_model is not None:
                     # A model is loaded, get the port
                     # The manager will automatically start the RPC server
-                    port = man.getResourcePort(res_uuid)
+                    port = man.getModelPort(res_uuid)
                     
                     try:
-                        testInstrument = RpcClient(address=addr, port=port)
+                        testInstrument = RpcClient(address=address, port=port)
                         if testInstrument._ready():
                             self.instruments[res_uuid] = testInstrument
                             return testInstrument
@@ -760,12 +763,19 @@ class InstrumentControl(object):
         Get a list of :class:`RpcClient` objects for all resources with models
         loaded
         
+        .. note::
+        
+            This function opens a socket to every known instrument with a Model
+            loaded. This could use a lot of system resources both locally and
+            on remote InstrumentManagers if you don't need them.
+        
         :returns: list of :class:`RpcClient` objects
         """
-        for addr, res_dict in self.resources.items():
-            for uuid in res_dict:
-                self.createInstrument(uuid)
-       
+        for address, man in self.managers.items():
+            devices = man.getModels()
+            for res_uuid in devices:
+                self.createInstrument(res_uuid)
+                
         return self.instruments.values()
     
     def getInstrument_serial(self, serial_number):
@@ -837,6 +847,8 @@ if __name__ == "__main__":
     man = instr.getManager('10.108.10.92')
     
     res = instr.getResources()
+    
+    list = instr.getInstrument_list()
     
     # Load Application GUI
     try:

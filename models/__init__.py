@@ -67,7 +67,7 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
         
         :returns: tuple - (Resource UUID, Controller Name, Resource ID)
         """
-        return (self.uuid, self.controller, self.resID)
+        return (self.uuid, self.controller.getControllerName(), self.resID)
     
     def getProperties(self):
         return { 'uuid': self.uuid,

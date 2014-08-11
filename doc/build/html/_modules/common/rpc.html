@@ -413,6 +413,13 @@
     <span class="k">def</span> <span class="nf">rpc_whoHasExclusiveAccess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
         <span class="c"># TODO</span>
         <span class="k">pass</span>
+    
+    <span class="k">def</span> <span class="nf">rpc_hasAccess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exclusive</span> <span class="o">==</span> <span class="bp">None</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exclusive</span><span class="p">,</span> <span class="n">RpcConnection</span><span class="p">)</span> <span class="ow">and</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">EXCLUSIVE_TIMEOUT</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">exclusiveTime</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
         
 <div class="viewcode-block" id="RpcBase.rpc_getHostname"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase.rpc_getHostname">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_getHostname</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -503,28 +510,30 @@
                                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;[</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">, </span><span class="si">%i</span><span class="s">] RPC request for protected method: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="p">)</span>
                              
                             <span class="k">else</span><span class="p">:</span>
-                                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">RpcBase</span><span class="p">):</span>
-                                    <span class="c"># Check for access first</span>
-                                    <span class="k">if</span> <span class="ow">not</span> <span class="n">target</span><span class="o">.</span><span class="n">rpc_hasAccess</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-                                        <span class="c"># Send an error if somebody has exclusive access</span>
-                                        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Rpc_Response</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">req</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;code&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">32001</span><span class="p">,</span> <span class="s">&#39;message&#39;</span><span class="p">:</span> <span class="s">&#39;Another connection has exclusive access.&#39;</span><span class="p">}))</span>
-                                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;logger&#39;</span><span class="p">):</span>
-                                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;[</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">, </span><span class="si">%i</span><span class="s">] RPC request denied - another user has exclusive access: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="p">)</span>
-                                    <span class="k">else</span><span class="p">:</span>
-                                        <span class="c"># Target inherits RpcBase</span>
-                                        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
-                                            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;logger&#39;</span><span class="p">):</span>
-                                                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;[</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">, </span><span class="si">%i</span><span class="s">] RPC method call: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="p">)</span>
+                                <span class="n">allow</span> <span class="o">=</span> <span class="bp">True</span>
+                                
+                                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">RpcBase</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">target</span><span class="o">.</span><span class="n">rpc_hasAccess</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                                    <span class="c"># Send an error if somebody has exclusive access</span>
+                                    <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Rpc_Response</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">req</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;code&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">32001</span><span class="p">,</span> <span class="s">&#39;message&#39;</span><span class="p">:</span> <span class="s">&#39;Another connection has exclusive access.&#39;</span><span class="p">}))</span>
+                                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;logger&#39;</span><span class="p">):</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;[</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">, </span><span class="si">%i</span><span class="s">] RPC request denied - another user has exclusive access: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="p">)</span>
+                                    
+                                    <span class="n">allow</span> <span class="o">=</span> <span class="bp">False</span>
+                                    
+                                <span class="k">if</span> <span class="n">allow</span><span class="p">:</span>
+                                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;logger&#39;</span><span class="p">):</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;[</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">, </span><span class="si">%i</span><span class="s">] RPC method call: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="p">)</span>
+                                        
+                                    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>      
+                                        <span class="k">try</span><span class="p">:</span>
                                             <span class="k">if</span> <span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;rpc&#39;</span><span class="p">:</span>
                                                 <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
                                             <span class="k">else</span><span class="p">:</span>
                                                 <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">target</span><span class="p">))</span>
-                                <span class="k">else</span><span class="p">:</span>
-                                    <span class="c"># Target does not inherit RpcBase, remote hosts cannot request exclusive access</span>
-                                    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
-                                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;logger&#39;</span><span class="p">):</span>
-                                            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;[</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">, </span><span class="si">%i</span><span class="s">] RPC method invoked: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="p">)</span>
-                                        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">target</span><span class="p">))</span>
+                                        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                                            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;logger&#39;</span><span class="p">):</span>
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s">&#39;[</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">, </span><span class="si">%i</span><span class="s">] RPC Unhandled Exception: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="p">)</span>
+                                            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Rpc_Response</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">Rpc_InternalError</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))))</span>
                                 
                     <span class="k">elif</span> <span class="n">request</span> <span class="o">==</span> <span class="bp">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">Rpc_Error</span><span class="p">):</span>
                         <span class="c"># An invalid request was parsed, error will be passed through to encode()</span>
@@ -592,7 +601,7 @@
 <span class="sd">    :type port: int</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
-    <span class="n">RPC_TIMEOUT</span> <span class="o">=</span> <span class="mf">3.0</span>
+    <span class="n">RPC_TIMEOUT</span> <span class="o">=</span> <span class="mf">10.0</span>
     <span class="n">RPC_MAX_PACKET_SIZE</span> <span class="o">=</span> <span class="mi">4096</span> <span class="c"># 4K</span>
     
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -621,6 +630,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">__rpcEncode__</span> <span class="o">=</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">encode</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">nextID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__rpcNextID</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RPC_TIMEOUT</span>
         
         <span class="c"># Try to open a socket</span>
         <span class="k">try</span><span class="p">:</span>
@@ -639,6 +649,7 @@
         <span class="c"># host does not inherit RpcBase</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ready</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_setTimeout</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">methods</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rpcCall</span><span class="p">(</span><span class="s">&#39;rpc_getMethods&#39;</span><span class="p">)</span>
                 
                 <span class="k">for</span> <span class="n">proc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">methods</span><span class="p">:</span>
@@ -650,6 +661,9 @@
                     
             <span class="k">except</span><span class="p">:</span>
                 <span class="k">pass</span>
+            
+    <span class="k">def</span> <span class="nf">_setTimeout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_to</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">new_to</span>
             
     <span class="k">def</span> <span class="nf">_getHostname</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostname</span>
@@ -683,7 +697,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">out_str</span><span class="p">)</span>
         
         <span class="c"># Wait for return data or timeout</span>
-        <span class="n">ready</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="bp">self</span><span class="o">.</span><span class="n">RPC_TIMEOUT</span><span class="p">)</span>
+        <span class="n">ready</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">ready</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
             <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">RPC_MAX_PACKET_SIZE</span><span class="p">)</span>
             
@@ -692,11 +706,11 @@
                 <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">isError</span><span class="p">():</span>
                     <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">error</span><span class="p">[</span><span class="s">&#39;code&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">32601</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">error</span><span class="p">[</span><span class="s">&#39;message&#39;</span><span class="p">])</span>
+                        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;message&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">))</span>
                     
                     <span class="k">else</span><span class="p">:</span>
                         <span class="c"># An error occurred!</span>
-                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">error</span><span class="p">[</span><span class="s">&#39;message&#39;</span><span class="p">])</span>
+                        <span class="k">raise</span> <span class="n">Rpc_ServerException</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;message&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">))</span>
             
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">result</span>
@@ -787,18 +801,13 @@
                 <span class="k">return</span> <span class="n">Rpc_Response</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">result</span><span class="o">=</span><span class="n">ret</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">None</span>
-            
-        <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="c"># Signature mis-matches on rpc internal functions will throw this</span>
-            <span class="k">raise</span>
-            <span class="c">#return Rpc_Response(id=self.id, error=Rpc_InternalError(message=str(e)))</span>
         
         <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
             <span class="c"># Whoops, somebody didn&#39;t follow the API</span>
             <span class="k">return</span> <span class="n">Rpc_Response</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">Rpc_MethodNotFound</span><span class="p">())</span>
             
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">Rpc_Response</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">Rpc_InternalError</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)))</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span>
         
 <span class="k">class</span> <span class="nc">Rpc_Response</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -853,6 +862,9 @@
     <span class="k">pass</span>
 
 <span class="k">class</span> <span class="nc">Rpc_Timeout</span><span class="p">(</span><span class="n">Rpc_Error</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">Rpc_ServerException</span><span class="p">(</span><span class="n">Rpc_Error</span><span class="p">):</span>
     <span class="k">pass</span>
 </pre></div>
 
