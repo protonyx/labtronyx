@@ -487,7 +487,7 @@ class RpcConnection(threading.Thread):
                                         except Exception as e:
                                             if hasattr(self, 'logger'):
                                                 self.logger.exception('[%s, %s, %i] RPC Unhandled Exception: %s', self.name, self.address, req.id, req.method)
-                                            result.append(Rpc_Response(id=self.id, error=Rpc_InternalError(message=str(e))))
+                                            result.append(Rpc_Response(id=req.id, error=Rpc_InternalError(message=str(e))))
                                 
                     elif request == None or isinstance(request, Rpc_Error):
                         # An invalid request was parsed, error will be passed through to encode()

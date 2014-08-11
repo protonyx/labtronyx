@@ -841,10 +841,10 @@ class InstrumentControl(object):
 if __name__ == "__main__":
     # DEBUG!
     instr = InstrumentControl()
-    #instr.addManager('DM-FALCON4-110')
-    instr.addManager('DM-FALCON4-111')
+    instr.addManager('DM-FALCON4-110')
+    #instr.addManager('DM-FALCON4-111')
     
-    man = instr.getManager('10.108.10.92')
+    #man = instr.getManager('10.108.10.92')
     
     res = instr.getResources()
     

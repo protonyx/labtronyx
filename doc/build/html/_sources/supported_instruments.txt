@@ -12,6 +12,16 @@ All Models
    
    models/Tektronix.Oscilloscope.m_OscilloscopeBase
    models/Tektronix.Oscilloscope.m_DigitalPhosphor
+   models/Agilent.m_SMU
+   
+Agilent
+-------
+
+Source-Measurement Units
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+:doc:`B2901A </models/Agilent.m_SMU>`
+:doc:`B2902A </models/Agilent.m_SMU>`
 
 Tektronix
 ---------
