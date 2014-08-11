@@ -15,7 +15,7 @@ class InstrumentManager(rpc.RpcBase):
     models = {} # Lookup table of available model drivers
     
     controllers = {} # Controller name -> controller object
-    resources = {} # UUID -> (Controller, ResID)
+    resources = {} # UUID -> (Controller, ResID, VID, PID)
     devices = {} # UUID -> model object
         
     def __loadConfig(self, configFile):
@@ -274,7 +274,20 @@ class InstrumentManager(rpc.RpcBase):
         """
         return self.resources
     
-    def getResourceModelName(self, res_uuid):
+    def getModels(self):
+        """
+        Get a listing of all Models loaded
+        
+        :returns: tuple - (`ModelName`, `Port`)
+        """
+        ret = {}
+        
+        for res_uuid, dev in self.devices.items():
+            ret[res_uuid] = (dev.getModelName(), dev.rpc_getPort())
+            
+        return ret
+    
+    def getModelName(self, res_uuid):
         """
         Get the class name for the model loaded for a given resource
 
@@ -290,7 +303,7 @@ class InstrumentManager(rpc.RpcBase):
         else:
             return None
     
-    def getResourcePort(self, res_uuid):
+    def getModelPort(self, res_uuid):
         """
         Get the RPC Port for the model loaded for a given resource
 
@@ -339,31 +352,37 @@ class InstrumentManager(rpc.RpcBase):
                 c_obj = self.controllers.get(controller)
                 
                 try:
+                    # Signal the controller to refresh resources
                     c_obj.refresh()
                     
-                    # Housekeeping
-                    # Resources: { UUID -> (Controller, ResID) }
+                    # Get updated list of resources
                     new_res = c_obj.getResources() # { ResID -> (VID, PID) }
                     
                     # Create new resources
                     for resID, resTup in new_res.items():
-                        int_res_id = (controller, resID)
+                        int_res_id = (controller, resID) + resTup
                         
                         if int_res_id not in self.resources.values():
                             new_uuid = str(uuid.uuid4())
                             self.logger.debug('Res: %s Assigned UUID: %s', resID, new_uuid)
                             
                             self.resources[new_uuid] = int_res_id
-                            (VID, PID) = resTup
                             
-                            # Get a list of compatible models
-                            validModels = self.getValidModels(controller, VID, PID)
+                            # Attempt to auto-load a Model
+                            self.loadModel(new_uuid)
                             
-                            # Attempt to load a model
-                            if type(validModels) is list and len(validModels) > 0:
-                                # TODO: Intelligently load a model or fail if multiple valid models are found
-                                moduleName, className = validModels[0] 
-                                self.loadModel(new_uuid, moduleName, className)
+                            #===================================================
+                            # (VID, PID) = resTup
+                            # 
+                            # # Get a list of compatible models
+                            # validModels = self.getValidModels(controller, VID, PID)
+                            # 
+                            # 
+                            # if type(validModels) is list and len(validModels) > 0:
+                            #     # TODO: Intelligently load a model or fail if multiple valid models are found
+                            #     moduleName, className = validModels[0] 
+                            #===================================================
+                                
                     
                     # Purge unavailable resources
                     for res_uuid, res_tup in self.resources.items():
