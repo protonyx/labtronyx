@@ -19,7 +19,7 @@ class m_OscilloscopeBase(m_Tektronix):
     validCursorTypes = ['HBARS', 'VBARS', 'SCREEN', 'WAVEFORM', 'XY']
 
     def _onLoad(self):
-        m_Tektronix.onLoad(self)
+        m_Tektronix._onLoad(self)
         
         # Configure scope
         self.write('HEADER OFF')

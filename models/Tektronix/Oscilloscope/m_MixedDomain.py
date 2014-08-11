@@ -11,6 +11,6 @@ class m_MixedDomain(m_DigitalPhosphor):
                     ]
     
     def _onLoad(self):
-        m_DigitalPhosphor.onLoad(self)
+        m_DigitalPhosphor._onLoad(self)
         
         self.logger.debug("Loaded Tektronix Mixed Domain Oscilloscope Model")

@@ -35,7 +35,7 @@ class m_SMU(m_Base):
             self.__identity = resp.strip().split(',')
             
         except:
-            self.logger.exception("Internal error while instantiating Tektronix model")
+            self.logger.exception("Internal error while attaching to VISA instrument")
     
     def getProperties(self):
         ret = m_Base.getProperties(self)
