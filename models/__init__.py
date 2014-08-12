@@ -93,10 +93,25 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
         return self.resID
 
     def getVendorID(self):
-        return ''
+        """
+        Returns the Resource Vendor ID that is used to find compatible Models 
+        
+        :returns: str
+        """
+        return self.VID
     
     def getProductID(self):
-        return ''
+        """
+        Returns the Resource Product ID that is used to find compatible Models 
+        
+        :returns: str
+        """
+        return self.PID
     
     def getProperties(self):
-        return {}
+        return { 'deviceType': self.deviceType,
+                 'deviceVendor': 'Generic',
+                 'deviceModel': 'Device',
+                 'deviceSerial': 'Unknown',
+                 'deviceFirmware': 'Unknown'
+                }

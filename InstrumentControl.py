@@ -802,7 +802,7 @@ class InstrumentControl(object):
         ret = []
         
         for res_uuid, prop_dict in self.getProperties().items():
-            if prop_dict['deviceType'] == d_type:
+            if prop_dict.get('deviceType') is d_type:
                 ret.append(self.createInstrument(res_uuid))
                 
         return ret
