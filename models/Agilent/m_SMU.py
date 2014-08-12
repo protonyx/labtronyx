@@ -85,7 +85,9 @@ class m_SMU(m_Base):
             self.write(':SOUR:%s:STOP %f' % (source_f, float(stop)))
             
             # Hard-coded number of points
-            self.write(':SOUR:SWE:POIN %i' % 2500)
+            # It appears the length of the sweep is determined by the number
+            # of points
+            self.write(':SOUR:SWE:POIN %i' % 20)
                         
             if float(stop) > float(start):
                 self.write(':SOUR:SWE:DIR UP')
@@ -212,7 +214,7 @@ class m_SMU(m_Base):
         """
         interv = float(time) / float(points)
         
-        setSourceSweep('VOLTAGE', startVoltage, stopVoltage,
+        self.setSourceSweep('VOLTAGE', startVoltage, stopVoltage,
                        Points=points,
                        TriggerInterval=interv )
     

@@ -764,7 +764,7 @@ class InstrumentControl(object):
         :returns: :class:`RpcClient` object
         """
         for res_uuid, prop_dict in self.getProperties().items():
-            if prop_dict['deviceSerial'] == serial_number:
+            if prop_dict.get('deviceSerial', None) == serial_number:
                 return self.createInstrument(res_uuid)
         
         return None
@@ -783,7 +783,7 @@ class InstrumentControl(object):
         ret = []
         
         for res_uuid, prop_dict in self.getProperties().items():
-            if prop_dict['deviceModel'] == model_number:
+            if prop_dict.get('deviceModel', None) == model_number:
                 ret.append(self.createInstrument(res_uuid))
                 
         return ret
@@ -802,7 +802,7 @@ class InstrumentControl(object):
         ret = []
         
         for res_uuid, prop_dict in self.getProperties().items():
-            if prop_dict.get('deviceType') == d_type:
+            if prop_dict.get('deviceType', None) == d_type:
                 ret.append(self.createInstrument(res_uuid))
                 
         return ret
