@@ -66,7 +66,7 @@ following keys will exist for all resources.
 	* 'productID': Product ID used to find compatible Models
 	
 Models can provide additional properties that more fully describe the instrument.
-See the :doc:`Model API Documentation <dev_models>` for more details.
+See the :doc:`Model API Documentation <dev_model>` for more details.
 
 Internal API
 ------------

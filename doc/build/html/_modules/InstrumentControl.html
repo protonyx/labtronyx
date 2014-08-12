@@ -176,7 +176,19 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
     </div>
-<div class="viewcode-block" id="InstrumentControl.getHostnames"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getHostnames">[docs]</a>    <span class="k">def</span> <span class="nf">getHostnames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentControl.getHostname"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getHostname">[docs]</a>    <span class="k">def</span> <span class="nf">getHostname</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the Hostname for the given address</span>
+<span class="sd">        </span>
+<span class="sd">        :param address: IP Address</span>
+<span class="sd">        :type address: str - IPv4</span>
+<span class="sd">        :returns: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">address</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">man</span><span class="o">.</span><span class="n">_getHostname</span><span class="p">()</span> <span class="c"># RpcClient function</span>
+    </div>
+<div class="viewcode-block" id="InstrumentControl.getConnectedHosts"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getConnectedHosts">[docs]</a>    <span class="k">def</span> <span class="nf">getConnectedHosts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get a list of connected hostnames</span>
 <span class="sd">        </span>
@@ -661,7 +673,7 @@
                 
             <span class="c"># Find out where this resource is located</span>
             <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-            <span class="n">address</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getResource_address</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
             <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getManager</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
                     
             <span class="k">if</span> <span class="n">man</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
@@ -676,6 +688,9 @@
                         <span class="n">testInstrument</span> <span class="o">=</span> <span class="n">RpcClient</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="n">address</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">)</span>
                         <span class="k">if</span> <span class="n">testInstrument</span><span class="o">.</span><span class="n">_ready</span><span class="p">():</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">instruments</span><span class="p">[</span><span class="n">res_uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">testInstrument</span>
+                            
+                            <span class="bp">self</span><span class="o">.</span><span class="n">refreshProperties</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+                            
                             <span class="k">return</span> <span class="n">testInstrument</span>
                         
                         <span class="k">else</span><span class="p">:</span>
@@ -727,24 +742,25 @@
                 <span class="c"># These dictionaries can be large, so update one at a time</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">refreshProperties</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
                     
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span>
         
         <span class="k">elif</span> <span class="n">res_uuid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="c"># Get the manager object</span>
             <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getResource_address</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
             <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getManager</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+            <span class="n">hostname</span> <span class="o">=</span> <span class="n">man</span><span class="o">.</span><span class="n">_getHostname</span><span class="p">()</span>
             
             <span class="c"># Get the properties from the manager</span>
             <span class="n">prop</span> <span class="o">=</span> <span class="n">man</span><span class="o">.</span><span class="n">getProperties</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
             
             <span class="c"># Inject hostname and address</span>
-            <span class="n">ret</span><span class="p">[</span><span class="s">&#39;address&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">_getAddress</span><span class="p">()</span>
-            <span class="n">ret</span><span class="p">[</span><span class="s">&#39;hostname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">_getHostname</span><span class="p">()</span>
+            <span class="n">prop</span><span class="p">[</span><span class="s">&#39;address&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">address</span>
+            <span class="n">prop</span><span class="p">[</span><span class="s">&#39;hostname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hostname</span>
             
             <span class="c"># Cache the properties</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="n">res_uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">ret</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="n">res_uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">prop</span>
             
-            <span class="k">return</span> <span class="n">ret</span>
+            <span class="k">return</span> <span class="n">prop</span>
             </div>
 <div class="viewcode-block" id="InstrumentControl.getProperties"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getProperties">[docs]</a>    <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -793,8 +809,6 @@
 <span class="sd">        </span>
 <span class="sd">        :returns: :class:`RpcClient` object</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">refreshProperties</span><span class="p">()</span>
-        
         <span class="k">for</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">prop_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getProperties</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">prop_dict</span><span class="p">[</span><span class="s">&#39;deviceSerial&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">serial_number</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">createInstrument</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
@@ -812,7 +826,6 @@
 <span class="sd">        </span>
 <span class="sd">        :returns: list of :class:`RpcClient` objects</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">refreshProperties</span><span class="p">()</span>
         <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
         
         <span class="k">for</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">prop_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getProperties</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -832,11 +845,10 @@
 <span class="sd">        </span>
 <span class="sd">        :returns: list of :class:`RpcClient` objects</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">refreshProperties</span><span class="p">()</span>
         <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
         
         <span class="k">for</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">prop_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getProperties</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">prop_dict</span><span class="p">[</span><span class="s">&#39;deviceType&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">d_type</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">prop_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;deviceType&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="n">d_type</span><span class="p">:</span>
                 <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">createInstrument</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">))</span>
                 
         <span class="k">return</span> <span class="n">ret</span>

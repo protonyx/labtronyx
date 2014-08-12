@@ -193,17 +193,15 @@ are not set. They are used to identify devices for scripting:</p>
 </tbody>
 </table>
 <p>Example:</p>
-<div class="highlight-python"><div class="highlight"><pre>def getProperties(self):
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
-prop = models.m_Base.getProperties(self)
+        <span class="n">prop</span><span class="p">[</span><span class="s">&#39;deviceVendor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;my vendor&#39;</span>
+        <span class="n">prop</span><span class="p">[</span><span class="s">&#39;deviceModel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;ABC 12345&#39;</span>
+        <span class="n">prop</span><span class="p">[</span><span class="s">&#39;deviceSerial&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;0123456789&#39;</span>
+        <span class="n">prop</span><span class="p">[</span><span class="s">&#39;deviceFirmware&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;1.0&#39;</span>
+        <span class="n">prop</span><span class="p">[</span><span class="s">&#39;deviceType&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;Widget&#39;</span>
 
-        prop[&#39;deviceVendor&#39;] = &#39;my vendor&#39;
-        prop[&#39;deviceModel&#39;] = &#39;ABC 12345&#39;
-        prop[&#39;deviceSerial&#39;] = &#39;0123456789&#39;
-        prop[&#39;deviceFirmware&#39;] = &#39;1.0&#39;
-        prop[&#39;deviceType&#39;] = &#39;Widget&#39;
-
-        return prop
+        <span class="k">return</span> <span class="n">prop</span>
 </pre></div>
 </div>
 </div>
@@ -255,7 +253,7 @@ and consolidation.</p>
 <h2>Recommended API Implementations<a class="headerlink" href="#recommended-api-implementations" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="models.m_Base">
-<em class="property">class </em><tt class="descclassname">models.</tt><tt class="descname">m_Base</tt><big>(</big><em>uuid</em>, <em>controller</em>, <em>resID</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models.html#m_Base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.m_Base" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">models.</tt><tt class="descname">m_Base</tt><big>(</big><em>uuid</em>, <em>controller</em>, <em>resID</em>, <em>VID</em>, <em>PID</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models.html#m_Base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.m_Base" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="models.m_Base._onLoad">
 <tt class="descname">_onLoad</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/models.html#m_Base._onLoad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.m_Base._onLoad" title="Permalink to this definition">¶</a></dt>

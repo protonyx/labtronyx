@@ -157,4 +157,4 @@ Recommended API Implementations
 -------------------------------
 
 .. autoclass:: models.m_Base
-   :members: _onLoad, _onUnload
+   :members: _onLoad, _onUnload, getProperties

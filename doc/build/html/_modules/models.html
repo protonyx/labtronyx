@@ -67,13 +67,15 @@
     <span class="n">validVIDs</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">validPIDs</span> <span class="o">=</span> <span class="p">[]</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">resID</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">resID</span><span class="p">,</span> <span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">common</span><span class="o">.</span><span class="n">rpc</span><span class="o">.</span><span class="n">RpcBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">common</span><span class="o">.</span><span class="n">IC_Common</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="n">uuid</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">controller</span> <span class="o">=</span> <span class="n">controller</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resID</span> <span class="o">=</span> <span class="n">resID</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">VID</span> <span class="o">=</span> <span class="n">VID</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">PID</span> <span class="o">=</span> <span class="n">PID</span>
         
         <span class="c"># Check for logger</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Logger&#39;</span><span class="p">,</span> <span class="n">logging</span><span class="p">)</span>
@@ -137,13 +139,28 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resID</span>
 
     <span class="k">def</span> <span class="nf">getVendorID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s">&#39;&#39;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the Resource Vendor ID that is used to find compatible Models </span>
+<span class="sd">        </span>
+<span class="sd">        :returns: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">VID</span>
     
     <span class="k">def</span> <span class="nf">getProductID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s">&#39;&#39;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the Resource Product ID that is used to find compatible Models </span>
+<span class="sd">        </span>
+<span class="sd">        :returns: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">PID</span>
     
     <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">{}</span></div>
+        <span class="k">return</span> <span class="p">{</span> <span class="s">&#39;deviceType&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">deviceType</span><span class="p">,</span>
+                 <span class="s">&#39;deviceVendor&#39;</span><span class="p">:</span> <span class="s">&#39;Generic&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;deviceModel&#39;</span><span class="p">:</span> <span class="s">&#39;Device&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;deviceSerial&#39;</span><span class="p">:</span> <span class="s">&#39;Unknown&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;deviceFirmware&#39;</span><span class="p">:</span> <span class="s">&#39;Unknown&#39;</span>
+                <span class="p">}</span></div>
 </pre></div>
 
           </div>

@@ -55,7 +55,7 @@
 <h1>Tektronix.Oscilloscope.m_OscilloscopeBase<a class="headerlink" href="#tektronix-oscilloscope-m-oscilloscopebase" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase">
-<em class="property">class </em><tt class="descclassname">models.Tektronix.Oscilloscope.</tt><tt class="descname">m_OscilloscopeBase</tt><big>(</big><em>uuid</em>, <em>controller</em>, <em>resID</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">models.Tektronix.Oscilloscope.</tt><tt class="descname">m_OscilloscopeBase</tt><big>(</big><em>uuid</em>, <em>controller</em>, <em>resID</em>, <em>VID</em>, <em>PID</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">models.Tektronix.m_Tektronix</span></tt></p>
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.defaultSetup">
@@ -74,6 +74,20 @@
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Filename</strong> (<em>str</em>) &#8211; Filename of output file</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">bool - True if successful, False otherwise</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getControllerName">
+<tt class="descname">getControllerName</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getControllerName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Model&#8217;s Controller class name</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
 </tr>
 </tbody>
 </table>
@@ -99,15 +113,14 @@
 </dd></dl>
 
 <dl class="method">
-<dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getIdentity">
-<tt class="descname">getIdentity</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getIdentity" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the Model identity information that is assigned when the
-InstrumentManager loads the Model and attaches it to a resource</p>
+<dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getModelName">
+<tt class="descname">getModelName</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getModelName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Model class name</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">tuple - (Resource UUID, Controller Name, Resource ID)</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
 </tr>
 </tbody>
 </table>
@@ -140,6 +153,35 @@ InstrumentManager loads the Model and attaches it to a resource</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getProductID">
+<tt class="descname">getProductID</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getProductID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Resource Product ID that is used to find compatible Models</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getResourceID">
+<tt class="descname">getResourceID</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getResourceID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Model Resource ID that identifies the resource to the
+Controller</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getSearchMarks">
 <tt class="descname">getSearchMarks</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.getSearchMarks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getSearchMarks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of all mark locations. Manually iterates through all marks
@@ -156,6 +198,34 @@ to complete</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Search</strong> (<em>int between 1-8</em>) &#8211; Search slot number</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list of mark times (float)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getUUID">
+<tt class="descname">getUUID</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getUUID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Resource UUID that is provided to the Model</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getVendorID">
+<tt class="descname">getVendorID</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getVendorID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Resource Vendor ID that is used to find compatible Models</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
 </tr>
 </tbody>
 </table>

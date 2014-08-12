@@ -125,8 +125,6 @@ Example::
 
 	def getProperties(self):
 	
-        prop = models.m_Base.getProperties(self)
-	
 		prop['deviceVendor'] = 'my vendor'
 		prop['deviceModel'] = 'ABC 12345'
 		prop['deviceSerial'] = '0123456789'
@@ -159,4 +157,4 @@ Recommended API Implementations
 -------------------------------
 
 .. autoclass:: models.m_Base
-   :members: _onLoad, _onUnload
+   :members: _onLoad, _onUnload, getProperties
