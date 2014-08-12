@@ -584,11 +584,11 @@ class RpcClient(object):
         self.__rpcEncode__ = jsonrpc.encode
         
         self.nextID = self.__rpcNextID()
-        self.timeout = self.RPC_TIMEOUT
         
         # Try to open a socket
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._setTimeout(1.0) # Short timeout on first connection
             self.socket.connect((self.address, self.port))
             self.socket.setblocking(0)
             
@@ -607,8 +607,7 @@ class RpcClient(object):
                 self.methods = self._rpcCall('rpc_getMethods')
                 
                 for proc in self.methods:
-                    dynFunc = self._methodAlias(proc)
-                    setattr(self, proc, dynFunc)
+                    self._methodAlias(proc)
                     
                 # Update the hostname
                 self.hostname = self._rpcCall('rpc_getHostname')
@@ -616,14 +615,20 @@ class RpcClient(object):
             except:
                 pass
             
-    def _setTimeout(self, new_to):
+        self._setTimeout() # Default
+            
+    def _setTimeout(self, new_to=None):
         """
         Set the Timeout limit for an RPC Method call
         
         :param new_to: New Timeout time in seconds
         :type new_to: fload
         """
-        self.timeout = float(new_to)
+        if new_to is not None:
+            self.timeout = float(new_to)
+        else:
+            self.timeout = self.RPC_TIMEOUT
+        self.socket.settimeout(self.timeout)
             
     def _getHostname(self):
         return self.hostname
@@ -665,12 +670,7 @@ class RpcClient(object):
             if len(response) == 1 and isinstance(response[0], Rpc_Response):
                 response = response[0]
                 if response.isError():
-                    if response.error['code'] == -32601:
-                        raise Rpc_MethodNotFound(response.error.get('message', None))
-                    
-                    else:
-                        # An error occurred!
-                        raise Rpc_ServerException(response.error.get('message', None))
+                    raise response.getError()
             
                 else:
                     return response.result
@@ -692,7 +692,8 @@ class RpcClient(object):
         :param methodName: Name of method
         :type methodName: str
         """
-        return lambda *args, **kwargs: self._rpcCall(methodName, *args, **kwargs)
+        dynFunc = lambda *args, **kwargs: self._rpcCall(methodName, *args, **kwargs)
+        setattr(self, methodName, dynFunc)
     
     def __str__(self):
         return '<RPC Instance of %s:%s>' % (self.address, self.port)
@@ -704,130 +705,3 @@ class RpcClient(object):
             pass
                 
     
-class Rpc_Request(object):
-    def __init__(self, **kwargs):
-        self.id = kwargs.get('id', None)
-        self.method = kwargs.get('method', '')
-        self.params = kwargs.get('params', [])
-        self.kwargs = kwargs.get('kwargs', {})
-        
-    def export(self):
-        # Slight modification of the JSON RPC 2.0 specification to allow 
-        # both positional and named parameters
-        # Adds kwargs variable to object only when both are present
-        out = {'id': self.id, 'method': self.method }
-        if len(self.params) > 0:
-            out['params'] = self.params
-            if len(self.kwargs) > 0:
-                out['kwargs'] = self.kwargs
-            
-        elif len(self.params) == 0:
-            out['params'] = self.kwargs
-            
-        return out
-        
-    def call(self, target, *pos_args, **kw_args):
-        # Parse method        
-
-        if hasattr(target, self.method):
-            self.method = getattr(target, self.method)
-        else:
-            return Rpc_Response(id=self.id, error=Rpc_MethodNotFound())
-            
-        # Parse params
-        self.params_pos = list(pos_args)
-        self.params_named = kw_args
-        if type(self.params) == dict:
-            # Only named parameters
-            self.params_named.update(self.params)
-            
-        elif type(self.params) == list:
-            # Only positional parameters
-            self.params_pos = self.params_pos + self.params
-            
-            if len(self.kwargs) > 0:
-                # Positional and named parameters
-                self.params_named.update(self.kwargs)
-                
-            #self.params_named = self.params.get("__args", [])
-            #if self.params_pos:
-                #del self.params["__args"]
-            
-        else:
-            return Rpc_Response(id=self.id, error=Rpc_InvalidParams())
-            
-        # Invoke method
-        try:
-            ret = self.method(*self.params_pos, **self.params_named)
-            # Build the response with the results
-            if self.id != None:
-                # Only send a result of a notification if an error occurred
-                return Rpc_Response(id=self.id, result=ret)
-            else:
-                return None
-        
-        except NotImplementedError:
-            # Whoops, somebody didn't follow the API
-            return Rpc_Response(id=self.id, error=Rpc_MethodNotFound())
-            
-        except:
-            raise
-        
-class Rpc_Response(object):
-    def __init__(self, **kwargs):
-
-        self.id = kwargs.get('id', None)
-        self.result = kwargs.get('result', None)
-        self.error = kwargs.get('error', None)
-        
-    def export(self):
-        ret = {'id': self.id}
-        if self.error != None:
-            ret['error'] = self.error
-        elif self.result != None:
-            ret['result'] = self.result
-        else:
-            ret['result'] = None
-            
-        return ret
-    
-    def isError(self):
-        if self.error != None:
-            return True
-        
-        else:
-            return False
-
-# Error Exceptions
-class Rpc_Error(RuntimeError):
-    code = None
-    message = None
-    data = None
-
-    def __init__(self, id = None, message = None, data = None):
-        RuntimeError.__init__(self)
-        self.id = id
-        self.message = message or self.message
-        self.data = data
-
-class Rpc_ParseError(Rpc_Error):
-    pass
-
-class Rpc_InvalidRequest(Rpc_Error):
-    pass
-
-class Rpc_MethodNotFound(Rpc_Error):
-    pass
-
-class Rpc_InvalidParams(Rpc_Error):
-    pass
-
-class Rpc_InternalError(Rpc_Error):
-    pass
-
-class Rpc_Timeout(Rpc_Error):
-    pass
-
-class Rpc_ServerException(Rpc_Error):
-    pass
-

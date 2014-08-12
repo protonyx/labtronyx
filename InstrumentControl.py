@@ -850,22 +850,25 @@ if __name__ == "__main__":
     
     list = instr.getInstrument_list()
     
-    # Load Application GUI
-    try:
-        #sys.path.append("..")
-        from application.a_Main import a_Main
-        main_gui = a_Main()
-        
-    except Exception as e:
-        print "Unable to load main application"
-        raise
-        sys.exit()
-
+    pass
     
     #scope = instr.getInstrument_model("MSO5204")[0]
     #scope.getWaveform()
     #scope.exportWaveform(Filename='C:/temp/test.csv')
-    #scope_gui = scope.loadView()
+    
+    
+    # Load Application GUI
+    #===========================================================================
+    # try:
+    #     #sys.path.append("..")
+    #     from application.a_Main import a_Main
+    #     main_gui = a_Main()
+    #     
+    # except Exception as e:
+    #     print "Unable to load main application"
+    #     raise
+    #     sys.exit()
+    #===========================================================================
     
 
     

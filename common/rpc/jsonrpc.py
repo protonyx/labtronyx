@@ -9,11 +9,57 @@ Follows the JSON RPC 2.0 Spec (http://www.jsonrpc.org/specification)
 This class can either be instantiated with a JSON encoded string or used as a utility helper class
 """
 
+# Error Exceptions
+class Rpc_Error(RuntimeError):
+    code = None
+    message = None
+    data = None
+
+    def __init__(self, id = None, message = None, data = None):
+        RuntimeError.__init__(self)
+        self.id = id
+        self.message = message or self.message
+        self.data = data
+
+class Rpc_ParseError(Rpc_Error):
+    code = -32700
+    message = 'Invalid JSON was received by the server.'
+
+class Rpc_InvalidRequest(Rpc_Error):
+    code = -32600
+    message = 'The JSON sent is not a valid Request object.'
+
+class Rpc_MethodNotFound(Rpc_Error):
+    code = -32601
+    message = 'The method does not exist / is not available.'
+
+class Rpc_InvalidParams(Rpc_Error):
+    code = -32602
+    message = 'Invalid method parameter(s).'
+
+class Rpc_InternalError(Rpc_Error):
+    code = -32603
+    message = 'Internal JSON-RPC error.'
+
+class Rpc_Timeout(Rpc_Error):
+    pass
+
+class Rpc_ServerException(Rpc_Error):
+    code = -32000
+    message = 'An unhandled server exception occurred'
+    
+JsonRpcErrors = {  -32700: Rpc_ParseError,
+                   -32600: Rpc_InvalidRequest,
+                   -32601: Rpc_MethodNotFound,
+                   -32602: Rpc_InvalidParams,
+                   -32603: Rpc_InternalError,
+                   -32000: Rpc_ServerException  } 
+                 # -32000 to -32099 are reserved server-errors
+    
 def parseJsonRpc(rpc_dict):
     """
     Takes a dictionary and determines if it is an RPC request or response
     """
-    from common.rpc import Rpc_Request, Rpc_Response, Rpc_InvalidRequest
     
     if type(rpc_dict) == dict:
         try:
@@ -28,8 +74,13 @@ def parseJsonRpc(rpc_dict):
                     
                 elif 'id' in rpc_dict.keys() and 'error' in rpc_dict.keys():
                     # Error response object
-                    return Rpc_Response(id=rpc_dict['id'], error=rpc_dict['error'])
-                        
+                    error_code = rpc_dict['error']['code']
+                    
+                    if error_code in JsonRpcErrors.keys():
+                        return Rpc_Response(id=rpc_dict['id'], error=JsonRpcErrors[error_code]())
+                    else:
+                        return Rpc_Response(id=rpc_dict['id'], error=Rpc_InternalError())
+                    
                 elif 'id' in rpc_dict.keys():
                     return Rpc_InvalidRequest(id=rpc_dict.get('id', None))
                     
@@ -51,7 +102,6 @@ def decode(str_req):
     
     tuple of lists of Rpc_Request and Rpc_Response objects
     """
-    from common.rpc import Rpc_Request, Rpc_Response, Rpc_ParseError, Rpc_InvalidRequest
 
     requests = []
     responses = []
@@ -98,7 +148,6 @@ def encode(toEncode):
     """
     Convert a list of Rpc_Request and Rpc_Result objects into a JSON RPC string for transmission
     """
-    from common.rpc import Rpc_Error, Rpc_ParseError, Rpc_InvalidRequest
         
     ret = []
     
@@ -144,29 +193,102 @@ def encode(toEncode):
         
     return str(json.dumps(ret))
 
-def errorToDict(Rpc_Error_obj):
-    from common.rpc import Rpc_Error, Rpc_ParseError, Rpc_InvalidRequest, Rpc_MethodNotFound, Rpc_InvalidParams, Rpc_InternalError
-    
-    if isinstance(Rpc_Error_obj, Rpc_ParseError):
-        return {'code': -32700, 'message': 'Invalid JSON was received by the server.'}
-    
-    elif isinstance(Rpc_Error_obj, Rpc_InvalidRequest):
-        return {'code': -32600, 'message': 'The JSON sent is not a valid Request object.'}
-    
-    elif isinstance(Rpc_Error_obj, Rpc_MethodNotFound):
-        return {'code': -32601, 'message': 'The method does not exist / is not available.'}
-    
-    elif isinstance(Rpc_Error_obj, Rpc_InvalidParams):
-        return {'code': -32602, 'message': 'Invalid method parameter(s).'}
-    
-    elif isinstance(Rpc_Error_obj, Rpc_InternalError):
-        if Rpc_Error_obj.message is not None:
-            return {'code': -32001, 'message': Rpc_Error_obj.message }
+class Rpc_Request(object):
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id', None)
+        self.method = kwargs.get('method', '')
+        self.params = kwargs.get('params', [])
+        self.kwargs = kwargs.get('kwargs', {})
+        
+    def export(self):
+        # Slight modification of the JSON RPC 2.0 specification to allow 
+        # both positional and named parameters
+        # Adds kwargs variable to object only when both are present
+        out = {'id': self.id, 'method': self.method }
+        if len(self.params) > 0:
+            out['params'] = self.params
+            if len(self.kwargs) > 0:
+                out['kwargs'] = self.kwargs
+            
+        elif len(self.params) == 0:
+            out['params'] = self.kwargs
+            
+        return out
+        
+    def call(self, target, *pos_args, **kw_args):
+        # Parse method        
+
+        if hasattr(target, self.method):
+            self.method = getattr(target, self.method)
         else:
-            return {'code': -32603, 'message': 'Internal JSON-RPC error.'}
+            return Rpc_Response(id=self.id, error=Rpc_MethodNotFound())
+            
+        # Parse params
+        self.params_pos = list(pos_args)
+        self.params_named = kw_args
+        if type(self.params) == dict:
+            # Only named parameters
+            self.params_named.update(self.params)
+            
+        elif type(self.params) == list:
+            # Only positional parameters
+            self.params_pos = self.params_pos + self.params
+            
+            if len(self.kwargs) > 0:
+                # Positional and named parameters
+                self.params_named.update(self.kwargs)
+                
+            #self.params_named = self.params.get("__args", [])
+            #if self.params_pos:
+                #del self.params["__args"]
+            
+        else:
+            return Rpc_Response(id=self.id, error=Rpc_InvalidParams())
+            
+        # Invoke method
+        try:
+            ret = self.method(*self.params_pos, **self.params_named)
+            # Build the response with the results
+            if self.id != None:
+                # Only send a result of a notification if an error occurred
+                return Rpc_Response(id=self.id, result=ret)
+            else:
+                return None
+        
+        except NotImplementedError:
+            # Whoops, somebody didn't follow the API
+            return Rpc_Response(id=self.id, error=Rpc_MethodNotFound())
+            
+        except:
+            raise
+        
+class Rpc_Response(object):
+    def __init__(self, **kwargs):
+
+        self.id = kwargs.get('id', None)
+        self.result = kwargs.get('result', None)
+        self.error = kwargs.get('error', None)
+        
+    def export(self):
+        ret = {'id': self.id}
+        if self.error != None:
+            ret['error'] = self.error
+        elif self.result != None:
+            ret['result'] = self.result
+        else:
+            ret['result'] = None
+            
+        return ret
     
-    elif type(Rpc_Error_obj) == dict and 'code' in Rpc_Error_obj.keys() and 'message' in  Rpc_Error_obj.keys():
-        return Rpc_Error_obj
-    
-    else:
-        return {'code': -32000, 'message': 'Unidentified Internal JSON-RPC error.'}
+    def isError(self):
+        if self.error != None:
+            return True
+        
+        else:
+            return False
+        
+    def getError(self):
+        if self.isError():
+            return self.error
+
+
