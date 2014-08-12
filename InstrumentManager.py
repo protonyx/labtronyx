@@ -274,7 +274,7 @@ class InstrumentManager(rpc.RpcBase):
                 
         elif res_uuid in self.resources.keys():
             # Get Resource
-            res = self.resources.get(res_uuid)
+            (controller, resID, VID, PID) = self.resources.get(res_uuid)
             
             # Default properties
             prop = {}
@@ -288,14 +288,14 @@ class InstrumentManager(rpc.RpcBase):
                 
                 # Inject Model identity information
                 prop['modelName'] = dev.getModelName()
-                prop['port'] = self.rpc_getPort()
+                prop['port'] = dev.rpc_getPort()
             
             # Inject resource information
-            prop['uuid'] = dev.getUUID()
-            prop['controller'] = dev.getControllerName()
-            prop['resourceID'] = dev.getResourceID()
-            prop['vendorID'] = dev.getVendorID()
-            prop['productID'] = dev.getProductID()
+            prop['uuid'] = res_uuid
+            prop['controller'] = controller
+            prop['resourceID'] = resID
+            prop['vendorID'] = VID
+            prop['productID'] = PID
             
             prop.setdefault('deviceType', 'Generic')
             prop.setdefault('deviceVendor', 'Generic')

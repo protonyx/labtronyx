@@ -130,7 +130,19 @@ class InstrumentControl(object):
         else:
             return False
     
-    def getHostnames(self):
+    def getHostname(self, address):
+        """
+        Get the Hostname for the given address
+        
+        :param address: IP Address
+        :type address: str - IPv4
+        :returns: str
+        """
+        if address in self.managers.keys():
+            man = self.managers.get(address)
+            return man._getHostname() # RpcClient function
+    
+    def getConnectedHosts(self):
         """
         Get a list of connected hostnames
         
@@ -690,18 +702,19 @@ class InstrumentControl(object):
             # Get the manager object
             address = self.getResource_address(res_uuid)
             man = self.getManager(address)
+            hostname = man._getHostname()
             
             # Get the properties from the manager
             prop = man.getProperties(res_uuid)
             
             # Inject hostname and address
-            ret['address'] = instr._getAddress()
-            ret['hostname'] = instr._getHostname()
+            prop['address'] = address
+            prop['hostname'] = hostname
             
             # Cache the properties
-            self.properties[res_uuid] = ret
+            self.properties[res_uuid] = prop
             
-            return ret
+            return prop
             
     def getProperties(self, res_uuid=None):
         """
