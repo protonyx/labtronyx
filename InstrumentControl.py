@@ -839,24 +839,7 @@ class InstrumentControl(object):
     
 # Load GUI in interactive mode
 if __name__ == "__main__":
-    # DEBUG!
-    instr = InstrumentControl()
-    instr.addManager('DM-FALCON4-110')
-    #instr.addManager('DM-FALCON4-111')
-    
-    #man = instr.getManager('10.108.10.92')
-    
-    res = instr.getResources()
-    
-    list = instr.getInstrument_list()
-    
     pass
-    
-    #scope = instr.getInstrument_model("MSO5204")[0]
-    #scope.getWaveform()
-    #scope.exportWaveform(Filename='C:/temp/test.csv')
-    
-    
     # Load Application GUI
     #===========================================================================
     # try:
@@ -869,7 +852,3 @@ if __name__ == "__main__":
     #     raise
     #     sys.exit()
     #===========================================================================
-    
-
-    
-    

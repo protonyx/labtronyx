@@ -6,7 +6,7 @@ import uuid
 import logging
 from datetime import datetime
 
-import jsonrpc
+from jsonrpc import *
 
 class RpcServer(threading.Thread):
     """
@@ -421,8 +421,8 @@ class RpcConnection(threading.Thread):
         #self.name = self.parent.name
         
         # Hardcode JSON RPC for now
-        self.rpc_decode = jsonrpc.decode
-        self.rpc_encode = jsonrpc.encode
+        self.rpc_decode = Rpc_decode
+        self.rpc_encode = Rpc_encode
         
         # Socket management
         self.alive = threading.Event()
@@ -484,6 +484,10 @@ class RpcConnection(threading.Thread):
                                                 result.append(req.call(target, self))
                                             else:
                                                 result.append(req.call(target))
+                                        except TypeError as e:
+                                            # Parameter issue
+                                            result.append(Rpc_Response(id=req.id, error=Rpc_InvalidParams(message=str(e))))
+                                            
                                         except Exception as e:
                                             if hasattr(self, 'logger'):
                                                 self.logger.exception('[%s, %s, %i] RPC Unhandled Exception: %s', self.name, self.address, req.id, req.method)
@@ -580,8 +584,8 @@ class RpcClient(object):
             raise RuntimeError('RpcClient must be provided a port')
         
         # Protocol aliases
-        self.__rpcDecode__ = jsonrpc.decode
-        self.__rpcEncode__ = jsonrpc.encode
+        self.__rpcDecode__ = Rpc_decode
+        self.__rpcEncode__ = Rpc_encode
         
         self.nextID = self.__rpcNextID()
         
@@ -612,7 +616,7 @@ class RpcClient(object):
                 # Update the hostname
                 self.hostname = self._rpcCall('rpc_getHostname')
                     
-            except:
+            except Exception as e:
                 pass
             
         self._setTimeout() # Default
@@ -670,7 +674,8 @@ class RpcClient(object):
             if len(response) == 1 and isinstance(response[0], Rpc_Response):
                 response = response[0]
                 if response.isError():
-                    raise response.getError()
+                    error = response.getError()
+                    raise error
             
                 else:
                     return response.result

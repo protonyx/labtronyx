@@ -20,6 +20,12 @@ class Rpc_Error(RuntimeError):
         self.id = id
         self.message = message or self.message
         self.data = data
+        
+    def __str__(self):
+        return repr(str(self.message))
+        
+    def export(self):
+        return {'code': self.code, 'message': self.message}
 
 class Rpc_ParseError(Rpc_Error):
     code = -32700
@@ -77,7 +83,7 @@ def parseJsonRpc(rpc_dict):
                     error_code = rpc_dict['error']['code']
                     
                     if error_code in JsonRpcErrors.keys():
-                        return Rpc_Response(id=rpc_dict['id'], error=JsonRpcErrors[error_code]())
+                        return Rpc_Response(id=rpc_dict['id'], error=JsonRpcErrors[error_code](message=rpc_dict['error'].get('message')))
                     else:
                         return Rpc_Response(id=rpc_dict['id'], error=Rpc_InternalError())
                     
@@ -96,7 +102,7 @@ def parseJsonRpc(rpc_dict):
     else:
         raise TypeError()
     
-def decode(str_req):
+def Rpc_decode(str_req):
     """
     Takes a string and returns:
     
@@ -144,7 +150,7 @@ def decode(str_req):
         
     return (requests, responses)
     
-def encode(toEncode):
+def Rpc_encode(toEncode):
     """
     Convert a list of Rpc_Request and Rpc_Result objects into a JSON RPC string for transmission
     """
@@ -171,9 +177,6 @@ def encode(toEncode):
             # Encode a single response
             item_dict = toEncode[0].export()
             item_dict['jsonrpc'] = '2.0'
-            
-            if 'error' in item_dict.keys():
-                item_dict['error'] = errorToDict(item_dict['error'])
             
             ret = item_dict
         
@@ -272,7 +275,10 @@ class Rpc_Response(object):
     def export(self):
         ret = {'id': self.id}
         if self.error != None:
-            ret['error'] = self.error
+            try:
+                ret['error'] = self.error.export()
+            except:
+                ret['error'] = self.error
         elif self.result != None:
             ret['result'] = self.result
         else:
