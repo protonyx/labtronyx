@@ -52,7 +52,7 @@
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
-<span class="kn">import</span> <span class="nn">jsonrpc</span>
+<span class="kn">from</span> <span class="nn">jsonrpc</span> <span class="kn">import</span> <span class="o">*</span>
 
 <span class="k">class</span> <span class="nc">RpcServer</span><span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -467,8 +467,8 @@
         <span class="c">#self.name = self.parent.name</span>
         
         <span class="c"># Hardcode JSON RPC for now</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rpc_decode</span> <span class="o">=</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">decode</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rpc_encode</span> <span class="o">=</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">encode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rpc_decode</span> <span class="o">=</span> <span class="n">Rpc_decode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rpc_encode</span> <span class="o">=</span> <span class="n">Rpc_encode</span>
         
         <span class="c"># Socket management</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
@@ -530,6 +530,10 @@
                                                 <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
                                             <span class="k">else</span><span class="p">:</span>
                                                 <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">target</span><span class="p">))</span>
+                                        <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                                            <span class="c"># Parameter issue</span>
+                                            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Rpc_Response</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">req</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">Rpc_InvalidParams</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))))</span>
+                                            
                                         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                                             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;logger&#39;</span><span class="p">):</span>
                                                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s">&#39;[</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">, </span><span class="si">%i</span><span class="s">] RPC Unhandled Exception: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">method</span><span class="p">)</span>
@@ -626,15 +630,15 @@
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&#39;RpcClient must be provided a port&#39;</span><span class="p">)</span>
         
         <span class="c"># Protocol aliases</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">__rpcDecode__</span> <span class="o">=</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">decode</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">__rpcEncode__</span> <span class="o">=</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">encode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__rpcDecode__</span> <span class="o">=</span> <span class="n">Rpc_decode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__rpcEncode__</span> <span class="o">=</span> <span class="n">Rpc_encode</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">nextID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__rpcNextID</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RPC_TIMEOUT</span>
         
         <span class="c"># Try to open a socket</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">socket</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setTimeout</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span> <span class="c"># Short timeout on first connection</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">connect</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">setblocking</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
             
@@ -653,18 +657,29 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">methods</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rpcCall</span><span class="p">(</span><span class="s">&#39;rpc_getMethods&#39;</span><span class="p">)</span>
                 
                 <span class="k">for</span> <span class="n">proc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">methods</span><span class="p">:</span>
-                    <span class="n">dynFunc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_methodAlias</span><span class="p">(</span><span class="n">proc</span><span class="p">)</span>
-                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">proc</span><span class="p">,</span> <span class="n">dynFunc</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_methodAlias</span><span class="p">(</span><span class="n">proc</span><span class="p">)</span>
                     
                 <span class="c"># Update the hostname</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">hostname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rpcCall</span><span class="p">(</span><span class="s">&#39;rpc_getHostname&#39;</span><span class="p">)</span>
                     
-            <span class="k">except</span><span class="p">:</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="k">pass</span>
             
-    <span class="k">def</span> <span class="nf">_setTimeout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_to</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">new_to</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setTimeout</span><span class="p">()</span> <span class="c"># Default</span>
             
+<div class="viewcode-block" id="RpcClient._setTimeout"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcClient._setTimeout">[docs]</a>    <span class="k">def</span> <span class="nf">_setTimeout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_to</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the Timeout limit for an RPC Method call</span>
+<span class="sd">        </span>
+<span class="sd">        :param new_to: New Timeout time in seconds</span>
+<span class="sd">        :type new_to: fload</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">new_to</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">new_to</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RPC_TIMEOUT</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">settimeout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">)</span>
+            </div>
     <span class="k">def</span> <span class="nf">_getHostname</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostname</span>
     
@@ -705,12 +720,8 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">response</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Rpc_Response</span><span class="p">):</span>
                 <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">isError</span><span class="p">():</span>
-                    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">error</span><span class="p">[</span><span class="s">&#39;code&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">32601</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;message&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">))</span>
-                    
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="c"># An error occurred!</span>
-                        <span class="k">raise</span> <span class="n">Rpc_ServerException</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;message&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">))</span>
+                    <span class="n">error</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">getError</span><span class="p">()</span>
+                    <span class="k">raise</span> <span class="n">error</span>
             
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">result</span>
@@ -726,9 +737,14 @@
 
 <div class="viewcode-block" id="RpcClient._methodAlias"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcClient._methodAlias">[docs]</a>    <span class="k">def</span> <span class="nf">_methodAlias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">methodName</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Used to fill the current object with methods that link to remote functions</span>
+<span class="sd">        Dynamically create a method internal to the RpcClient object that will</span>
+<span class="sd">        invoke an RPC method call when called.</span>
+<span class="sd">        </span>
+<span class="sd">        :param methodName: Name of method</span>
+<span class="sd">        :type methodName: str</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rpcCall</span><span class="p">(</span><span class="n">methodName</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">dynFunc</span> <span class="o">=</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rpcCall</span><span class="p">(</span><span class="n">methodName</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">methodName</span><span class="p">,</span> <span class="n">dynFunc</span><span class="p">)</span>
     </div>
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s">&#39;&lt;RPC Instance of </span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">&gt;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
@@ -740,132 +756,6 @@
             <span class="k">pass</span>
                 
     </div>
-<span class="k">class</span> <span class="nc">Rpc_Request</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;method&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;params&#39;</span><span class="p">,</span> <span class="p">[])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;kwargs&#39;</span><span class="p">,</span> <span class="p">{})</span>
-        
-    <span class="k">def</span> <span class="nf">export</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c"># Slight modification of the JSON RPC 2.0 specification to allow </span>
-        <span class="c"># both positional and named parameters</span>
-        <span class="c"># Adds kwargs variable to object only when both are present</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s">&#39;method&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="p">}</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">out</span><span class="p">[</span><span class="s">&#39;params&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">out</span><span class="p">[</span><span class="s">&#39;kwargs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span>
-            
-        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">out</span><span class="p">[</span><span class="s">&#39;params&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span>
-            
-        <span class="k">return</span> <span class="n">out</span>
-        
-    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="o">*</span><span class="n">pos_args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw_args</span><span class="p">):</span>
-        <span class="c"># Parse method        </span>
-
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">Rpc_Response</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">Rpc_MethodNotFound</span><span class="p">())</span>
-            
-        <span class="c"># Parse params</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">params_pos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pos_args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">params_named</span> <span class="o">=</span> <span class="n">kw_args</span>
-        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">:</span>
-            <span class="c"># Only named parameters</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">params_named</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
-            
-        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
-            <span class="c"># Only positional parameters</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">params_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params_pos</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span>
-            
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="c"># Positional and named parameters</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">params_named</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
-                
-            <span class="c">#self.params_named = self.params.get(&quot;__args&quot;, [])</span>
-            <span class="c">#if self.params_pos:</span>
-                <span class="c">#del self.params[&quot;__args&quot;]</span>
-            
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">Rpc_Response</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">Rpc_InvalidParams</span><span class="p">())</span>
-            
-        <span class="c"># Invoke method</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">params_pos</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">params_named</span><span class="p">)</span>
-            <span class="c"># Build the response with the results</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="c"># Only send a result of a notification if an error occurred</span>
-                <span class="k">return</span> <span class="n">Rpc_Response</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">result</span><span class="o">=</span><span class="n">ret</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="bp">None</span>
-        
-        <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
-            <span class="c"># Whoops, somebody didn&#39;t follow the API</span>
-            <span class="k">return</span> <span class="n">Rpc_Response</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">Rpc_MethodNotFound</span><span class="p">())</span>
-            
-        <span class="k">except</span><span class="p">:</span>
-            <span class="k">raise</span>
-        
-<span class="k">class</span> <span class="nc">Rpc_Response</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;result&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;error&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-        
-    <span class="k">def</span> <span class="nf">export</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">ret</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">}</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">ret</span><span class="p">[</span><span class="s">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">ret</span><span class="p">[</span><span class="s">&#39;result&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">ret</span><span class="p">[</span><span class="s">&#39;result&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
-            
-        <span class="k">return</span> <span class="n">ret</span>
-    
-    <span class="k">def</span> <span class="nf">isError</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">True</span>
-        
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">False</span>
-
-<span class="c"># Error Exceptions</span>
-<span class="k">class</span> <span class="nc">Rpc_Error</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
-    <span class="n">code</span> <span class="o">=</span> <span class="bp">None</span>
-    <span class="n">message</span> <span class="o">=</span> <span class="bp">None</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="bp">None</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">message</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
-        <span class="ne">RuntimeError</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">id</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
-
-<span class="k">class</span> <span class="nc">Rpc_ParseError</span><span class="p">(</span><span class="n">Rpc_Error</span><span class="p">):</span>
-    <span class="k">pass</span>
-
-<span class="k">class</span> <span class="nc">Rpc_InvalidRequest</span><span class="p">(</span><span class="n">Rpc_Error</span><span class="p">):</span>
-    <span class="k">pass</span>
-
-<span class="k">class</span> <span class="nc">Rpc_MethodNotFound</span><span class="p">(</span><span class="n">Rpc_Error</span><span class="p">):</span>
-    <span class="k">pass</span>
-
-<span class="k">class</span> <span class="nc">Rpc_InvalidParams</span><span class="p">(</span><span class="n">Rpc_Error</span><span class="p">):</span>
-    <span class="k">pass</span>
-
-<span class="k">class</span> <span class="nc">Rpc_InternalError</span><span class="p">(</span><span class="n">Rpc_Error</span><span class="p">):</span>
-    <span class="k">pass</span>
-
-<span class="k">class</span> <span class="nc">Rpc_Timeout</span><span class="p">(</span><span class="n">Rpc_Error</span><span class="p">):</span>
-    <span class="k">pass</span>
-
-<span class="k">class</span> <span class="nc">Rpc_ServerException</span><span class="p">(</span><span class="n">Rpc_Error</span><span class="p">):</span>
-    <span class="k">pass</span>
 </pre></div>
 
           </div>

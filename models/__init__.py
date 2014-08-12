@@ -21,13 +21,15 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
     validVIDs = []
     validPIDs = []
     
-    def __init__(self, uuid, controller, resID, **kwargs):
+    def __init__(self, uuid, controller, resID, VID, PID, **kwargs):
         common.rpc.RpcBase.__init__(self)
         common.IC_Common.__init__(self, **kwargs)
         
         self.uuid = uuid
         self.controller = controller
         self.resID = resID
+        self.VID = VID
+        self.PID = PID
         
         # Check for logger
         self.logger = kwargs.get('Logger', logging)
@@ -58,28 +60,43 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
     #===========================================================================
     
     def getModelName(self):
-        return self.__class__.__name__
-
-    def getIdentity(self):
         """
-        Returns the Model identity information that is assigned when the
-        InstrumentManager loads the Model and attaches it to a resource
+        Returns the Model class name
         
-        :returns: tuple - (Resource UUID, Controller Name, Resource ID)
+        :returns: str
         """
-        return (self.uuid, self.controller.getControllerName(), self.resID)
+        return self.__class__.__name__
+    
+    def getUUID(self):
+        """
+        Returns the Resource UUID that is provided to the Model
+        
+        :returns: str
+        """
+        return self.uuid
+    
+    def getControllerName(self):
+        """
+        Returns the Model's Controller class name
+        
+        :returns: str
+        """
+        return self.controller.getControllerName()
+    
+    def getResourceID(self):
+        """
+        Returns the Model Resource ID that identifies the resource to the
+        Controller
+        
+        :returns: str
+        """
+        return self.resID
+
+    def getVendorID(self):
+        return ''
+    
+    def getProductID(self):
+        return ''
     
     def getProperties(self):
-        return { 'uuid': self.uuid,
-                 'controller': self.controller.getControllerName(),
-                 'resourceID': self.resID,
-                 'modelName': self.getModelName(),
-                 'port': self.rpc_getPort(),
-                 'deviceType': self.deviceType,
-                 'deviceVendor': 'Generic',
-                 'deviceModel': 'Device',
-                 'deviceSerial': 'Unknown',
-                 'deviceFirmware': 'Unknown'
-                }
-
-
+        return {}

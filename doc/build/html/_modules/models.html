@@ -104,30 +104,47 @@
     <span class="c">#===========================================================================</span>
     </div>
     <span class="k">def</span> <span class="nf">getModelName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
-
-    <span class="k">def</span> <span class="nf">getIdentity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the Model identity information that is assigned when the</span>
-<span class="sd">        InstrumentManager loads the Model and attaches it to a resource</span>
+<span class="sd">        Returns the Model class name</span>
 <span class="sd">        </span>
-<span class="sd">        :returns: tuple - (Resource UUID, Controller Name, Resource ID)</span>
+<span class="sd">        :returns: str</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">getControllerName</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">resID</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+    
+    <span class="k">def</span> <span class="nf">getUUID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the Resource UUID that is provided to the Model</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">uuid</span>
+    
+    <span class="k">def</span> <span class="nf">getControllerName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the Model&#39;s Controller class name</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">getControllerName</span><span class="p">()</span>
+    
+    <span class="k">def</span> <span class="nf">getResourceID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the Model Resource ID that identifies the resource to the</span>
+<span class="sd">        Controller</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resID</span>
+
+    <span class="k">def</span> <span class="nf">getVendorID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&#39;&#39;</span>
+    
+    <span class="k">def</span> <span class="nf">getProductID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&#39;&#39;</span>
     
     <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">{</span> <span class="s">&#39;uuid&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span>
-                 <span class="s">&#39;controller&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">getControllerName</span><span class="p">(),</span>
-                 <span class="s">&#39;resourceID&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">resID</span><span class="p">,</span>
-                 <span class="s">&#39;modelName&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">getModelName</span><span class="p">(),</span>
-                 <span class="s">&#39;port&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rpc_getPort</span><span class="p">(),</span>
-                 <span class="s">&#39;deviceType&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">deviceType</span><span class="p">,</span>
-                 <span class="s">&#39;deviceVendor&#39;</span><span class="p">:</span> <span class="s">&#39;Generic&#39;</span><span class="p">,</span>
-                 <span class="s">&#39;deviceModel&#39;</span><span class="p">:</span> <span class="s">&#39;Device&#39;</span><span class="p">,</span>
-                 <span class="s">&#39;deviceSerial&#39;</span><span class="p">:</span> <span class="s">&#39;Unknown&#39;</span><span class="p">,</span>
-                 <span class="s">&#39;deviceFirmware&#39;</span><span class="p">:</span> <span class="s">&#39;Unknown&#39;</span>
-                <span class="p">}</span>
-</pre></div></div>
+        <span class="k">return</span> <span class="p">{}</span></div>
+</pre></div>
 
           </div>
         </div>

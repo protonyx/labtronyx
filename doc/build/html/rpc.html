@@ -299,7 +299,16 @@ be created manually using RpcClient._methodAlias()</p>
 <dl class="method">
 <dt id="common.rpc.RpcClient._methodAlias">
 <tt class="descname">_methodAlias</tt><big>(</big><em>methodName</em><big>)</big><a class="reference internal" href="_modules/common/rpc.html#RpcClient._methodAlias"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#common.rpc.RpcClient._methodAlias" title="Permalink to this definition">¶</a></dt>
-<dd><p>Used to fill the current object with methods that link to remote functions</p>
+<dd><p>Dynamically create a method internal to the RpcClient object that will
+invoke an RPC method call when called.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>methodName</strong> (<em>str</em>) &#8211; Name of method</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -321,6 +330,20 @@ arguments</p>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="common.rpc.RpcClient._setTimeout">
+<tt class="descname">_setTimeout</tt><big>(</big><em>new_to=None</em><big>)</big><a class="reference internal" href="_modules/common/rpc.html#RpcClient._setTimeout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#common.rpc.RpcClient._setTimeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the Timeout limit for an RPC Method call</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>new_to</strong> (<em>fload</em>) &#8211; New Timeout time in seconds</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>

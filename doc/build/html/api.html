@@ -489,6 +489,22 @@ resources in nested dictionaries by Resource UUID.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="InstrumentControl.InstrumentControl.getResource_address">
+<tt class="descname">getResource_address</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getResource_address"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getResource_address" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the address where a resource is located.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>res_uuid</strong> (<em>str</em>) &#8211; Unique Resource Identifier (UUID)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">str - IP Address</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="InstrumentControl.InstrumentControl.getResources">
 <tt class="descname">getResources</tt><big>(</big><em>address=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getResources" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a listing of all cached resources from the given address or from all
@@ -504,8 +520,8 @@ so resources returned may not be valid</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> (<em>str</em>) &#8211; IP Address of host (optional)</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dict of tuples - 
-(<cite>address</cite>, <cite>controller</cite>, <cite>resourceID</cite>, <cite>VID</cite>, <cite>PID</cite>)</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dict of tuples - { Resource UUID: 
+(<cite>address</cite>, <cite>controller</cite>, <cite>resourceID</cite>, <cite>VID</cite>, <cite>PID</cite>) }</td>
 </tr>
 </tbody>
 </table>
@@ -619,7 +635,7 @@ before calling this function.</p>
 Resource UUID is provided, all resources properties will be updated.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Properties should be refreshed when loading new models for a 
+<p class="last">Properties should be refreshed when loading a new Model for a 
 resource.</p>
 </div>
 <table class="docutils field-list" frame="void" rules="none">

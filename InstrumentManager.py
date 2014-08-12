@@ -245,14 +245,68 @@ class InstrumentManager(rpc.RpcBase):
                         
             except:
                 pass
-        
-    def getProperties(self):
+            
+    def getVersion(self):
         """
-        Get the properties dictionary for InstrumentManager
+        Get the InstrumentManager version
         
+        :returns: str
+        """
+        return self.VERSION
+        
+    def getProperties(self, res_uuid=None):
+        """
+        Get the properties dictionary for a given resource. If Resource UUID is
+        not provided, a nested dictionary will be returned, with each property
+        dictionary nested by Resource UUID.
+        
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
         :returns: dict
         """
-        return {'Version': self.VERSION}
+        if res_uuid is None:
+            # Recursively get properties
+            ret = {}
+            for res_uuid, res in self.resources.items():
+                ret[res_uuid] = self.getProperties(res_uuid)
+                
+            return ret
+                
+        elif res_uuid in self.resources.keys():
+            # Get Resource
+            res = self.resources.get(res_uuid)
+            
+            # Default properties
+            prop = {}
+            
+            if res_uuid in self.devices.keys():
+                # Get Model object
+                dev = self.devices.get(res_uuid)
+                
+                # Call Model's getProperties
+                prop = dev.getProperties()
+                
+                # Inject Model identity information
+                prop['modelName'] = dev.getModelName()
+                prop['port'] = self.rpc_getPort()
+            
+            # Inject resource information
+            prop['uuid'] = dev.getUUID()
+            prop['controller'] = dev.getControllerName()
+            prop['resourceID'] = dev.getResourceID()
+            prop['vendorID'] = dev.getVendorID()
+            prop['productID'] = dev.getProductID()
+            
+            prop.setdefault('deviceType', 'Generic')
+            prop.setdefault('deviceVendor', 'Generic')
+            prop.setdefault('deviceModel', 'Device')
+            prop.setdefault('deviceSerial', 'Unknown')
+            prop.setdefault('deviceFirmware', 'Unknown')
+            
+            return prop
+        
+        else:
+            return None
         
     #===========================================================================
     # Mass Controller Operations
@@ -564,7 +618,7 @@ class InstrumentManager(rpc.RpcBase):
             
             if res_uuid in self.resources.keys():
                 
-                controller, resID, _, _ = self.resources.get(res_uuid)
+                controller, resID, VID, PID = self.resources.get(res_uuid)
                 
                 try:
                     # Check if the specified model is valid
@@ -573,7 +627,7 @@ class InstrumentManager(rpc.RpcBase):
                     
                     # Load the model and store it
                     cont_obj = self.controllers.get(controller, None)
-                    model_obj = testClass(res_uuid, cont_obj, resID, Logger=self.logger)
+                    model_obj = testClass(res_uuid, cont_obj, resID, VID, PID, Logger=self.logger)
                 
                     model_obj._onLoad()
                     

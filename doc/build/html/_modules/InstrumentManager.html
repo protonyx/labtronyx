@@ -291,14 +291,65 @@
                         
             <span class="k">except</span><span class="p">:</span>
                 <span class="k">pass</span>
-        
-<div class="viewcode-block" id="InstrumentManager.getProperties"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager.getProperties">[docs]</a>    <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            
+<div class="viewcode-block" id="InstrumentManager.getVersion"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager.getVersion">[docs]</a>    <span class="k">def</span> <span class="nf">getVersion</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get the properties dictionary for InstrumentManager</span>
+<span class="sd">        Get the InstrumentManager version</span>
 <span class="sd">        </span>
+<span class="sd">        :returns: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">VERSION</span>
+        </div>
+<div class="viewcode-block" id="InstrumentManager.getProperties"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager.getProperties">[docs]</a>    <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the properties dictionary for a given resource. If Resource UUID is</span>
+<span class="sd">        not provided, a nested dictionary will be returned, with each property</span>
+<span class="sd">        dictionary nested by Resource UUID.</span>
+<span class="sd">        </span>
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
 <span class="sd">        :returns: dict</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;Version&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">VERSION</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">res_uuid</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># Recursively get properties</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">res</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">ret</span><span class="p">[</span><span class="n">res_uuid</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getProperties</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+                
+            <span class="k">return</span> <span class="n">ret</span>
+                
+        <span class="k">elif</span> <span class="n">res_uuid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="c"># Get Resource</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+            
+            <span class="c"># Default properties</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="p">{}</span>
+            
+            <span class="k">if</span> <span class="n">res_uuid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">devices</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="c"># Get Model object</span>
+                <span class="n">dev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">devices</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+                
+                <span class="c"># Call Model&#39;s getProperties</span>
+                <span class="n">prop</span> <span class="o">=</span> <span class="n">dev</span><span class="o">.</span><span class="n">getProperties</span><span class="p">()</span>
+                
+                <span class="c"># Inject Model identity information</span>
+                <span class="n">prop</span><span class="p">[</span><span class="s">&#39;modelName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev</span><span class="o">.</span><span class="n">getModelName</span><span class="p">()</span>
+                <span class="n">prop</span><span class="p">[</span><span class="s">&#39;port&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rpc_getPort</span><span class="p">()</span>
+            
+            <span class="c"># Inject resource information</span>
+            <span class="n">prop</span><span class="p">[</span><span class="s">&#39;uuid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev</span><span class="o">.</span><span class="n">getUUID</span><span class="p">()</span>
+            <span class="n">prop</span><span class="p">[</span><span class="s">&#39;controller&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev</span><span class="o">.</span><span class="n">getControllerName</span><span class="p">()</span>
+            <span class="n">prop</span><span class="p">[</span><span class="s">&#39;resourceID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev</span><span class="o">.</span><span class="n">getResourceID</span><span class="p">()</span>
+            <span class="n">prop</span><span class="p">[</span><span class="s">&#39;VendorID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev</span><span class="o">.</span><span class="n">getVendorID</span><span class="p">()</span>
+            <span class="n">prop</span><span class="p">[</span><span class="s">&#39;ProductID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dev</span><span class="o">.</span><span class="n">getProductID</span><span class="p">()</span>
+            
+            <span class="n">prop</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;deviceType&#39;</span><span class="p">,</span> <span class="s">&#39;Generic&#39;</span><span class="p">)</span>
+            <span class="n">prop</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;deviceVendor&#39;</span><span class="p">,</span> <span class="s">&#39;Generic&#39;</span><span class="p">)</span>
+            <span class="n">prop</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;deviceModel&#39;</span><span class="p">,</span> <span class="s">&#39;Device&#39;</span><span class="p">)</span>
+            <span class="n">prop</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;deviceSerial&#39;</span><span class="p">,</span> <span class="s">&#39;Unknown&#39;</span><span class="p">)</span>
+            <span class="n">prop</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;deviceFirmware&#39;</span><span class="p">,</span> <span class="s">&#39;Unknown&#39;</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="n">prop</span>
         
     <span class="c">#===========================================================================</span>
     <span class="c"># Mass Controller Operations</span>

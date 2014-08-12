@@ -98,6 +98,23 @@ physical device:</p>
 </ul>
 </div></blockquote>
 </div>
+<div class="section" id="properties">
+<h2>Properties<a class="headerlink" href="#properties" title="Permalink to this headline">¶</a></h2>
+<p>Properties are auxiliary information about a physical device. The keys and data
+contained in the properties are dependent on the device and Model, but the
+following keys will exist for all resources.</p>
+<blockquote>
+<div><ul class="simple">
+<li>&#8216;uuid&#8217;: Unique Resource Identifier</li>
+<li>&#8216;controller&#8217;: The module name for the controller</li>
+<li>&#8216;resourceID&#8217;: Resource ID specific for the controller</li>
+<li>&#8216;vendorID&#8217;: Vendor ID used to find compatible Models</li>
+<li>&#8216;productID&#8217;: Product ID used to find compatible Models</li>
+</ul>
+</div></blockquote>
+<p>Models can provide additional properties that more fully describe the instrument.
+See the <tt class="xref doc docutils literal"><span class="pre">Model</span> <span class="pre">API</span> <span class="pre">Documentation</span></tt> for more details.</p>
+</div>
 <div class="section" id="internal-api">
 <h2>Internal API<a class="headerlink" href="#internal-api" title="Permalink to this headline">¶</a></h2>
 <p>Like models, an InstrumentManager can also be connected to with a
@@ -243,13 +260,17 @@ use <a class="reference internal" href="#InstrumentManager.InstrumentManager.can
 
 <dl class="method">
 <dt id="InstrumentManager.InstrumentManager.getProperties">
-<tt class="descname">getProperties</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getProperties" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the properties dictionary for InstrumentManager</p>
+<tt class="descname">getProperties</tt><big>(</big><em>res_uuid=None</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getProperties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the properties dictionary for a given resource. If Resource UUID is
+not provided, a nested dictionary will be returned, with each property
+dictionary nested by Resource UUID.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dict</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>res_uuid</strong> (<em>str</em>) &#8211; Unique Resource Identifier (UUID)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dict</td>
 </tr>
 </tbody>
 </table>
@@ -289,6 +310,20 @@ Vendor Identifier (<cite>VID</cite>) and Product Identifier (<cite>PID</cite>) c
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">list of tuples (ModuleName, ClassName)</p>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getVersion">
+<tt class="descname">getVersion</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getVersion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getVersion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the InstrumentManager version</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
 </tr>
 </tbody>
 </table>
@@ -377,6 +412,7 @@ all controllers will be refreshed</p>
 <li><a class="reference internal" href="#">InstrumentManager</a><ul>
 <li><a class="reference internal" href="#architecture">Architecture</a></li>
 <li><a class="reference internal" href="#resources">Resources</a></li>
+<li><a class="reference internal" href="#properties">Properties</a></li>
 <li><a class="reference internal" href="#internal-api">Internal API</a></li>
 </ul>
 </li>

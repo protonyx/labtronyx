@@ -424,34 +424,6 @@
     <span class="c">#===========================================================================</span>
     <span class="c"># Resource Operations</span>
     <span class="c">#===========================================================================</span>
-    
-    <span class="c">#===========================================================================</span>
-    <span class="c"># def getAllResources(self, address=None):</span>
-    <span class="c">#     &quot;&quot;&quot;</span>
-    <span class="c">#     </span>
-    <span class="c">#     </span>
-    <span class="c">#     Returned dictionary is a flat list of all cached resources with the </span>
-    <span class="c">#     resource UUID as the key. Values are resource identifier tuples: </span>
-    <span class="c">#     (`controller`, `resourceID`)</span>
-    <span class="c">#     </span>
-    <span class="c">#     :param address: IP Address of manager</span>
-    <span class="c">#     :type address: str</span>
-    <span class="c">#     </span>
-    <span class="c">#     :returns: dict</span>
-    <span class="c">#     &quot;&quot;&quot;</span>
-    <span class="c">#     if address in self.managers:</span>
-    <span class="c">#         return self.resources.get(address, {})</span>
-    <span class="c">#     </span>
-    <span class="c">#     elif address is None:</span>
-    <span class="c">#         ret = {}</span>
-    <span class="c">#         for addr in self.managers:</span>
-    <span class="c">#             res = self.resources.get(addr, {})</span>
-    <span class="c">#             ret.update(res)</span>
-    <span class="c">#         return ret</span>
-    <span class="c">#     </span>
-    <span class="c">#     else:</span>
-    <span class="c">#         return {}</span>
-    <span class="c">#===========================================================================</span>
         </div>
 <div class="viewcode-block" id="InstrumentControl.getResources"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getResources">[docs]</a>    <span class="k">def</span> <span class="nf">getResources</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -466,8 +438,8 @@
 <span class="sd">        :param address: IP Address of host (optional)</span>
 <span class="sd">        :type address: str</span>
 <span class="sd">        </span>
-<span class="sd">        :returns: dict of tuples - \ </span>
-<span class="sd">                    (`address`, `controller`, `resourceID`, `VID`, `PID`)</span>
+<span class="sd">        :returns: dict of tuples - { Resource UUID: \ </span>
+<span class="sd">                    (`address`, `controller`, `resourceID`, `VID`, `PID`) }</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">address</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">ret</span> <span class="o">=</span> <span class="p">{}</span>
@@ -493,6 +465,20 @@
         <span class="c">#         </span>
         <span class="c"># return None</span>
         <span class="c">#=======================================================================</span>
+        </div>
+<div class="viewcode-block" id="InstrumentControl.getResource_address"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getResource_address">[docs]</a>    <span class="k">def</span> <span class="nf">getResource_address</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the address where a resource is located.</span>
+<span class="sd">        </span>
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :returns: str - IP Address</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">res_uuid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
     </div>
 <div class="viewcode-block" id="InstrumentControl.addResource"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.addResource">[docs]</a>    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">ResID</span><span class="p">,</span> <span class="n">VendorID</span><span class="p">,</span> <span class="n">ProductID</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -729,7 +715,7 @@
 <span class="sd">        </span>
 <span class="sd">        .. note::</span>
 <span class="sd">        </span>
-<span class="sd">            Properties should be refreshed when loading new models for a </span>
+<span class="sd">            Properties should be refreshed when loading a new Model for a </span>
 <span class="sd">            resource.</span>
 <span class="sd">            </span>
 <span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
@@ -737,55 +723,27 @@
 <span class="sd">        :returns: dict - updated resource properties</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">res_uuid</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">ret</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="k">for</span> <span class="n">addr</span><span class="p">,</span> <span class="n">res_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">for</span> <span class="n">uuid</span> <span class="ow">in</span> <span class="n">res_dict</span><span class="p">:</span>
-                    <span class="n">ret</span><span class="p">[</span><span class="n">uuid</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">refreshProperties</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">res</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c"># These dictionaries can be large, so update one at a time</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refreshProperties</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
                     
-            <span class="k">return</span> <span class="n">ret</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span>
         
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">ret</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="n">instr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrument</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">res_uuid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="c"># Get the manager object</span>
+            <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getResource_address</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+            <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getManager</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
             
-            <span class="c"># Prevent the manager from maintaining an unreasonable number of</span>
-            <span class="c"># connections if we only need to grab properties data</span>
-            <span class="n">instr_destroyOnCompletion</span> <span class="o">=</span> <span class="bp">False</span>
-            <span class="k">if</span> <span class="n">instr</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="n">instr_destroyOnCompletion</span> <span class="o">=</span> <span class="bp">True</span>
-                <span class="n">instr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">createInstrument</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+            <span class="c"># Get the properties from the manager</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="n">man</span><span class="o">.</span><span class="n">getProperties</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
             
-            <span class="k">if</span> <span class="n">instr</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="c"># Model is not loaded for that resource</span>
-                <span class="n">ret</span><span class="p">[</span><span class="s">&#39;uuid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">res_uuid</span>
-                <span class="n">c_name</span><span class="p">,</span> <span class="n">res_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getResource</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
-                <span class="n">ret</span><span class="p">[</span><span class="s">&#39;controller&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">c_name</span>
-                <span class="n">ret</span><span class="p">[</span><span class="s">&#39;resourceID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">res_id</span>
-                <span class="c"># Get address and hostname from manager</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-                    <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">None</span><span class="p">)</span>
-                    
-                    <span class="n">ret</span><span class="p">[</span><span class="s">&#39;address&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">man</span><span class="o">.</span><span class="n">_getAddress</span><span class="p">()</span>
-                    <span class="n">ret</span><span class="p">[</span><span class="s">&#39;hostname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">man</span><span class="o">.</span><span class="n">_getHostname</span><span class="p">()</span>
-                    
-                <span class="k">except</span><span class="p">:</span>
-                    <span class="k">pass</span>
-                
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">ret</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">getProperties</span><span class="p">()</span>
-                    <span class="c"># Inject hostname and address</span>
-                    <span class="n">ret</span><span class="p">[</span><span class="s">&#39;address&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">_getAddress</span><span class="p">()</span>
-                    <span class="n">ret</span><span class="p">[</span><span class="s">&#39;hostname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">_getHostname</span><span class="p">()</span>
-                    
-                <span class="k">except</span><span class="p">:</span>
-                    <span class="k">pass</span>
-                
-            <span class="k">if</span> <span class="n">instr_destroyOnCompletion</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">destroyInstrument</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
-                
+            <span class="c"># Inject hostname and address</span>
+            <span class="n">ret</span><span class="p">[</span><span class="s">&#39;address&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">_getAddress</span><span class="p">()</span>
+            <span class="n">ret</span><span class="p">[</span><span class="s">&#39;hostname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">_getHostname</span><span class="p">()</span>
+            
+            <span class="c"># Cache the properties</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="n">res_uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">ret</span>
+            
             <span class="k">return</span> <span class="n">ret</span>
             </div>
 <div class="viewcode-block" id="InstrumentControl.getProperties"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getProperties">[docs]</a>    <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -885,37 +843,19 @@
     
 <span class="c"># Load GUI in interactive mode</span></div></div>
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="c"># DEBUG!</span>
-    <span class="n">instr</span> <span class="o">=</span> <span class="n">InstrumentControl</span><span class="p">()</span>
-    <span class="n">instr</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="s">&#39;DM-FALCON4-110&#39;</span><span class="p">)</span>
-    <span class="c">#instr.addManager(&#39;DM-FALCON4-111&#39;)</span>
-    
-    <span class="c">#man = instr.getManager(&#39;10.108.10.92&#39;)</span>
-    
-    <span class="n">res</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">getResources</span><span class="p">()</span>
-    
-    <span class="nb">list</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">getInstrument_list</span><span class="p">()</span>
-    
+    <span class="k">pass</span>
     <span class="c"># Load Application GUI</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="c">#sys.path.append(&quot;..&quot;)</span>
-        <span class="kn">from</span> <span class="nn">application.a_Main</span> <span class="kn">import</span> <span class="n">a_Main</span>
-        <span class="n">main_gui</span> <span class="o">=</span> <span class="n">a_Main</span><span class="p">()</span>
-        
-    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&quot;Unable to load main application&quot;</span>
-        <span class="k">raise</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
-
-    
-    <span class="c">#scope = instr.getInstrument_model(&quot;MSO5204&quot;)[0]</span>
-    <span class="c">#scope.getWaveform()</span>
-    <span class="c">#scope.exportWaveform(Filename=&#39;C:/temp/test.csv&#39;)</span>
-    <span class="c">#scope_gui = scope.loadView()</span>
-    
-
-    
-    
+    <span class="c">#===========================================================================</span>
+    <span class="c"># try:</span>
+    <span class="c">#     #sys.path.append(&quot;..&quot;)</span>
+    <span class="c">#     from application.a_Main import a_Main</span>
+    <span class="c">#     main_gui = a_Main()</span>
+    <span class="c">#     </span>
+    <span class="c"># except Exception as e:</span>
+    <span class="c">#     print &quot;Unable to load main application&quot;</span>
+    <span class="c">#     raise</span>
+    <span class="c">#     sys.exit()</span>
+    <span class="c">#===========================================================================</span>
 </pre></div>
 
           </div>

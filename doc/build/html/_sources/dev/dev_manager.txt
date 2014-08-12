@@ -51,6 +51,22 @@ physical device:
 	* Universally Unique IDentifier (str)
 	* `Controller` name (str)
 	* Resource Identifier (str)
+	
+Properties
+----------
+
+Properties are auxiliary information about a physical device. The keys and data
+contained in the properties are dependent on the device and Model, but the
+following keys will exist for all resources.
+
+	* 'uuid': Unique Resource Identifier
+	* 'controller': The module name for the controller
+	* 'resourceID': Resource ID specific for the controller
+	* 'vendorID': Vendor ID used to find compatible Models
+	* 'productID': Product ID used to find compatible Models
+	
+Models can provide additional properties that more fully describe the instrument.
+See the :doc:`Model API Documentation <dev_models>` for more details.
 
 Internal API
 ------------

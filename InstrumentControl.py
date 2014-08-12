@@ -378,34 +378,6 @@ class InstrumentControl(object):
     #===========================================================================
     # Resource Operations
     #===========================================================================
-    
-    #===========================================================================
-    # def getAllResources(self, address=None):
-    #     """
-    #     
-    #     
-    #     Returned dictionary is a flat list of all cached resources with the 
-    #     resource UUID as the key. Values are resource identifier tuples: 
-    #     (`controller`, `resourceID`)
-    #     
-    #     :param address: IP Address of manager
-    #     :type address: str
-    #     
-    #     :returns: dict
-    #     """
-    #     if address in self.managers:
-    #         return self.resources.get(address, {})
-    #     
-    #     elif address is None:
-    #         ret = {}
-    #         for addr in self.managers:
-    #             res = self.resources.get(addr, {})
-    #             ret.update(res)
-    #         return ret
-    #     
-    #     else:
-    #         return {}
-    #===========================================================================
         
     def getResources(self, address=None):
         """
@@ -420,8 +392,8 @@ class InstrumentControl(object):
         :param address: IP Address of host (optional)
         :type address: str
         
-        :returns: dict of tuples - \ 
-                    (`address`, `controller`, `resourceID`, `VID`, `PID`)
+        :returns: dict of tuples - { Resource UUID: \ 
+                    (`address`, `controller`, `resourceID`, `VID`, `PID`) }
         """
         if address is not None:
             ret = {}
@@ -447,6 +419,20 @@ class InstrumentControl(object):
         #         
         # return None
         #=======================================================================
+        
+    def getResource_address(self, res_uuid):
+        """
+        Get the address where a resource is located.
+        
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: str - IP Address
+        """
+        if res_uuid in self.resources.keys():
+            return self.resources.get(res_uuid)[0]
+        
+        else:
+            return None
     
     def addResource(self, address, controller, ResID, VendorID, ProductID):
         """
@@ -629,7 +615,7 @@ class InstrumentControl(object):
                 
             # Find out where this resource is located
             res = self.resources.get(res_uuid, None)
-            address = res[0]
+            address = self.getResource_address(res_uuid)
             man = self.getManager(address)
                     
             if man is not None:
@@ -644,6 +630,9 @@ class InstrumentControl(object):
                         testInstrument = RpcClient(address=address, port=port)
                         if testInstrument._ready():
                             self.instruments[res_uuid] = testInstrument
+                            
+                            self.refreshProperties(res_uuid)
+                            
                             return testInstrument
                         
                         else:
@@ -683,7 +672,7 @@ class InstrumentControl(object):
         
         .. note::
         
-            Properties should be refreshed when loading new models for a 
+            Properties should be refreshed when loading a new Model for a 
             resource.
             
         :param res_uuid: Unique Resource Identifier (UUID)
@@ -691,55 +680,27 @@ class InstrumentControl(object):
         :returns: dict - updated resource properties
         """
         if res_uuid is None:
-            ret = {}
-            for addr, res_dict in self.resources.items():
-                for uuid in res_dict:
-                    ret[uuid] = self.refreshProperties(uuid)
+            for res_uuid, res in self.resources.items():
+                # These dictionaries can be large, so update one at a time
+                self.refreshProperties(res_uuid)
                     
-            return ret
+            return self.properties
         
-        else:
-            ret = {}
-            instr = self.getInstrument(res_uuid)
+        elif res_uuid in self.resources.keys():
+            # Get the manager object
+            address = self.getResource_address(res_uuid)
+            man = self.getManager(address)
             
-            # Prevent the manager from maintaining an unreasonable number of
-            # connections if we only need to grab properties data
-            instr_destroyOnCompletion = False
-            if instr is None:
-                instr_destroyOnCompletion = True
-                instr = self.createInstrument(res_uuid)
+            # Get the properties from the manager
+            prop = man.getProperties(res_uuid)
             
-            if instr is None:
-                # Model is not loaded for that resource
-                ret['uuid'] = res_uuid
-                c_name, res_id = self.getResource(res_uuid)
-                ret['controller'] = c_name
-                ret['resourceID'] = res_id
-                # Get address and hostname from manager
-                try:
-                    res = self.resources.get(res_uuid, None)
-                    man = self.managers.get(res[0], None)
-                    
-                    ret['address'] = man._getAddress()
-                    ret['hostname'] = man._getHostname()
-                    
-                except:
-                    pass
-                
-            else:
-                try:
-                    ret = instr.getProperties()
-                    # Inject hostname and address
-                    ret['address'] = instr._getAddress()
-                    ret['hostname'] = instr._getHostname()
-                    
-                except:
-                    pass
-                
-            if instr_destroyOnCompletion:
-                self.destroyInstrument(res_uuid)
-                
+            # Inject hostname and address
+            ret['address'] = instr._getAddress()
+            ret['hostname'] = instr._getHostname()
+            
+            # Cache the properties
             self.properties[res_uuid] = ret
+            
             return ret
             
     def getProperties(self, res_uuid=None):
@@ -789,8 +750,6 @@ class InstrumentControl(object):
         
         :returns: :class:`RpcClient` object
         """
-        self.refreshProperties()
-        
         for res_uuid, prop_dict in self.getProperties().items():
             if prop_dict['deviceSerial'] == serial_number:
                 return self.createInstrument(res_uuid)
@@ -808,7 +767,6 @@ class InstrumentControl(object):
         
         :returns: list of :class:`RpcClient` objects
         """
-        self.refreshProperties()
         ret = []
         
         for res_uuid, prop_dict in self.getProperties().items():
@@ -828,7 +786,6 @@ class InstrumentControl(object):
         
         :returns: list of :class:`RpcClient` objects
         """
-        self.refreshProperties()
         ret = []
         
         for res_uuid, prop_dict in self.getProperties().items():

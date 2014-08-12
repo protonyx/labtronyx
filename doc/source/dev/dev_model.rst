@@ -79,31 +79,51 @@ information such as:
 	* Operating Frequencies
 	* Command Set Revision
 	* etc.
-	 
-:func:`models.m_Base.getProperties` returns a default set of properties:
+	
+Properties are retrieved by calling :func:`getProperties` from the Model. Models 
+should override :func:`getProperties` and add additional properties that
+may be useful for application and script development, like the ones above.
 
-	* 'uuid': Resource UUID
-	* 'controller': The module name for the controller
-	* 'id': Resource ID specific for the controller
-	* 'driver': The module name for the currently loaded model, None if not loaded
-	* 'port': RPC Server port
-    
-There are also some recommended properties:
+The following keys will always exist for all Models:
 
-    * 'deviceVendor': The device vendor
-    * 'deviceModel': The device model number
-    * 'deviceSerial': The device serial number
-    * 'deviceFirmware': The device firmware revision
-    * 'deviceType': The device type from the model
-    
-Models should override :func:`getProperties` and add additional properties that
-may be useful for application and script development. In order to prevent errors
-in scripts that expect some or all of the default parameters, the Model should
-get the default parameters and append to the returned dict::
++---------------+-------------------------------------------------+
+| Key           | Description                                     |
++---------------+-------------------------------------------------+
+| 'uuid'        | Resource UUID                                   |
++---------------+-------------------------------------------------+
+| 'controller'  | The module name for the controller              |
++---------------+-------------------------------------------------+
+| 'resourceID'  | Resource ID specific for the controller         |
++---------------+-------------------------------------------------+
+| 'vendorID'    | Vendor ID used to find compatible Models        |
++---------------+-------------------------------------------------+
+| 'productID'   | Product ID used to find compatible Models       |
++---------------+-------------------------------------------------+
+| 'modelName'   | The module name for the currently loaded model  |
++---------------+-------------------------------------------------+
+| 'port'        | RPC port                                        |
++---------------+-------------------------------------------------+
+
+The following keys will always exist, but will assume default values if they
+are not set. They are used to identify devices for scripting: 
+
++-----------------+---------------+
+| Key             | Default Value |
++-----------------+---------------+
+| 'deviceType'    | 'Generic'     |
++-----------------+---------------+
+| 'deviceVendor'  | 'Generic'     |
++-----------------+---------------+
+| 'deviceModel'   | 'Device'      |
++-----------------+---------------+
+| 'deviceSerial   | 'Unknown'     |
++-----------------+---------------+
+| 'deviceFirmware'| 'Unknown'     |
++-----------------+---------------+
+
+Example::
 
 	def getProperties(self):
-	
-        prop = models.m_Base.getProperties(self)
 	
 		prop['deviceVendor'] = 'my vendor'
 		prop['deviceModel'] = 'ABC 12345'
@@ -112,12 +132,6 @@ get the default parameters and append to the returned dict::
 		prop['deviceType'] = 'Widget'
 		
 		return prop
-	
-.. warning::
-
-	Not returning a properties dict with the required keys may cause problems
-	with scripts or applications that expect those keys. It is highly
-	recommended, though not currently enforced.
         
 Model Inheritance
 -----------------
