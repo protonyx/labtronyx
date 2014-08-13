@@ -16,6 +16,9 @@ class m_SMU(m_Base):
                    'CURRENT': 'CURR'}
     validFunc = ['VOLT', 'CURR', 'RES']
     validMode = ['SWEEP', 'FIXED', 'LIST']
+    validTrigger = ['AINT', 'BUS', 'TIMER', 'INT1', 'INT2', 'LAN', 'EXT1', 'EXT2',
+                    'EXT3', 'EXT4', 'EXT5', 'EXT6', 'EXT7', 'EXT8', 'EXT9', 'EXT10',
+                    'EXT11', 'EXT12', 'EXT13', 'EXT14']
 
     def _onLoad(self):
         self.__identity = None
@@ -54,7 +57,7 @@ class m_SMU(m_Base):
         """
         self.write("*RST")
         
-    def setSourceSweep(self, source, start, stop, **kwargs):
+    def setSourceSweep(self, source, start, stop, points):
         """
         Configure the SMU to Sweep a range of points.
         
@@ -64,17 +67,8 @@ class m_SMU(m_Base):
         :type start: float
         :param stop: Final Voltage/Current
         :type stop: float
-        
-        :param Pulse: Enable/Disable Pulsing
-        :type Pulse: bool
-        :param Width: Pulse Width in sec (Pulsing Enabled only)
-        :type Width: float
-        :param Delay: Pulse Delay in sec (Pulsing Enabled only)
-        :type Delay: float
-        :param TriggerDelay: Trigger Delay in sec
-        :type TriggerDelay: float
-        :param TriggerInterval: Trigger Interval in sec
-        :type TriggerInterval: float
+        :param points: Number of Points
+        :type points: int
         """
         if source in self.validSource.keys():
             source_f = self.validSource.get(source)
@@ -87,16 +81,15 @@ class m_SMU(m_Base):
             # Hard-coded number of points
             # It appears the length of the sweep is determined by the number
             # of points
-            self.write(':SOUR:SWE:POIN %i' % 20)
+            self.write(':SOUR:SWE:POIN %i' % int(points))
+            self.write(':TRIG:COUN %i' % int(points))
                         
             if float(stop) > float(start):
                 self.write(':SOUR:SWE:DIR UP')
             else:
                 self.write(':SOUR:SWE:DIR DOWN')
-                
-            self.setSourceSetup(**kwargs)            
         
-    def setSourceFixed(self, source, base, peak, **kwargs):
+    def setSourceFixed(self, source, base, peak):
         """
         Configure the SMU to output a fixed voltage or current
         
@@ -104,19 +97,8 @@ class m_SMU(m_Base):
         :type source: str
         :param base: Base Voltage/Current
         :type base: float
-        :param peak: Peak Voltage/Current
+        :param peak: Peak Voltage/Current when triggered
         :type peak: float
-        
-        :param Pulse: Enable/Disable Pulsing
-        :type Pulse: bool
-        :param Width: Pulse Width in sec (Pulsing Enabled only)
-        :type Width: float
-        :param Delay: Pulse Delay in sec (Pulsing Enabled only)
-        :type Delay: float
-        :param TriggerDelay: Trigger Delay in sec
-        :type TriggerDelay: float
-        :param TriggerInterval: Trigger Interval in sec
-        :type TriggerInterval: float
         """
         if source in self.validSource.keys():
             source_f = self.validSource.get(source)
@@ -124,51 +106,58 @@ class m_SMU(m_Base):
             
             self.write(':SOUR:%s %f' % (source_f, float(base)))
             self.write(':SOUR:%s:TRIG %f' % (source_f, float(peak)))
-        
-            self.setSourceSetup(**kwargs)
             
     def setSourceProgram(self):
         pass
-        
-    def setSourceSetup(self, **kwargs):
+
+    def setPulseSetup(self, pulseEnable, pulseWidth, delay=0.0):
         """
-        Set SMU Source Trigger and Pulse parameters.
+        Set SMU Pulse settings
         
-        :param Pulse: Enable/Disable Pulsing
-        :type Pulse: bool
-        :param Width: Pulse Width in sec (Pulsing Enabled only)
-        :type Width: float
-        :param Delay: Pulse Delay in sec (Pulsing Enabled only)
-        :type Delay: float
-        :param TriggerDelay: Trigger Delay in sec
-        :type TriggerDelay: float
-        :param TriggerInterval: Trigger Interval in sec
-        :type TriggerInterval: float
+        :param pulseEnable: Enable/Disable Pulsing
+        :type pulseEnable: bool
+        :param pulseWidth: Pulse width in seconds - must be greater than 20E-6
+        :type pulseWidth: float
+        :param delay: Delay before first pulse in seconds
+        :type delay: float
         """
-        if 'Pulse' in kwargs:
-            if bool(kwargs.get('Pulse', False)):
-                self.write(':SOUR:FUNC:SHAP PULS')
-                
-                if 'Width' in kwargs:
-                    self.write(':SOUR:PULS:WIDT %f' % float(kwargs['Width']))
-                    
-                if 'Delay' in kwargs:
-                    self.write(':SOUR:PULS:DEL %f' % float(kwargs['Delay']))
+        if pulseEnable:
+            self.write(':SOUR:FUNC:SHAP PULS')
             
+            self.write(':SOUR:PULS:WIDT %f' % float(pulseWidth))
+                
+            if delay > 0.0:
+                self.write(':SOUR:PULS:DEL %f' % float(delay))
+                
+        else:
+            self.write(':SOUR:FUNC:SHAP DC')
+                
+    def setTriggerSetup(self, triggerSource, number, interval, delay=0):
+        """
+        Set SMU Trigger settings
+        
+        :param triggerSource: Trigger Source - ['AINT', 'BUS', 'TIMER', 'INT1', 'INT2', 'LAN', 'EXT1', 'EXT2',\
+                    'EXT3', 'EXT4', 'EXT5', 'EXT6', 'EXT7', 'EXT8', 'EXT9', 'EXT10',\
+                    'EXT11', 'EXT12', 'EXT13', 'EXT14']
+        :type triggerSource: str
+        :param number: Number of Triggers per sequence - 1 to 100000 or 2147483647 (INF)
+        :type number: int
+        :param interval: Timing interval in seconds - must be greater than 20E-6
+        :type interval: float
+        :param delay: Delay before first trigger in seconds
+        :type delay: float 
+        """
+        if triggerSource in self.validTrigger:
+            self.write(':TRIG:SOUR %s' % triggerSource)
+            self.write(':TRIG:COUN %i' % number)
+            
+            if triggerSource == 'TIMER':
+                self.write(':TRIG:TIME %f' % float(interval))
+            
+            if delay > 0.0:
+                self.write(':TRIG:DEL %f' % float(delay))
             else:
-                self.write(':SOUR:FUNC:SHAP DC')
-                
-        if 'TriggerDelay' in kwargs:
-            self.write(':TRIG:DEL %f' % float(kwargs['TriggerDelay']))
-        else:
-            self.write(':TRIG:DEL 0')
-            
-        if 'TriggerInterval' in kwargs:
-            self.write(':TRIG:SOUR TIMER')
-            self.write(':TRIG:TIME %f' % float(kwargs['TriggerInterval']))
-            self.write(':TRIG:COUN %i' % int(kwargs.get('Points', 2500)))
-        else:
-            self.write(':TRIG:SOUR AINT')
+                self.write(':TRIG:DEL 0')
     
     def setMeasurementSetup(self, **kwargs):
         pass
@@ -185,6 +174,12 @@ class m_SMU(m_Base):
         self.write(':OUTP OFF')
         
     def startProgram(self, channel=1):
+        """
+        Start a program sequence / Force trigger.
+        
+        :param channel: Channel (1 or 2)
+        :type channel: int
+        """
         if channel == 1:
             self.write(':INIT (@1)')
             
@@ -201,22 +196,41 @@ class m_SMU(m_Base):
     # Helper Functions
     #===========================================================================
     
-    def rampVoltage(self, startVoltage, stopVoltage, time, points):
+    def rampVoltage(self, startVoltage, stopVoltage, time, delay=0):
         """
-        Sweep through a list of programmed points and take measurements at each
-        point.
+        Automated voltage ramp
         
-        Uses:
-        - Voltage ramp rates
-        
-        Parameters
-        - Source: VOLT or CURR (Default: VOLT)
+        :param startVoltage: Starting Voltage
+        :type startVoltage: float
+        :param stopVoltage: Stop Voltage
+        :type stopVoltage: float
+        :param time: Rise/Fall Time (seconds)
+        :type time: float
+        :param delay: Time (seconds) before ramp is started
+        :type delay: float
         """
-        interv = float(time) / float(points)
+        if float(time) < 0.05:
+            # Minimum Interval
+            interval = 20E-6
+            points = int(float(time) / interval)
         
-        self.setSourceSweep('VOLTAGE', startVoltage, stopVoltage,
-                       Points=points,
-                       TriggerInterval=interv )
-    
+        else:
+            # Maximum resolution
+            points = 2500
+            interval = float(time) / float(points)
+        
+        #interv = float(time) / float(points)
+        
+        # Set default parameters and enable
+        self.setSourceFixed('VOLTAGE', startVoltage, startVoltage)
+        self.powerOn()
+        
+        # Setup sweep params
+        self.setSourceSweep('VOLTAGE', startVoltage, stopVoltage, points)
+        
+        self.setTriggerSetup('TIMER', points, interval, delay)
+        
+        self.write(":SOUR:FUNC:TRIG:CONT ON") # OUTPUT AFTER SWEEP - END VAL
+        self.startProgram(1)
 
     
