@@ -292,7 +292,9 @@ class InstrumentControl(object):
         else:
             self.hostnames[testManager.hostname] = addr 
             self.managers[addr] = testManager
-            self.refreshManager(addr)
+            
+            # Update the resource cache
+            self.cacheManager(addr)
             
         return True
         
@@ -316,6 +318,33 @@ class InstrumentControl(object):
             # Force a remote device scan
             man.refresh()
             
+            # Update the local resource cache
+            self.cacheManager(address)
+
+        elif address is None:
+            for addr in self.managers:
+                self.refreshManager(addr)
+                 
+        else:
+            return False
+        
+        return True
+    
+    def cacheManager(self, address):
+        """
+        Update the local cache of resources from a given Manager
+        
+        .. note::
+           Use :func:`addManager` to establish a connection to a manager
+           before calling this function.
+        
+        :param address: IP Address to check
+        :type address: str
+        :returns: True unless there is no existing connection to `address`
+        """
+        if address in self.managers:
+            man = self.managers.get(address)
+            
             # Get the list of resources for the address
             cached_resources = self.getResources(address)
             
@@ -327,20 +356,18 @@ class InstrumentControl(object):
                 if res_uuid not in cached_resources.keys():
                     # Expects res == (Controller, ResID, VID, PID)
                      self.resources[res_uuid] = (address,) + tuple(res)
+                     
+                     # Cache the properties dict for new resources
+                     self.cacheProperties(res_uuid)
 
             # Purge resources that are no longer available
             for res_uuid, res in cached_resources.items():
                 if res_uuid not in remote_resources.keys():
                     self.resources.pop(res_uuid)
-
-        elif address is None:
-            for addr in self.managers:
-                self.refreshManager(addr)
-                 
-        else:
-            return False
+                    
+                    # Purge cached properties
+                    self.properties.pop(res_uuid)
         
-        return True
     
     def removeManager(self, address):
         """
@@ -577,7 +604,10 @@ class InstrumentControl(object):
         man = self.managers.get(res[0], None)
         
         if man is not None:
-            return man.loadModel(res_uuid, modelName, className)
+            ret = man.loadModel(res_uuid, modelName, className)
+            self.cacheProperties(res_uuid)
+            
+            return ret
         
         else:
             return False
@@ -598,7 +628,7 @@ class InstrumentControl(object):
         
         if man is not None:
             ret = man.unloadModel(res_uuid)
-            self.refreshProperties(res_uuid)
+            self.cacheProperties(res_uuid)
             return ret
         
         else:
@@ -625,36 +655,22 @@ class InstrumentControl(object):
             if res_uuid not in self.resources.keys():
                 return False
                 
-            # Find out where this resource is located
-            res = self.resources.get(res_uuid, None)
-            address = self.getResource_address(res_uuid)
-            man = self.getManager(address)
+            # Update the property cache
+            self.cacheProperties(res_uuid)
+            prop = self.getProperties(res_uuid)
+            address = prop.get('address')
+            port = prop.get('port', None)
                     
-            if man is not None:
-                res_model = man.getModelName(res_uuid)
-                
-                if res_model is not None:
-                    # A model is loaded, get the port
-                    # The manager will automatically start the RPC server
-                    port = man.getModelPort(res_uuid)
-                    
-                    try:
-                        testInstrument = RpcClient(address=address, port=port)
-                        if testInstrument._ready():
-                            self.instruments[res_uuid] = testInstrument
-                            
-                            self.refreshProperties(res_uuid)
-                            
-                            return testInstrument
+            if port is not None:
+                try:
+                    testInstrument = RpcClient(address=address, port=port)
+                    if testInstrument._ready():
+                        self.instruments[res_uuid] = testInstrument
                         
-                        else:
-                            return None
-                    except:
-                        return None
+                        return testInstrument
                     
-                else:
-                    # No model loaded for that resource
-                    return None
+                except:
+                    pass
                 
             else:
                 # The resource could not be located
@@ -677,7 +693,7 @@ class InstrumentControl(object):
         
         return False
     
-    def refreshProperties(self, res_uuid=None):
+    def cacheProperties(self, res_uuid=None):
         """
         Refresh the cached property dictionary for a given resource. If no
         Resource UUID is provided, all resources properties will be updated.
@@ -694,7 +710,7 @@ class InstrumentControl(object):
         if res_uuid is None:
             for res_uuid, res in self.resources.items():
                 # These dictionaries can be large, so update one at a time
-                self.refreshProperties(res_uuid)
+                self.cacheProperties(res_uuid)
                     
             return self.properties
         
