@@ -25,7 +25,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="../index.html" />
     <link rel="up" title="Supported Instruments (Models)" href="../supported_instruments.html" />
-    <link rel="next" title="Supported Interfaces (Controllers)" href="../supported_interfaces.html" />
+    <link rel="next" title="Agilent.m_SMU" href="Agilent.m_SMU.html" />
     <link rel="prev" title="Tektronix.Oscilloscope.m_OscilloscopeBase" href="Tektronix.Oscilloscope.m_OscilloscopeBase.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="../supported_interfaces.html" title="Supported Interfaces (Controllers)"
+          <a href="Agilent.m_SMU.html" title="Agilent.m_SMU"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="Tektronix.Oscilloscope.m_OscilloscopeBase.html" title="Tektronix.Oscilloscope.m_OscilloscopeBase"
@@ -55,7 +55,7 @@
 <h1>Tektronix.Oscilloscope.m_DigitalPhosphor<a class="headerlink" href="#tektronix-oscilloscope-m-digitalphosphor" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor">
-<em class="property">class </em><tt class="descclassname">models.Tektronix.Oscilloscope.m_DigitalPhosphor.</tt><tt class="descname">m_DigitalPhosphor</tt><big>(</big><em>uuid</em>, <em>controller</em>, <em>resID</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope/m_DigitalPhosphor.html#m_DigitalPhosphor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">models.Tektronix.Oscilloscope.m_DigitalPhosphor.</tt><tt class="descname">m_DigitalPhosphor</tt><big>(</big><em>uuid</em>, <em>controller</em>, <em>resID</em>, <em>VID</em>, <em>PID</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope/m_DigitalPhosphor.html#m_DigitalPhosphor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase" title="models.Tektronix.Oscilloscope.m_OscilloscopeBase"><tt class="xref py py-class docutils literal"><span class="pre">models.Tektronix.Oscilloscope.m_OscilloscopeBase</span></tt></a></p>
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.defaultSetup">
@@ -74,6 +74,20 @@
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Filename</strong> (<em>str</em>) &#8211; Filename of output file</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">bool - True if successful, False otherwise</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getControllerName">
+<tt class="descname">getControllerName</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getControllerName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Model&#8217;s Controller class name</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
 </tr>
 </tbody>
 </table>
@@ -99,15 +113,14 @@
 </dd></dl>
 
 <dl class="method">
-<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getIdentity">
-<tt class="descname">getIdentity</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getIdentity" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the Model identity information that is assigned when the
-InstrumentManager loads the Model and attaches it to a resource</p>
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getModelName">
+<tt class="descname">getModelName</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getModelName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Model class name</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">tuple - (Resource UUID, Controller Name, Resource ID)</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
 </tr>
 </tbody>
 </table>
@@ -140,6 +153,35 @@ InstrumentManager loads the Model and attaches it to a resource</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getProductID">
+<tt class="descname">getProductID</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getProductID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Resource Product ID that is used to find compatible Models</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getResourceID">
+<tt class="descname">getResourceID</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getResourceID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Model Resource ID that identifies the resource to the
+Controller</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getSearchMarks">
 <tt class="descname">getSearchMarks</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getSearchMarks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of all mark locations. Manually iterates through all marks
@@ -156,6 +198,34 @@ to complete</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Search</strong> (<em>int between 1-8</em>) &#8211; Search slot number</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list of mark times (float)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getUUID">
+<tt class="descname">getUUID</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getUUID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Resource UUID that is provided to the Model</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getVendorID">
+<tt class="descname">getVendorID</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.getVendorID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Resource Vendor ID that is used to find compatible Models</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
 </tr>
 </tbody>
 </table>
@@ -181,6 +251,20 @@ the channel as the key.</p>
 <dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.lock">
 <tt class="descname">lock</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.lock" title="Permalink to this definition">¶</a></dt>
 <dd><p>Lock the oscilloscope</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.rpc_getConnections">
+<tt class="descname">rpc_getConnections</tt><big>(</big><em>connection=None</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_DigitalPhosphor.rpc_getConnections" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of connections to the RPC server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -680,8 +764,8 @@ The full range of possible Search Types are:
   <p class="topless"><a href="Tektronix.Oscilloscope.m_OscilloscopeBase.html"
                         title="previous chapter">Tektronix.Oscilloscope.m_OscilloscopeBase</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="../supported_interfaces.html"
-                        title="next chapter">Supported Interfaces (Controllers)</a></p>
+  <p class="topless"><a href="Agilent.m_SMU.html"
+                        title="next chapter">Agilent.m_SMU</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/models/Tektronix.Oscilloscope.m_DigitalPhosphor.txt"
@@ -711,7 +795,7 @@ The full range of possible Search Types are:
           <a href="../genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="../supported_interfaces.html" title="Supported Interfaces (Controllers)"
+          <a href="Agilent.m_SMU.html" title="Agilent.m_SMU"
              >next</a> |</li>
         <li class="right" >
           <a href="Tektronix.Oscilloscope.m_OscilloscopeBase.html" title="Tektronix.Oscilloscope.m_OscilloscopeBase"

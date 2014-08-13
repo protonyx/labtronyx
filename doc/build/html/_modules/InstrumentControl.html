@@ -52,10 +52,11 @@
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">logging.handlers</span>
+<span class="kn">import</span> <span class="nn">socket</span>
 
 <span class="c"># Instrument Control Classes</span>
 <span class="kn">import</span> <span class="nn">common</span>
-<span class="kn">from</span> <span class="nn">common</span> <span class="kn">import</span> <span class="n">is_valid_ipv4_address</span><span class="p">,</span> <span class="n">resolve_hostname</span>
+<span class="kn">from</span> <span class="nn">common</span> <span class="kn">import</span> <span class="n">is_valid_ipv4_address</span>
 <span class="kn">from</span> <span class="nn">common.rpc</span> <span class="kn">import</span> <span class="n">RpcClient</span>
 
 <div class="viewcode-block" id="InstrumentControl"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl">[docs]</a><span class="k">class</span> <span class="nc">InstrumentControl</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -130,7 +131,7 @@
         <span class="c">#self.startWaitManager()</span>
                 
         <span class="c"># Attempt to connect to the local manager</span>
-        <span class="c">#local = self.getAddressFromHostname(&#39;localhost&#39;)</span>
+        <span class="c">#local = self._resolveAddress(&#39;localhost&#39;)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">)</span>
         
         <span class="c">#=======================================================================</span>
@@ -149,29 +150,35 @@
     <span class="c"># Manager Operations    </span>
     <span class="c">#===========================================================================</span>
     
-<div class="viewcode-block" id="InstrumentControl.getAddressFromHostname"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getAddressFromHostname">[docs]</a>    <span class="k">def</span> <span class="nf">getAddressFromHostname</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hostname</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_resolveAddress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Resolves a hostname.</span>
+<span class="sd">        Verify a IPv4 address from the input. Always returns an IPv4 Address or</span>
+<span class="sd">        None</span>
 <span class="sd">        </span>
-<span class="sd">        :param hostname: Machine hostname to resolve</span>
-<span class="sd">        :type hostname: str</span>
+<span class="sd">        :param input: IP Address or Hostname</span>
+<span class="sd">        :type input: str</span>
 <span class="sd">        :returns: str -- IPv4 Address</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">addr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostnames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hostname</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">addr</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">addr</span> <span class="o">=</span> <span class="n">resolve_hostname</span><span class="p">(</span><span class="n">hostname</span><span class="p">)</span>
-            
-        <span class="k">return</span> <span class="n">addr</span>
-    </div>
+        <span class="k">if</span> <span class="nb">input</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostnames</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostnames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+        
+        <span class="k">elif</span> <span class="n">is_valid_ipv4_address</span><span class="p">(</span><span class="nb">input</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">input</span>
+        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostbyname</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+    
 <div class="viewcode-block" id="InstrumentControl.isConnectedHost"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.isConnectedHost">[docs]</a>    <span class="k">def</span> <span class="nf">isConnectedHost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hostname</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Check if a given hostname is connected</span>
+<span class="sd">        Check if a given host is connected</span>
 <span class="sd">        </span>
-<span class="sd">        :param hostname: hostname to check</span>
+<span class="sd">        :param hostname: IP Address or Hostname</span>
 <span class="sd">        :type hostname: str</span>
-<span class="sd">        :returns: True is hostname if connected, False otherwise</span>
+<span class="sd">        :returns: True if connected, False otherwise</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostnames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hostname</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolveAddress</span><span class="p">(</span><span class="n">hostname</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">address</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostnames</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="k">return</span> <span class="bp">True</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
@@ -216,7 +223,7 @@
 <span class="sd">           instance is not fully initialized before attempting to connect to it,</span>
 <span class="sd">           timeouts will occur. </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAddressFromHostname</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">)</span>
+        <span class="n">local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolveAddress</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">)</span>
         
         <span class="k">try</span><span class="p">:</span>
             <span class="n">pyExec</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">executable</span>
@@ -239,7 +246,7 @@
 <span class="sd">        :type timeout: float</span>
 <span class="sd">        :returns: Nothing</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAddressFromHostname</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">)</span>
+        <span class="n">local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolveAddress</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">startManager</span><span class="p">()</span>
         
@@ -252,19 +259,21 @@
             <span class="k">if</span> <span class="n">tryTime</span> <span class="o">&gt;=</span> <span class="n">timeout</span><span class="p">:</span>
                 <span class="k">break</span>
             
-        <span class="bp">self</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="n">local</span><span class="p">)</span>
         </div>
 <div class="viewcode-block" id="InstrumentControl.managerRunning"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.managerRunning">[docs]</a>    <span class="k">def</span> <span class="nf">managerRunning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if an :class:`InstrumentManager` instance is running. Attempts to</span>
 <span class="sd">        open a socket to the provided address and port.</span>
 <span class="sd">        </span>
-<span class="sd">        :param address: IP Address to check</span>
+<span class="sd">        :param address: IP Address or Hostname</span>
 <span class="sd">        :type address: str</span>
 <span class="sd">        :param port: Port</span>
 <span class="sd">        :type port: int</span>
 <span class="sd">        :returns: True if running, False if not running</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolveAddress</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+        
         <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getManager</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">man</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="c"># Manager already connected</span>
@@ -287,20 +296,22 @@
 <span class="sd">        .. note::</span>
 <span class="sd">           :class:`InstrumentManager` cannot be restarted once it is stopped</span>
 <span class="sd">           </span>
-<span class="sd">        :param address: IP Address to check</span>
+<span class="sd">        :param address: IP Address or Hostname</span>
 <span class="sd">        :type address: str</span>
 <span class="sd">        :param port: Port</span>
 <span class="sd">        :type port: int</span>
 <span class="sd">        :returns: Nothing</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolveAddress</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+        
         <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getManager</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">man</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">man</span><span class="o">.</span><span class="n">rpc_stop</span><span class="p">()</span>
+            <span class="n">man</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">removeManager</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span>
                 <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getManager</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
-                <span class="n">man</span><span class="o">.</span><span class="n">rpc_stop</span><span class="p">()</span>
+                <span class="n">man</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">removeManager</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c"># No manager could be found at the address:port</span>
@@ -312,12 +323,13 @@
 <span class="sd">        connection is successful, the remote resources are automatically</span>
 <span class="sd">        added to the pool of resources using :func:`refreshManager`</span>
 <span class="sd">        </span>
-<span class="sd">        :param address: IP Address to check</span>
+<span class="sd">        :param address: IP Address or Hostname</span>
 <span class="sd">        :type address: str</span>
 <span class="sd">        :param port: Port</span>
 <span class="sd">        :type port: int</span>
 <span class="sd">        :returns: True if manager found, False if connection failed</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolveAddress</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
         
         <span class="n">seekPort</span> <span class="o">=</span> <span class="n">port</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">managerPort</span>
         
@@ -338,14 +350,49 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">hostnames</span><span class="p">[</span><span class="n">testManager</span><span class="o">.</span><span class="n">hostname</span><span class="p">]</span> <span class="o">=</span> <span class="n">addr</span> 
             <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span> <span class="o">=</span> <span class="n">testManager</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">refreshManager</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
+            
+            <span class="c"># Update the resource cache</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cacheManager</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
             
         <span class="k">return</span> <span class="bp">True</span>
         </div>
 <div class="viewcode-block" id="InstrumentControl.refreshManager"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.refreshManager">[docs]</a>    <span class="k">def</span> <span class="nf">refreshManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Refresh the cached resources for the manager at `address`. If no </span>
-<span class="sd">        address is provided, refreshes all resources across all managers</span>
+<span class="sd">        Force the remote InstrumentManager to refresh all of the controllers</span>
+<span class="sd">        and enumerate any new resources.</span>
+<span class="sd">        </span>
+<span class="sd">        .. note::</span>
+<span class="sd">           Use :func:`addManager` to establish a connection to a manager</span>
+<span class="sd">           before calling this function.</span>
+<span class="sd">        </span>
+<span class="sd">        :param address: IP Address or Hostname</span>
+<span class="sd">        :type address: str</span>
+<span class="sd">        :returns: True unless there is no existing connection to `address`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">address</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolveAddress</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">address</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="p">:</span>
+            <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+            
+            <span class="c"># Force a remote device scan</span>
+            <span class="n">man</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+            
+            <span class="c"># Update the local resource cache</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cacheManager</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">address</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">addr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">refreshManager</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
+                 
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        
+        <span class="k">return</span> <span class="bp">True</span>
+    </div>
+<div class="viewcode-block" id="InstrumentControl.cacheManager"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.cacheManager">[docs]</a>    <span class="k">def</span> <span class="nf">cacheManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the local cache of resources from a given Manager</span>
 <span class="sd">        </span>
 <span class="sd">        .. note::</span>
 <span class="sd">           Use :func:`addManager` to establish a connection to a manager</span>
@@ -355,12 +402,10 @@
 <span class="sd">        :type address: str</span>
 <span class="sd">        :returns: True unless there is no existing connection to `address`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolveAddress</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="n">address</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="p">:</span>
             <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
-            
-            <span class="c"># Force a remote device scan</span>
-            <span class="n">man</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
             
             <span class="c"># Get the list of resources for the address</span>
             <span class="n">cached_resources</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getResources</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
@@ -373,20 +418,18 @@
                 <span class="k">if</span> <span class="n">res_uuid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cached_resources</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                     <span class="c"># Expects res == (Controller, ResID, VID, PID)</span>
                      <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="p">[</span><span class="n">res_uuid</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">address</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+                     
+                     <span class="c"># Cache the properties dict for new resources</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">cacheProperties</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
 
             <span class="c"># Purge resources that are no longer available</span>
             <span class="k">for</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">cached_resources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">res_uuid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">remote_resources</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
-
-        <span class="k">elif</span> <span class="n">address</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">addr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">refreshManager</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
-                 
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">False</span>
+                    
+                    <span class="c"># Purge cached properties</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
         
-        <span class="k">return</span> <span class="bp">True</span>
     </div>
 <div class="viewcode-block" id="InstrumentControl.removeManager"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.removeManager">[docs]</a>    <span class="k">def</span> <span class="nf">removeManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -397,6 +440,8 @@
 <span class="sd">        :type address: str</span>
 <span class="sd">        :returns: True unless there is no existing connection to `address`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolveAddress</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+        
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">address</span><span class="p">):</span>
             <span class="c"># Remove all resources from that host</span>
             <span class="n">cached_resources</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="p">{})</span>
@@ -431,6 +476,8 @@
 <span class="sd">        :returns: :class:`common.rpc.RpcClient` object or None if there is no \</span>
 <span class="sd">        existing connection to `address`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolveAddress</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+            
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
 
     <span class="c">#===========================================================================</span>
@@ -454,6 +501,8 @@
 <span class="sd">                    (`address`, `controller`, `resourceID`, `VID`, `PID`) }</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">address</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolveAddress</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+            
             <span class="n">ret</span> <span class="o">=</span> <span class="p">{}</span>
             
             <span class="k">if</span> <span class="n">address</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostnames</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
@@ -526,6 +575,8 @@
 <span class="sd">        </span>
 <span class="sd">        :returns: bool - True if success, False otherwise</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolveAddress</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+            
         <span class="k">if</span> <span class="n">address</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="p">:</span>
             <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
             
@@ -623,7 +674,10 @@
         <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">None</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="n">man</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">man</span><span class="o">.</span><span class="n">loadModel</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="n">modelName</span><span class="p">,</span> <span class="n">className</span><span class="p">)</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">man</span><span class="o">.</span><span class="n">loadModel</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="n">modelName</span><span class="p">,</span> <span class="n">className</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cacheProperties</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="n">ret</span>
         
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
@@ -644,7 +698,7 @@
         
         <span class="k">if</span> <span class="n">man</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">ret</span> <span class="o">=</span> <span class="n">man</span><span class="o">.</span><span class="n">unloadModel</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">refreshProperties</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cacheProperties</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">ret</span>
         
         <span class="k">else</span><span class="p">:</span>
@@ -671,36 +725,22 @@
             <span class="k">if</span> <span class="n">res_uuid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="k">return</span> <span class="bp">False</span>
                 
-            <span class="c"># Find out where this resource is located</span>
-            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-            <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getResource_address</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
-            <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getManager</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+            <span class="c"># Update the property cache</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cacheProperties</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getProperties</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+            <span class="n">address</span> <span class="o">=</span> <span class="n">prop</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;address&#39;</span><span class="p">)</span>
+            <span class="n">port</span> <span class="o">=</span> <span class="n">prop</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;port&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
                     
-            <span class="k">if</span> <span class="n">man</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="n">res_model</span> <span class="o">=</span> <span class="n">man</span><span class="o">.</span><span class="n">getModelName</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
-                
-                <span class="k">if</span> <span class="n">res_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-                    <span class="c"># A model is loaded, get the port</span>
-                    <span class="c"># The manager will automatically start the RPC server</span>
-                    <span class="n">port</span> <span class="o">=</span> <span class="n">man</span><span class="o">.</span><span class="n">getModelPort</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
-                    
-                    <span class="k">try</span><span class="p">:</span>
-                        <span class="n">testInstrument</span> <span class="o">=</span> <span class="n">RpcClient</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="n">address</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="n">testInstrument</span><span class="o">.</span><span class="n">_ready</span><span class="p">():</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">instruments</span><span class="p">[</span><span class="n">res_uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">testInstrument</span>
-                            
-                            <span class="bp">self</span><span class="o">.</span><span class="n">refreshProperties</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
-                            
-                            <span class="k">return</span> <span class="n">testInstrument</span>
+            <span class="k">if</span> <span class="n">port</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">testInstrument</span> <span class="o">=</span> <span class="n">RpcClient</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="n">address</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">testInstrument</span><span class="o">.</span><span class="n">_ready</span><span class="p">():</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">instruments</span><span class="p">[</span><span class="n">res_uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">testInstrument</span>
                         
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="k">return</span> <span class="bp">None</span>
-                    <span class="k">except</span><span class="p">:</span>
-                        <span class="k">return</span> <span class="bp">None</span>
+                        <span class="k">return</span> <span class="n">testInstrument</span>
                     
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c"># No model loaded for that resource</span>
-                    <span class="k">return</span> <span class="bp">None</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">pass</span>
                 
             <span class="k">else</span><span class="p">:</span>
                 <span class="c"># The resource could not be located</span>
@@ -723,7 +763,7 @@
         
         <span class="k">return</span> <span class="bp">False</span>
     </div>
-<div class="viewcode-block" id="InstrumentControl.refreshProperties"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.refreshProperties">[docs]</a>    <span class="k">def</span> <span class="nf">refreshProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentControl.cacheProperties"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.cacheProperties">[docs]</a>    <span class="k">def</span> <span class="nf">cacheProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Refresh the cached property dictionary for a given resource. If no</span>
 <span class="sd">        Resource UUID is provided, all resources properties will be updated.</span>
@@ -740,7 +780,7 @@
         <span class="k">if</span> <span class="n">res_uuid</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">res</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="c"># These dictionaries can be large, so update one at a time</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">refreshProperties</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cacheProperties</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
                     
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span>
         
@@ -810,7 +850,7 @@
 <span class="sd">        :returns: :class:`RpcClient` object</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">prop_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getProperties</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">prop_dict</span><span class="p">[</span><span class="s">&#39;deviceSerial&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">serial_number</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">prop_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;deviceSerial&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="o">==</span> <span class="n">serial_number</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">createInstrument</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
         
         <span class="k">return</span> <span class="bp">None</span>
@@ -829,7 +869,7 @@
         <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
         
         <span class="k">for</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">prop_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getProperties</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">prop_dict</span><span class="p">[</span><span class="s">&#39;deviceModel&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">model_number</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">prop_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;deviceModel&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="o">==</span> <span class="n">model_number</span><span class="p">:</span>
                 <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">createInstrument</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">))</span>
                 
         <span class="k">return</span> <span class="n">ret</span>
@@ -848,7 +888,7 @@
         <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
         
         <span class="k">for</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">prop_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getProperties</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">prop_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;deviceType&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="n">d_type</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">prop_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;deviceType&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="o">==</span> <span class="n">d_type</span><span class="p">:</span>
                 <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">createInstrument</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">))</span>
                 
         <span class="k">return</span> <span class="n">ret</span>

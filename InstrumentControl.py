@@ -6,10 +6,11 @@ import subprocess
 import time
 import logging
 import logging.handlers
+import socket
 
 # Instrument Control Classes
 import common
-from common import is_valid_ipv4_address, resolve_hostname
+from common import is_valid_ipv4_address
 from common.rpc import RpcClient
 
 class InstrumentControl(object):
@@ -84,7 +85,7 @@ class InstrumentControl(object):
         #self.startWaitManager()
                 
         # Attempt to connect to the local manager
-        #local = self.getAddressFromHostname('localhost')
+        #local = self._resolveAddress('localhost')
         self.addManager('localhost')
         
         #=======================================================================
@@ -103,29 +104,35 @@ class InstrumentControl(object):
     # Manager Operations    
     #===========================================================================
     
-    def getAddressFromHostname(self, hostname):
+    def _resolveAddress(self, input):
         """
-        Resolves a hostname.
+        Verify a IPv4 address from the input. Always returns an IPv4 Address or
+        None
         
-        :param hostname: Machine hostname to resolve
-        :type hostname: str
+        :param input: IP Address or Hostname
+        :type input: str
         :returns: str -- IPv4 Address
         """
-        addr = self.hostnames.get(hostname, None)
-        if addr is None:
-            addr = resolve_hostname(hostname)
-            
-        return addr
+        if input in self.hostnames:
+            return self.hostnames.get(input)
+        
+        elif is_valid_ipv4_address(input):
+            return input
+        
+        else:
+            return socket.gethostbyname(input)
     
     def isConnectedHost(self, hostname):
         """
-        Check if a given hostname is connected
+        Check if a given host is connected
         
-        :param hostname: hostname to check
+        :param hostname: IP Address or Hostname
         :type hostname: str
-        :returns: True is hostname if connected, False otherwise
+        :returns: True if connected, False otherwise
         """
-        if self.hostnames.get(hostname, None) is not None:
+        address = self._resolveAddress(hostname)
+        
+        if address in self.hostnames.values():
             return True
         else:
             return False
@@ -170,7 +177,7 @@ class InstrumentControl(object):
            instance is not fully initialized before attempting to connect to it,
            timeouts will occur. 
         """
-        local = self.getAddressFromHostname('localhost')
+        local = self._resolveAddress('localhost')
         
         try:
             pyExec = sys.executable
@@ -193,7 +200,7 @@ class InstrumentControl(object):
         :type timeout: float
         :returns: Nothing
         """
-        local = self.getAddressFromHostname('localhost')
+        local = self._resolveAddress('localhost')
         
         self.startManager()
         
@@ -206,19 +213,21 @@ class InstrumentControl(object):
             if tryTime >= timeout:
                 break
             
-        self.addManager('localhost')
+        self.addManager(local)
         
     def managerRunning(self, address, port=None):
         """
         Check if an :class:`InstrumentManager` instance is running. Attempts to
         open a socket to the provided address and port.
         
-        :param address: IP Address to check
+        :param address: IP Address or Hostname
         :type address: str
         :param port: Port
         :type port: int
         :returns: True if running, False if not running
         """
+        address = self._resolveAddress(address)
+        
         man = self.getManager(address)
         if man is not None:
             # Manager already connected
@@ -241,20 +250,22 @@ class InstrumentControl(object):
         .. note::
            :class:`InstrumentManager` cannot be restarted once it is stopped
            
-        :param address: IP Address to check
+        :param address: IP Address or Hostname
         :type address: str
         :param port: Port
         :type port: int
         :returns: Nothing
         """
+        address = self._resolveAddress(address)
+        
         man = self.getManager(address)
         if man is not None:
-            man.rpc_stop()
+            man.stop()
             self.removeManager(address)
         else:
             if self.addManager(address, port):
                 man = self.getManager(address)
-                man.rpc_stop()
+                man.stop()
                 self.removeManager(address)
             else:
                 # No manager could be found at the address:port
@@ -266,12 +277,13 @@ class InstrumentControl(object):
         connection is successful, the remote resources are automatically
         added to the pool of resources using :func:`refreshManager`
         
-        :param address: IP Address to check
+        :param address: IP Address or Hostname
         :type address: str
         :param port: Port
         :type port: int
         :returns: True if manager found, False if connection failed
         """
+        address = self._resolveAddress(address)
         
         seekPort = port or self.config.managerPort
         
@@ -300,17 +312,19 @@ class InstrumentControl(object):
         
     def refreshManager(self, address=None):
         """
-        Refresh the cached resources for the manager at `address`. If no 
-        address is provided, refreshes all resources across all managers
+        Force the remote InstrumentManager to refresh all of the controllers
+        and enumerate any new resources.
         
         .. note::
            Use :func:`addManager` to establish a connection to a manager
            before calling this function.
         
-        :param address: IP Address to check
+        :param address: IP Address or Hostname
         :type address: str
         :returns: True unless there is no existing connection to `address`
         """
+        if address is not None:
+            address = self._resolveAddress(address)
         
         if address in self.managers:
             man = self.managers.get(address)
@@ -342,6 +356,8 @@ class InstrumentControl(object):
         :type address: str
         :returns: True unless there is no existing connection to `address`
         """
+        address = self._resolveAddress(address)
+        
         if address in self.managers:
             man = self.managers.get(address)
             
@@ -378,6 +394,8 @@ class InstrumentControl(object):
         :type address: str
         :returns: True unless there is no existing connection to `address`
         """
+        address = self._resolveAddress(address)
+        
         if self.managers.has_key(address):
             # Remove all resources from that host
             cached_resources = self.resources.pop(address, {})
@@ -412,6 +430,8 @@ class InstrumentControl(object):
         :returns: :class:`common.rpc.RpcClient` object or None if there is no \
         existing connection to `address`
         """
+        address = self._resolveAddress(address)
+            
         return self.managers.get(address, None)
 
     #===========================================================================
@@ -435,6 +455,8 @@ class InstrumentControl(object):
                     (`address`, `controller`, `resourceID`, `VID`, `PID`) }
         """
         if address is not None:
+            address = self._resolveAddress(address)
+            
             ret = {}
             
             if address in self.hostnames.values():
@@ -507,6 +529,8 @@ class InstrumentControl(object):
         
         :returns: bool - True if success, False otherwise
         """
+        address = self._resolveAddress(address)
+            
         if address in self.managers:
             man = self.managers.get(address)
             

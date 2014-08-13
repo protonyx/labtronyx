@@ -55,7 +55,7 @@
 <h1>Agilent.m_SMU<a class="headerlink" href="#agilent-m-smu" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="models.Agilent.m_SMU.m_SMU">
-<em class="property">class </em><tt class="descclassname">models.Agilent.m_SMU.</tt><tt class="descname">m_SMU</tt><big>(</big><em>uuid</em>, <em>controller</em>, <em>resID</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Agilent/m_SMU.html#m_SMU"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">models.Agilent.m_SMU.</tt><tt class="descname">m_SMU</tt><big>(</big><em>uuid</em>, <em>controller</em>, <em>resID</em>, <em>VID</em>, <em>PID</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Agilent/m_SMU.html#m_SMU"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../dev/dev_model.html#models.m_Base" title="models.m_Base"><tt class="xref py py-class docutils literal"><span class="pre">models.m_Base</span></tt></a></p>
 <dl class="method">
 <dt id="models.Agilent.m_SMU.m_SMU.defaultSetup">
@@ -64,15 +64,14 @@
 </dd></dl>
 
 <dl class="method">
-<dt id="models.Agilent.m_SMU.m_SMU.getIdentity">
-<tt class="descname">getIdentity</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.getIdentity" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the Model identity information that is assigned when the
-InstrumentManager loads the Model and attaches it to a resource</p>
+<dt id="models.Agilent.m_SMU.m_SMU.getControllerName">
+<tt class="descname">getControllerName</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.getControllerName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Model&#8217;s Controller class name</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">tuple - (Resource UUID, Controller Name, Resource ID)</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
 </tr>
 </tbody>
 </table>
@@ -85,14 +84,108 @@ InstrumentManager loads the Model and attaches it to a resource</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="models.Agilent.m_SMU.m_SMU.getModelName">
+<tt class="descname">getModelName</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.getModelName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Model class name</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Agilent.m_SMU.m_SMU.getProductID">
+<tt class="descname">getProductID</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.getProductID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Resource Product ID that is used to find compatible Models</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Agilent.m_SMU.m_SMU.getResourceID">
+<tt class="descname">getResourceID</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.getResourceID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Model Resource ID that identifies the resource to the
+Controller</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Agilent.m_SMU.m_SMU.getUUID">
+<tt class="descname">getUUID</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.getUUID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Resource UUID that is provided to the Model</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Agilent.m_SMU.m_SMU.getVendorID">
+<tt class="descname">getVendorID</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.getVendorID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Resource Vendor ID that is used to find compatible Models</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="models.Agilent.m_SMU.m_SMU.rampVoltage">
-<tt class="descname">rampVoltage</tt><big>(</big><em>startVoltage</em>, <em>stopVoltage</em>, <em>time</em>, <em>points</em><big>)</big><a class="reference internal" href="../_modules/models/Agilent/m_SMU.html#m_SMU.rampVoltage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.rampVoltage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sweep through a list of programmed points and take measurements at each
-point.</p>
-<p>Uses:
-- Voltage ramp rates</p>
-<p>Parameters
-- Source: VOLT or CURR (Default: VOLT)</p>
+<tt class="descname">rampVoltage</tt><big>(</big><em>startVoltage</em>, <em>stopVoltage</em>, <em>time</em>, <em>delay=0</em><big>)</big><a class="reference internal" href="../_modules/models/Agilent/m_SMU.html#m_SMU.rampVoltage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.rampVoltage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Automated voltage ramp</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>startVoltage</strong> (<em>float</em>) &#8211; Starting Voltage</li>
+<li><strong>stopVoltage</strong> (<em>float</em>) &#8211; Stop Voltage</li>
+<li><strong>time</strong> (<em>float</em>) &#8211; Rise/Fall Time (seconds)</li>
+<li><strong>delay</strong> (<em>float</em>) &#8211; Time (seconds) before ramp is started</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Agilent.m_SMU.m_SMU.rpc_getConnections">
+<tt class="descname">rpc_getConnections</tt><big>(</big><em>connection=None</em><big>)</big><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.rpc_getConnections" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of connections to the RPC server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -294,22 +387,17 @@ by another call to <tt class="xref py py-func docutils literal"><span class="pre
 </dd></dl>
 
 <dl class="method">
-<dt id="models.Agilent.m_SMU.m_SMU.setSourceFixed">
-<tt class="descname">setSourceFixed</tt><big>(</big><em>source</em>, <em>base</em>, <em>peak</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Agilent/m_SMU.html#m_SMU.setSourceFixed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.setSourceFixed" title="Permalink to this definition">¶</a></dt>
-<dd><p>Configure the SMU to output a fixed voltage or current</p>
+<dt id="models.Agilent.m_SMU.m_SMU.setPulseSetup">
+<tt class="descname">setPulseSetup</tt><big>(</big><em>pulseEnable</em>, <em>pulseWidth</em>, <em>delay=0.0</em><big>)</big><a class="reference internal" href="../_modules/models/Agilent/m_SMU.html#m_SMU.setPulseSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.setPulseSetup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set SMU Pulse settings</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>source</strong> (<em>str</em>) &#8211; Voltage or Current Source - [&#8216;VOLTAGE&#8217;, &#8216;CURRENT&#8217;]</li>
-<li><strong>base</strong> (<em>float</em>) &#8211; Base Voltage/Current</li>
-<li><strong>peak</strong> (<em>float</em>) &#8211; Peak Voltage/Current</li>
-<li><strong>Pulse</strong> (<em>bool</em>) &#8211; Enable/Disable Pulsing</li>
-<li><strong>Width</strong> (<em>float</em>) &#8211; Pulse Width in sec (Pulsing Enabled only)</li>
-<li><strong>Delay</strong> (<em>float</em>) &#8211; Pulse Delay in sec (Pulsing Enabled only)</li>
-<li><strong>TriggerDelay</strong> (<em>float</em>) &#8211; Trigger Delay in sec</li>
-<li><strong>TriggerInterval</strong> (<em>float</em>) &#8211; Trigger Interval in sec</li>
+<li><strong>pulseEnable</strong> (<em>bool</em>) &#8211; Enable/Disable Pulsing</li>
+<li><strong>pulseWidth</strong> (<em>float</em>) &#8211; Pulse width in seconds - must be greater than 20E-6</li>
+<li><strong>delay</strong> (<em>float</em>) &#8211; Delay before first pulse in seconds</li>
 </ul>
 </td>
 </tr>
@@ -318,19 +406,17 @@ by another call to <tt class="xref py py-func docutils literal"><span class="pre
 </dd></dl>
 
 <dl class="method">
-<dt id="models.Agilent.m_SMU.m_SMU.setSourceSetup">
-<tt class="descname">setSourceSetup</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Agilent/m_SMU.html#m_SMU.setSourceSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.setSourceSetup" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set SMU Source Trigger and Pulse parameters.</p>
+<dt id="models.Agilent.m_SMU.m_SMU.setSourceFixed">
+<tt class="descname">setSourceFixed</tt><big>(</big><em>source</em>, <em>base</em>, <em>peak</em><big>)</big><a class="reference internal" href="../_modules/models/Agilent/m_SMU.html#m_SMU.setSourceFixed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.setSourceFixed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configure the SMU to output a fixed voltage or current</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>Pulse</strong> (<em>bool</em>) &#8211; Enable/Disable Pulsing</li>
-<li><strong>Width</strong> (<em>float</em>) &#8211; Pulse Width in sec (Pulsing Enabled only)</li>
-<li><strong>Delay</strong> (<em>float</em>) &#8211; Pulse Delay in sec (Pulsing Enabled only)</li>
-<li><strong>TriggerDelay</strong> (<em>float</em>) &#8211; Trigger Delay in sec</li>
-<li><strong>TriggerInterval</strong> (<em>float</em>) &#8211; Trigger Interval in sec</li>
+<li><strong>source</strong> (<em>str</em>) &#8211; Voltage or Current Source - [&#8216;VOLTAGE&#8217;, &#8216;CURRENT&#8217;]</li>
+<li><strong>base</strong> (<em>float</em>) &#8211; Base Voltage/Current</li>
+<li><strong>peak</strong> (<em>float</em>) &#8211; Peak Voltage/Current when triggered</li>
 </ul>
 </td>
 </tr>
@@ -340,7 +426,7 @@ by another call to <tt class="xref py py-func docutils literal"><span class="pre
 
 <dl class="method">
 <dt id="models.Agilent.m_SMU.m_SMU.setSourceSweep">
-<tt class="descname">setSourceSweep</tt><big>(</big><em>source</em>, <em>start</em>, <em>stop</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Agilent/m_SMU.html#m_SMU.setSourceSweep"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.setSourceSweep" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">setSourceSweep</tt><big>(</big><em>source</em>, <em>start</em>, <em>stop</em>, <em>points</em><big>)</big><a class="reference internal" href="../_modules/models/Agilent/m_SMU.html#m_SMU.setSourceSweep"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.setSourceSweep" title="Permalink to this definition">¶</a></dt>
 <dd><p>Configure the SMU to Sweep a range of points.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -350,13 +436,43 @@ by another call to <tt class="xref py py-func docutils literal"><span class="pre
 <li><strong>source</strong> (<em>str</em>) &#8211; Voltage or Current Source - [&#8216;VOLTAGE&#8217;, &#8216;CURRENT&#8217;]</li>
 <li><strong>start</strong> (<em>float</em>) &#8211; Starting Voltage/Current</li>
 <li><strong>stop</strong> (<em>float</em>) &#8211; Final Voltage/Current</li>
-<li><strong>Pulse</strong> (<em>bool</em>) &#8211; Enable/Disable Pulsing</li>
-<li><strong>Width</strong> (<em>float</em>) &#8211; Pulse Width in sec (Pulsing Enabled only)</li>
-<li><strong>Delay</strong> (<em>float</em>) &#8211; Pulse Delay in sec (Pulsing Enabled only)</li>
-<li><strong>TriggerDelay</strong> (<em>float</em>) &#8211; Trigger Delay in sec</li>
-<li><strong>TriggerInterval</strong> (<em>float</em>) &#8211; Trigger Interval in sec</li>
+<li><strong>points</strong> (<em>int</em>) &#8211; Number of Points</li>
 </ul>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Agilent.m_SMU.m_SMU.setTriggerSetup">
+<tt class="descname">setTriggerSetup</tt><big>(</big><em>triggerSource</em>, <em>number</em>, <em>interval</em>, <em>delay=0</em><big>)</big><a class="reference internal" href="../_modules/models/Agilent/m_SMU.html#m_SMU.setTriggerSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.setTriggerSetup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set SMU Trigger settings</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>triggerSource</strong> (<em>str</em>) &#8211; Trigger Source - [&#8216;AINT&#8217;, &#8216;BUS&#8217;, &#8216;TIMER&#8217;, &#8216;INT1&#8217;, &#8216;INT2&#8217;, &#8216;LAN&#8217;, &#8216;EXT1&#8217;, &#8216;EXT2&#8217;,                    &#8216;EXT3&#8217;, &#8216;EXT4&#8217;, &#8216;EXT5&#8217;, &#8216;EXT6&#8217;, &#8216;EXT7&#8217;, &#8216;EXT8&#8217;, &#8216;EXT9&#8217;, &#8216;EXT10&#8217;,                    &#8216;EXT11&#8217;, &#8216;EXT12&#8217;, &#8216;EXT13&#8217;, &#8216;EXT14&#8217;]</li>
+<li><strong>number</strong> (<em>int</em>) &#8211; Number of Triggers per sequence - 1 to 100000 or 2147483647 (INF)</li>
+<li><strong>interval</strong> (<em>float</em>) &#8211; Timing interval in seconds - must be greater than 20E-6</li>
+<li><strong>delay</strong> (<em>float</em>) &#8211; Delay before first trigger in seconds</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="models.Agilent.m_SMU.m_SMU.startProgram">
+<tt class="descname">startProgram</tt><big>(</big><em>channel=1</em><big>)</big><a class="reference internal" href="../_modules/models/Agilent/m_SMU.html#m_SMU.startProgram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Agilent.m_SMU.m_SMU.startProgram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start a program sequence / Force trigger.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>channel</strong> (<em>int</em>) &#8211; Channel (1 or 2)</td>
 </tr>
 </tbody>
 </table>

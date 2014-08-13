@@ -142,6 +142,7 @@ def Rpc_decode(str_req):
                 responses.append(item)
         
         else:
+            print str_req
             raise Rpc_ParseError()
         
     except ValueError:

@@ -236,7 +236,7 @@ added to the pool of resources using <tt class="xref py py-func docutils literal
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>address</strong> (<em>str</em>) &#8211; IP Address to check</li>
+<li><strong>address</strong> (<em>str</em>) &#8211; IP Address or Hostname</li>
 <li><strong>port</strong> (<em>int</em>) &#8211; Port</li>
 </ul>
 </td>
@@ -288,6 +288,49 @@ communication can be established.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="InstrumentControl.InstrumentControl.cacheManager">
+<tt class="descname">cacheManager</tt><big>(</big><em>address</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.cacheManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.cacheManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the local cache of resources from a given Manager</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Use <tt class="xref py py-func docutils literal"><span class="pre">addManager()</span></tt> to establish a connection to a manager
+before calling this function.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> (<em>str</em>) &#8211; IP Address to check</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True unless there is no existing connection to <cite>address</cite></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentControl.InstrumentControl.cacheProperties">
+<tt class="descname">cacheProperties</tt><big>(</big><em>res_uuid=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.cacheProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.cacheProperties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the cached property dictionary for a given resource. If no
+Resource UUID is provided, all resources properties will be updated.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Properties should be refreshed when loading a new Model for a 
+resource.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>res_uuid</strong> (<em>str</em>) &#8211; Unique Resource Identifier (UUID)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dict - updated resource properties</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="InstrumentControl.InstrumentControl.createInstrument">
 <tt class="descname">createInstrument</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.createInstrument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.createInstrument" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> instance that is linked to a model on a
@@ -317,22 +360,6 @@ a local or remote model.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>res_uuid</strong> (<em>str</em>) &#8211; Unique Resource Identifier (UUID)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">bool - True if successful, False otherwise</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="InstrumentControl.InstrumentControl.getAddressFromHostname">
-<tt class="descname">getAddressFromHostname</tt><big>(</big><em>hostname</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getAddressFromHostname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getAddressFromHostname" title="Permalink to this definition">¶</a></dt>
-<dd><p>Resolves a hostname.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hostname</strong> (<em>str</em>) &#8211; Machine hostname to resolve</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">str &#8211; IPv4 Address</td>
 </tr>
 </tbody>
 </table>
@@ -546,14 +573,14 @@ so resources returned may not be valid</p>
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.isConnectedHost">
 <tt class="descname">isConnectedHost</tt><big>(</big><em>hostname</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.isConnectedHost"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.isConnectedHost" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check if a given hostname is connected</p>
+<dd><p>Check if a given host is connected</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hostname</strong> (<em>str</em>) &#8211; hostname to check</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hostname</strong> (<em>str</em>) &#8211; IP Address or Hostname</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True is hostname if connected, False otherwise</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if connected, False otherwise</td>
 </tr>
 </tbody>
 </table>
@@ -610,7 +637,7 @@ open a socket to the provided address and port.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>address</strong> (<em>str</em>) &#8211; IP Address to check</li>
+<li><strong>address</strong> (<em>str</em>) &#8211; IP Address or Hostname</li>
 <li><strong>port</strong> (<em>int</em>) &#8211; Port</li>
 </ul>
 </td>
@@ -625,8 +652,8 @@ open a socket to the provided address and port.</p>
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.refreshManager">
 <tt class="descname">refreshManager</tt><big>(</big><em>address=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.refreshManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.refreshManager" title="Permalink to this definition">¶</a></dt>
-<dd><p>Refresh the cached resources for the manager at <cite>address</cite>. If no 
-address is provided, refreshes all resources across all managers</p>
+<dd><p>Force the remote InstrumentManager to refresh all of the controllers
+and enumerate any new resources.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Use <tt class="xref py py-func docutils literal"><span class="pre">addManager()</span></tt> to establish a connection to a manager
@@ -636,31 +663,9 @@ before calling this function.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> (<em>str</em>) &#8211; IP Address to check</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> (<em>str</em>) &#8211; IP Address or Hostname</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True unless there is no existing connection to <cite>address</cite></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="InstrumentControl.InstrumentControl.refreshProperties">
-<tt class="descname">refreshProperties</tt><big>(</big><em>res_uuid=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.refreshProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.refreshProperties" title="Permalink to this definition">¶</a></dt>
-<dd><p>Refresh the cached property dictionary for a given resource. If no
-Resource UUID is provided, all resources properties will be updated.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Properties should be refreshed when loading a new Model for a 
-resource.</p>
-</div>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>res_uuid</strong> (<em>str</em>) &#8211; Unique Resource Identifier (UUID)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dict - updated resource properties</td>
 </tr>
 </tbody>
 </table>
@@ -752,7 +757,7 @@ machine.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>address</strong> (<em>str</em>) &#8211; IP Address to check</li>
+<li><strong>address</strong> (<em>str</em>) &#8211; IP Address or Hostname</li>
 <li><strong>port</strong> (<em>int</em>) &#8211; Port</li>
 </ul>
 </td>

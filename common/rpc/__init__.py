@@ -53,27 +53,16 @@ class RpcServer(threading.Thread):
         else:
             # Auto-assign the port to a free port
             self.port = 0
-
-        # RPC Client Synchronization lock
-        self.lock = threading.Lock()
-
-        # Socket management
-        self.connections = []
-        self.exclusive = None
-        self.exclusiveTime = None
-        
-    def start(self):
-        """
-        Start the RPC Server Thread. 
-        """
-        threading.Thread.start(self)
+            
+        self.rpc_connections = []
         
     def run(self):
         # Start socket
-        # TODO: Should this be off-loaded to the RPC Protocol API?
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # TODO: Bind on each interface
         self.socket.bind(('',self.port))
         self.socket.listen(5)
+        self.socket.setblocking(0)
         
         self.port = self.socket.getsockname()[1]
         
@@ -85,17 +74,21 @@ class RpcServer(threading.Thread):
 
         while self.alive.isSet():
             try:
-                # Spawn a new thread to service the connection
-                connection, address = self.socket.accept()
-                # Spawn a new thread to service the connection
-                connThread = RpcConnection(parent=self, address=address, socket=connection)
-                # Give the name a meaningful name
-                connThread.name = 'RPC-Conn-' + self.target.__class__.__name__ + connThread.name
+                ready_to_read,_,_ = select.select([self.socket], [], [], 1.0)
                 
-                if hasattr(self, 'logger'):
-                    connThread.attachLogger(self.logger)
-                connThread.start()
-                self.connections.append(connThread)
+                if self.socket in ready_to_read:
+                    # Spawn a new thread to service the connection
+                    connection, address = self.socket.accept()
+                    # Spawn a new thread to service the connection
+                    connThread = RpcConnection(target=self.target, address=address, socket=connection)
+                    
+                    # Pass the new connection thread a logger object
+                    if hasattr(self, 'logger'):
+                        connThread.attachLogger(self.logger)
+                        
+                    connThread.start()
+                    
+                    self.rpc_connections.append(connThread)
                 
             except socket.error:
                 # The socket probably closed, if so alive will be cleared
@@ -112,24 +105,26 @@ class RpcServer(threading.Thread):
         
         if hasattr(self, 'logger'):
             self.logger.debug('[%s] RPC Server thread stopped', self.name)
-            
+        
+    def stop(self):
+        """
+        Close the server socket and stop the RpcServer thread
+        
+        .. note::
+        
+            This operation may take a small amount of time for the socket to
+            register the stop request.
+        """
+        self.alive.clear()
+        
+        for conn in self.rpc_connections:
+            conn.stop()
+        
     def getPort(self):
         """
         Get the port that is bound by the RpcServer
         """
         return self.socket.getsockname()[1]
-        
-    def stop(self):
-        """
-        Close all connections and stop the RpcServer thread
-        """
-        # Close all connections
-        for conn in self.connections:
-            conn.stop()
-            conn.join()
-            
-        self.socket.close()
-        self.alive.clear()
         
     def attachLogger(self, loggerObj):
         """
@@ -150,16 +145,19 @@ class RpcBase(object):
     Each instantiation of an RpcBase object will generate a UUID to identify it
     to RPC Clients
     """
-    rpc_thread = None
-    exclusive = None
-    exclusiveTime = None
     
-    __identity = 'JSON-RPC/2.0'
-        
     def __init__(self):
-        self.exclusive = None
-        self.exclusiveTime = None
+        self.rpc_exclusive = None
+        self.rpc_exclusiveTime = None
         self.uuid = str(uuid.uuid1())
+        
+        self.rpc_thread = None
+    
+        self.rpc_running = threading.Event()
+        self.rpc_lock = threading.Lock()
+        self.rpc_startTime = datetime.now()
+        
+        self.__identity = 'JSON-RPC/2.0'
         
     def _setHELOResponse(self, response):
         self.__identity = response
@@ -216,6 +214,8 @@ class RpcBase(object):
                 self.rpc_thread.attachLogger(self.logger)
             
             self.rpc_thread.start()
+            
+            self.rpc_running.set()
             self.rpc_startTime = datetime.now()
         
             # Wait for thread to come alive
@@ -276,8 +276,16 @@ class RpcBase(object):
             return False
     
     def rpc_getConnections(self, connection=None):
-        # TODO
-        pass
+        """
+        Get the number of connections to the RPC server
+        
+        :returns: int
+        """
+        if isinstance(self.rpc_thread, RpcServer):
+            return len(self.rpc_thread.rpc_connections)
+        
+        else:
+            return 0
     
     def rpc_getMethods(self, connection):
         """
@@ -322,8 +330,8 @@ class RpcBase(object):
         """
         if self.rpc_hasAccess(connection):
             # No other connection has exclusive access, or previous owner did not renew exclusive lock
-            self.exclusive = connection
-            self.exclusiveTime = datetime.now()
+            self.rpc_exclusive = connection
+            self.rpc_exclusiveTime = datetime.now()
             
             self.logger.debug('[%s, %s] Requested exclusive access', self.name, connection.address)
             
@@ -344,8 +352,8 @@ class RpcBase(object):
             
         :returns: bool - True if lock released, False otherwise
         """
-        if isinstance(self.exclusive, RpcConnection) and self.exclusive == connection:
-            self.exclusive = None
+        if isinstance(self.rpc_exclusive, RpcConnection) and self.rpc_exclusive == connection:
+            self.rpc_exclusive = None
               
             self.logger.debug('[%s, %s] Released exclusive access', self.name, connection.address)
               
@@ -360,7 +368,7 @@ class RpcBase(object):
         
         :returns: bool - True if requesting connection has exclusive access, False otherwise
         """
-        if isinstance(self.exclusive, RpcConnection) and self.exclusive == connection and timedelta(seconds=self.EXCLUSIVE_TIMEOUT) < (datetime.now() - self.exclusiveTime):
+        if isinstance(self.rpc_exclusive, RpcConnection) and self.rpc_exclusive == connection and timedelta(seconds=self.EXCLUSIVE_TIMEOUT) < (datetime.now() - self.rpc_exclusiveTime):
             return True
         
         else:
@@ -371,7 +379,7 @@ class RpcBase(object):
         pass
     
     def rpc_hasAccess(self, connection):
-        if self.exclusive == None or (isinstance(self.exclusive, RpcConnection) and timedelta(seconds=self.EXCLUSIVE_TIMEOUT) < (datetime.now() - self.exclusiveTime)):
+        if self.rpc_exclusive == None or (isinstance(self.rpc_exclusive, RpcConnection) and timedelta(seconds=self.EXCLUSIVE_TIMEOUT) < (datetime.now() - self.rpc_exclusiveTime)):
             return True
         
         else:
@@ -408,19 +416,22 @@ class RpcConnection(threading.Thread):
 
     
     """
+    RPC_MAX_PACKET_SIZE = 4096 # 4K
     
     def __init__(self, **kwargs):
         threading.Thread.__init__(self)
         
-        self.parent = kwargs['parent']
+        self.target = kwargs['target']
         
-        self.address = kwargs['address'][0]
-        self.port = kwargs['address'][1]
+        self.address, self.port = kwargs['address']
         
         self.socket = kwargs['socket']
         
-        self.lock = self.parent.lock
+        self.lock = self.target.rpc_lock
         #self.name = self.parent.name
+        
+        # Give the thread a meaningful name
+        self.name = 'RPC-Conn-' + self.target.__class__.__name__ + self.name
         
         # Hardcode JSON RPC for now
         self.rpc_decode = Rpc_decode
@@ -438,78 +449,82 @@ class RpcConnection(threading.Thread):
         while self.alive.isSet():
             # Check for incoming data
             try:
-                data = self.socket.recv(4096)
+                ready_to_read,_,_ = select.select([self.socket],[],[], 1.0)
                 
-                if type(data) is str and data[0:4] == 'HELO':
-                    self.socket.send(self.parent.target._getHELOResponse())
+                if self.socket in ready_to_read:
                     
-                elif data:
-                    # Process the incoming data as a JSON RPC packet
-                    try:
-                        request, _ = self.rpc_decode(data)
-                    except Rpc_Error as e:
-                        request = e
-                        
-                    # self.logger.debug('RX: %s', data)
-                        
-                    result = []
-                    target = self.parent.target
+                    data = self.socket.recv(self.RPC_MAX_PACKET_SIZE)
                     
-                    if type(request) == list and len(request) > 0:
-                        # Iterate through each request, verify access criteria
-                        for req in request:
+                    if type(data) is str and data[0:4] == 'HELO':
+                        self.socket.send(self.target._getHELOResponse())
+                        
+                    elif data:
+                        # Process the incoming data as a JSON RPC packet
+                        try:
+                            request, _ = self.rpc_decode(data)
+                        except Rpc_Error as e:
+                            request = e
                             
-                             # Disallow access to methods that start with an underscore
-                            if req.method == '' or req.method[0] == '_':
-                                result.append(Rpc_Response(id=req.id, error=Rpc_InvalidRequest()))
-                                if hasattr(self, 'logger'):
-                                    self.logger.debug('[%s, %s, %i] RPC request for protected method: %s', self.name, self.address, req.id, req.method)
-                             
-                            else:
-                                allow = True
+                        # self.logger.debug('RX: %s', data)
+                            
+                        result = []
+                        target = self.target
+                        
+                        if type(request) == list and len(request) > 0:
+                            # Iterate through each request, verify access criteria
+                            for req in request:
                                 
-                                if isinstance(target, RpcBase) and not target.rpc_hasAccess(self):
-                                    # Send an error if somebody has exclusive access
-                                    result.append(Rpc_Response(id=req.id, error={'code': -32001, 'message': 'Another connection has exclusive access.'}))
+                                 # Disallow access to methods that start with an underscore
+                                if req.method == '' or req.method[0] == '_':
+                                    result.append(Rpc_Response(id=req.id, error=Rpc_InvalidRequest()))
                                     if hasattr(self, 'logger'):
-                                        self.logger.debug('[%s, %s, %i] RPC request denied - another user has exclusive access: %s', self.name, self.address, req.id, req.method)
+                                        self.logger.debug('[%s, %s, %i] RPC request for protected method: %s', self.name, self.address, req.id, req.method)
+                                 
+                                else:
+                                    allow = True
                                     
-                                    allow = False
-                                    
-                                if allow:
-                                    if hasattr(self, 'logger'):
-                                        self.logger.debug('[%s, %s, %i] RPC method call: %s', self.name, self.address, req.id, req.method)
+                                    if isinstance(target, RpcBase) and not target.rpc_hasAccess(self):
+                                        # Send an error if somebody has exclusive access
+                                        result.append(Rpc_Response(id=req.id, error={'code': -32001, 'message': 'Another connection has exclusive access.'}))
+                                        if hasattr(self, 'logger'):
+                                            self.logger.debug('[%s, %s, %i] RPC request denied - another user has exclusive access: %s', self.name, self.address, req.id, req.method)
                                         
-                                    with self.lock:      
-                                        try:
-                                            if req.method[0:3] == 'rpc':
-                                                result.append(req.call(target, self))
-                                            else:
-                                                result.append(req.call(target))
-                                        except TypeError as e:
-                                            # Parameter issue
-                                            result.append(Rpc_Response(id=req.id, error=Rpc_InvalidParams(message=str(e))))
+                                        allow = False
+                                        
+                                    if allow:
+                                        if hasattr(self, 'logger'):
+                                            self.logger.debug('[%s, %s, %i] RPC method call: %s', self.name, self.address, req.id, req.method)
                                             
-                                        except Exception as e:
-                                            if hasattr(self, 'logger'):
-                                                self.logger.exception('[%s, %s, %i] RPC Unhandled Exception: %s', self.name, self.address, req.id, req.method)
-                                            result.append(Rpc_Response(id=req.id, error=Rpc_InternalError(message=str(e))))
-                                
-                    elif request == None or isinstance(request, Rpc_Error):
-                        # An invalid request was parsed, error will be passed through to encode()
-                        result = request
-                    
+                                        with self.lock:      
+                                            try:
+                                                if req.method[0:3] == 'rpc':
+                                                    result.append(req.call(target, self))
+                                                else:
+                                                    result.append(req.call(target))
+                                            except TypeError as e:
+                                                # Parameter issue
+                                                result.append(Rpc_Response(id=req.id, error=Rpc_InvalidParams(message=str(e))))
+                                                
+                                            except Exception as e:
+                                                if hasattr(self, 'logger'):
+                                                    self.logger.exception('[%s, %s, %i] RPC Unhandled Exception: %s', self.name, self.address, req.id, req.method)
+                                                result.append(Rpc_Response(id=req.id, error=Rpc_InternalError(message=str(e))))
+                                    
+                        elif request == None or isinstance(request, Rpc_Error):
+                            # An invalid request was parsed, error will be passed through to encode()
+                            result = request
+                        
+                        else:
+                            # Something really terrible must have happened
+                            if hasattr(self, 'logger'):
+                                self.logger.error("RPC Library Error")
+                        
+                        # Encode the outputs of the RPC requests
+                        self.socket.send(self.rpc_encode(result))
+                        
                     else:
-                        # Something really terrible must have happened
-                        if hasattr(self, 'logger'):
-                            self.logger.error("RPC Library Error")
-                    
-                    # Encode the outputs of the RPC requests
-                    self.socket.send(self.rpc_encode(result))
-                    
-                else:
-                    # Connection was closed by client
-                    break
+                        # Connection was closed by client
+                        break
                 
             except socket.error as e:
                 # Socket closed poorly from client
@@ -530,7 +545,6 @@ class RpcConnection(threading.Thread):
             self.logger.debug('[%s, %s] Disconnected', self.name, self.address)
         
     def stop(self):
-        self.socket.close()
         self.alive.clear()
         
         if hasattr(self, 'logger'):

@@ -246,6 +246,16 @@ class InstrumentManager(rpc.RpcBase):
             except:
                 pass
             
+    def stop(self):
+        """
+        Stop the InstrumentManager instance. Calls rpc_stop to all Models.
+        """
+        for dev in self.devices.values():
+            if hasattr(dev, 'rpc_stop'):
+                dev.rpc_stop()
+                
+        self.rpc_stop()
+            
     def getVersion(self):
         """
         Get the InstrumentManager version
