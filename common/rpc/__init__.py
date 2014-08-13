@@ -124,8 +124,9 @@ class RpcServer(threading.Thread):
         Close all connections and stop the RpcServer thread
         """
         # Close all connections
-        for socket in self.connections:
-            socket.join()
+        for conn in self.connections:
+            conn.stop()
+            conn.join()
             
         self.socket.close()
         self.alive.clear()
@@ -227,6 +228,7 @@ class RpcBase(object):
         Stops a running RpcServer thread.
         """
         if isinstance(self.rpc_thread, RpcServer):
+            self.rpc_thread.stop()
             self.rpc_thread.join()
             self.rpc_thread = None
             
