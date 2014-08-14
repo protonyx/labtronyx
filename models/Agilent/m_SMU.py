@@ -160,7 +160,24 @@ class m_SMU(m_Base):
                 self.write(':TRIG:DEL 0')
     
     def setMeasurementSetup(self, **kwargs):
+        """
+        Set SMU Measurement settings.
+        
+        .. warning::
+        
+            This function has not yet been implemented
+            
+        """
         pass
+    
+    def setCurrentLimit(self, limit):
+        """
+        Set SMU current limit
+        
+        :param limit: Current limit
+        :type limit: float
+        """
+        self.write(':SENS:CURR:PROT %f' % float(limit))
     
     def powerOn(self):
         self.write(':OUTP ON')
