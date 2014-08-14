@@ -206,9 +206,26 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;:TRIG:DEL 0&#39;</span><span class="p">)</span>
     </div>
-    <span class="k">def</span> <span class="nf">setMeasurementSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="m_SMU.setMeasurementSetup"><a class="viewcode-back" href="../../../models/Agilent.m_SMU.html#models.Agilent.m_SMU.m_SMU.setMeasurementSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setMeasurementSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set SMU Measurement settings.</span>
+<span class="sd">        </span>
+<span class="sd">        .. warning::</span>
+<span class="sd">        </span>
+<span class="sd">            This function has not yet been implemented</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
-    
+    </div>
+<div class="viewcode-block" id="m_SMU.setCurrentLimit"><a class="viewcode-back" href="../../../models/Agilent.m_SMU.html#models.Agilent.m_SMU.m_SMU.setCurrentLimit">[docs]</a>    <span class="k">def</span> <span class="nf">setCurrentLimit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">limit</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set SMU current limit</span>
+<span class="sd">        </span>
+<span class="sd">        :param limit: Current limit</span>
+<span class="sd">        :type limit: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;:SENS:CURR:PROT </span><span class="si">%f</span><span class="s">&#39;</span> <span class="o">%</span> <span class="nb">float</span><span class="p">(</span><span class="n">limit</span><span class="p">))</span>
+    </div>
     <span class="k">def</span> <span class="nf">powerOn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;:OUTP ON&#39;</span><span class="p">)</span>
         

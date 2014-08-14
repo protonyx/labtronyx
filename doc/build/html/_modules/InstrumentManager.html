@@ -56,8 +56,6 @@
 
 <div class="viewcode-block" id="InstrumentManager"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager">[docs]</a><span class="k">class</span> <span class="nc">InstrumentManager</span><span class="p">(</span><span class="n">rpc</span><span class="o">.</span><span class="n">RpcBase</span><span class="p">):</span>
     
-    <span class="n">VERSION</span> <span class="o">=</span> <span class="s">&#39;0.1dev&#39;</span>
-    
     <span class="n">models</span> <span class="o">=</span> <span class="p">{}</span> <span class="c"># Lookup table of available model drivers</span>
     
     <span class="n">controllers</span> <span class="o">=</span> <span class="p">{}</span> <span class="c"># Controller name -&gt; controller object</span>
@@ -255,13 +253,13 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">rpc_test</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">managerPort</span><span class="p">):</span>
             
             <span class="c"># Configure RPC Identity</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_setHELOResponse</span><span class="p">(</span><span class="s">&#39;InstrumentManager/</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">VERSION</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setHELOResponse</span><span class="p">(</span><span class="s">&#39;InstrumentManager/</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
 
             <span class="c"># Configure Logger</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">__configureLogger</span><span class="p">()</span>
             
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Instrument Manager Started&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Version: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">VERSION</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Version: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
             
             <span class="c"># Build the model dictionary</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">__loadModels</span><span class="p">()</span>
@@ -308,7 +306,7 @@
 <span class="sd">        </span>
 <span class="sd">        :returns: str</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">VERSION</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">version</span>
         </div>
 <div class="viewcode-block" id="InstrumentManager.getProperties"><a class="viewcode-back" href="../dev/dev_manager.html#InstrumentManager.InstrumentManager.getProperties">[docs]</a>    <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>

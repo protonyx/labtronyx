@@ -97,7 +97,7 @@
             <span class="kn">import</span> <span class="nn">imp</span>
             <span class="n">cFile</span> <span class="o">=</span> <span class="n">imp</span><span class="o">.</span><span class="n">load_source</span><span class="p">(</span><span class="s">&#39;default&#39;</span><span class="p">,</span> <span class="n">configFile</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">cFile</span><span class="o">.</span><span class="n">Config</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">rootPath</span> <span class="o">=</span> <span class="n">rootPath</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rootPath</span> <span class="o">=</span> <span class="n">rootPath</span>
             
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">print</span><span class="p">(</span><span class="s">&quot;FATAL ERROR: Unable to import config file&quot;</span><span class="p">)</span>
@@ -128,23 +128,30 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">lh_console</span><span class="p">)</span>
                 
         <span class="c"># Attempt to start the local manager</span>
-        <span class="c">#self.startWaitManager()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">managerRunning</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">)</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">startWaitManager</span><span class="p">()</span>
+            
+            <span class="c"># Attempt to connect to the local manager</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">)</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Attempt to connect to the local manager</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">)</span>
+            
+            <span class="c"># Check the local Manager version</span>
+            <span class="n">localMan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getManager</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">)</span>
+            <span class="n">localVer</span> <span class="o">=</span> <span class="n">localMan</span><span class="o">.</span><span class="n">getVersion</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">localVer</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">version</span><span class="p">:</span>
+                <span class="c"># Version doesn&#39;t match, restart with new code from this release</span>
+                <span class="n">localMan</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
                 
-        <span class="c"># Attempt to connect to the local manager</span>
-        <span class="c">#local = self._resolveAddress(&#39;localhost&#39;)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">)</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
+                
+                <span class="bp">self</span><span class="o">.</span><span class="n">startWaitManager</span><span class="p">()</span>
+            
+            
         
-        <span class="c">#=======================================================================</span>
-        <span class="c"># # Dependency Check</span>
-        <span class="c"># # Numpy</span>
-        <span class="c"># try:</span>
-        <span class="c">#     importlib.import_module(&#39;numpy&#39;)</span>
-        <span class="c"># except ImportError:</span>
-        <span class="c">#     self.logger.error(&#39;Unable to import Numpy. Non-fatal for the moment.&#39;)</span>
-        <span class="c"># # MatPlotLib</span>
-        <span class="c"># </span>
-        <span class="c"># self.logger.info(&quot;Dependency check complete&quot;)</span>
-        <span class="c">#=======================================================================</span>
     
     <span class="c">#===========================================================================</span>
     <span class="c"># Manager Operations    </span>
@@ -231,8 +238,8 @@
             
             <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="n">pyExec</span><span class="p">,</span> <span class="n">manPath</span><span class="p">])</span>
             
-        <span class="k">except</span><span class="p">:</span>
-            <span class="k">pass</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span>
             </div>
 <div class="viewcode-block" id="InstrumentControl.startWaitManager"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.startWaitManager">[docs]</a>    <span class="k">def</span> <span class="nf">startWaitManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">10.0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -280,13 +287,26 @@
             <span class="k">return</span> <span class="bp">True</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c"># Try to connect to one</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span>
-                <span class="c"># Manager connected</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">removeManager</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
-                <span class="k">return</span> <span class="bp">True</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c"># No manager could be found at the address:port</span>
-                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">testSocket</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+                <span class="n">testSocket</span><span class="o">.</span><span class="n">settimeout</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+                <span class="n">testSocket</span><span class="o">.</span><span class="n">connect</span><span class="p">((</span><span class="n">address</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">managerPort</span><span class="p">))</span>
+                <span class="c">#testSocket.setblocking(0)</span>
+                <span class="n">testSocket</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&#39;HELO&#39;</span><span class="p">)</span>
+                
+                <span class="n">banner</span> <span class="o">=</span> <span class="n">testSocket</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="s">&#39;InstrumentManager&#39;</span> <span class="ow">in</span> <span class="n">banner</span><span class="p">:</span>
+                    <span class="n">testSocket</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                    <span class="k">return</span> <span class="bp">True</span>
+            
+            <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">pass</span>
+            
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">testSocket</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                
+            <span class="k">return</span> <span class="bp">False</span>
     </div>
 <div class="viewcode-block" id="InstrumentControl.stopManager"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.stopManager">[docs]</a>    <span class="k">def</span> <span class="nf">stopManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -333,28 +353,27 @@
         
         <span class="n">seekPort</span> <span class="o">=</span> <span class="n">port</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">managerPort</span>
         
-        <span class="c"># Check address or resolve hostname</span>
-        <span class="k">if</span> <span class="n">is_valid_ipv4_address</span><span class="p">(</span><span class="n">address</span><span class="p">):</span>
-            <span class="n">addr</span> <span class="o">=</span> <span class="n">address</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">addr</span> <span class="o">=</span> <span class="n">resolve_hostname</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
-        
-        <span class="c"># Attempt a connection</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">testManager</span> <span class="o">=</span> <span class="n">RpcClient</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="n">addr</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">seekPort</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">testManager</span><span class="o">.</span><span class="n">_ready</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">address</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="c"># Attempt a connection</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">testManager</span> <span class="o">=</span> <span class="n">RpcClient</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="n">address</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">seekPort</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">testManager</span><span class="o">.</span><span class="n">_ready</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="bp">False</span>
+                
+                <span class="n">ver</span> <span class="o">=</span> <span class="n">testManager</span><span class="o">.</span><span class="n">getVersion</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Connected to InstrumentManager @ </span><span class="si">%s</span><span class="s">, version </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">ver</span><span class="p">)</span>
+                
+            <span class="k">except</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">False</span>
-        <span class="k">except</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">False</span>
-        
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">hostnames</span><span class="p">[</span><span class="n">testManager</span><span class="o">.</span><span class="n">hostname</span><span class="p">]</span> <span class="o">=</span> <span class="n">addr</span> 
-            <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="p">[</span><span class="n">addr</span><span class="p">]</span> <span class="o">=</span> <span class="n">testManager</span>
             
-            <span class="c"># Update the resource cache</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">cacheManager</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
-            
-        <span class="k">return</span> <span class="bp">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">hostnames</span><span class="p">[</span><span class="n">testManager</span><span class="o">.</span><span class="n">hostname</span><span class="p">]</span> <span class="o">=</span> <span class="n">address</span> 
+                <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="p">[</span><span class="n">address</span><span class="p">]</span> <span class="o">=</span> <span class="n">testManager</span>
+                
+                <span class="c"># Update the resource cache</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cacheManager</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+                
+            <span class="k">return</span> <span class="bp">True</span>
         </div>
 <div class="viewcode-block" id="InstrumentControl.refreshManager"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.refreshManager">[docs]</a>    <span class="k">def</span> <span class="nf">refreshManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
