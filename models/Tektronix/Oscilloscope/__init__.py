@@ -668,7 +668,7 @@ class m_OscilloscopeBase(m_Tektronix):
                 
             data_scaled = (data - y_offset) * y_scale + y_zero
             
-            self.data[ch] = list(data_scaled)
+            self.data[ch] = data_scaled.tolist()
             
         return True
     
