@@ -252,7 +252,7 @@ class InstrumentControl(object):
                 
                 if 'InstrumentManager' in banner:
                     testSocket.close()
-                    return True
+                return True
             
             except socket.error as e:
                 pass

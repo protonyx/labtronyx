@@ -1,7 +1,8 @@
 from .. import m_Tektronix
 
 import time
-from struct import unpack
+import struct
+import base64
 import csv
 import sys
 
@@ -595,12 +596,17 @@ class m_OscilloscopeBase(m_Tektronix):
             
     def getWaveform(self):
         """
-        Get the raw waveform data from the oscilloscope. Returns dictionary 
-        contains numpy arrays (if numpy is available, otherwise a list) with
-        the channel as the key.
+        Refreshes the raw waveform data from the oscilloscope. 
         
-        :returns: dict
+        :returns: bool - True if successful, False otherwise
         """
+        try:
+            import numpy
+            
+        except:
+            self.logger.error('Unable to getWaveform without numpy library')
+            return False
+        
         if not self.waitUntilReady(1.0, 10.0):
             self.logger.error("Unable to export waveform while oscilloscope is busy")
             return False
@@ -651,20 +657,41 @@ class m_OscilloscopeBase(m_Tektronix):
             elems = len(data) / data_width
             
             if data_width == 2:
-                data = unpack('%sH' % elems, data)
+                data = struct.unpack('%sH' % elems, data)
             elif data_width == 1:
-                data = unpack('%sB' % elems, data)
+                data = struct.unpack('%sB' % elems, data)
             else:
                 self.logger.error('Unhandled data width in getWaveform')
                 
             # Utilize numpy if possible, its more efficient
-            if 'numpy' in sys.modules:
-                data = numpy.array(data)
+            data = numpy.array(data)
                 
             data_scaled = (data - y_offset) * y_scale + y_zero
             
-            self.data[ch] = data_scaled
-
+            self.data[ch] = list(data_scaled)
+            
+        return True
+    
+    
+    def getPackedWaveform(self, ch):
+        """
+        Get packed binary waveform data for a given channel
+        
+        :param ch: Channel - ['CH1', 'CH2', 'CH3', 'CH4']
+        :type ch: str
+        :returns: binary data
+        """
+        if ch in self.validWaveforms and ch in self.data.keys():
+            d_list = self.data.get(ch)
+            points = len(d_list)
+            
+            # Pack the data
+            packed = str(struct.pack('%sf' % points, *d_list))
+            
+            # Base64 Encode the data
+            enc = base64.b64encode(packed)
+            
+            return enc
         
     def waveformExport(self, **kwargs):
         """

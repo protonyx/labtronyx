@@ -416,7 +416,7 @@ class RpcConnection(threading.Thread):
 
     
     """
-    RPC_MAX_PACKET_SIZE = 4096 # 4K
+    RPC_MAX_PACKET_SIZE = 1048576 # 1MB
     
     def __init__(self, **kwargs):
         threading.Thread.__init__(self)
@@ -576,7 +576,7 @@ class RpcClient(object):
     """
     
     RPC_TIMEOUT = 10.0
-    RPC_MAX_PACKET_SIZE = 4096 # 4K
+    RPC_MAX_PACKET_SIZE = 1048576 # 1MB
     
     def __init__(self, **kwargs):
         
