@@ -241,13 +241,26 @@ class InstrumentControl(object):
             return True
         else:
             # Try to connect to one
-            if self.addManager(address, port):
-                # Manager connected
-                self.removeManager(address)
-                return True
-            else:
-                # No manager could be found at the address:port
-                return False
+            try:
+                testSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                testSocket.settimeout(1.0)
+                testSocket.connect((address, self.config.managerPort))
+                #testSocket.setblocking(0)
+                testSocket.send('HELO')
+                
+                banner = testSocket.recv(255)
+                
+                if 'InstrumentManager' in banner:
+                    testSocket.close()
+                    return True
+            
+            except socket.error as e:
+                pass
+            
+            finally:
+                testSocket.close()
+                
+            return False
     
     def stopManager(self, address, port=None):
         """
@@ -294,26 +307,27 @@ class InstrumentControl(object):
         
         seekPort = port or self.config.managerPort
         
-        # Attempt a connection
-        try:
-            testManager = RpcClient(address=address, port=seekPort)
-            if not testManager._ready():
+        if address not in self.managers.keys():
+            # Attempt a connection
+            try:
+                testManager = RpcClient(address=address, port=seekPort)
+                if not testManager._ready():
+                    return False
+                
+                ver = testManager.getVersion()
+                self.logger.info('Connected to InstrumentManager @ %s, version %s', address, ver)
+                
+            except:
                 return False
             
-            ver = testManager.getVersion()
-            self.logger.info('Connected to InstrumentManager @ %s, version %s', address, ver)
-            
-        except:
-            return False
-        
-        else:
-            self.hostnames[testManager.hostname] = address 
-            self.managers[address] = testManager
-            
-            # Update the resource cache
-            self.cacheManager(address)
-            
-        return True
+            else:
+                self.hostnames[testManager.hostname] = address 
+                self.managers[address] = testManager
+                
+                # Update the resource cache
+                self.cacheManager(address)
+                
+            return True
         
     def refreshManager(self, address=None):
         """

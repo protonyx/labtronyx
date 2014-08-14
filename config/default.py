@@ -4,7 +4,7 @@ class Config(object):
     
     def __init__(self):
         # Version
-        self.version = '0.1dev'
+        self.version = '140814'
         
         #
         #  Logging
@@ -33,8 +33,7 @@ class Config(object):
         self.managerPort = 6780
         
         # SVN
-        self.svn_rev = '$Revision: $'
-        self.svn_url = '$HeadURL: $'
+        #self.svn_rev = '$Revision: $'
         
 
         

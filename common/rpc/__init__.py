@@ -642,7 +642,7 @@ class RpcClient(object):
         Set the Timeout limit for an RPC Method call
         
         :param new_to: New Timeout time in seconds
-        :type new_to: fload
+        :type new_to: float
         """
         if new_to is not None:
             self.timeout = float(new_to)
