@@ -51,7 +51,7 @@ class InstrumentControl(object):
             import imp
             cFile = imp.load_source('default', configFile)
             self.config = cFile.Config()
-            self.config.rootPath = rootPath
+            self.rootPath = rootPath
             
         except Exception as e:
             print("FATAL ERROR: Unable to import config file")
@@ -82,23 +82,30 @@ class InstrumentControl(object):
                 self.logger.addHandler(lh_console)
                 
         # Attempt to start the local manager
-        #self.startWaitManager()
+        if not self.managerRunning('localhost') :
+            self.startWaitManager()
+            
+            # Attempt to connect to the local manager
+            self.addManager('localhost')
+            
+        else:
+            # Attempt to connect to the local manager
+            self.addManager('localhost')
+            
+            # Check the local Manager version
+            localMan = self.getManager('localhost')
+            localVer = localMan.getVersion()
+            
+            if localVer != self.config.version:
+                # Version doesn't match, restart with new code from this release
+                localMan.stop()
                 
-        # Attempt to connect to the local manager
-        #local = self._resolveAddress('localhost')
-        self.addManager('localhost')
+                time.sleep(2.0)
+                
+                self.startWaitManager()
+            
+            
         
-        #=======================================================================
-        # # Dependency Check
-        # # Numpy
-        # try:
-        #     importlib.import_module('numpy')
-        # except ImportError:
-        #     self.logger.error('Unable to import Numpy. Non-fatal for the moment.')
-        # # MatPlotLib
-        # 
-        # self.logger.info("Dependency check complete")
-        #=======================================================================
     
     #===========================================================================
     # Manager Operations    
@@ -185,8 +192,8 @@ class InstrumentControl(object):
             
             subprocess.Popen([pyExec, manPath])
             
-        except:
-            pass
+        except Exception as e:
+            raise
             
     def startWaitManager(self, timeout=10.0):
         """
@@ -287,26 +294,24 @@ class InstrumentControl(object):
         
         seekPort = port or self.config.managerPort
         
-        # Check address or resolve hostname
-        if is_valid_ipv4_address(address):
-            addr = address
-        else:
-            addr = resolve_hostname(address)
-        
         # Attempt a connection
         try:
-            testManager = RpcClient(address=addr, port=seekPort)
+            testManager = RpcClient(address=address, port=seekPort)
             if not testManager._ready():
                 return False
+            
+            ver = testManager.getVersion()
+            self.logger.info('Connected to InstrumentManager @ %s, version %s', address, ver)
+            
         except:
             return False
         
         else:
-            self.hostnames[testManager.hostname] = addr 
-            self.managers[addr] = testManager
+            self.hostnames[testManager.hostname] = address 
+            self.managers[address] = testManager
             
             # Update the resource cache
-            self.cacheManager(addr)
+            self.cacheManager(address)
             
         return True
         

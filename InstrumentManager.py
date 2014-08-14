@@ -10,8 +10,6 @@ import common.rpc as rpc
 
 class InstrumentManager(rpc.RpcBase):
     
-    VERSION = '0.1dev'
-    
     models = {} # Lookup table of available model drivers
     
     controllers = {} # Controller name -> controller object
@@ -209,13 +207,13 @@ class InstrumentManager(rpc.RpcBase):
         if not self.rpc_test(port=self.config.managerPort):
             
             # Configure RPC Identity
-            self._setHELOResponse('InstrumentManager/%s' % self.VERSION)
+            self._setHELOResponse('InstrumentManager/%s' % self.config.version)
 
             # Configure Logger
             self.__configureLogger()
             
             self.logger.info("Instrument Manager Started")
-            self.logger.info("Version: %s", self.VERSION)
+            self.logger.info("Version: %s", self.config.version)
             
             # Build the model dictionary
             self.__loadModels()
@@ -262,7 +260,7 @@ class InstrumentManager(rpc.RpcBase):
         
         :returns: str
         """
-        return self.VERSION
+        return self.config.version
         
     def getProperties(self, res_uuid=None):
         """

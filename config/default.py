@@ -3,6 +3,9 @@ import logging
 class Config(object):
     
     def __init__(self):
+        # Version
+        self.version = '0.1dev'
+        
         #
         #  Logging
         #
