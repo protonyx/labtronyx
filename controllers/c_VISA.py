@@ -2,9 +2,6 @@ import importlib
 
 import controllers
 
-# Dependency: pyVISA
-import visa
-
 class c_VISA(controllers.c_Base):
     """
     VISA Controller
@@ -41,6 +38,9 @@ class c_VISA(controllers.c_Base):
         """
         
         try:
+            # Dependency: pyVISA
+            import visa
+
             # Load the VISA Resource Manager
             self.__rm = visa.ResourceManager()
             self.logger.debug(str(self.__rm))
