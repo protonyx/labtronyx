@@ -34,6 +34,8 @@ class Config(object):
         
         # SVN
         #self.svn_rev = '$Revision: $'
-        
 
+        # UPEL Controller Config
+        self.broadcastIP = '192.168.1.255'
+        self.UPELPort = 7968
         
