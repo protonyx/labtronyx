@@ -59,7 +59,7 @@ class ProcessDataReadPacket(UPEL_ICP_Packet):
 class DiscoveryPacket(UPEL_ICP_Packet):
     def __init__(self):
         self.packetType = 0xF
-        self.packetID = 0x0
+        self.packetID = 0x00
 
 
 

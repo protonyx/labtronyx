@@ -60,7 +60,8 @@ class c_UPEL(controllers.c_Base):
         #s.sendto(packet, ('192.168.1.130', self.DEFAULT_PORT))
         #s.sendto(packet, ('192.168.1.137', self.DEFAULT_PORT))
         while 1:
-            data = repr(time.time()) + '\n'
+            #data = repr(time.time()) + '\n'
+            data = packet
             s.sendto(data, (broadcast_ip, self.DEFAULT_PORT))
             time.sleep(2)
             
