@@ -11,35 +11,55 @@ class UPEL_ICP_Packet:
     SPEC_NUMBER = 0x1
     CONTROL = 0x0
     
-    packetID = 0x0
-    packetType = 0x0
+    PACKET_ID = 0x0
+    PACKET_TYPE = 0x0
     
+    PAYLOAD = bytearray()
     
-    payload = bytearray()
+    def __init__(self, pkt_data=None):
+        if pkt_data is not None and len(pkt_data) >= 8:
+            # Unpack the data
+            header = pkt_data[:8]
+            header_format = 'IBBBB'
+            identifier, pkt_spec_type, pkt_control, pkt_id, pkt_payload_size = struct.unpack(header_format, header)
+            
+            if identifier != 0x4C455055:
+                raise ICP_Invalid_Packet
+            
+            self.CONTROL = pkt_control
+            self.PACKET_ID = pkt_id
+            self.PACKET_TYPE = pkt_spec_type & 0xF
+            self.SPEC_NUMBER = (pkt_spec_type >> 4) & 0xF
+            
+            if len(pkt_data) > 8:
+                self.PAYLOAD = pkt_data[8:(pkt_payload_size+8)]
+                
+    def getPayload(self):
+        return self.PAYLOAD
     
     def pack(self):
         """
-        Pack the header and payload
+        Pack the header and PAYLOAD
         """
-        packetIdentifier = ((self.SPEC_NUMBER<<4) | (self.packetType & 0xF)) & 0xFF
+        packetIdentifier = ((self.SPEC_NUMBER<<4) | (self.PACKET_TYPE & 0xF)) & 0xFF
         
-        # Enforce payload type as bytearray
-        if type(self.payload) is not bytearray:
-            self.payload = bytearray(self.payload)
+        # Enforce PAYLOAD type as bytearray
+        if type(self.PAYLOAD) is not bytearray:
+            self.PAYLOAD = bytearray(self.PAYLOAD)
             
-        payloadSize = len(self.payload)
-        headerFormat = '4sBBHH%is' % (payloadSize)
+        payloadSize = len(self.PAYLOAD)
+        headerFormat = '4sBBBB%is' % (payloadSize)
             
-        return struct.pack(headerFormat, 'UPEL', packetIdentifier, self.CONTROL, self.packetID, payloadSize, str(self.payload))
+        return struct.pack(headerFormat, 'UPEL', packetIdentifier, self.CONTROL, self.PACKET_ID, payloadSize, str(self.PAYLOAD))
     
 class StateChangePacket(UPEL_ICP_Packet):
     def __init__(self, state):
-        self.packetType = 0x0
-        self.payload = struct.pack('B', state)
+        self.PACKET_TYPE = 0x0
+        self.PAYLOAD = struct.pack('B', state)
 
 class ErrorPacket(UPEL_ICP_Packet):
     def __init__(self):
-        self.packetType = 0x1
+        self.PACKET_TYPE = 0x1
 
 class HeartbeatPacket(UPEL_ICP_Packet):
     pass
@@ -58,9 +78,13 @@ class ProcessDataReadPacket(UPEL_ICP_Packet):
 
 class DiscoveryPacket(UPEL_ICP_Packet):
     def __init__(self):
-        self.packetType = 0xF
-        self.packetID = 0x00
+        self.PACKET_TYPE = 0xF
+        self.PACKET_ID = 0x00
 
-
+#===============================================================================
+# Exceptions
+#===============================================================================
+class ICP_Invalid_Packet(RuntimeError):
+    pass
 
 
