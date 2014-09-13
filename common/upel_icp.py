@@ -52,6 +52,9 @@ class UPEL_ICP_Packet:
             
         return struct.pack(headerFormat, 'UPEL', packetIdentifier, self.CONTROL, self.PACKET_ID, payloadSize, str(self.PAYLOAD))
     
+class UPEL_ICP_Device(object):
+    pass
+    
 class StateChangePacket(UPEL_ICP_Packet):
     def __init__(self, state):
         self.PACKET_TYPE = 0x0

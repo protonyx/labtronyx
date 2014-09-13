@@ -224,8 +224,6 @@ class InstrumentManager(rpc.RpcBase):
             # Scan devices
             self.refresh()
             
-            self.getResources('c_VISA')
-            
             # Start RPC server
             # This operation will timeout after 2 seconds. If that happens,
             # this process should exit
