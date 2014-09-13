@@ -177,6 +177,7 @@ class c_UPEL_arbiter(threading.Thread):
             #===================================================================
             # Service the message queue
             #===================================================================
+            self._serviceQueue()
             
             #===================================================================
             # Check for dead entries in the routing map
@@ -193,15 +194,39 @@ class c_UPEL_arbiter(threading.Thread):
     def queueMessage(self, destination, ttl, response_queue, packet_obj):
         """
         Insert a message into the queue
+        
+        :param destination: Destination IP Address
+        :type destination: str
+        :param ttl: Time to Live (seconds)
+        :type ttl: int
+        :param response_queue: Queue to drop response into
+        :type response_queue: Queue
+        :param packet_obj: ICP Packet Object
+        :type packet_obj: UPEL_ICP_Packet
+        :returns: bool - True if messaged was queued successfully, False otherwise
         """
+        try:
+            self.__messageQueue.put((destination, ttl, response_queue, packet_obj), False)
+            return True
+        
+        except Full:
+            return False
         
     def _getPacketID(self):
+        """
+        Get the next available packet ID
+        
+        :returns: int or None if there are no available IDs
+        """
         try:
             s = self.__availableIDs.pop()
             return s
         
         except KeyError:
-            return False
+            return None
+        
+    def _packetID_available(self):
+        return len(self.__availableIDs) > 0
         
     def _serviceSocket(self):
             read, _, _ = select.select([self.socket],[],[], 0.5)
@@ -224,3 +249,30 @@ class c_UPEL_arbiter(threading.Thread):
                     
                 except icp.ICP_Invalid_Packet:
                     pass
+                
+    def _serviceQueue(self):
+        """
+        :returns: bool - True if the queue was not empty, False otherwise
+        """
+        if not self.__messageQueue.empty() and self._packetID_available():
+            try:
+                msg = self.__messageQueue.get_nowait()
+                destination, ttl, response_queue, packet_obj = msg
+                
+                # Assign a PacketID
+                packetID = self._getPacketID()
+                packet_obj.PACKET_ID = packetID
+                
+                if type(packet_obj) is UPEL_ICP_Packet:
+                    # Add entry to routing map
+                    self.__routingMap[packetID] = (destination, ttl, response_queue)
+                    
+                    # Pack and transmit
+                    packet = packet_obj.pack()
+                    self.socket.sendto(packet, (broadcast_ip, self.DEFAULT_PORT))
+                
+            except Empty:
+                return False
+            
+        else:
+            return False
