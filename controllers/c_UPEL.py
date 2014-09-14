@@ -14,6 +14,7 @@ class c_UPEL(controllers.c_Base):
     devices = {}
 
     def open(self):
+        
         # Start the arbiter thread
         self.arbiter = c_UPEL_arbiter(self)
         self.arbiter.start()
@@ -36,49 +37,49 @@ class c_UPEL(controllers.c_Base):
     
     def refresh(self):
         """
-        Send a UDP broadcast packet on port 7968 and see who responds
+        Queues a broadcast discovery packet. The arbiter will automatically
+        update the resource table as responses come in. 
+        
+        :returns: None
         """
+        packet = icp.DiscoveryPacket()
+
+        # Queue Discovery Packet
+        self.arbiter.queueMessage('<broadcast>', 60.0, None, packet)
         
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        # Give the arbiter time to process responses
+        time.sleep(2.0)
         
-        packet = icp.DiscoveryPacket().pack()
-        
-        #local_ip = str(socket.gethostbyname(socket.getfqdn()))
-        
-        if self.config.broadcastIP:
-            broadcast_ip = self.config.broadcastIP
-        else:
-            broadcast_ip = '<broadcast>'
-        
-        # Send Discovery Packet
-        self.socket.sendto(packet, (broadcast_ip, self.DEFAULT_PORT))
+        #self.socket.sendto(packet, (broadcast_ip, self.DEFAULT_PORT))
         
         #s.sendto(packet, ('192.168.1.130', self.DEFAULT_PORT))
         #s.sendto(packet, ('192.168.1.137', self.DEFAULT_PORT))
-        t_start = time.time()
+        #t_start = time.time()
         
-        while (time.time() - t_start) < 2.0:
-            #data = repr(time.time()) + '\n'
-            read, _, _ = select.select([self.socket],[],[], 2.0)
-            
-            if self.socket in read:
-                data, address = self.socket.recvfrom(4096)
-
-                try:
-                    resp_pkt = icp.UPEL_ICP_Packet(data)
-                    
-                    if resp_pkt.PACKET_TYPE == 0xF:
-                        # Filter Discovery Packets
-                        ident = resp_pkt.PAYLOAD.split(',')
-                        
-                        res = (ident[0], ident[1])
-                        self.resources[address[0]] = res
-                        
-                        self.logger.info("Found UPEL ICP Device: %s %s" % res)
-                    
-                    
-                except icp.ICP_Invalid_Packet:
-                    pass
+#===============================================================================
+#         while (time.time() - t_start) < 2.0:
+#             #data = repr(time.time()) + '\n'
+#             read, _, _ = select.select([self.socket],[],[], 2.0)
+#             
+#             if self.socket in read:
+#                 data, address = self.socket.recvfrom(4096)
+# 
+#                 try:
+#                     resp_pkt = icp.UPEL_ICP_Packet(data)
+#                     
+#                     if resp_pkt.PACKET_TYPE == 0xF:
+#                         # Filter Discovery Packets
+#                         ident = resp_pkt.PAYLOAD.split(',')
+#                         
+#                         res = (ident[0], ident[1])
+#                         self.resources[address[0]] = res
+#                         
+#                         self.logger.info("Found UPEL ICP Device: %s %s" % res)
+#                     
+#                     
+#                 except icp.ICP_Invalid_Packet:
+#                     pass
+#===============================================================================
     
     #===========================================================================
     # Optional - Manual Controllers
@@ -145,21 +146,26 @@ class c_UPEL_arbiter(threading.Thread):
     def __init__(self, controller):
         threading.Thread.__init__(self)
         self.controller = controller
+        self.name = "c_UPEL_Arbiter"
     
     def run(self):
         # Init
         self.__messageQueue = Queue.Queue()
         self.__routingMap = {}
         self.__availableIDs = Set(range(1,255))
-        
-        #import config
-        #self.config = config.Config()
+        # Import config
+        try:
+            import config
+            self.config = config.Config()
+            self.port = self.config.UPELPort
+        except:
+            self.port = self.DEFAULT_PORT
         
         # Configure Socket
         # IPv4 UDP
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.socket.bind(('', self.DEFAULT_PORT))
+            self.socket.bind(('', self.port))
             self.socket.setblocking(0)
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             
@@ -261,17 +267,35 @@ class c_UPEL_arbiter(threading.Thread):
                 
                 # Assign a PacketID
                 packetID = self._getPacketID()
-                packet_obj.PACKET_ID = packetID
                 
-                if type(packet_obj) is UPEL_ICP_Packet:
-                    # Add entry to routing map
-                    self.__routingMap[packetID] = (destination, ttl, response_queue)
+                if issubclass(packet_obj.__class__, icp.UPEL_ICP_Packet) and packetID is not None:
+                    # Assign the PacketID
+                    packet_obj.PACKET_ID = packetID
                     
-                    # Pack and transmit
+                    # Pack for transmission
                     packet = packet_obj.pack()
-                    self.socket.sendto(packet, (broadcast_ip, self.DEFAULT_PORT))
-                
-            except Empty:
+                    
+                    # Override broadcast address if necessary
+                    if destination is '<broadcast>':
+                        if self.config.broadcastIP:
+                            try:
+                                destination = self.config.broadcastIP
+                            except:
+                                pass
+                        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+                            
+                    else:
+                        # Add entry to routing map
+                        self.__routingMap[packetID] = (destination, ttl, response_queue)
+                        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 0)
+                    
+                    # Transmit
+                    self.socket.sendto(packet, (destination, self.port))
+                    
+                else:
+                    return True
+            
+            except Queue.Empty:
                 return False
             
         else:
