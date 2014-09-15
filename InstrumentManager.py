@@ -244,11 +244,15 @@ class InstrumentManager(rpc.RpcBase):
             
     def stop(self):
         """
-        Stop the InstrumentManager instance. Calls rpc_stop to all Models.
+        Stop the InstrumentManager instance. Attempts to shutdown and free
+        all resources.
         """
         for dev in self.devices.values():
             if hasattr(dev, 'rpc_stop'):
                 dev.rpc_stop()
+                
+        for cont in self.controllers.values():
+            cont.close()
                 
         self.rpc_stop()
             
@@ -616,7 +620,12 @@ class InstrumentManager(rpc.RpcBase):
                     res = self.loadModel(res_uuid, moduleName, className)
                     return res
                 
+                else:
+                    self.logger.warning("Cannot load model, no valid model found for %s", res_uuid)
+                    return False
+                
             else:
+                self.logger.error("Cannot load model, invalid UUID: %s", res_uuid)
                 return False
                 
         else:

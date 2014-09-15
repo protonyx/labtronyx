@@ -1,9 +1,70 @@
 import struct
+import Queue
 """
 Conforms to Rev 1.0 of the UPEL Instrument Control Protocol
 
 Author: Kevin Kennedy
 """
+
+    
+class UPEL_ICP_Device(object):
+    """
+    Instrument class for ICP devices. Used by Models to communicate with ICP
+    devices over the network. 
+    
+    Compatible with the VISA instrument object to ease code portability.
+    """
+    
+    def __init__(self, address, arbiter):
+        """
+        :param address: IPv4 Address
+        :type address: str
+        """
+        self.address = address
+        self.arbiter = arbiter
+        
+        self.packetQueue = Queue.Queue()
+        
+    def _getResponse(self, timeout):
+        try:
+            return self.packetQueue.get(True, timeout)
+            
+        except Queue.Empty:
+            raise ICP_Timeout
+    
+    #===========================================================================
+    # Register Operations
+    #===========================================================================
+    
+    def writeReg(self, address, subindex, data):
+        packet = RegisterWritePacket(address, subindex, data)
+        
+        self.arbiter.queueMessage(self.address, 60.0, packet)
+        
+        try:
+            return self._getResponse(60.0)
+            
+        except ICP_Timeout:
+            return None
+    
+    def readReg(self, address, subindex):
+        packet = RegisterReadPacket(address, subindex)
+        
+        self.arbiter.queueMessage(self.address, 60.0, packet)
+        
+        try:
+            return self._getResponse(60.0)
+            
+        except ICP_Timeout:
+            return None
+    
+    #===========================================================================
+    # Process Data Operations
+    #===========================================================================
+    
+    def readProc(self, address):
+        pass
+    
 class UPEL_ICP_Packet:
     """
     Base class for all ICP packets. Packs header information before transmission
@@ -37,6 +98,9 @@ class UPEL_ICP_Packet:
     def getPayload(self):
         return self.PAYLOAD
     
+    def isResponse(self):
+        return bool(self.CONTROL & 0x80)
+    
     def pack(self):
         """
         Pack the header and PAYLOAD
@@ -51,9 +115,6 @@ class UPEL_ICP_Packet:
         headerFormat = '4sBBBB%is' % (payloadSize)
             
         return struct.pack(headerFormat, 'UPEL', packetIdentifier, self.CONTROL, self.PACKET_ID, payloadSize, str(self.PAYLOAD))
-    
-class UPEL_ICP_Device(object):
-    pass
     
 class StateChangePacket(UPEL_ICP_Packet):
     def __init__(self, state):
@@ -71,10 +132,14 @@ class FirmwareDownloadPacket(UPEL_ICP_Packet):
     pass
 
 class RegisterReadPacket(UPEL_ICP_Packet):
-    pass
+    def __init__(self, address, subindex):
+        self.PACKET_TYPE = 0x8
+        self.PAYLOAD = str(struct('HxB', address, subindex))
 
 class RegisterWritePacket(UPEL_ICP_Packet):
-    pass
+    def __init__(self, address, subindex, data):
+        self.PACKET_TYPE = 0x9
+        self.PAYLOAD = str(struct('HxB', address, subindex)) + str(data)
 
 class ProcessDataReadPacket(UPEL_ICP_Packet):
     pass
@@ -90,4 +155,6 @@ class DiscoveryPacket(UPEL_ICP_Packet):
 class ICP_Invalid_Packet(RuntimeError):
     pass
 
+class ICP_Timeout(RuntimeError):
+    pass
 

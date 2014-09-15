@@ -10,7 +10,9 @@ from sets import Set
 
 class c_UPEL(controllers.c_Base):
     
+    # Dict: ResID -> (VID, PID)
     resources = {}
+    # Dict: ResID -> UPEL_ICP_Device Object
     devices = {}
 
     def open(self):
@@ -45,7 +47,7 @@ class c_UPEL(controllers.c_Base):
         packet = icp.DiscoveryPacket()
 
         # Queue Discovery Packet
-        self.arbiter.queueMessage('<broadcast>', 60.0, None, packet)
+        self.arbiter.queueMessage('<broadcast>', 60.0, packet)
         
         # Give the arbiter time to process responses
         time.sleep(2.0)
@@ -80,6 +82,12 @@ class c_UPEL(controllers.c_Base):
 #                 except icp.ICP_Invalid_Packet:
 #                     pass
 #===============================================================================
+
+    def _getInstrument(self, resID):
+        return self._getDevice(resID)
+        
+    def _getDevice(self, resID):
+        return self.devices.get(resID, None)
     
     #===========================================================================
     # Optional - Manual Controllers
@@ -197,7 +205,7 @@ class c_UPEL_arbiter(threading.Thread):
         
         self.alive.clear()
         
-    def queueMessage(self, destination, ttl, response_queue, packet_obj):
+    def queueMessage(self, destination, ttl, packet_obj):
         """
         Insert a message into the queue
         
@@ -205,14 +213,14 @@ class c_UPEL_arbiter(threading.Thread):
         :type destination: str
         :param ttl: Time to Live (seconds)
         :type ttl: int
-        :param response_queue: Queue to drop response into
-        :type response_queue: Queue
+        :param source_obj: Source device object
+        :type source_obj: UPEL_ICP_Device
         :param packet_obj: ICP Packet Object
         :type packet_obj: UPEL_ICP_Packet
         :returns: bool - True if messaged was queued successfully, False otherwise
         """
         try:
-            self.__messageQueue.put((destination, ttl, response_queue, packet_obj), False)
+            self.__messageQueue.put((destination, ttl, packet_obj), False)
             return True
         
         except Full:
@@ -243,22 +251,46 @@ class c_UPEL_arbiter(threading.Thread):
                 try:
                     resp_pkt = icp.UPEL_ICP_Packet(data)
                     
-                    if resp_pkt.PACKET_TYPE == 0xF:
-                        # Filter Discovery Packets
-                        ident = resp_pkt.PAYLOAD.split(',')
-                        
-                        res = (ident[0], ident[1])
-                        self.resources[address[0]] = res
-                        
-                        self.logger.info("Found UPEL ICP Device: %s %s" % res)
+                    packetID = resp_pkt.PACKET_ID
                     
-                    elif resp_pkt.PACKET_ID in self.__routingMap.keys():
-                        destination, _, response_queue = self.__routingMap[resp_pkt.PACKET_ID]
+                    # Route Packets
+                    if resp_pkt.PACKET_TYPE == 0xF and resp_pkt.isResponse():
+                        # Filter Discovery Packets
+                        ident = resp_pkt.getPayload().split(',')
                         
+                        # Check if resource exists
+                        resID = address[0]
+                        res = (ident[0], ident[1])
                         
+                        if resID not in self.controller.resources.keys():
+                            # Create new device
+                            self.controller.resources[resID] = res
+                            self.controller.devices[resID] = icp.UPEL_ICP_Device(resID, self)
+                        
+                            self.controller.logger.info("Found UPEL ICP Device: %s %s" % res)
+                            
+                        # TODO: Under what conditions should a device be removed?
+                    
+                    elif packetID in self.__routingMap.keys():
+                        destination, _ = self.__routingMap[packetID]
+                        
+                        if destination in self.controller.devices.keys():
+                            dev = self.controller.devices.get(destination)
+                            
+                            dev.packetQueue.put(resp_pkt)
+                            
+                        # Remove entry from routing map
+                        self.__routingMap.pop(packetID)
+                        
+                        # Add free ID back into pool
+                        self.__availableIDs.add(packetID)
                         
                 except icp.ICP_Invalid_Packet:
                     pass
+                
+                #except:
+                    # Pass on all errors for the time being
+                    #pass
                 
     def _serviceQueue(self):
         """
@@ -267,7 +299,7 @@ class c_UPEL_arbiter(threading.Thread):
         if not self.__messageQueue.empty() and self._packetID_available():
             try:
                 msg = self.__messageQueue.get_nowait()
-                destination, ttl, response_queue, packet_obj = msg
+                destination, ttl, packet_obj = msg
                 
                 # Assign a PacketID
                 packetID = self._getPacketID()
@@ -280,7 +312,7 @@ class c_UPEL_arbiter(threading.Thread):
                     packet = packet_obj.pack()
                     
                     # Override broadcast address if necessary
-                    if destination is '<broadcast>':
+                    if destination == "<broadcast>":
                         if self.config.broadcastIP:
                             try:
                                 destination = self.config.broadcastIP
@@ -290,7 +322,7 @@ class c_UPEL_arbiter(threading.Thread):
                             
                     else:
                         # Add entry to routing map
-                        self.__routingMap[packetID] = (destination, ttl, response_queue)
+                        self.__routingMap[packetID] = (destination, ttl)
                         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 0)
                     
                     # Transmit
