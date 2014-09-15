@@ -23,6 +23,6 @@ class m_Template(models.m_Base):
         prop = models.m_Base.getProperties(self)
         
         # Add any additional properties here
-        pass
+        return prop
     
     
