@@ -252,7 +252,11 @@ class c_UPEL_arbiter(threading.Thread):
                         
                         self.logger.info("Found UPEL ICP Device: %s %s" % res)
                     
-                    
+                    elif resp_pkt.PACKET_ID in self.__routingMap.keys():
+                        destination, _, response_queue = self.__routingMap[resp_pkt.PACKET_ID]
+                        
+                        
+                        
                 except icp.ICP_Invalid_Packet:
                     pass
                 
