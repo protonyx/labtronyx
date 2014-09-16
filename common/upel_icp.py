@@ -134,12 +134,12 @@ class FirmwareDownloadPacket(UPEL_ICP_Packet):
 class RegisterReadPacket(UPEL_ICP_Packet):
     def __init__(self, address, subindex):
         self.PACKET_TYPE = 0x8
-        self.PAYLOAD = str(struct('HxB', address, subindex))
+        self.PAYLOAD = str(struct.pack('HxB', address, subindex))
 
 class RegisterWritePacket(UPEL_ICP_Packet):
     def __init__(self, address, subindex, data):
         self.PACKET_TYPE = 0x9
-        self.PAYLOAD = str(struct('HxB', address, subindex)) + str(data)
+        self.PAYLOAD = str(struct.pack('HxB', address, subindex)) + str(data)
 
 class ProcessDataReadPacket(UPEL_ICP_Packet):
     pass

@@ -501,9 +501,9 @@ class RpcConnection(threading.Thread):
                                                     result.append(req.call(target, self))
                                                 else:
                                                     result.append(req.call(target))
-                                            except TypeError as e:
+                                            #except TypeError as e:
                                                 # Parameter issue
-                                                result.append(Rpc_Response(id=req.id, error=Rpc_InvalidParams(message=str(e))))
+                                                #result.append(Rpc_Response(id=req.id, error=Rpc_InvalidParams(message=str(e))))
                                                 
                                             except Exception as e:
                                                 if hasattr(self, 'logger'):
