@@ -252,6 +252,7 @@ class c_UPEL_arbiter(threading.Thread):
                     resp_pkt = icp.UPEL_ICP_Packet(data)
                     
                     packetID = resp_pkt.PACKET_ID
+                    self.controller.logger.debug("Recieved packet id %i", packetID)
                     
                     # Route Packets
                     if resp_pkt.PACKET_TYPE == 0xF and resp_pkt.isResponse():
@@ -327,6 +328,8 @@ class c_UPEL_arbiter(threading.Thread):
                     
                     # Transmit
                     self.socket.sendto(packet, (destination, self.port))
+                    
+                    self.controller.logger.debug("Sent packet id %i", packetID)
                     
                 else:
                     return True

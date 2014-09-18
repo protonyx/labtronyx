@@ -27,7 +27,9 @@ class UPEL_ICP_Device(object):
         
     def _getResponse(self, timeout):
         try:
-            return self.packetQueue.get(True, timeout)
+            pkt = self.packetQueue.get(True, timeout)
+            
+            return str(pkt.getPayload())
             
         except Queue.Empty:
             raise ICP_Timeout

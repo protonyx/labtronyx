@@ -27,5 +27,5 @@ class m_Generic(models.m_Base):
         return prop
     
     def getErrors(self):
-        self.__instr.readReg(0x1001, 0x00)
+        return self.__instr.readReg(0x1001, 0x00)
     
