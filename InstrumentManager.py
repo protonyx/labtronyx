@@ -229,18 +229,9 @@ class InstrumentManager(rpc.RpcBase):
             # this process should exit
             self.logger.info("Starting RPC Server...")
             self.rpc_start(port=self.config.managerPort)
-                
-            try:
-                if self.is_alive():
-                    # Running as a subprocess
-                    # Spin to keep the process running, otherwise the interpreter
-                    # will stop, even with the rpc server running in the background
-                    while self.rpc_isRunning():
-                        # Do something to keep process alive
-                        time.sleep(1.0)
-                        
-            except:
-                pass
+            
+            # Main thread will now close
+            # TODO: Should the main thread be doing something?
             
     def stop(self):
         """
