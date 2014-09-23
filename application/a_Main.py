@@ -1,4 +1,5 @@
 import sys
+import os
 import logging
 
 import Tkinter as Tk
@@ -26,6 +27,11 @@ class a_Main(object):
     treeSort = 'deviceModel'
     
     def __init__(self):
+        # Get root directory
+        # Get the root path
+        can_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir) # Resolves symbolic links
+        self.rootPath = os.path.abspath(can_path)
+        
         # Instantiate a logger
         self.logger = logging.getLogger(__name__)
         self.logFormatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
@@ -48,10 +54,76 @@ class a_Main(object):
         self.rebuild()
         self.rebind()
         
+        # Index views
+        self.__loadViews()
+        
         # TODO: Persistent Settings
         
         self.run()
         
+    def __pathToModelName(self, path):
+        # Get module name from relative path
+        com_pre = os.path.commonprefix([self.rootPath, path])
+        r_path = path.replace(com_pre + "\\", '')
+        
+        modulePath = r_path.replace("\\", '.')
+        return modulePath
+        
+    def __loadViews(self):
+        # Clear the view dictionary
+        self.views = {} 
+        
+        # Build view dictionary
+        view_dir = os.path.join(self.rootPath, 'views')
+        allviews = os.walk(view_dir)
+        for dir in allviews:
+            # Verify valid directory
+            if len(dir[2]) == 0:
+                # Directory is empty, move on
+                continue
+            
+            elif '__init__.py' not in dir[2]:
+                # Directory must be a python module
+                # TODO: Create an __init__.py file if one does not exist
+                self.logger.warning('Non-module model found: %s', dir[0])
+                continue
+            
+            for file in dir[2]:
+                # Iterate through each file
+                if file[-3:] == '.py' and '__init__' not in file:
+                    # Get module name from relative path     
+                    className = file.replace('.py', '')
+                    viewModule = self.__pathToModelName(dir[0]) + '.' + className
+
+                    # Attempt to load the view
+                    try:
+                        testModule = importlib.import_module(viewModule)
+                        self.logger.debug('Loading model: %s', viewModule)
+                        
+                        # Check to make sure the correct class exists
+                        testClass = getattr(testModule, className) # Will raise exception if doesn't exist
+                    
+                    except Exception as e:
+                        self.logger.error('Unable to load module %s: %s', viewModule, str(e))
+                        continue
+                    
+                    #===========================================================
+                    # except AttributeError:
+                    #     self.logger.error('Model %s does not have a class %s', modelModule, className)
+                    #     continue
+                    #===========================================================
+                        
+                    # Verify the model
+                    try:
+                        
+                        validVIDs = testClass.validVIDs
+                        validPIDs = testClass.validPIDs
+                        
+                        self.views[modelModule] = (className, validVIDs, validPIDs)
+                                
+                    except Exception as e:
+                        self.logger.error('Unable to load module %s: %s', modelModule, str(e))
+                        continue
         
     def rebuild(self):
         """
@@ -87,6 +159,7 @@ class a_Main(object):
         self.m_File = Tk.Menu(self.menubar)
         self.menubar.add_cascade(menu=self.m_File, label='File')
         self.m_File.add_command(label='Connect to host...', command=lambda: self.cb_managerConnect())
+        self.m_File.add_command(label='Refresh all hosts...', command=lambda: self.cb_refreshTree())
         self.m_File.add_separator()
         # File - LogLevel
         self.m_File_LogLevel = Tk.Menu(self.m_File)
@@ -187,6 +260,7 @@ class a_Main(object):
         # Try to connect to the local manager
         self.ICF.addManager('localhost')
         #self.ICF.addManager('DM-FALCON4-110')
+        
         self.rebuildTreeview()
         
         self.logger.info('Application start')
@@ -217,14 +291,14 @@ class a_Main(object):
             self.tree.delete(n)
 
         # Get a flat list of resources and sort
-        self.ICF.refreshProperties()
+        self.ICF.cacheProperties()
         resources = self.ICF.getProperties().values()
         resources.sort(key=lambda res: res.get(sort, ''), reverse=reverseOrder)
         
         # Build a list of group values
         if group is 'hostname':
             # Fixes a bug where hosts were not added if no resources were present
-            for gval in self.ICF.getHostnames():
+            for gval in self.ICF.getConnectedHosts():
                 self.tree.insert('', 'end', gval, text=gval)
                 
         elif group is not None and group in validGroups:
@@ -294,8 +368,11 @@ class a_Main(object):
         #self.ICF.refresh
         self.cb_refreshTree()
         
+    def cb_loadView(self, uuid):
+        pass
+        
     def cb_refreshTree(self, address=None):
-        self.ICF.refreshManager(address)
+        self.ICF.refreshManager(address)            
         self.rebuildTreeview()
             
     def cb_setLogLevel(self, level):
@@ -323,7 +400,7 @@ class a_Main(object):
         # Populate menu based on context
         address = self.ICF.isConnectedHost(elem)
         res_props = self.ICF.getProperties(elem)
-        if address is not None:
+        if address is True:
             # Context is Hostname
             
             # Context menu:
@@ -345,7 +422,7 @@ class a_Main(object):
             else:
                 menu.add_command(label='Unload Driver', command=lambda: self.cb_unloadDriver(elem))
                 
-            menu.add_command(label='Control Instrument', command=lambda: tkMessageBox.showinfo('Control Instrument', elem))
+            menu.add_command(label='Load View...', command=lambda: cb_loadView(elem))
             menu.add_command(label='Properties...', command=lambda: tkMessageBox.showinfo('Instrument Properties', elem))
         
         else:
@@ -410,3 +487,13 @@ class TextHandler(logging.Handler):
         self.console.insert(Tk.END, message)
         self.console.configure(state=Tk.DISABLED)
         self.console.see(Tk.END)
+        
+if __name__ == "__main__":
+    # Load Application GUI
+    try:
+        main_gui = a_Main()
+         
+    except Exception as e:
+        print "Unable to load main application"
+        raise
+        sys.exit()

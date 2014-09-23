@@ -127,7 +127,12 @@ class InstrumentControl(object):
             return input
         
         else:
-            return socket.gethostbyname(input)
+            try:
+                host = socket.gethostbyname(input)
+            except:
+                host = None
+            finally:
+                return host
     
     def isConnectedHost(self, hostname):
         """
@@ -868,16 +873,13 @@ class InstrumentControl(object):
     
 # Load GUI in interactive mode
 if __name__ == "__main__":
-    pass
     # Load Application GUI
-    #===========================================================================
-    # try:
-    #     #sys.path.append("..")
-    #     from application.a_Main import a_Main
-    #     main_gui = a_Main()
-    #     
-    # except Exception as e:
-    #     print "Unable to load main application"
-    #     raise
-    #     sys.exit()
-    #===========================================================================
+    try:
+        #sys.path.append("..")
+        from application.a_Main import a_Main
+        main_gui = a_Main()
+         
+    except Exception as e:
+        print "Unable to load main application"
+        raise
+        sys.exit()

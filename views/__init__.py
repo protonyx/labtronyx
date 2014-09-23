@@ -1,32 +1,18 @@
 
-import multiprocessing
+#import multiprocessing
+import Tkinter as Tk
 from common.rpc import RpcClient
 
-class v_Base(multiprocessing.Process):
+class v_Base(Tk.TopLevel):
     
-    def __init__(self, **kwargs):
-        multiprocessing.Process.__init__(self)
+    validVIDs = []
+    validPIDs = []
+    
+    def __init__(self, master, parent, model):
+        Tk.Toplevel.__init__(self, master)
         
-        if 'port' in kwargs:
-            self.port = kwargs['port']
-        else:
-            self.port = None
-        
-        if 'address' in kwargs:
-            self.address = kwargs['address']
-        else:
-            # Assume localhost
-            self.address = '127.0.0.1'
+        self.parent = parent
+        self.model = model
             
-    def start(self):
-        multiprocessing.Process.start(self)
-        
-        # Instantiate an RPC Client
-        if self.port != None:
-            self.target = RpcClient(port=self.port) 
-
     def run(self):
-        raise NotImplementedError
-    
-    def stop(self):
         raise NotImplementedError
