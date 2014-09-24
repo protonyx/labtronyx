@@ -569,6 +569,16 @@ class InstrumentControl(object):
         
         else:
             return False
+        
+    def isValidResource(self, res_uuid):
+        """
+        Check if a resource is known.
+        
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: bool - True if resource was removed, False otherwise
+        """
+        return self.resources.has_key(res_uuid)
     
     def removeResource(self, res_uuid):
         """

@@ -1,6 +1,7 @@
 import sys
 import os
 import logging
+import importlib
 
 import Tkinter as Tk
 import ttk
@@ -98,31 +99,17 @@ class a_Main(object):
                     # Attempt to load the view
                     try:
                         testModule = importlib.import_module(viewModule)
-                        self.logger.debug('Loading model: %s', viewModule)
                         
                         # Check to make sure the correct class exists
                         testClass = getattr(testModule, className) # Will raise exception if doesn't exist
-                    
-                    except Exception as e:
-                        self.logger.error('Unable to load module %s: %s', viewModule, str(e))
-                        continue
-                    
-                    #===========================================================
-                    # except AttributeError:
-                    #     self.logger.error('Model %s does not have a class %s', modelModule, className)
-                    #     continue
-                    #===========================================================
-                        
-                    # Verify the model
-                    try:
                         
                         validVIDs = testClass.validVIDs
                         validPIDs = testClass.validPIDs
                         
-                        self.views[modelModule] = (className, validVIDs, validPIDs)
-                                
+                        self.views[viewModule] = (className, validVIDs, validPIDs)
+                    
                     except Exception as e:
-                        self.logger.error('Unable to load module %s: %s', modelModule, str(e))
+                        self.logger.error('Unable to load module %s: %s', viewModule, str(e))
                         continue
         
     def rebuild(self):
@@ -372,7 +359,25 @@ class a_Main(object):
         self.cb_refreshTree()
         
     def cb_loadView(self, uuid):
-        pass
+        validViews = []
+        
+        props = self.ICF.getProperties(uuid)
+        VID = props.get('vendorID', None)
+        PID = props.get('productID', None)
+        
+        for viewModule, viewInfo in self.views.items():
+            viewClass, validVIDs, validPIDs = viewInfo
+            
+            if VID in validVIDs or len(validVIDs) == 0:
+                if PID in validPIDs or len(validPIDs) == 0:
+                    validViews.append((viewModule, viewClass))
+            
+        # Spawn a window to select the view to load
+        from include.a_managerHelpers import a_ViewSelector
+        
+        # Create the child window
+        w_ViewSelector = a_ViewSelector(self.myTk, lambda address, port: self.cb_addManager(address, port))
+        w_connectToHost.show()
         
     def cb_refreshTree(self, address=None):
         self.ICF.refreshManager(address)            
@@ -401,31 +406,30 @@ class a_Main(object):
         menu = Tk.Menu(self.myTk)
         
         # Populate menu based on context
-        address = self.ICF.isConnectedHost(elem)
-        res_props = self.ICF.getProperties(elem)
-        if address is True:
+        if self.ICF.isConnectedHost(elem):
             # Context is Hostname
             
             # Context menu:
             # -Refresh
             # -Load Device
             # -Get log?
-            menu.add_command(label='Refresh', command=lambda: self.cb_refreshTree(address))
-            menu.add_command(label='Disconnect', command=lambda: self.cb_managerDisconnect(address))
+            menu.add_command(label='Refresh', command=lambda: self.cb_refreshTree(elem))
+            menu.add_command(label='Disconnect', command=lambda: self.cb_managerDisconnect(elem))
             
-        elif len(res_props) > 0:
+        elif self.ICF.isValidResource(elem):
             # Context is Resource, elem is the UUID
             
             # Context menu:
             # -Load Driver/Unload Driver
             # -Control Instrument (Launch View/GUI)
+            res_props = self.ICF.getProperties(elem)
             
             if res_props.get('modelName', None) == None:
                 menu.add_command(label='Load Driver', command=lambda: self.cb_loadDriver(elem))
             else:
                 menu.add_command(label='Unload Driver', command=lambda: self.cb_unloadDriver(elem))
                 
-            menu.add_command(label='Load View...', command=lambda: cb_loadView(elem))
+            menu.add_command(label='Load View...', command=lambda: self.cb_loadView(elem))
             menu.add_command(label='Properties...', command=lambda: tkMessageBox.showinfo('Instrument Properties', elem))
         
         else:

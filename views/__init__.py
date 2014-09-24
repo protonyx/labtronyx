@@ -3,7 +3,7 @@
 import Tkinter as Tk
 from common.rpc import RpcClient
 
-class v_Base(Tk.TopLevel):
+class v_Base(Tk.Toplevel):
     
     validVIDs = []
     validPIDs = []
