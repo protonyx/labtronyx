@@ -349,10 +349,13 @@ class a_Main(object):
         # Spawn a window to get address and port
         from include.a_managerHelpers import a_ConnectToHost
         
-        w_connectToHost = a_ConnectToHost(self.myTk)
+        # Create the child window
+        w_connectToHost = a_ConnectToHost(self.myTk, lambda address, port: self.cb_addManager(address, port))
+        w_connectToHost.show()
         
+    def cb_addManager(self, address, port=None):
         # Attempt a connection to the manager
-        connStat = self.ICF.addManager(address, port)
+        self.ICF.addManager(address, port)
         self.cb_refreshTree()
     
     def cb_managerDisconnect(self, address):
