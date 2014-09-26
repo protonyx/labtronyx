@@ -6,6 +6,9 @@ from common.rpc import *
 import Tkinter as Tk
 
 class v_test(views.v_Base):
+    
+    validVIDs = ['Test']
+    validPIDs = ['12345']
         
     def run(self):
         self.myTk = Tk.Tk()

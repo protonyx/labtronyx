@@ -9,11 +9,11 @@ class a_ConnectToHost(Tk.Toplevel):
         self.cb_func = cb_func
         
         self.wm_title('Connect to host...')
-        Tk.Label(t, text='Connect to remote host').grid(row=0, column=0, columnspan=2)
-        Tk.Label(t, text='Address or Hostname').grid(row=1, column=0)
-        self.txt_address = Tk.Text(t)
+        Tk.Label(master, text='Connect to remote host').grid(row=0, column=0, columnspan=2)
+        Tk.Label(master, text='Address or Hostname').grid(row=1, column=0)
+        self.txt_address = Tk.Text(master)
         self.txt_address.grid(row=1, column=1)
-        Tk.Button()
+        Tk.Button(master, text='Connect', command=lambda: self.cb_Add()).grid(row=2, column=0)
         
         # Make this dialog modal
         self.focus_set()
@@ -39,9 +39,9 @@ class a_ViewSelector(Tk.Toplevel):
         # Store reference to parent window callback function
         self.cb_func = cb_func
         
-        self.wm_title('Connect to host...')
+        self.wm_title('Load a view...')
         Tk.Label(t, text='Connect to remote host').grid(row=0, column=0, columnspan=2)
-        Tk.Label(t, text='Address or Hostname').grid(row=1, column=0)
+        Tk.Button(t, text='').grid(row=1, column=0)
         self.txt_address = Tk.Text(t)
         self.txt_address.grid(row=1, column=1)
         Tk.Button()

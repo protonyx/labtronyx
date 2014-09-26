@@ -22,6 +22,7 @@ class a_Main(object):
     - Nanny thread to periodically check if connected hosts and resources are still active
     """
 
+    openViews = {}
     
     # Tree Organization
     treeGroup = 'hostname'
@@ -130,7 +131,7 @@ class a_Main(object):
         +-----------------------------------+
         """
         master = self.myTk
-        ttk.Style().theme_use('vista')
+        #ttk.Style().theme_use('vista')
         #master = Tk.Toplevel(self.myTk)
         master.wm_title("Instrument Control")
         master.minsize(500, 500)
@@ -348,6 +349,9 @@ class a_Main(object):
     def cb_managerDisconnect(self, address):
         self.ICF.removeManager(address)
         self.cb_refreshTree()
+        
+    def cb_addResource(self, address):
+        pass
             
     def cb_loadDriver(self, uuid):
         tkMessageBox.showinfo('Load Driver', uuid)
@@ -371,13 +375,30 @@ class a_Main(object):
             if VID in validVIDs or len(validVIDs) == 0:
                 if PID in validPIDs or len(validPIDs) == 0:
                     validViews.append((viewModule, viewClass))
+          
+        if uuid in self.openViews.keys():
+            # Do nothing? Bring window into focus?
+            pass  
+        elif len(validViews) > 1:
+            # Spawn a window to select the view to load
+            from include.a_managerHelpers import a_ViewSelector
             
-        # Spawn a window to select the view to load
-        from include.a_managerHelpers import a_ViewSelector
-        
-        # Create the child window
-        w_ViewSelector = a_ViewSelector(self.myTk, lambda address, port: self.cb_addManager(address, port))
-        w_connectToHost.show()
+            # Create the child window
+            w_ViewSelector = a_ViewSelector(self.myTk, lambda address, port: self.cb_addManager(address, port))
+            w_ViewSelector.show()
+            
+        else:
+            try:
+                moduleName, className = validViews[0]
+                
+                viewModule = importlib.import_module(moduleName)
+                viewClass = getattr(viewModule, className)
+                
+                viewWindow = viewClass()
+                viewWindow.run()
+                
+            except:
+                self.logger.error("Failed to load view: %s", moduleName)
         
     def cb_refreshTree(self, address=None):
         self.ICF.refreshManager(address)            
@@ -413,6 +434,7 @@ class a_Main(object):
             # -Refresh
             # -Load Device
             # -Get log?
+            menu.add_command(label='Add Resource', command=lambda: self.cb_addResource(elem))
             menu.add_command(label='Refresh', command=lambda: self.cb_refreshTree(elem))
             menu.add_command(label='Disconnect', command=lambda: self.cb_managerDisconnect(elem))
             
