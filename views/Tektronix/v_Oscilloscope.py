@@ -61,5 +61,6 @@ class v_Oscilloscope(views.v_Base):
         self.myTk.destroy()
         
     def cb_Single(self):
+        pass
         
         

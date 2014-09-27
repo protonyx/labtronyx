@@ -7,6 +7,8 @@ import Tkinter as Tk
 import ttk
 import tkMessageBox
 
+import ImageTk
+from PIL import Image
 
 sys.path.append("..")
 from InstrumentControl import InstrumentControl
@@ -172,13 +174,13 @@ class a_Main(object):
         self.statusbar.pack(side=Tk.BOTTOM, fill=Tk.X)
         
         # Horizontal Pane
-        self.HPane = Tk.PanedWindow(master, orient=Tk.VERTICAL, sashrelief=Tk.RAISED, sashpad=5, sashwidth=8)
+        self.HPane = Tk.PanedWindow(master, orient=Tk.VERTICAL, height=400, sashpad=5, sashwidth=8)
         self.HPane.pack(fill=Tk.BOTH, expand=Tk.YES)
         #=======================================================================
         # Horizontal Pane - Top
         #=======================================================================
         # Vertical Pane
-        self.VPane = Tk.PanedWindow(self.HPane, orient=Tk.HORIZONTAL, sashrelief=Tk.RAISED, sashpad=5, sashwidth=8)
+        self.VPane = Tk.PanedWindow(self.HPane, orient=Tk.HORIZONTAL, height=400, width=400, sashpad=5, sashwidth=8)
         self.HPane.add(self.VPane)
         
         #=======================================================================
@@ -186,16 +188,17 @@ class a_Main(object):
         #     Treeview Frame
         #     Min size: 400px
         #=======================================================================
-        self.treeFrame = Tk.Frame(self.VPane, highlightcolor='green', highlightthickness=2)
+        self.treeFrame = Tk.Frame(self.VPane) #, highlightcolor='green', highlightthickness=2)
         self.VPane.add(self.treeFrame, width=400, minsize=400)
         
-        Tk.Label(self.treeFrame, text='Instruments', anchor='w').pack(side=Tk.TOP)
-        self.tree = ttk.Treeview(self.treeFrame)
+        Tk.Label(self.treeFrame, text='Instruments').pack(side=Tk.TOP)
+        self.tree = ttk.Treeview(self.treeFrame, height=20)
+        
         self.tree['columns'] = ('Type', 'Serial')
         self.tree.heading('#0', text='Instrument')
-        self.tree.column('Type') #, width=150, anchor='w')
+        self.tree.column('Type', width=150)
         self.tree.heading('Type', text='Type')
-        self.tree.column('Serial') #, width=150, anchor='w')
+        self.tree.column('Serial', width=100)
         self.tree.heading('Serial', text='Serial Number')
         self.tree.pack(fill=Tk.BOTH)
         
@@ -255,10 +258,6 @@ class a_Main(object):
         
         self.myTk.mainloop()
     
-
-        
-
-    
     def rebuildTreeview(self, group='hostname', sort='deviceModel', reverseOrder=False):
         """
         Possible groupings:
@@ -277,6 +276,12 @@ class a_Main(object):
         treenodes = self.tree.get_children()
         for n in treenodes:
             self.tree.delete(n)
+            
+        # Import Image Assets
+        img_host = Image.open('assets/computer.png')
+        img_host = ImageTk.PhotoImage(img_host)
+        img_device = Image.open('assets/drive.png')
+        img_device = ImageTk.PhotoImage(img_device)
 
         # Get a flat list of resources and sort
         self.ICF.cacheProperties()
@@ -287,7 +292,7 @@ class a_Main(object):
         if group is 'hostname':
             # Fixes a bug where hosts were not added if no resources were present
             for gval in self.ICF.getConnectedHosts():
-                self.tree.insert('', 'end', gval, text=gval)
+                self.tree.insert('', 'end', gval, text=gval, open=True, image=img_host)
                 
         elif group is not None and group in validGroups:
             group_vals = []
@@ -314,7 +319,7 @@ class a_Main(object):
                     lineText = res.get('deviceVendor') + ' ' + res.get('deviceModel')
     
                 
-                self.tree.insert(res.get(group, ''), 'end', lineID, text=lineText)
+                self.tree.insert(res.get(group, ''), 'end', lineID, text=lineText, image=img_device)
                 self.tree.set(lineID, 'Type', res.get('deviceType', 'Generic'))
                 self.tree.set(lineID, 'Serial', res.get('deviceSerial', 'Unknown'))
 

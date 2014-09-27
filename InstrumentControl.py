@@ -627,7 +627,8 @@ class InstrumentControl(object):
         man = self.managers.get(man, None)
         
         if man is not None:
-            return man.getValidModels(res_uuid)
+            validModels = man.getValidModels(res_uuid)
+            return validModels
         
         else:
             return []

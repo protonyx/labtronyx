@@ -45,8 +45,8 @@ class v_test(views.v_Base):
         
     def cb_Send(self):
         method = str(self.txtMethod.get())
-        if hasattr(self.target, method):
-            ret = getattr(self.target, method)()
+        if hasattr(self.model, method):
+            ret = getattr(self.model, method)()
         else:
             ret = 'Method not found'
             
