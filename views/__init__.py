@@ -8,10 +8,9 @@ class v_Base(Tk.Toplevel):
     validVIDs = []
     validPIDs = []
     
-    def __init__(self, master, parent, model):
+    def __init__(self, master, model):
         Tk.Toplevel.__init__(self, master)
         
-        self.parent = parent
         self.model = model
             
     def run(self):

@@ -439,18 +439,6 @@ class InstrumentManager(rpc.RpcBase):
                             
                             # Attempt to auto-load a Model
                             self.loadModel(new_uuid)
-                            
-                            #===================================================
-                            # (VID, PID) = resTup
-                            # 
-                            # # Get a list of compatible models
-                            # validModels = self.getValidModels(controller, VID, PID)
-                            # 
-                            # 
-                            # if type(validModels) is list and len(validModels) > 0:
-                            #     # TODO: Intelligently load a model or fail if multiple valid models are found
-                            #     moduleName, className = validModels[0] 
-                            #===================================================
                                 
                     
                     # Purge unavailable resources
@@ -548,15 +536,12 @@ class InstrumentManager(rpc.RpcBase):
     # Model Operations
     #===========================================================================
     
-    def getValidModels(self, controller, VID, PID):
+    def getValidModels(self, res_uuid):
         """
-        Get a list of models that are considered valid for a given `controller`,
-        Vendor Identifier (`VID`) and Product Identifier (`PID`) combination
+        Get a list of models that are considered valid for a given Resource
         
-        :param controller: Controller name
-        :type controller: str
-        :param VID: Vendor Identifier
-        :type VID: str
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
         :param PID: Product Identifier
         :type PID: str
         
@@ -564,6 +549,8 @@ class InstrumentManager(rpc.RpcBase):
         """
         # Models: { Controller -> { VendorID -> { modelName -> [ ProductID ] } } }
         ret = []
+        
+        (controller, resID, VID, PID) = self.resources.get(res_uuid)
         
         mod_cont = self.models.get(controller, {})
         mod_vid = mod_cont.get(VID, {})
@@ -603,8 +590,7 @@ class InstrumentManager(rpc.RpcBase):
             
             if res_uuid in self.resources.keys():
                 
-                (controller, resID, VID, PID) = self.resources.get(res_uuid)
-                validModels = self.getValidModels(controller, VID, PID)
+                validModels = self.getValidModels(res_uuid)
                 
                 if type(validModels) is list and len(validModels) >= 1:
                     moduleName, className = validModels[0] 

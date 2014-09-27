@@ -93,8 +93,22 @@ class c_UPEL(controllers.c_Base):
     # Optional - Manual Controllers
     #===========================================================================
     
-    def addResource(self, ResID, VID, PID):
-        pass
+    def addResource(self, ResID, VID=None, PID=None):
+        """
+        Treats an addResource request as a hint that a device exists. Attempts
+        to send a discovery packet to the device to get more information.
+        
+        The arbiter thread will automatically handle the creation of an
+        instrument for the new resource.
+        
+        :param ResID: Resource ID (IP Address)
+        :type ResID: str
+        :returns: bool. True if successful, False otherwise
+        """
+        packet = icp.DiscoveryPacket()
+
+        # Queue Discovery Packet
+        self.arbiter.queueMessage(ResID, 60.0, packet)
     
     def destroyResource(self):
         pass

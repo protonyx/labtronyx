@@ -339,7 +339,7 @@ class a_Main(object):
         
         # Create the child window
         w_connectToHost = a_ConnectToHost(self.myTk, lambda address, port: self.cb_addManager(address, port))
-        w_connectToHost.show()
+        
         
     def cb_addManager(self, address, port=None):
         # Attempt a connection to the manager
@@ -351,10 +351,25 @@ class a_Main(object):
         self.cb_refreshTree()
         
     def cb_addResource(self, address):
-        pass
+        from include.a_managerHelpers import a_AddResource
+            
+        controllers = self.ICF.getControllers(address)
+            
+        # Create the child window
+        w_addResource = a_AddResource(self.myTk, controllers, lambda address, resID: self.ICF.addResource(address, resID))
+        
+        # Make the child modal
+        w_addResource.focus_set()
+        w_addResource.grab_set()
             
     def cb_loadDriver(self, uuid):
-        tkMessageBox.showinfo('Load Driver', uuid)
+        validModels = self.ICF.getValidModels(uuid)
+        
+        if len(validModels) > 0:
+            tkMessageBox.showwarning('Unable to load driver', 'Somebody hasnt finished this code yet')
+        
+        else:
+            tkMessageBox.showwarning('Unable to load driver', 'No valid drivers could be found for this device')
             
     def cb_unloadDriver(self, uuid):
         self.ICF.unloadModel(uuid)
@@ -385,7 +400,6 @@ class a_Main(object):
             
             # Create the child window
             w_ViewSelector = a_ViewSelector(self.myTk, lambda address, port: self.cb_addManager(address, port))
-            w_ViewSelector.show()
             
         else:
             try:
@@ -394,11 +408,17 @@ class a_Main(object):
                 viewModule = importlib.import_module(moduleName)
                 viewClass = getattr(viewModule, className)
                 
-                viewWindow = viewClass()
-                viewWindow.run()
+                instrument = self.ICF.getInstrument(uuid)
+                
+                if instrument is not None:
+                    viewWindow = viewClass(self.myTk, instrument)
+                    viewWindow.run()
+                    
+                else:
+                    tkMessageBox.showwarning('Unable to load view', 'No Model is loaded for this device')
                 
             except:
-                self.logger.error("Failed to load view: %s", moduleName)
+                self.logger.exception("Failed to load view: %s", moduleName)
         
     def cb_refreshTree(self, address=None):
         self.ICF.refreshManager(address)            
@@ -420,7 +440,6 @@ class a_Main(object):
     #===========================================================================
 
     def e_TreeRightClick(self, event):
-        self.logger.info('TreeRightClick')
         elem = self.tree.identify_row(event.y)
 
         # Create a context menu
@@ -449,10 +468,10 @@ class a_Main(object):
             if res_props.get('modelName', None) == None:
                 menu.add_command(label='Load Driver', command=lambda: self.cb_loadDriver(elem))
             else:
+                menu.add_command(label='Control Device', command=lambda: self.cb_loadView(elem))
                 menu.add_command(label='Unload Driver', command=lambda: self.cb_unloadDriver(elem))
-                
-            menu.add_command(label='Load View...', command=lambda: self.cb_loadView(elem))
-            menu.add_command(label='Properties...', command=lambda: tkMessageBox.showinfo('Instrument Properties', elem))
+            
+            #menu.add_command(label='Properties...', command=lambda: tkMessageBox.showinfo('Instrument Properties', elem))
         
         else:
             # Something else maybe empty space?
@@ -461,7 +480,7 @@ class a_Main(object):
         menu.post(event.x_root, event.y_root)
 
     def e_TreeDoubleClick(self, event):
-        self.logger.info('TreeDoubleClick')
+        pass
         
     #===========================================================================
     # Internal Class Definitions
