@@ -43,12 +43,15 @@ class m_Generic(models.m_Base):
         # Add any additional properties here
         return prop
     
-    def _getRegisterValue(self, index, subindex):
+    def readRegisterValue(self, index, subindex):
         """
         Get a cached register value from the ICP device
         """
         return self.__instr.readReg(index, subindex)
     
+    def writeRegisterValue(self, index, subindex, value):
+        return self.__instr.writeReg(index, subindex, value)
+    
     def getErrors(self):
-        return self._getRegisterValue(0x1001, 0x00)
+        return self.getRegisterValue(0x1001, 0x00)
     

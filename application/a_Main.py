@@ -357,7 +357,7 @@ class a_Main(object):
                 tkMessageBox.showwarning('Unable to load view', 'No Model is loaded for this device')
             
         except:
-            self.logger.exception("Failed to load view: %s", moduleName)
+            self.logger.exception("Failed to load view: %s", viewModule)
 
     #===========================================================================
     # Callback Functions
