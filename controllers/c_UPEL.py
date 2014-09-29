@@ -109,6 +109,9 @@ class c_UPEL(controllers.c_Base):
 
         # Queue Discovery Packet
         self.arbiter.queueMessage(ResID, 60.0, packet)
+        
+        # Wait for the packet to come back
+        time.sleep(1.0)
     
     def destroyResource(self):
         pass
@@ -197,21 +200,25 @@ class c_UPEL_arbiter(threading.Thread):
         self.alive.set()
         
         while (self.alive.is_set()):
-            #===================================================================
-            # Service the socket
-            #===================================================================
-            self._serviceSocket()
-            
-            #===================================================================
-            # Service the message queue
-            #===================================================================
-            self._serviceQueue()
-            
-            #===================================================================
-            # Check for dead entries in the routing map
-            #===================================================================
-            
-            # Sleep?
+            try:
+                #===================================================================
+                # Service the socket
+                #===================================================================
+                self._serviceSocket()
+                
+                #===================================================================
+                # Service the message queue
+                #===================================================================
+                self._serviceQueue()
+                
+                #===================================================================
+                # Check for dead entries in the routing map
+                #===================================================================
+                
+                # Sleep?
+                
+            except:
+                continue
             
     def stop(self):
         self.socket.shutdown(1)
@@ -350,6 +357,10 @@ class c_UPEL_arbiter(threading.Thread):
             
             except Queue.Empty:
                 return False
+            
+            except:
+                self.logger.exception("Exception encountered while servicing queue")
+                return True
             
         else:
             return False

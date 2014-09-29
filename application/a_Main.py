@@ -114,7 +114,19 @@ class a_Main(object):
                     except Exception as e:
                         self.logger.error('Unable to load module %s: %s', viewModule, str(e))
                         continue
+    
+    def _getValidViews(self, VID, PID):   
+        validViews = []
         
+        for viewModule, viewInfo in self.views.items():
+            viewClass, validVIDs, validPIDs = viewInfo
+        
+            if VID in validVIDs or len(validVIDs) == 0:
+                if PID in validPIDs or len(validPIDs) == 0:
+                    validViews.append((viewModule, viewClass))
+                
+        return validViews
+    
     def rebuild(self):
         """
         Rebuilds all GUI elements and positions
@@ -189,7 +201,7 @@ class a_Main(object):
         #     Min size: 400px
         #=======================================================================
         self.treeFrame = Tk.Frame(self.VPane) #, highlightcolor='green', highlightthickness=2)
-        self.VPane.add(self.treeFrame, width=400, minsize=400)
+        self.VPane.add(self.treeFrame, width=800, minsize=400)
         
         Tk.Label(self.treeFrame, text='Instruments').pack(side=Tk.TOP)
         self.tree = ttk.Treeview(self.treeFrame, height=20)
@@ -201,7 +213,6 @@ class a_Main(object):
         self.tree.column('Serial', width=100)
         self.tree.heading('Serial', text='Serial Number')
         self.tree.pack(fill=Tk.BOTH)
-        
         
         #=======================================================================
         #     Vertical Pane - Right
@@ -323,6 +334,30 @@ class a_Main(object):
                 self.tree.set(lineID, 'Type', res.get('deviceType', 'Generic'))
                 self.tree.set(lineID, 'Serial', res.get('deviceSerial', 'Unknown'))
 
+    def loadView(self, uuid, viewModule, viewClass=None):
+        
+        try:
+            if viewClass is None:
+                viewClass = self.views.get(viewModule)[0]
+            
+            viewModule = importlib.import_module(viewModule)
+            viewClass = getattr(viewModule, viewClass)
+            
+            instrument = self.ICF.getInstrument(uuid)
+            
+            if instrument is not None:
+                viewWindow = viewClass(self.myTk, instrument)
+                
+                # Store the object in open views
+                self.openViews[uuid] = viewWindow
+                
+                viewWindow.run()
+                
+            else:
+                tkMessageBox.showwarning('Unable to load view', 'No Model is loaded for this device')
+            
+        except:
+            self.logger.exception("Failed to load view: %s", moduleName)
 
     #===========================================================================
     # Callback Functions
@@ -361,7 +396,7 @@ class a_Main(object):
         controllers = self.ICF.getControllers(address)
             
         # Create the child window
-        w_addResource = a_AddResource(self.myTk, controllers, lambda address, resID: self.ICF.addResource(address, resID))
+        w_addResource = a_AddResource(self.myTk, self, controllers, lambda controller, resID: self.ICF.addResource(address, controller, resID))
         
         # Make the child modal
         w_addResource.focus_set()
@@ -371,7 +406,7 @@ class a_Main(object):
         validModels = self.ICF.getValidModels(uuid)
         
         if len(validModels) > 0:
-            tkMessageBox.showwarning('Unable to load driver', 'Somebody hasnt finished this code yet')
+            tkMessageBox.showwarning('Unable to load driver', 'Driver conflict. Kevin\'s fault.')
         
         else:
             tkMessageBox.showwarning('Unable to load driver', 'No valid drivers could be found for this device')
@@ -383,47 +418,34 @@ class a_Main(object):
         self.cb_refreshTree()
         
     def cb_loadView(self, uuid):
-        validViews = []
-        
-        props = self.ICF.getProperties(uuid)
-        VID = props.get('vendorID', None)
-        PID = props.get('productID', None)
-        
-        for viewModule, viewInfo in self.views.items():
-            viewClass, validVIDs, validPIDs = viewInfo
-            
-            if VID in validVIDs or len(validVIDs) == 0:
-                if PID in validPIDs or len(validPIDs) == 0:
-                    validViews.append((viewModule, viewClass))
-          
+
         if uuid in self.openViews.keys():
             # Do nothing? Bring window into focus?
             pass  
-        elif len(validViews) > 1:
-            # Spawn a window to select the view to load
-            from include.a_managerHelpers import a_ViewSelector
-            
-            # Create the child window
-            w_ViewSelector = a_ViewSelector(self.myTk, lambda address, port: self.cb_addManager(address, port))
-            
+        
         else:
-            try:
-                moduleName, className = validViews[0]
+            # Load view selector
+            props = self.ICF.getProperties(uuid)
+            VID = props.get('vendorID', None)
+            PID = props.get('productID', None)
+            
+            validViews = self._getValidViews(VID, PID)
+            
+            if len(validViews) > 1:
+                # Spawn a window to select the view to load
+                from include.a_managerHelpers import a_ViewSelector
                 
-                viewModule = importlib.import_module(moduleName)
-                viewClass = getattr(viewModule, className)
+                # Create the child window
+                viewList = [x[0] for x in validViews]
+                w_ViewSelector = a_ViewSelector(self.myTk, viewList, lambda viewModule: self.loadView(uuid, viewModule, None))
                 
-                instrument = self.ICF.getInstrument(uuid)
+            elif len(validViews) is 1:
+                viewModule, viewClass = validViews[0]
                 
-                if instrument is not None:
-                    viewWindow = viewClass(self.myTk, instrument)
-                    viewWindow.run()
+                self.loadView(uuid, viewModule, viewClass)
                     
-                else:
-                    tkMessageBox.showwarning('Unable to load view', 'No Model is loaded for this device')
-                
-            except:
-                self.logger.exception("Failed to load view: %s", moduleName)
+            else:
+                tkMessageBox.showwarning('Unable to load view', 'No suitable views could be found for this model')
         
     def cb_refreshTree(self, address=None):
         self.ICF.refreshManager(address)            
@@ -440,7 +462,6 @@ class a_Main(object):
     # All Tk bound event handlers should:
     # - start with 'e_'
     # - accept a parameter 'event'
-    #
     # 
     #===========================================================================
 

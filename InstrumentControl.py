@@ -570,12 +570,15 @@ class InstrumentControl(object):
             
             # Does manager support manually adding resources?
             if man.canEditResources(controller):
-                man.addResource(controller, VendorID, ProductID)
-            res_dict['address'] = address
-            res_dict['hostname'] = self.managers.get(address).hostname
-        
-            self.resources[res_uuid] = res_dict
-            return True
+                res = man.addResource(controller, ResID, VendorID, ProductID)
+                
+                # Force the manager to update the resource list
+                man.refresh(controller, False)
+                
+                # Update the local resource cache
+                self.cacheManager(address)
+                
+                return res
         
         else:
             return False

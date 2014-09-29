@@ -9,11 +9,12 @@ class a_ConnectToHost(Tk.Toplevel):
         self.cb_func = cb_func
         
         self.wm_title('Connect to host...')
-        Tk.Label(master, text='Connect to remote host').grid(row=0, column=0, columnspan=2)
-        Tk.Label(master, text='Address or Hostname').grid(row=1, column=0)
-        self.txt_address = Tk.Text(master)
+        Tk.Label(self, text='Connect to remote host').grid(row=0, column=0, columnspan=3)
+        Tk.Label(self, text='Address or Hostname').grid(row=1, column=0, columnspan=2)
+        self.txt_address = Tk.Text(self)
         self.txt_address.grid(row=1, column=1)
-        Tk.Button(master, text='Connect', command=lambda: self.cb_Add()).grid(row=2, column=0)
+        Tk.Button(self, text='Cancel', command=lambda: self.cb_Cancel()).grid(row=2, column=1)
+        Tk.Button(self, text='Connect', command=lambda: self.cb_Add()).grid(row=2, column=2)
         
         # Make this dialog modal
         self.focus_set()
@@ -33,10 +34,12 @@ class a_ConnectToHost(Tk.Toplevel):
         
 class a_AddResource(Tk.Toplevel):
     
-    def __init__(self, master, controllers, cb_func):
+    def __init__(self, master, mainWindow, controllers, cb_func):
         Tk.Toplevel.__init__(self, master)
         
         # Store reference to parent window callback function
+        self.mainWindow = mainWindow
+        
         self.cb_func = cb_func
         self.controller = Tk.StringVar(self)
         self.controller.set(controllers[0])
@@ -57,9 +60,12 @@ class a_AddResource(Tk.Toplevel):
         
     def cb_Add(self):
         controller = self.controller.get()
-        resID = self.txt_resID.get(0)
+        resID = self.txt_resID.get()
         
         self.cb_func(controller, resID)
+        
+        # Refresh treeview
+        self.mainWindow.rebuildTreeview()
         
         # Close this window
         self.destroy()
@@ -69,19 +75,31 @@ class a_AddResource(Tk.Toplevel):
         
 class a_ViewSelector(Tk.Toplevel):
     
-    def __init__(self, master, cb_func):
+    def __init__(self, master, views, cb_func):
         Tk.Toplevel.__init__(self, master)
         
         # Store reference to parent window callback function
         self.cb_func = cb_func
+        self.view = Tk.StringVar(self)
+        self.view.set(views[0])
         
         self.wm_title('Load a view...')
-        Tk.Label(t, text='Connect to remote host').grid(row=0, column=0, columnspan=2)
-        Tk.Button(t, text='').grid(row=1, column=0)
-        self.txt_address = Tk.Text(t)
-        self.txt_address.grid(row=1, column=1)
-        Tk.Button()
+        Tk.Label(self, text='Multiple views found, select one to load:').grid(row=0, column=0, columnspan=2)
+        self.lst_view = Tk.OptionMenu(self, self.view, *views).grid(row=1, column=0, columnspan=2)
+        Tk.Button(self, text='Cancel', command=lambda: self.cb_Cancel()).grid(row=2, column=0)
+        Tk.Button(self, text='Launch', command=lambda: self.cb_Load()).grid(row=2, column=1)
         
         # Make this dialog modal
         self.focus_set()
         self.grab_set()
+        
+    def cb_Load(self):
+        view = self.view.get()
+        
+        self.cb_func(view)
+        
+        # Close this window
+        self.destroy()
+        
+    def cb_Cancel(self):
+        self.destroy()

@@ -44,6 +44,11 @@ class v_BDPC(views.v_Base):
     def run(self):
         pass
     
+    def updateWindow(self):
+        """
+        Update window from BDPC Model
+        """
+    
 class BDPC_Graph(Tk.Toplevel):
     
     def __init__(self):

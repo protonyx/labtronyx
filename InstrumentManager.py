@@ -396,13 +396,15 @@ class InstrumentManager(rpc.RpcBase):
 
         return None
     
-    def refresh(self, controller=None):
+    def refresh(self, controller=None, invoke_refresh=True):
         """
         Refresh all resources for a given controller. If `controller` is None, 
         all controllers will be refreshed
         
         :param controller: Controller to refresh
         :type controller: str
+        :param invoke_refresh: Call Controller refresh()
+        :type invoke_refresh: bool
         :returns: None
         """
         if len(self.controllers) == 0:
@@ -412,7 +414,7 @@ class InstrumentManager(rpc.RpcBase):
             self.logger.info("Refreshing resources...")
             
             for c_name in self.controllers:
-                self.refresh(c_name)
+                self.refresh(c_name, invoke_refresh)
                 
             self.logger.info("Refresh finished")
             
@@ -422,7 +424,8 @@ class InstrumentManager(rpc.RpcBase):
                 
                 try:
                     # Signal the controller to refresh resources
-                    c_obj.refresh()
+                    if invoke_refresh:
+                        c_obj.refresh()
                     
                     # Get updated list of resources
                     new_res = c_obj.getResources() # { ResID -> (VID, PID) }
@@ -472,7 +475,8 @@ class InstrumentManager(rpc.RpcBase):
         """
         if controller in self.controllers:
             try:
-                return controller.canEditResources()
+                cont_obj = self.controllers.get(controller)
+                return cont_obj.canEditResources()
             
             except NotImplementedError:
                 return False
@@ -501,7 +505,8 @@ class InstrumentManager(rpc.RpcBase):
         """
         if controller in self.controllers:
             try:
-                return controller.addResource(ResID, VID, PID)
+                cont_obj = self.controllers.get(controller)
+                return cont_obj.addResource(ResID, VID, PID)
             
             except NotImplementedError:
                 return False
