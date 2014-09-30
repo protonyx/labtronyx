@@ -224,33 +224,26 @@ class InstrumentManager(rpc.RpcBase):
             # Scan devices
             self.refresh()
             
-            self.getResources('c_VISA')
-            
             # Start RPC server
             # This operation will timeout after 2 seconds. If that happens,
             # this process should exit
             self.logger.info("Starting RPC Server...")
             self.rpc_start(port=self.config.managerPort)
-                
-            try:
-                if self.is_alive():
-                    # Running as a subprocess
-                    # Spin to keep the process running, otherwise the interpreter
-                    # will stop, even with the rpc server running in the background
-                    while self.rpc_isRunning():
-                        # Do something to keep process alive
-                        time.sleep(1.0)
-                        
-            except:
-                pass
+            
+            # Main thread will now close
+            # TODO: Should the main thread be doing something?
             
     def stop(self):
         """
-        Stop the InstrumentManager instance. Calls rpc_stop to all Models.
+        Stop the InstrumentManager instance. Attempts to shutdown and free
+        all resources.
         """
         for dev in self.devices.values():
             if hasattr(dev, 'rpc_stop'):
                 dev.rpc_stop()
+                
+        for cont in self.controllers.values():
+            cont.close()
                 
         self.rpc_stop()
             
@@ -403,13 +396,15 @@ class InstrumentManager(rpc.RpcBase):
 
         return None
     
-    def refresh(self, controller=None):
+    def refresh(self, controller=None, invoke_refresh=True):
         """
         Refresh all resources for a given controller. If `controller` is None, 
         all controllers will be refreshed
         
         :param controller: Controller to refresh
         :type controller: str
+        :param invoke_refresh: Call Controller refresh()
+        :type invoke_refresh: bool
         :returns: None
         """
         if len(self.controllers) == 0:
@@ -419,7 +414,7 @@ class InstrumentManager(rpc.RpcBase):
             self.logger.info("Refreshing resources...")
             
             for c_name in self.controllers:
-                self.refresh(c_name)
+                self.refresh(c_name, invoke_refresh)
                 
             self.logger.info("Refresh finished")
             
@@ -429,7 +424,8 @@ class InstrumentManager(rpc.RpcBase):
                 
                 try:
                     # Signal the controller to refresh resources
-                    c_obj.refresh()
+                    if invoke_refresh:
+                        c_obj.refresh()
                     
                     # Get updated list of resources
                     new_res = c_obj.getResources() # { ResID -> (VID, PID) }
@@ -446,18 +442,6 @@ class InstrumentManager(rpc.RpcBase):
                             
                             # Attempt to auto-load a Model
                             self.loadModel(new_uuid)
-                            
-                            #===================================================
-                            # (VID, PID) = resTup
-                            # 
-                            # # Get a list of compatible models
-                            # validModels = self.getValidModels(controller, VID, PID)
-                            # 
-                            # 
-                            # if type(validModels) is list and len(validModels) > 0:
-                            #     # TODO: Intelligently load a model or fail if multiple valid models are found
-                            #     moduleName, className = validModels[0] 
-                            #===================================================
                                 
                     
                     # Purge unavailable resources
@@ -491,7 +475,8 @@ class InstrumentManager(rpc.RpcBase):
         """
         if controller in self.controllers:
             try:
-                return controller.canEditResources()
+                cont_obj = self.controllers.get(controller)
+                return cont_obj.canEditResources()
             
             except NotImplementedError:
                 return False
@@ -520,7 +505,8 @@ class InstrumentManager(rpc.RpcBase):
         """
         if controller in self.controllers:
             try:
-                return controller.addResource(ResID, VID, PID)
+                cont_obj = self.controllers.get(controller)
+                return cont_obj.addResource(ResID, VID, PID)
             
             except NotImplementedError:
                 return False
@@ -555,15 +541,12 @@ class InstrumentManager(rpc.RpcBase):
     # Model Operations
     #===========================================================================
     
-    def getValidModels(self, controller, VID, PID):
+    def getValidModels(self, res_uuid):
         """
-        Get a list of models that are considered valid for a given `controller`,
-        Vendor Identifier (`VID`) and Product Identifier (`PID`) combination
+        Get a list of models that are considered valid for a given Resource
         
-        :param controller: Controller name
-        :type controller: str
-        :param VID: Vendor Identifier
-        :type VID: str
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
         :param PID: Product Identifier
         :type PID: str
         
@@ -571,6 +554,8 @@ class InstrumentManager(rpc.RpcBase):
         """
         # Models: { Controller -> { VendorID -> { modelName -> [ ProductID ] } } }
         ret = []
+        
+        (controller, resID, VID, PID) = self.resources.get(res_uuid)
         
         mod_cont = self.models.get(controller, {})
         mod_vid = mod_cont.get(VID, {})
@@ -610,15 +595,19 @@ class InstrumentManager(rpc.RpcBase):
             
             if res_uuid in self.resources.keys():
                 
-                (controller, resID, VID, PID) = self.resources.get(res_uuid)
-                validModels = self.getValidModels(controller, VID, PID)
+                validModels = self.getValidModels(res_uuid)
                 
                 if type(validModels) is list and len(validModels) >= 1:
                     moduleName, className = validModels[0] 
                     res = self.loadModel(res_uuid, moduleName, className)
                     return res
                 
+                else:
+                    self.logger.warning("Cannot load model, no valid model found for %s", res_uuid)
+                    return False
+                
             else:
+                self.logger.error("Cannot load model, invalid UUID: %s", res_uuid)
                 return False
                 
         else:

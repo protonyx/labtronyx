@@ -4,7 +4,7 @@ class Config(object):
     
     def __init__(self):
         # Version
-        self.version = '140814'
+        self.version = 'dev'
         
         #
         #  Logging
@@ -34,6 +34,8 @@ class Config(object):
         
         # SVN
         #self.svn_rev = '$Revision: $'
-        
 
+        # UPEL Controller Config
+        self.broadcastIP = '129.123.202.52' #'192.168.1.255'
+        self.UPELPort = 7968
         

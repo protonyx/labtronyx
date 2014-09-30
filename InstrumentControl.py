@@ -127,7 +127,12 @@ class InstrumentControl(object):
             return input
         
         else:
-            return socket.gethostbyname(input)
+            try:
+                host = socket.gethostbyname(input)
+            except:
+                host = None
+            finally:
+                return host
     
     def isConnectedHost(self, hostname):
         """
@@ -163,6 +168,20 @@ class InstrumentControl(object):
         :returns: List of connected hostnames
         """
         return self.hostnames.keys()
+    
+    def getControllers(self, address):
+        """
+        Get a list of controllers from a given InstrumentManager instance.
+        
+        :param address: IP Address
+        :type address: str - IPv4
+        :returns: dict
+        """
+        address = self._resolveAddress(address)
+        
+        if address in self.managers.keys():
+            man = self.managers.get(address)
+            return man.getControllers()
     
     #===========================================================================
     # Local Manager Operations
@@ -514,17 +533,13 @@ class InstrumentControl(object):
         else:
             return None
     
-    def addResource(self, address, controller, ResID, VendorID, ProductID):
+    def addResource(self, address, controller, ResID, VendorID=None, ProductID=None):
         """
         Create a managed resource within a controller object
         
         If `controller` is not a valid controller on the remote manager instance,
         or if the controller does not support manually adding resources, this 
         function will return False. 
-        
-        Additional keyword arguments may be necessary, depending on the
-        requirements of the controller. See the controller documentation for
-        further requirements.
         
         .. note::
         
@@ -555,15 +570,28 @@ class InstrumentControl(object):
             
             # Does manager support manually adding resources?
             if man.canEditResources(controller):
-                man.addResource(controller, VendorID, ProductID)
-            res_dict['address'] = address
-            res_dict['hostname'] = self.managers.get(address).hostname
-        
-            self.resources[res_uuid] = res_dict
-            return True
+                res = man.addResource(controller, ResID, VendorID, ProductID)
+                
+                # Force the manager to update the resource list
+                man.refresh(controller, False)
+                
+                # Update the local resource cache
+                self.cacheManager(address)
+                
+                return res
         
         else:
             return False
+        
+    def isValidResource(self, res_uuid):
+        """
+        Check if a resource is known.
+        
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: bool - True if resource was removed, False otherwise
+        """
+        return self.resources.has_key(res_uuid)
     
     def removeResource(self, res_uuid):
         """
@@ -585,29 +613,28 @@ class InstrumentControl(object):
                 return True
             
         return False
-
-    #===========================================================================
-    # Instrument Operations
-    #
-    # Instruments are RPC Client objects to local/remote instruments
-    #===========================================================================
     
-    def getInstrument(self, res_uuid):
+    def getValidModels(self, res_uuid):
         """
-        Get an Instrument :class:`common.rpc.RpcClient` object that is linked
-        to the remote model.
+        Get a list of models that are considered valid for a given Resource
         
         :param res_uuid: Unique Resource Identifier (UUID)
         :type res_uuid: str
-        :returns: :class:`common.rpc.RpcClient` object or None if unable to \
-        connect to Model
-        """
-        ret = self.instruments.get(res_uuid, None)
+        :param PID: Product Identifier
+        :type PID: str
         
-        if ret is None:
-            ret = self.createInstrument(res_uuid)
-            
-        return ret
+        :returns: list of tuples (ModuleName, ClassName)
+        """
+        man,_,_,_,_ = self.resources.get(res_uuid, None)
+        
+        man = self.managers.get(man, None)
+        
+        if man is not None:
+            validModels = man.getValidModels(res_uuid)
+            return validModels
+        
+        else:
+            return []
     
     def loadModel(self, res_uuid, modelName=None, className=None):
         """
@@ -642,9 +669,9 @@ class InstrumentControl(object):
         :type className: str
         :returns: bool - True if successful, False otherwise
         """
-        res = self.resources.get(res_uuid, None)
+        man,_,_,_,_ = self.resources.get(res_uuid, None)
         
-        man = self.managers.get(res[0], None)
+        man = self.managers.get(man, None)
         
         if man is not None:
             ret = man.loadModel(res_uuid, modelName, className)
@@ -676,6 +703,29 @@ class InstrumentControl(object):
         
         else:
             return False
+
+    #===========================================================================
+    # Instrument Operations
+    #
+    # Instruments are RPC Client objects to local/remote instruments
+    #===========================================================================
+    
+    def getInstrument(self, res_uuid):
+        """
+        Get an Instrument :class:`common.rpc.RpcClient` object that is linked
+        to the remote model.
+        
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: :class:`common.rpc.RpcClient` object or None if unable to \
+        connect to Model
+        """
+        ret = self.instruments.get(res_uuid, None)
+        
+        if ret is None:
+            ret = self.createInstrument(res_uuid)
+            
+        return ret
     
     def createInstrument(self, res_uuid):
         """
@@ -868,16 +918,13 @@ class InstrumentControl(object):
     
 # Load GUI in interactive mode
 if __name__ == "__main__":
-    pass
     # Load Application GUI
-    #===========================================================================
-    # try:
-    #     #sys.path.append("..")
-    #     from application.a_Main import a_Main
-    #     main_gui = a_Main()
-    #     
-    # except Exception as e:
-    #     print "Unable to load main application"
-    #     raise
-    #     sys.exit()
-    #===========================================================================
+    try:
+        #sys.path.append("..")
+        from application.a_Main import a_Main
+        main_gui = a_Main()
+         
+    except Exception as e:
+        print "Unable to load main application"
+        raise
+        sys.exit()
