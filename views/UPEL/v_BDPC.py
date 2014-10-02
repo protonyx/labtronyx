@@ -2,6 +2,8 @@
 import views
 import Tkinter as Tk
 
+from . import ICP_Sensor
+
 class v_BDPC(views.v_Base):
     """
     BDPC View. Collects and displays the following information:
@@ -42,7 +44,16 @@ class v_BDPC(views.v_Base):
     validPIDs = []
     
     def run(self):
-        pass
+        # Sensor Frame
+        numSensors = 2#self.model.readRegisterValue(0x2100, 0x1) # Number of Sensors
+        self.sensorFrame = Tk.LabelFrame(self, text="Sensors", padx=5, pady=5)
+        self.sensor = {}
+        for x in range(1, numSensors+1):
+            sens_obj = ICP_Sensor(self.sensorFrame, self.model, x)
+            sens_obj.pack()
+            self.sensor[x] = sens_obj
+            
+        self.sensorFrame.grid(row=0, column=0)
     
     def updateWindow(self):
         """

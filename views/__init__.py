@@ -9,7 +9,7 @@ class v_Base(Tk.Toplevel):
     validPIDs = []
     
     def __init__(self, master, model):
-        Tk.Toplevel.__init__(self, master)
+        Tk.Toplevel.__init__(self, master, padx=5, pady=5)
         
         self.model = model
             

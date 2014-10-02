@@ -9,20 +9,26 @@ class a_ConnectToHost(Tk.Toplevel):
         self.cb_func = cb_func
         
         self.wm_title('Connect to host...')
-        Tk.Label(self, text='Connect to remote host').grid(row=0, column=0, columnspan=3)
-        Tk.Label(self, text='Address or Hostname').grid(row=1, column=0, columnspan=2)
-        self.txt_address = Tk.Text(self)
+        Tk.Label(self, text='Connect to remote host').grid(row=0, column=0, columnspan=2)
+        
+        Tk.Label(self, text='Address or Hostname').grid(row=1, column=0)
+        self.txt_address = Tk.Entry(self)
         self.txt_address.grid(row=1, column=1)
-        Tk.Button(self, text='Cancel', command=lambda: self.cb_Cancel()).grid(row=2, column=1)
-        Tk.Button(self, text='Connect', command=lambda: self.cb_Add()).grid(row=2, column=2)
+        
+        Tk.Label(self, text='Port').grid(row=2, column=0)
+        self.txt_port = Tk.Entry(self)
+        self.txt_port.grid(row=2, column=1)
+        
+        Tk.Button(self, text='Cancel', command=lambda: self.cb_Cancel()).grid(row=3, column=0)
+        Tk.Button(self, text='Connect', command=lambda: self.cb_Add()).grid(row=3, column=1)
         
         # Make this dialog modal
         self.focus_set()
         self.grab_set()
         
     def cb_Add(self):
-        address = self.txt_address.get(0)
-        port = self.txt_port.get(0)
+        address = self.txt_address.get()
+        port = self.txt_port.get()
         
         self.cb_func(address, port)
         

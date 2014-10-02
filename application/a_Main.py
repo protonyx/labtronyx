@@ -261,7 +261,6 @@ class a_Main(object):
 
         # Try to connect to the local manager
         self.ICF.addManager('localhost')
-        #self.ICF.addManager('DM-FALCON4-110')
         
         self.rebuildTreeview()
         
