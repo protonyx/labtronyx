@@ -2,7 +2,7 @@
 import views
 import Tkinter as Tk
 
-from . import ICP_Sensor
+from . import *
 
 class v_BDPC(views.v_Base):
     """
@@ -44,16 +44,36 @@ class v_BDPC(views.v_Base):
     validPIDs = []
     
     def run(self):
-        # Sensor Frame
-        numSensors = 2#self.model.readRegisterValue(0x2100, 0x1) # Number of Sensors
-        self.sensorFrame = Tk.LabelFrame(self, text="Sensors", padx=5, pady=5)
-        self.sensor = {}
-        for x in range(1, numSensors+1):
-            sens_obj = ICP_Sensor(self.sensorFrame, self.model, x)
-            sens_obj.pack()
-            self.sensor[x] = sens_obj
-            
-        self.sensorFrame.grid(row=0, column=0)
+        #=======================================================================
+        # Parameters
+        #=======================================================================
+        self.frame_param = Tk.LabelFrame(self, text="Operation", padx=5, pady=5)
+        
+        self.frame_param.grid(row=0, column=0, columnspan=3)
+        
+        # Primary
+        self.frame_primary = Tk.LabelFrame(self, text="Primary", padx=5, pady=5)
+        self.pri_sensor_voltage = ICP_Sensor(self.frame_primary, self.model, 1)
+        self.pri_sensor_voltage.pack()
+        self.pri_sensor_current = ICP_Sensor(self.frame_primary, self.model, 3)
+        self.pri_sensor_current.pack()
+        self.pri_power = ICP_Value_Read(self.frame_primary, self.model, 
+                                        label="Input Power", units="W", read_cb=self.model.getPrimaryPower)
+        self.pri_power.pack()
+        self.frame_primary.grid(row=1, column=0)
+        
+        # Picture Frame
+        
+        # Secondary
+        self.frame_secondary = Tk.LabelFrame(self, text="Secondary", padx=5, pady=5)
+        self.sec_sensor_voltage = ICP_Sensor(self.frame_secondary, self.model, 2)
+        self.sec_sensor_voltage.pack()
+        self.sec_sensor_current = ICP_Sensor(self.frame_secondary, self.model, 4)
+        self.sec_sensor_current.pack()
+        self.sec_power = ICP_Value_Read(self.frame_secondary, self.model, 
+                                        label="Output Power", units="W", read_cb=self.model.getSecondaryPower)
+        self.sec_power.pack()
+        self.frame_secondary.grid(row=1, column=2)
     
     def updateWindow(self):
         """
