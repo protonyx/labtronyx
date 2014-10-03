@@ -26,7 +26,8 @@ class v_UPEL(views.v_Base):
         self.reg_subindex.grid(row=1, column=1)
         
         Tk.Label(self.regGroup, text="Value:").grid(row=2,column=0)
-        self.reg_value = Tk.Entry(self.regGroup)
+        self.val = Tk.StringVar()
+        self.reg_value = Tk.Entry(self.regGroup, textvariable=self.val)
         self.reg_value.grid(row=2, column=1)
         
         Tk.Button(self.regGroup, text="Read", command=self.reg_read).grid(row=3,column=0)
@@ -38,11 +39,11 @@ class v_UPEL(views.v_Base):
         
         value = self.model.readRegisterValue(address, subindex)
         
-        self.reg_value.set(value)
+        self.val.set(value)
     
     def reg_write(self):
         address = int(self.reg_address.get(), 16)
         subindex = int(self.reg_subindex.get(), 16)
-        value = self.reg_value.get()
+        value = self.val.get()
         
         self.model.writeRegisterValue(address, subindex, value)
