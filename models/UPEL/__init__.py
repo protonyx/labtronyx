@@ -18,6 +18,9 @@ class m_Generic(models.m_Base):
     
         * Which registers to update
         * What time interval should registers be updated
+        
+    Class variable `instr` is available for sub-classes to interact with the
+    ICP Instrument Object.
     """
     
     # Model device type
@@ -34,7 +37,7 @@ class m_Generic(models.m_Base):
     regCache = {}
     
     def _onLoad(self):
-        self.__instr = self.controller._getDevice(self.resID)
+        self.instr = self.controller._getDevice(self.resID)
     
     def _onUnload(self):
         pass
@@ -50,59 +53,17 @@ class m_Generic(models.m_Base):
     #===========================================================================
     
     def getOperationState(self):
-        pass
+        return self.instr.getState()
     
     def setOperationState(self, new_state):
-        pass
+        return self.instr.setState(new_state)
     
-    def getValidOperationTransitions(self):
+    def getValidNextState(self):
         """
-        Given the current operation state, return all valid state transitions
+        Given the current operation state, return the next valid state transition
         """
-        pass
-    
-    #===========================================================================
-    # Register Operations
-    #===========================================================================
-    
-    def readRegisterValue(self, index, subindex):
-        """
-        Get a cached register value from the ICP device
-        """
-        return self.__instr.readReg(index, subindex)
-    
-    def readRegisterValue_int8(self, index, subindex):
-        reg = self.__instr.readReg(index, subindex)
-        reg_up = struct.unpack('b', reg)
-        return reg_up
+        state = self.getOperationState()
         
-    def readRegisterValue_int16(self, index, subindex):
-        reg = self.__instr.readReg(index, subindex)
-        reg_up = struct.unpack('h', reg)
-        return reg_up
-        
-    def readRegisterValue_int32(self, index, subindex):
-        reg = self.__instr.readReg(index, subindex)
-        reg_up = struct.unpack('i', reg)
-        return reg_up
-    
-    def readRegisterValue_int64(self, index, subindex):
-        reg = self.__instr.readReg(index, subindex)
-        reg_up = struct.unpack('q', reg)
-        return reg_up
-    
-    def readRegisterValue_float(self, index, subindex):
-        reg = self.__instr.readReg(index, subindex)
-        reg_up = struct.unpack('f', reg)
-        return reg_up
-    
-    def readRegisterValue_double(self, index, subindex):
-        reg = self.__instr.readReg(index, subindex)
-        reg_up = struct.unpack('d', reg)
-        return reg_up
-    
-    def writeRegisterValue(self, index, subindex, value):
-        return self.__instr.writeReg(index, subindex, value)
     
     def getErrors(self):
         return self.getRegisterValue(0x1001, 0x00)

@@ -6,7 +6,7 @@ import Tkinter as Tk
 
 class ICP_Widget(Tk.Frame):
     def __init__(self, master, model):
-        Tk.Frame.__init__(self, master, padx=2, pady=2)
+        Tk.Frame.__init__(self, master, padx=2, pady=2, width=200)
         
 class ICP_Operation_Mode(ICP_Widget):
     def __init__(self, master, model):

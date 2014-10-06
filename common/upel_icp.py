@@ -11,8 +11,6 @@ class UPEL_ICP_Device(object):
     """
     Instrument class for ICP devices. Used by Models to communicate with ICP
     devices over the network. 
-    
-    Compatible with the VISA instrument object to ease code portability.
     """
     
     def __init__(self, address, arbiter):
@@ -29,16 +27,54 @@ class UPEL_ICP_Device(object):
         try:
             pkt = self.packetQueue.get(True, timeout)
             
+            if isinstance(pkt, ErrorPacket):
+                raise ICP_DeviceError(pkt);
+            
             return str(pkt.getPayload())
             
         except Queue.Empty:
             raise ICP_Timeout
+        
+    #===========================================================================
+    # Device State
+    #===========================================================================
+    
+    def getState(self):
+        packet = StateChangePacket(0)
+        
+        self.arbiter.queueMessage(self.address, 10.0, packet)
+        
+        try:
+            return self._getResponse(10.0)
+            
+        except ICP_Timeout:
+            return None
+        
+    def setState(self, new_state):
+        packet = StateChangePacket(new_state)
+        
+        self.arbiter.queueMessage(self.address, 10.0, packet)
+        
+        try:
+            return self._getResponse(10.0)
+            
+        except ICP_Timeout:
+            return None
     
     #===========================================================================
     # Register Operations
     #===========================================================================
     
     def writeReg(self, address, subindex, data):
+        """
+        Write a value to a register.
+        
+        :warning::
+        
+            Binary data cannot be encoded for network transmission from a Model.
+            Models should use the appropriate writeReg function for the desired
+            data type to avoid raising exceptions or corrupting data.
+        """
         packet = RegisterWritePacket(address, subindex, data)
         
         self.arbiter.queueMessage(self.address, 60.0, packet)
@@ -48,8 +84,47 @@ class UPEL_ICP_Device(object):
             
         except ICP_Timeout:
             return None
+        
+    def writeReg_int8(self, address, subindex, data):
+        data_enc = struct.pack('b', data)
+        return self.writeReg(address, subindex, data_enc)
+    
+    def writeReg_int16(self, address, subindex, data):
+        data_enc = struct.pack('h', data)
+        return self.writeReg(address, subindex, data_enc)
+    
+    def writeReg_int32(self, address, subindex, data):
+        data_enc = struct.pack('i', data)
+        return self.writeReg(address, subindex, data_enc)
+    
+    def writeReg_int64(self, address, subindex, data):
+        data_enc = struct.pack('q', data)
+        return self.writeReg(address, subindex, data_enc)
+    
+    def writeReg_float(self, address, subindex, data):
+        data_enc = struct.pack('f', data)
+        return self.writeReg(address, subindex, data_enc)
+    
+    def writeReg_double(self, address, subindex, data):
+        data_enc = struct.pack('d', data)
+        return self.writeReg(address, subindex, data_enc)
     
     def readReg(self, address, subindex):
+        """
+        Read a register. Interpret as string
+        
+        :warning::
+        
+            Binary data cannot be encoded for network transmission from a Model.
+            Models should use the appropriate readReg function for the desired
+            data type to avoid raising exceptions. 
+        
+        :param address: 16-bit address
+        :type address: int
+        :param subindex: 8-bit subindex
+        :type subindex: int
+        :returns: str
+        """
         packet = RegisterReadPacket(address, subindex)
         
         self.arbiter.queueMessage(self.address, 60.0, packet)
@@ -59,6 +134,36 @@ class UPEL_ICP_Device(object):
             
         except ICP_Timeout:
             return None
+        
+    def readReg_int8(self, index, subindex):
+        reg = self.readReg(index, subindex)
+        reg_up = struct.unpack('b', reg)
+        return reg_up
+        
+    def readReg_int16(self, index, subindex):
+        reg = self.readReg(index, subindex)
+        reg_up = struct.unpack('h', reg)
+        return reg_up
+        
+    def readReg_int32(self, index, subindex):
+        reg = self.readReg(index, subindex)
+        reg_up = struct.unpack('i', reg)
+        return reg_up
+    
+    def readReg_int64(self, index, subindex):
+        reg = self.readReg(index, subindex)
+        reg_up = struct.unpack('q', reg)
+        return reg_up
+    
+    def readReg_float(self, index, subindex):
+        reg = self.readReg(index, subindex)
+        reg_up = struct.unpack('f', reg)
+        return reg_up
+    
+    def readReg_double(self, index, subindex):
+        reg = self.readReg(index, subindex)
+        reg_up = struct.unpack('d', reg)
+        return reg_up
     
     #===========================================================================
     # Process Data Operations
@@ -159,4 +264,12 @@ class ICP_Invalid_Packet(RuntimeError):
 
 class ICP_Timeout(RuntimeError):
     pass
+
+class ICP_DeviceError(RuntimeError):
+    def __init__(self, error_packet=None):
+        self.error_packet = error_packet
+        
+    def get_errorPacket(self):
+        return self.error_packet
+
 

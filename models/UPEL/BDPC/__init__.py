@@ -19,22 +19,22 @@ class m_BDPC(m_Generic):
     #===========================================================================
     
     def getVoltage(self):
-        pass
+        return self.instr.readReg_float(0x2220, 0x01)
     
     def setVoltage(self, set_v):
-        pass
+        return self.instr.writeReg_float(0x2220, 0x1, set_v);
     
     def getCurrent(self):
-        pass
+        return self.instr.readReg_float(0x2220, 0x02)
     
     def setCurrent(self, set_i):
-        pass
+        return self.instr.writeReg_float(0x2220, 0x2, set_i);
     
     def getPower(self):
-        pass
+        return self.instr.readReg_float(0x2220, 0x03)
     
     def setPower(self, set_p):
-        pass
+        return self.instr.writeReg_float(0x2220, 0x3, set_p);
     
     #===========================================================================
     # Diagnostics

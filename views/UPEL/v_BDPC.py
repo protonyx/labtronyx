@@ -6,38 +6,27 @@ from . import *
 
 class v_BDPC(views.v_Base):
     """
-    BDPC View. Collects and displays the following information:
+    Base BDPC View. Collects and displays the following information:
     
-    BDPC Parameters:
-    
+    Parameters:
+        * Closed-Loop MMC Parameters (P/V/I)
         * Phase Shift from SYNC
+    
+    Operation:
         * Operation Mode (Switching On/Off)
-    
-    Main Controller:
-    
-        * Controller Gain
-        * Power Command
+        * Data Refresh interval
+
+    Primary:
+        * Sensors (Current, Voltage)
+        * Power
+        
+    Secondary:
+        * Sensors (Current, Voltage)
+        * Power
+        
+    Diagnostics:
+        * Efficiency
         * Conversion Ratio
-        * Phi AB, AD, DC
-    
-    Controller Programmable Parameters:
-    
-        * Dead Time (Td)
-        * Controller Gain
-        * Open Loop Power Command
-        * MMC Params?
-        
-    Auxiliary Leg Controllers:
-    
-        * Angle Command (ACMD or Phi')
-        * Desired ZVS current
-        * Measured ZVS current
-        * Minimum Angle Command
-        
-    Aux Controller Programmable Parameters:
-    
-        * Dead Time (Tda)
-        * Open Loop Angle Command
     """
     
     validVIDs = ['UPEL']
@@ -133,3 +122,35 @@ class BDPC_Graph(Tk.Toplevel):
     
     def __init__(self):
         pass
+    
+class BDPC_MainController(Tk.Toplevel):
+    """
+    Main Controller:
+        * Closed-Loop Controller Gain
+        * Power Command
+        * MMC Droop Resistance
+        * Dead Time (Td)
+        
+    Minimum Current Trajectory (MCT):
+        * Power Command
+        * Conversion Ratio
+        * Phi AB, AD, DC
+    
+    """
+    pass
+
+class BDPC_AuxController(Tk.Toplevel):
+    """
+    Auxiliary Leg Controllers:
+    
+        * Angle Command (ACMD or Phi')
+        * Desired ZVS current
+        * Measured ZVS current
+        * Minimum Angle Command
+        
+    Aux Controller Programmable Parameters:
+    
+        * Dead Time (Tda)
+        * Open Loop Angle Command
+    """
+    pass
