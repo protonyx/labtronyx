@@ -33,6 +33,9 @@ class v_BDPC(views.v_Base):
     validPIDs = []
     
     def run(self):
+        # List of GUI elements to update
+        self.update_elems = []
+         
         #=======================================================================
         # Parameters
         #=======================================================================
@@ -50,6 +53,10 @@ class v_BDPC(views.v_Base):
                                            read_cb=self.model.getPower, write_cb=self.model.setPower)
         self.param_p.pack()
         self.frame_param.grid(row=0, column=0)
+        
+        self.update_elems.append(self.param_v)
+        self.update_elems.append(self.param_i)
+        self.update_elems.append(self.param_p)
         
         #=======================================================================
         # Diagnostics
@@ -69,6 +76,9 @@ class v_BDPC(views.v_Base):
         self.diag_auxController.pack()
         self.frame_diag.grid(row=0, column=1)
         
+        self.update_elems.append(self.diag_efficiency)
+        self.update_elems.append(self.diag_convRatio)
+        
         #=======================================================================
         # Operation
         #=======================================================================
@@ -82,6 +92,10 @@ class v_BDPC(views.v_Base):
         self.ops_refresh_toggle = ICP_Value_Toggle(self.frame_ops, self.model,
                                                    label="Auto Update", states=["Off", "On"], cb=self.cb_refreshToggle)
         self.ops_refresh_toggle.pack()
+        # Immediate update
+        self.ops_update_immed = ICP_Button(self.frame_ops, self.model,
+                                           label="Update Immediately", button_label="Update", cb=self.update)
+        self.ops_update_immed.pack()
         self.frame_ops.grid(row=0, column=2)
         
         #=======================================================================
@@ -97,6 +111,10 @@ class v_BDPC(views.v_Base):
         self.pri_power.pack()
         self.frame_primary.grid(row=1, column=0)
         
+        self.update_elems.append(self.pri_sensor_voltage)
+        self.update_elems.append(self.pri_sensor_current)
+        self.update_elems.append(self.pri_power)
+        
         # Picture Frame
         
         # Secondary
@@ -109,11 +127,20 @@ class v_BDPC(views.v_Base):
                                         label="Output Power", units="W", read_cb=self.model.getSecondaryPower)
         self.sec_power.pack()
         self.frame_secondary.grid(row=1, column=2)
+        
+        self.update_elems.append(self.sec_sensor_voltage)
+        self.update_elems.append(self.sec_sensor_current)
+        self.update_elems.append(self.sec_power)
     
-    def updateWindow(self):
+    def update(self):
         """
-        Update window from BDPC Model
+        Update all elements in the window
         """
+        for elem in self.update_elems:
+            try:
+                elem.update()
+            except:
+                pass
         
     def cb_refreshToggle(self):
         pass

@@ -3,6 +3,7 @@ UPEL View Helper Classes
 """
 
 import Tkinter as Tk
+from common.upel_icp import ICP_DeviceError
 
 class ICP_Widget(Tk.Frame):
     def __init__(self, master, model):
@@ -59,6 +60,18 @@ class ICP_Launch_Window(ICP_Widget):
             except:
                 # TODO: Popup!
                 pass
+            
+class ICP_Button(ICP_Widget):
+    def __init__(self, master, model, label, button_label, cb_func):
+        ICP_Widget.__init__(self, master, model)
+        
+        # Label
+        self.l_name = Tk.Label(self, width=15, font=("Purisa", 12), text=label, anchor=Tk.W, justify=Tk.LEFT)
+        self.l_name.pack(side=Tk.LEFT)
+
+        # Button
+        self.b_button = Tk.Button(self, text=button_label, command=cb_func)
+        self.b_button.pack(side=Tk.LEFT)
 
 class ICP_Value_Read(ICP_Widget):
     # Data Type?
@@ -82,8 +95,12 @@ class ICP_Value_Read(ICP_Widget):
         self.l_units.pack(side=Tk.LEFT)
         
     def update(self):
-        val = self.read_cb()
-        self.val.set(val)
+        try:
+            val = self.read_cb()
+            self.val.set(val)
+            
+        except ICP_DeviceError:
+            self.l_data.config(background="red")
 
 class ICP_Value_ReadWrite(ICP_Widget):
     def __init__(self, master, model, label, units, read_cb, write_cb):
