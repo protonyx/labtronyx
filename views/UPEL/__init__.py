@@ -99,8 +99,8 @@ class ICP_Value_Read(ICP_Widget):
             val = self.read_cb()
             self.val.set(val)
             
-        except ICP_DeviceError:
-            self.l_data.config(background="red")
+        except:
+            self.l_data.config(bg="red")
 
 class ICP_Value_ReadWrite(ICP_Widget):
     def __init__(self, master, model, label, units, read_cb, write_cb):
@@ -136,7 +136,7 @@ class ICP_Value_ReadWrite(ICP_Widget):
             self.write_cb(self.val.get())
             
         except:
-            pass
+            self.txt_data.config(bg='red')
 
 class ICP_Value_Toggle(ICP_Widget):
     def __init__(self, master, model, label, states=None, cb=None):

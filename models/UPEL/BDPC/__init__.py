@@ -8,6 +8,14 @@ class m_BDPC(m_Generic):
     # Model device type
     deviceType = 'Source'
     
+    registers = {
+        }
+    
+    def _onLoad(self):
+        m_Generic._onLoad(self)
+        
+        #self.
+    
     def getProperties(self):
         prop = m_Generic.getProperties(self)
         
@@ -71,12 +79,19 @@ class m_BDPC(m_Generic):
         return float(sp) / float(pp)
     
     def getSensorValue(self, sensor):
-        return self._getRegisterValue_float(0x2122, sensor)
+        return self.instr.readReg_float(0x2122, sensor)
     
     def getSensorType(self, sensor):
         ret = {}
         
-        ret['description'] = 'test' # self.readRegisterValue(0x2120, sensorNumber)
-        ret['units'] = 'A' # self.readRegisterValue(0x2121, sensorNumber)
+        try:
+            ret['description'] = self.instr.readReg(0x2120, sensor)
+        except:
+            ret['description'] = 'Unknown'
+            
+        try:
+            ret['units'] = self.instr.readReg(0x2121, sensor)
+        except:
+            ret['units'] = '?'
         
         return ret

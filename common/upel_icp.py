@@ -13,6 +13,14 @@ class UPEL_ICP_Device(object):
     devices over the network. 
     """
     
+    data_types = {
+        'int8': 'b',
+        'int16': 'h',
+        'int32': 'i',
+        'int64': 'q',
+        'float': 'f',
+        'double': 'f' }
+    
     def __init__(self, address, arbiter):
         """
         :param address: IPv4 Address
@@ -22,6 +30,12 @@ class UPEL_ICP_Device(object):
         self.arbiter = arbiter
         
         self.packetQueue = Queue.Queue()
+        
+    def _processResponse(self, pkt):
+        """
+        Called by the controller thread when a response packet is
+        received that originated from this instrument.
+        """
         
     def _getResponse(self, timeout):
         try:
@@ -65,9 +79,19 @@ class UPEL_ICP_Device(object):
     # Register Operations
     #===========================================================================
     
-    def writeReg(self, address, subindex, data):
+    def queue_writeReg(self, address, subindex, data, data_type):
         """
-        Write a value to a register.
+        Queue a write operation to a register. Returns packet ID for the sent
+        packet. If there are no packet IDs currently available, this call
+        blocks until one is available. Otherwise, this call returns immediately.
+        
+        :returns: packetID
+        """
+        pass
+    
+    def writeReg(self, address, subindex, data, data_type):
+        """
+        Write a value to a register. Blocking operation.
         
         :warning::
         
@@ -212,6 +236,21 @@ class UPEL_ICP_Packet:
                 self.__class__ = RegisterWritePacket
             elif self.PACKET_TYPE == 0xF:
                 self.__class__ = DiscoveryPacket
+                
+        self.source = None
+        self.destination = None
+                
+    def setSource(self, source):
+        self.source = source
+        
+    def getSource(self):
+        return self.source
+                
+    def setDestination(self, destination):
+        self.destination = destination
+    
+    def getDestination(self):
+        return self.destination
                 
     def getPayload(self):
         return self.PAYLOAD

@@ -226,7 +226,7 @@ class c_UPEL_arbiter(threading.Thread):
         
         self.alive.clear()
         
-    def queueMessage(self, destination, ttl, packet_obj):
+    def queueMessage(self, packet_obj):
         """
         Insert a message into the queue
         
@@ -241,42 +241,41 @@ class c_UPEL_arbiter(threading.Thread):
         :returns: bool - True if messaged was queued successfully, False otherwise
         """
         try:
+            # Assign a PacketID
+            packetID = self.__availableIDs.pop()
+                
+            packet_obj.PACKET_ID = packetID
+                
             self.__messageQueue.put((destination, ttl, packet_obj), False)
             return True
-        
-        except Full:
-            return False
-        
-    def _getPacketID(self):
-        """
-        Get the next available packet ID
-        
-        :returns: int or None if there are no available IDs
-        """
-        try:
-            s = self.__availableIDs.pop()
-            return s
         
         except KeyError:
             return None
         
+        except Full:
+            return False
+
     def _packetID_available(self):
         return len(self.__availableIDs) > 0
         
     def _serviceSocket(self):
-            read, _, _ = select.select([self.socket],[],[], 0.5)
+            read, _, _ = select.select([self.socket],[],[], 0.1)
             
             if self.socket in read:
                 data, address = self.socket.recvfrom(4096)
             
                 try:
                     resp_pkt = icp.UPEL_ICP_Packet(data)
-                    
                     packetID = resp_pkt.PACKET_ID
-                    self.controller.logger.debug("Recieved packet id %i", packetID)
+                    packetType = resp_pkt.PACKET_TYPE
+                    
+                    sourceIP, _ = address
+                    resp_pkt.setSource(sourceIP)
+                    
+                    self.controller.logger.debug("ICP RX [ID:%i, TYPE:%X] from %s", packetID, packetType, sourceIP)
                     
                     # Route Packets
-                    if resp_pkt.PACKET_TYPE == 0xF and resp_pkt.isResponse():
+                    if packetType == 0xF and resp_pkt.isResponse():
                         # Filter Discovery Packets
                         ident = resp_pkt.getPayload().split(',')
                         
@@ -299,7 +298,7 @@ class c_UPEL_arbiter(threading.Thread):
                         if destination in self.controller.devices.keys():
                             dev = self.controller.devices.get(destination)
                             
-                            dev.packetQueue.put(resp_pkt)
+                            dev._processResponse(resp_pkt)
                             
                         # Remove entry from routing map
                         self.__routingMap.pop(packetID)
@@ -320,15 +319,10 @@ class c_UPEL_arbiter(threading.Thread):
         """
         if not self.__messageQueue.empty() and self._packetID_available():
             try:
-                msg = self.__messageQueue.get_nowait()
-                destination, ttl, packet_obj = msg
+                packet_obj = self.__messageQueue.get_nowait()
                 
-                # Assign a PacketID
-                packetID = self._getPacketID()
-                
-                if issubclass(packet_obj.__class__, icp.UPEL_ICP_Packet) and packetID is not None:
-                    # Assign the PacketID
-                    packet_obj.PACKET_ID = packetID
+                if issubclass(packet_obj.__class__, icp.UPEL_ICP_Packet):
+                    destination = packet.getDestination()
                     
                     # Pack for transmission
                     packet = packet_obj.pack()
@@ -350,7 +344,7 @@ class c_UPEL_arbiter(threading.Thread):
                     # Transmit
                     self.socket.sendto(packet, (destination, self.port))
                     
-                    self.controller.logger.debug("Sent packet id %i", packetID)
+                    self.controller.logger.debug("ICP TX [ID:%i] to %s", packetID, destination)
                     
                 else:
                     return True

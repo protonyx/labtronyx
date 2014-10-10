@@ -20,6 +20,3 @@ class m_BDPC_BR1(m_BDPC):
         
         # Add any additional properties here
         return prop
-    
-    def getSensorValue(self, sensor):
-        return self._getRegisterValue(0x2122, sensor)    

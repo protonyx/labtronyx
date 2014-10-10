@@ -34,7 +34,11 @@ class m_Generic(models.m_Base):
     validVIDs = ['UPEL']
     validPIDs = ['Generic']
     
-    regCache = {}
+    registers = {}
+    
+    # Cached register data
+    # { name: (data, timestamp) }
+    register_cache = {}
     
     def _onLoad(self):
         self.instr = self.controller._getDevice(self.resID)
@@ -60,6 +64,9 @@ class m_Generic(models.m_Base):
     
     def getErrors(self):
         return str(self.instr.readReg_int16(0x1001, 0x01))
+    
+    def getStatus(self):
+        return str(self.instr.readReg_int16(0x1002, 0x1))
     
     #===========================================================================
     # Debug Register Operations
