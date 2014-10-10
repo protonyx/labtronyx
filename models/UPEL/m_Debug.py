@@ -16,7 +16,7 @@ class m_Debug(m_Generic):
     # List of Valid Vendor Identifier (VID) and Product Identifier (PID) values
     # that are compatible with this Model
     validVIDs = ['UPEL']
-    validPIDs = ['BDPC_BR1', 'BDPC_BR2']
+    validPIDs = [] #['BDPC_BR1', 'BDPC_BR2']
     
     #===========================================================================
     # Register Operations

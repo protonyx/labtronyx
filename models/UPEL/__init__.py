@@ -52,19 +52,44 @@ class m_Generic(models.m_Base):
     # Operation
     #===========================================================================
     
-    def getOperationState(self):
+    def getState(self):
         return self.instr.getState()
     
-    def setOperationState(self, new_state):
-        return self.instr.setState(new_state)
-    
-    def getValidNextState(self):
-        """
-        Given the current operation state, return the next valid state transition
-        """
-        state = self.getOperationState()
-        
+    def setState(self, new_state):
+        return self.instr.setState(new_state)    
     
     def getErrors(self):
-        return self.getRegisterValue(0x1001, 0x00)
+        return str(self.instr.readReg_int16(0x1001, 0x01))
     
+    #===========================================================================
+    # Debug Register Operations
+    #===========================================================================
+    
+    def debug_readRegister(self, address, subindex, data_type):
+        if data_type == '' or data_type is None:
+            func = 'readReg'
+        else:
+            func = "readReg_" + str(data_type)
+            
+            
+        if hasattr(self.instr, func):
+            tocall = getattr(self.instr, func)
+            
+            return tocall(address, subindex)
+        
+        else:
+            return None
+    
+    def debug_writeRegister(self, address, subindex, data_type, value):
+        if data_type == '' or data_type is None:
+            func = 'writeReg'
+        else:
+            func = "writeReg_" + str(data_type)
+            
+        if hasattr(self.instr, func):
+            tocall = getattr(self.instr, func)
+            
+            return tocall(address, subindex, value)
+        
+        else:
+            return None

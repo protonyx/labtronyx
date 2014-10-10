@@ -30,20 +30,33 @@ class v_UPEL(views.v_Base):
         self.reg_value = Tk.Entry(self.regGroup, textvariable=self.val)
         self.reg_value.grid(row=2, column=1)
         
-        Tk.Button(self.regGroup, text="Read", command=self.reg_read).grid(row=3,column=0)
-        Tk.Button(self.regGroup, text="Write", command=self.reg_write).grid(row=3,column=1)
+        Tk.Label(self.regGroup, text="Data Type:").grid(row=3,column=0)
+        self.var_type = Tk.StringVar()
+        self.validTypes = ['string', 'int8', 'int16', 'int32', 'int64', 'float', 'double']
+        self.lst_type = Tk.OptionMenu(self.regGroup, self.var_type, *self.validTypes)
+        self.lst_type.grid(row=3, column=1)
+        
+        Tk.Button(self.regGroup, text="Read", command=self.reg_read).grid(row=4,column=0)
+        Tk.Button(self.regGroup, text="Write", command=self.reg_write).grid(row=4,column=1)
         
     def reg_read(self):
         address = int(self.reg_address.get(), 16)
         subindex = int(self.reg_subindex.get(), 16)
+        data_type = self.var_type.get()
+        if data_type == 'string':
+            data_type = ''
         
-        value = self.model.readRegisterValue(address, subindex)
+        value = self.model.debug_readRegister(address, subindex, data_type)
         
         self.val.set(value)
     
     def reg_write(self):
         address = int(self.reg_address.get(), 16)
         subindex = int(self.reg_subindex.get(), 16)
+        data_type = self.var_type.get()
+        if data_type == 'string':
+            data_type = ''
+            
         value = self.val.get()
         
-        self.model.writeRegisterValue(address, subindex, value)
+        self.model.debug_writeRegister(address, subindex, data_type, value)

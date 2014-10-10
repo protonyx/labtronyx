@@ -28,10 +28,10 @@ class ICP_Operation_Mode(ICP_Widget):
         self.b_mode.grid(row=1, column=1)
         
     def update(self):
-        state = self.model.getOperationMode()
+        state = self.model.getState()
         self.mode.set(state)
         
-        state_next = self.model.getValidOperationTransitions()
+        state_next = '???'
         self.mode_next.set(state_next)
     
     def cb_set(self, mode):

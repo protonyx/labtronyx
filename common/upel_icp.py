@@ -86,27 +86,27 @@ class UPEL_ICP_Device(object):
             return None
         
     def writeReg_int8(self, address, subindex, data):
-        data_enc = struct.pack('b', data)
+        data_enc = struct.pack('b', int(data))
         return self.writeReg(address, subindex, data_enc)
     
     def writeReg_int16(self, address, subindex, data):
-        data_enc = struct.pack('h', data)
+        data_enc = struct.pack('h', int(data))
         return self.writeReg(address, subindex, data_enc)
     
     def writeReg_int32(self, address, subindex, data):
-        data_enc = struct.pack('i', data)
+        data_enc = struct.pack('i', int(data))
         return self.writeReg(address, subindex, data_enc)
     
     def writeReg_int64(self, address, subindex, data):
-        data_enc = struct.pack('q', data)
+        data_enc = struct.pack('q', int(data))
         return self.writeReg(address, subindex, data_enc)
     
     def writeReg_float(self, address, subindex, data):
-        data_enc = struct.pack('f', data)
+        data_enc = struct.pack('f', float(data))
         return self.writeReg(address, subindex, data_enc)
     
     def writeReg_double(self, address, subindex, data):
-        data_enc = struct.pack('d', data)
+        data_enc = struct.pack('d', float(data))
         return self.writeReg(address, subindex, data_enc)
     
     def readReg(self, address, subindex):
@@ -137,32 +137,32 @@ class UPEL_ICP_Device(object):
         
     def readReg_int8(self, index, subindex):
         reg = self.readReg(index, subindex)
-        reg_up = struct.unpack('b', reg)
+        reg_up = struct.unpack('b', reg)[0]
         return reg_up
         
     def readReg_int16(self, index, subindex):
         reg = self.readReg(index, subindex)
-        reg_up = struct.unpack('h', reg)
+        reg_up = struct.unpack('h', reg)[0]
         return reg_up
         
     def readReg_int32(self, index, subindex):
         reg = self.readReg(index, subindex)
-        reg_up = struct.unpack('i', reg)
+        reg_up = struct.unpack('i', reg)[0]
         return reg_up
     
     def readReg_int64(self, index, subindex):
         reg = self.readReg(index, subindex)
-        reg_up = struct.unpack('q', reg)
+        reg_up = struct.unpack('q', reg)[0]
         return reg_up
     
     def readReg_float(self, index, subindex):
         reg = self.readReg(index, subindex)
-        reg_up = struct.unpack('f', reg)
+        reg_up = struct.unpack('f', reg)[0]
         return reg_up
     
     def readReg_double(self, index, subindex):
         reg = self.readReg(index, subindex)
-        reg_up = struct.unpack('d', reg)
+        reg_up = struct.unpack('d', reg)[0]
         return reg_up
     
     #===========================================================================
