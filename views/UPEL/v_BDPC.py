@@ -94,7 +94,7 @@ class v_BDPC(views.v_Base):
         self.ops_refresh_toggle.pack()
         # Immediate update
         self.ops_update_immed = ICP_Button(self.frame_ops, self.model,
-                                           label="Update Immediately", button_label="Update", cb=self.update)
+                                           label="Update Immediately", button_label="Update", cb_func=self.update)
         self.ops_update_immed.pack()
         self.frame_ops.grid(row=0, column=2)
         

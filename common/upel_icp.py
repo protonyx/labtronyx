@@ -202,6 +202,17 @@ class UPEL_ICP_Packet:
             if len(pkt_data) > 8:
                 self.PAYLOAD = pkt_data[8:(pkt_payload_size+8)]
                 
+            if self.PACKET_TYPE == 0x0:
+                self.__class__ = StateChangePacket
+            elif self.PACKET_TYPE == 0x1:
+                self.__class__ = ErrorPacket
+            elif self.PACKET_TYPE == 0x8:
+                self.__class__ = RegisterReadPacket
+            elif self.PACKET_TYPE == 0x9:
+                self.__class__ = RegisterWritePacket
+            elif self.PACKET_TYPE == 0xF:
+                self.__class__ = DiscoveryPacket
+                
     def getPayload(self):
         return self.PAYLOAD
     

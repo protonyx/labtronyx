@@ -75,7 +75,11 @@ class m_Generic(models.m_Base):
         if hasattr(self.instr, func):
             tocall = getattr(self.instr, func)
             
-            return tocall(address, subindex)
+            try:
+                return tocall(address, subindex)
+            
+            except:
+                return 'INVALID'
         
         else:
             return None
@@ -89,7 +93,11 @@ class m_Generic(models.m_Base):
         if hasattr(self.instr, func):
             tocall = getattr(self.instr, func)
             
-            return tocall(address, subindex, value)
+            try:
+                return tocall(address, subindex, value)
+            
+            except:
+                return 'INVALID'
         
         else:
             return None

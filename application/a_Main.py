@@ -7,8 +7,8 @@ import Tkinter as Tk
 import ttk
 import tkMessageBox
 
-import ImageTk
-from PIL import Image
+#import ImageTk
+#from PIL import Image
 
 sys.path.append("..")
 from InstrumentControl import InstrumentControl
@@ -288,10 +288,10 @@ class a_Main(object):
             self.tree.delete(n)
             
         # Import Image Assets
-        img_host = Image.open('assets/computer.png')
-        img_host = ImageTk.PhotoImage(img_host)
-        img_device = Image.open('assets/drive.png')
-        img_device = ImageTk.PhotoImage(img_device)
+        #img_host = Image.open('assets/computer.png')
+        #img_host = ImageTk.PhotoImage(img_host)
+        #img_device = Image.open('assets/drive.png')
+        #img_device = ImageTk.PhotoImage(img_device)
 
         # Get a flat list of resources and sort
         self.ICF.cacheProperties()
@@ -302,7 +302,7 @@ class a_Main(object):
         if group is 'hostname':
             # Fixes a bug where hosts were not added if no resources were present
             for gval in self.ICF.getConnectedHosts():
-                self.tree.insert('', 'end', gval, text=gval, open=True, image=img_host)
+                self.tree.insert('', 'end', gval, text=gval, open=True) #, image=img_host)
                 
         elif group is not None and group in validGroups:
             group_vals = []
@@ -329,7 +329,7 @@ class a_Main(object):
                     lineText = res.get('deviceVendor') + ' ' + res.get('deviceModel')
     
                 
-                self.tree.insert(res.get(group, ''), 'end', lineID, text=lineText, image=img_device)
+                self.tree.insert(res.get(group, ''), 'end', lineID, text=lineText) #, image=img_device)
                 self.tree.set(lineID, 'Type', res.get('deviceType', 'Generic'))
                 self.tree.set(lineID, 'Serial', res.get('deviceSerial', 'Unknown'))
 
@@ -419,33 +419,40 @@ class a_Main(object):
     def cb_loadView(self, uuid):
 
         if uuid in self.openViews.keys():
-            # Do nothing? Bring window into focus?
-            pass  
+            try:
+                # Do nothing? Bring window into focus?
+                view_window = self.openViews.get(uuid)
+                
+                view_window.lift()
+            
+                return None
+            except:
+                # On exception, load the view selector
+                pass
+            
+        # Load view selector
+        props = self.ICF.getProperties(uuid)
+        VID = props.get('vendorID', None)
+        PID = props.get('productID', None)
         
+        validViews = self._getValidViews(VID, PID)
+        
+        if len(validViews) > 1:
+            # Spawn a window to select the view to load
+            from include.a_managerHelpers import a_ViewSelector
+            
+            # Create the child window
+            viewList = [x[0] for x in validViews]
+            w_ViewSelector = a_ViewSelector(self.myTk, viewList, lambda viewModule: self.loadView(uuid, viewModule, None))
+            
+        elif len(validViews) is 1:
+            viewModule, viewClass = validViews[0]
+            
+            self.loadView(uuid, viewModule, viewClass)
+                
         else:
-            # Load view selector
-            props = self.ICF.getProperties(uuid)
-            VID = props.get('vendorID', None)
-            PID = props.get('productID', None)
-            
-            validViews = self._getValidViews(VID, PID)
-            
-            if len(validViews) > 1:
-                # Spawn a window to select the view to load
-                from include.a_managerHelpers import a_ViewSelector
-                
-                # Create the child window
-                viewList = [x[0] for x in validViews]
-                w_ViewSelector = a_ViewSelector(self.myTk, viewList, lambda viewModule: self.loadView(uuid, viewModule, None))
-                
-            elif len(validViews) is 1:
-                viewModule, viewClass = validViews[0]
-                
-                self.loadView(uuid, viewModule, viewClass)
-                    
-            else:
-                tkMessageBox.showwarning('Unable to load view', 'No suitable views could be found for this model')
-        
+            tkMessageBox.showwarning('Unable to load view', 'No suitable views could be found for this model')
+    
     def cb_refreshTree(self, address=None):
         self.ICF.refreshManager(address)            
         self.rebuildTreeview()
