@@ -63,48 +63,25 @@ class m_Generic(models.m_Base):
         return self.instr.setState(new_state)    
     
     def getErrors(self):
-        return str(self.instr.readReg_int16(0x1001, 0x01))
+        return int(self.instr.readReg(0x1001, 0x01, 'int16'))
     
     def getStatus(self):
-        return str(self.instr.readReg_int16(0x1002, 0x1))
+        return int(self.instr.readReg(0x1002, 0x1, 'int16'))
     
     #===========================================================================
     # Debug Register Operations
     #===========================================================================
     
     def debug_readRegister(self, address, subindex, data_type):
-        if data_type == '' or data_type is None:
-            func = 'readReg'
-        else:
-            func = "readReg_" + str(data_type)
-            
-            
-        if hasattr(self.instr, func):
-            tocall = getattr(self.instr, func)
-            
-            try:
-                return tocall(address, subindex)
-            
-            except:
-                return 'INVALID'
+        try:
+            return self.instr.readReg(address, subindex, data_type)
         
-        else:
-            return None
+        except:
+            return 'INVALID'
     
     def debug_writeRegister(self, address, subindex, data_type, value):
-        if data_type == '' or data_type is None:
-            func = 'writeReg'
-        else:
-            func = "writeReg_" + str(data_type)
-            
-        if hasattr(self.instr, func):
-            tocall = getattr(self.instr, func)
-            
-            try:
-                return tocall(address, subindex, value)
-            
-            except:
-                return 'INVALID'
+        try:
+            return self.instr.writeReg(address, subindex, value, data_type)
         
-        else:
-            return None
+        except:
+            return 'INVALID'

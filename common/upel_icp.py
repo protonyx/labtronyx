@@ -1,5 +1,5 @@
 import struct
-import Queue
+import time
 """
 Conforms to Rev 1.0 of the UPEL Instrument Control Protocol
 
@@ -13,13 +13,21 @@ class UPEL_ICP_Device(object):
     devices over the network. 
     """
     
-    data_types = {
-        'int8': 'b',
-        'int16': 'h',
-        'int32': 'i',
-        'int64': 'q',
-        'float': 'f',
-        'double': 'f' }
+    data_types_pack = {
+        'int8': lambda data: struct.pack('b', int(data)),
+        'int16': lambda data: struct.pack('h', int(data)),
+        'int32': lambda data: struct.pack('i', int(data)),
+        'int64': lambda data: struct.pack('q', int(data)),
+        'float': lambda data: struct.pack('f', float(data)),
+        'double': lambda data: struct.pack('d', float(data)) }
+    
+    data_types_unpack = {
+        'int8': lambda data: struct.unpack('b', data)[0],
+        'int16': lambda data: struct.unpack('h', data)[0],
+        'int32': lambda data: struct.unpack('i', data)[0],
+        'int64': lambda data: struct.unpack('q', data)[0],
+        'float': lambda data: struct.unpack('f', data)[0],
+        'double': lambda data: struct.unpack('d', data)[0] }
     
     def __init__(self, address, arbiter):
         """
@@ -29,25 +37,63 @@ class UPEL_ICP_Device(object):
         self.address = address
         self.arbiter = arbiter
         
-        self.packetQueue = Queue.Queue()
+        self.incomingPackets = {}
+        
+    def _processTimeout(self, packetID):
+        """
+        Called by the controller thread when a sent packet is considered
+        expired
+        """
+        self.incomingPackets[packetID]= ICP_Timeout
         
     def _processResponse(self, pkt):
         """
         Called by the controller thread when a response packet is
         received that originated from this instrument.
         """
+        packetID = pkt.PACKET_ID
         
-    def _getResponse(self, timeout):
-        try:
-            pkt = self.packetQueue.get(True, timeout)
+        self.incomingPackets[packetID] = pkt
+        
+    def _getResponse(self, packetID, data_type):
+        """
+        Get 
+        :returns: UPEL_ICP_Packet object or None if no response
+        """
+        pkt = self.incomingPackets.get(packetID, None)
+        
+        if isinstance(pkt, ICP_Timeout):
+            raise pkt
+            
+        elif pkt is not None:
+            self.incomingPackets.pop(packetID)
             
             if isinstance(pkt, ErrorPacket):
-                raise ICP_DeviceError(pkt);
+                raise ICP_DeviceError(pkt)
             
-            return str(pkt.getPayload())
-            
-        except Queue.Empty:
-            raise ICP_Timeout
+            else:
+                unpacker = self.data_types_unpack.get(data_type, None)
+                if unpacker is not None:
+                    return unpacker(pkt.getPayload())
+                else:
+                    return pkt.getPayload()
+                
+        else:
+            return None
+        
+    #===========================================================================
+    # def _getResponse(self, timeout):
+    #     try:
+    #         pkt = self.packetQueue.get(True, timeout)
+    #         
+    #         if isinstance(pkt, ErrorPacket):
+    #             raise ICP_DeviceError(pkt);
+    #         
+    #         return str(pkt.getPayload())
+    #         
+    #     except Queue.Empty:
+    #         raise ICP_Timeout
+    #===========================================================================
         
     #===========================================================================
     # Device State
@@ -87,7 +133,16 @@ class UPEL_ICP_Device(object):
         
         :returns: packetID
         """
-        pass
+        packer = self.data_types_pack.get(data_type, None)
+        if packer is not None:
+            data = packer(data)
+            
+        packet = RegisterWritePacket(address, subindex, data)
+        packet.setDestination(self.address)
+        
+        packetID = self.arbiter.queueMessage(packet, 10.0)
+        
+        return packetID
     
     def writeReg(self, address, subindex, data, data_type):
         """
@@ -99,43 +154,37 @@ class UPEL_ICP_Device(object):
             Models should use the appropriate writeReg function for the desired
             data type to avoid raising exceptions or corrupting data.
         """
-        packet = RegisterWritePacket(address, subindex, data)
+        packetID = self.queue_writeReg(address, subindex, data, data_type)
         
-        self.arbiter.queueMessage(self.address, 60.0, packet)
-        
-        try:
-            return self._getResponse(60.0)
+        if packetID is not None:
+            while True:
+                try:
+                    data = self._getResponse(packetID, data_type)
+                    
+                    if data is not None:
+                        return data
+                
+                except ICP_Timeout:
+                    return None
             
-        except ICP_Timeout:
-            return None
-        
-    def writeReg_int8(self, address, subindex, data):
-        data_enc = struct.pack('b', int(data))
-        return self.writeReg(address, subindex, data_enc)
-    
-    def writeReg_int16(self, address, subindex, data):
-        data_enc = struct.pack('h', int(data))
-        return self.writeReg(address, subindex, data_enc)
-    
-    def writeReg_int32(self, address, subindex, data):
-        data_enc = struct.pack('i', int(data))
-        return self.writeReg(address, subindex, data_enc)
-    
-    def writeReg_int64(self, address, subindex, data):
-        data_enc = struct.pack('q', int(data))
-        return self.writeReg(address, subindex, data_enc)
-    
-    def writeReg_float(self, address, subindex, data):
-        data_enc = struct.pack('f', float(data))
-        return self.writeReg(address, subindex, data_enc)
-    
-    def writeReg_double(self, address, subindex, data):
-        data_enc = struct.pack('d', float(data))
-        return self.writeReg(address, subindex, data_enc)
-    
-    def readReg(self, address, subindex):
+    def queue_readReg(self, address, subindex, data_type):
         """
-        Read a register. Interpret as string
+        Queue a read operation to a register. Returns packet ID for the sent
+        packet. If there are no packet IDs currently available, this call
+        blocks until one is available. Otherwise, this call returns immediately.
+        
+        :returns: packetID
+        """
+        packet = RegisterReadPacket(address, subindex)
+        packet.setDestination(self.address)
+        
+        packetID = self.arbiter.queueMessage(packet, 10.0)
+        
+        return packetID
+    
+    def readReg(self, address, subindex, data_type):
+        """
+        Read a value from a register. Blocks until data returns.
         
         :warning::
         
@@ -149,45 +198,18 @@ class UPEL_ICP_Device(object):
         :type subindex: int
         :returns: str
         """
-        packet = RegisterReadPacket(address, subindex)
+        packetID = self.queue_readReg(address, subindex, data_type)
         
-        self.arbiter.queueMessage(self.address, 60.0, packet)
-        
-        try:
-            return self._getResponse(60.0)
-            
-        except ICP_Timeout:
-            return None
-        
-    def readReg_int8(self, index, subindex):
-        reg = self.readReg(index, subindex)
-        reg_up = struct.unpack('b', reg)[0]
-        return reg_up
-        
-    def readReg_int16(self, index, subindex):
-        reg = self.readReg(index, subindex)
-        reg_up = struct.unpack('h', reg)[0]
-        return reg_up
-        
-    def readReg_int32(self, index, subindex):
-        reg = self.readReg(index, subindex)
-        reg_up = struct.unpack('i', reg)[0]
-        return reg_up
-    
-    def readReg_int64(self, index, subindex):
-        reg = self.readReg(index, subindex)
-        reg_up = struct.unpack('q', reg)[0]
-        return reg_up
-    
-    def readReg_float(self, index, subindex):
-        reg = self.readReg(index, subindex)
-        reg_up = struct.unpack('f', reg)[0]
-        return reg_up
-    
-    def readReg_double(self, index, subindex):
-        reg = self.readReg(index, subindex)
-        reg_up = struct.unpack('d', reg)[0]
-        return reg_up
+        if packetID is not None:
+            while True:
+                try:
+                    data = self._getResponse(packetID, data_type)
+                    
+                    if data is not None:
+                        return data
+                
+                except ICP_Timeout:
+                    return None
     
     #===========================================================================
     # Process Data Operations
@@ -239,6 +261,7 @@ class UPEL_ICP_Packet:
                 
         self.source = None
         self.destination = None
+        self.timestamp = time.time()
                 
     def setSource(self, source):
         self.source = source
@@ -254,6 +277,9 @@ class UPEL_ICP_Packet:
                 
     def getPayload(self):
         return self.PAYLOAD
+    
+    def getTimestamp(self):
+        return self.timestamp
     
     def isResponse(self):
         return bool(self.CONTROL & 0x80)

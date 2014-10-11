@@ -27,22 +27,22 @@ class m_BDPC(m_Generic):
     #===========================================================================
     
     def getVoltage(self):
-        return self.instr.readReg_float(0x2220, 0x01)
+        return self.instr.readReg(0x2220, 0x01, 'float')
     
     def setVoltage(self, set_v):
-        return self.instr.writeReg_float(0x2220, 0x1, set_v);
+        return self.instr.writeReg(0x2220, 0x1, set_v, 'float');
     
     def getCurrent(self):
-        return self.instr.readReg_float(0x2220, 0x02)
+        return self.instr.readReg(0x2220, 0x02, 'float')
     
     def setCurrent(self, set_i):
-        return self.instr.writeReg_float(0x2220, 0x2, set_i);
+        return self.instr.writeReg(0x2220, 0x2, set_i, 'float');
     
     def getPower(self):
-        return self.instr.readReg_float(0x2220, 0x03)
+        return self.instr.readReg(0x2220, 0x03, 'float')
     
     def setPower(self, set_p):
-        return self.instr.writeReg_float(0x2220, 0x3, set_p);
+        return self.instr.writeReg(0x2220, 0x3, set_p, 'float');
     
     #===========================================================================
     # Diagnostics
@@ -79,18 +79,18 @@ class m_BDPC(m_Generic):
         return float(sp) / float(pp)
     
     def getSensorValue(self, sensor):
-        return self.instr.readReg_float(0x2122, sensor)
+        return self.instr.readReg(0x2122, sensor, 'float')
     
     def getSensorType(self, sensor):
         ret = {}
         
         try:
-            ret['description'] = self.instr.readReg(0x2120, sensor)
+            ret['description'] = self.instr.readReg(0x2120, sensor, 'string')
         except:
             ret['description'] = 'Unknown'
             
         try:
-            ret['units'] = self.instr.readReg(0x2121, sensor)
+            ret['units'] = self.instr.readReg(0x2121, sensor, 'string')
         except:
             ret['units'] = '?'
         
