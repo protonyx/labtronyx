@@ -1,3 +1,4 @@
+import threading
 from .. import m_Generic
 
 class m_BDPC(m_Generic):
@@ -9,40 +10,88 @@ class m_BDPC(m_Generic):
     deviceType = 'Source'
     
     registers = {
+        'SensorGain': 0x2110,
+        'SensorOffset': 0x2111,
+        'SensorDescription': 0x2120,
+        'SensorUnits': 0x2121,
+        'SensorData': 0x2122,
+        'SensorDataRaw': 0x2123,
+        # Main Controller
+        'FeedbackLoopGain': 0x2210,
+        'PowerCommand': 0x2211,
+        'MMCParameters': 0x2220,
+        'MMCDiagnostics': 0x2222
         }
+    
+    numSensors = 4
     
     def _onLoad(self):
         m_Generic._onLoad(self)
         
-        #self.
+        # Spawn a thread to update static values from device
+        t = threading.Thread(target=self.update_startup)
+        t.start()
     
     def getProperties(self):
         prop = m_Generic.getProperties(self)
         
+        prop['numSensors'] = self.numSensors
+        
         # Add any additional properties here
         return prop
+    
+    def update_startup(self):
+        """
+        Called on startup to get the following values:
+        
+            * Sensor types for all sensors
+            * MMC Parameters (P/V/I)
+        """
+        for x in range(1,self.numSensors+1):
+            address = self.registers.get('SensorDescription')
+            self.readRegister(address, x, 'string')
+            
+            address = self.registers.get('SensorUnits')
+            self.readRegister(address, x, 'string')
+    
+    def update(self):
+        """
+        Update the following values:
+        
+            * Sensor Values
+            * Control Angles (Phi AB/AD/DC)
+        """
+        pass
+    
+    
     
     #===========================================================================
     # Parameters
     #===========================================================================
     
     def getVoltage(self):
-        return self.instr.readReg(0x2220, 0x01, 'float')
+        address = self.registers.get('MMCParameters')
+        return self.instr.readReg(address, 0x01, 'float')
     
     def setVoltage(self, set_v):
-        return self.instr.writeReg(0x2220, 0x1, set_v, 'float');
+        address = self.registers.get('MMCParameters')
+        return self.instr.writeReg(address, 0x1, set_v, 'float');
     
     def getCurrent(self):
-        return self.instr.readReg(0x2220, 0x02, 'float')
+        address = self.registers.get('MMCParameters')
+        return self.instr.readReg(address, 0x02, 'float')
     
     def setCurrent(self, set_i):
-        return self.instr.writeReg(0x2220, 0x2, set_i, 'float');
+        address = self.registers.get('MMCParameters')
+        return self.instr.writeReg(address, 0x2, set_i, 'float');
     
     def getPower(self):
-        return self.instr.readReg(0x2220, 0x03, 'float')
+        address = self.registers.get('MMCParameters')
+        return self.instr.readReg(address, 0x03, 'float')
     
     def setPower(self, set_p):
-        return self.instr.writeReg(0x2220, 0x3, set_p, 'float');
+        address = self.registers.get('MMCParameters')
+        return self.instr.writeReg(address, 0x3, set_p, 'float');
     
     #===========================================================================
     # Diagnostics
@@ -79,18 +128,21 @@ class m_BDPC(m_Generic):
         return float(sp) / float(pp)
     
     def getSensorValue(self, sensor):
-        return self.instr.readReg(0x2122, sensor, 'float')
+        address = self.registers.get('SensorData')
+        return self.instr.readReg(address, sensor, 'float')
     
     def getSensorType(self, sensor):
         ret = {}
         
+        address = self.registers.get('SensorDescription')
         try:
-            ret['description'] = self.instr.readReg(0x2120, sensor, 'string')
+            ret['description'] = self.readRegister_cache(address, sensor, 'string')
         except:
             ret['description'] = 'Unknown'
             
+        address = self.registers.get('SensorUnits')
         try:
-            ret['units'] = self.instr.readReg(0x2121, sensor, 'string')
+            ret['units'] = self.readRegister_cache(address, sensor, 'string')
         except:
             ret['units'] = '?'
         

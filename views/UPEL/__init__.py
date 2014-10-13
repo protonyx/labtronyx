@@ -6,18 +6,29 @@ import Tkinter as Tk
 from common.upel_icp import ICP_DeviceError
 
 class ICP_Widget(Tk.Frame):
-    def __init__(self, master, model):
-        Tk.Frame.__init__(self, master, padx=2, pady=2, width=200)
+    PIXELS_PER_X = 30
+    PIXELS_PER_Y = 30
+    
+    def __init__(self, master, model, units_x=8, units_y=1):
+        Tk.Frame.__init__(self, master, padx=2, pady=2)
+        
+        width = units_x * self.PIXELS_PER_X
+        height = units_y * self.PIXELS_PER_Y
+        
+        self.config(width=width, height=height)
+        self.pack_propagate(0)
         
 class ICP_Operation_Mode(ICP_Widget):
     def __init__(self, master, model):
-        ICP_Widget.__init__(self, master, model)
+        ICP_Widget.__init__(self, master, model, 8, 4)
+        
+        self.columnconfigure(0, weight=1)
         
         # Current Mode
         Tk.Label(self, font=("Purisa", 12), text="Current Mode:", anchor=Tk.W, justify=Tk.LEFT).grid(row=0, column=0)
         self.mode = Tk.StringVar()
         self.mode.set("Off")
-        self.l_mode = Tk.Label(self, font=("Purisa", 12), textvariable=self.mode)
+        self.l_mode = Tk.Label(self, font=("Purisa", 12), textvariable=self.mode, anchor=Tk.E, justify=Tk.RIGHT)
         self.l_mode.grid(row=0, column=1)
         
         # Set Mode
@@ -39,7 +50,7 @@ class ICP_Operation_Mode(ICP_Widget):
         
 class ICP_Launch_Window(ICP_Widget):
     def __init__(self, master, model, label, window_class):
-        ICP_Widget.__init__(self, master, model)
+        ICP_Widget.__init__(self, master, model, 8, 1)
         
         self.window_class = window_class
         self.window_obj = None
@@ -50,7 +61,7 @@ class ICP_Launch_Window(ICP_Widget):
 
         # Launch Button
         self.b_launch = Tk.Button(self, text="Open", command=self.cb_open)
-        self.b_launch.pack(side=Tk.LEFT)
+        self.b_launch.pack(side=Tk.RIGHT)
         
     def cb_open(self):
         if self.window_obj is None:
@@ -63,7 +74,7 @@ class ICP_Launch_Window(ICP_Widget):
             
 class ICP_Button(ICP_Widget):
     def __init__(self, master, model, label, button_label, cb_func):
-        ICP_Widget.__init__(self, master, model)
+        ICP_Widget.__init__(self, master, model, 8, 1)
         
         # Label
         self.l_name = Tk.Label(self, width=15, font=("Purisa", 12), text=label, anchor=Tk.W, justify=Tk.LEFT)
@@ -71,28 +82,28 @@ class ICP_Button(ICP_Widget):
 
         # Button
         self.b_button = Tk.Button(self, text=button_label, command=cb_func)
-        self.b_button.pack(side=Tk.LEFT)
+        self.b_button.pack(side=Tk.RIGHT)
 
 class ICP_Value_Read(ICP_Widget):
     # Data Type?
     def __init__(self, master, model, label, units, read_cb):
-        ICP_Widget.__init__(self, master, model)
+        ICP_Widget.__init__(self, master, model, 8, 1)
         
         self.read_cb = read_cb
         
         # Label
         self.l_name = Tk.Label(self, width=15, font=("Purisa", 12), text=label, anchor=Tk.W, justify=Tk.LEFT)
         self.l_name.pack(side=Tk.LEFT)
+        
+        # Units
+        self.l_units = Tk.Label(self, width=3, font=("Purisa", 12), text=units)
+        self.l_units.pack(side=Tk.RIGHT)
 
         # Data
         self.val = Tk.StringVar()
         self.val.set("0")
         self.l_data = Tk.Label(self, width=5, font=("Purisa", 12), textvariable=self.val, relief=Tk.RIDGE)
-        self.l_data.pack(side=Tk.LEFT)
-        
-        # Units
-        self.l_units = Tk.Label(self, font=("Purisa", 12), text=units)
-        self.l_units.pack(side=Tk.LEFT)
+        self.l_data.pack(side=Tk.RIGHT)
         
     def update(self):
         try:
@@ -104,7 +115,7 @@ class ICP_Value_Read(ICP_Widget):
 
 class ICP_Value_ReadWrite(ICP_Widget):
     def __init__(self, master, model, label, units, read_cb, write_cb):
-        ICP_Widget.__init__(self, master, model)
+        ICP_Widget.__init__(self, master, model, 8, 1)
         
         self.read_cb = read_cb
         self.write_cb = write_cb
@@ -113,19 +124,19 @@ class ICP_Value_ReadWrite(ICP_Widget):
         self.l_name = Tk.Label(self, width=15, font=("Purisa", 12), text=label, anchor=Tk.W, justify=Tk.LEFT)
         self.l_name.pack(side=Tk.LEFT)
         
+        # Set Button
+        self.b_set = Tk.Button(self, text="Set", command=self.cb_set)
+        self.b_set.pack(side=Tk.RIGHT)
+        
+        # Units
+        self.l_units = Tk.Label(self, width=3, font=("Purisa", 12), text=units)
+        self.l_units.pack(side=Tk.RIGHT)
+        
         # Data
         self.val = Tk.StringVar()
         self.val.set("0")
         self.txt_data = Tk.Entry(self, width=5, textvariable=self.val)
-        self.txt_data.pack(side=Tk.LEFT)
-        
-        # Units
-        self.l_units = Tk.Label(self, font=("Purisa", 12), text=units)
-        self.l_units.pack(side=Tk.LEFT)
-        
-        # Set Button
-        self.b_set = Tk.Button(self, text="Set", command=self.cb_set)
-        self.b_set.pack(side=Tk.LEFT)
+        self.txt_data.pack(side=Tk.RIGHT)
     
     def update(self):
         val = self.read_cb()
@@ -140,7 +151,7 @@ class ICP_Value_ReadWrite(ICP_Widget):
 
 class ICP_Value_Toggle(ICP_Widget):
     def __init__(self, master, model, label, states=None, cb=None):
-        ICP_Widget.__init__(self, master, model)
+        ICP_Widget.__init__(self, master, model, 8, 1)
         
         if states is None:
             self.states = ['Off', 'On']
@@ -156,7 +167,7 @@ class ICP_Value_Toggle(ICP_Widget):
         
         self.val = Tk.StringVar()
         self.b_state = Tk.Button(self, textvariable=self.val, command=self.cb_buttonPressed)
-        self.b_state.pack(side=Tk.LEFT)
+        self.b_state.pack(side=Tk.RIGHT)
         
         # Init
         self.setState(self.state)

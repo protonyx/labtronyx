@@ -156,7 +156,7 @@ class InstrumentManager(rpc.RpcBase):
                         testClass = getattr(testModule, className) # Will raise exception if doesn't exist
                     
                     except Exception as e:
-                        self.logger.error('Unable to load module %s: %s', modelModule, str(e))
+                        self.logger.exception('Unable to load module %s: %s', modelModule, str(e))
                         continue
                     
                     #===========================================================
@@ -658,7 +658,7 @@ class InstrumentManager(rpc.RpcBase):
             try:
                 dev.rpc_stop()
                 
-                dev.onUnload()
+                dev._onUnload()
             
             except NotImplementedError:
                 pass
