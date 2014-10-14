@@ -16,7 +16,7 @@ Author: Kevin Kennedy
 """
 class UPEL_ICP(threading.Thread):
     """
-    The UPEL Arbiter thread manages communication in and out of the network __socket
+    The UPEL Arbiter thread manages communication in and out of the network socket
     on port 7968.
     
     Structure
@@ -79,11 +79,6 @@ class UPEL_ICP(threading.Thread):
             self.logger = kwargs.get('logger')
         
         else:
-            #loggerList = logging.Logger.manager.loggerDict
-            # Attach to the MTB/MIST logger if inside a test environment
-            #if '__main__' in loggerList:
-            #self.logger = logging.getLogger('__main__')
-            
             self.logger = logging.getLogger(__name__)
             
         self.alive = threading.Event()
@@ -217,7 +212,7 @@ class UPEL_ICP(threading.Thread):
                         
                         if resID not in self.devices.keys():
                             # Create new device
-                            self.devices[resID] = UPEL_ICP_Device(resID, self)
+                            self.devices[resID] = UPEL_ICP_Device(resID, self.__messageQueue)
                             self.resources[resID] = res
                         
                             self.logger.info("Found UPEL ICP Device: %s %s" % res)

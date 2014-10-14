@@ -20,13 +20,17 @@ class UPEL_ICP_Device(object):
         'float': lambda data: struct.unpack('f', data)[0],
         'double': lambda data: struct.unpack('d', data)[0] }
     
-    def __init__(self, address, arbiter):
+    cache = {}
+    
+    def __init__(self, address, packetQueue):
         """
         :param address: IPv4 Address
         :type address: str
+        :param packetQueue: Outgoing Packet Queue
+        :type packetQueue: Queue.Queue
         """
         self.address = address
-        self.arbiter = arbiter
+        self.queue = packetQueue
         
         self.incomingPackets = {}
         
@@ -163,6 +167,29 @@ class UPEL_ICP_Device(object):
                 
                 except ICP_Timeout:
                     return None
+                
+    def register_cache(self, address, subindex):
+        """
+        Configure a register to cache the value. Used for static values that change infrequently
+        """
+        pass
+                
+    def register_accumulate(self, address, subindex, depth, sample_time):
+        """
+        Configure a register to accumulate values. Used to get sampled waveforms.
+        
+        :param depth: Number of samples
+        :type depth: int
+        :param sample_time: Sample Time (sec)
+        :type sample_time: float
+        """
+        pass
+                
+    def register_read_queue(self, address, subindex, data_type):
+        pass
+    
+    def register_read(self, address, subindex, data_type):
+        pass
             
     def queue_readReg(self, address, subindex, data_type):
         """
