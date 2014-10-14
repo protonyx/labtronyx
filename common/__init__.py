@@ -55,3 +55,9 @@ class IC_Common(object):
             # Create a generic logger
             self.logger = logging
         
+        try:
+            import config
+            self.config = config.Config()
+            
+        except:
+            pass

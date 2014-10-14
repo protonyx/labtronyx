@@ -91,7 +91,7 @@ class m_Generic(models.m_Base):
     def readRegister_cache(self, address, subindex, data_type):
         """
         Read a register value from the cache. If no value exists in the cache,
-        a new value is fetched.
+        a new value is fetched (using readRegister).
         """
         key = (address, subindex)
         if key in self.register_cache:
