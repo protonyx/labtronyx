@@ -3,7 +3,7 @@ UPEL View Helper Classes
 """
 
 import Tkinter as Tk
-from common.upel_icp import ICP_DeviceError
+from common.icp.errors import *
 
 class ICP_Widget(Tk.Frame):
     PIXELS_PER_X = 30
