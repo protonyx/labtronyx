@@ -46,7 +46,7 @@ class v_UPEL(views.v_Base):
         if data_type == 'string':
             data_type = ''
         
-        value = self.model.debug_readRegister(address, subindex, data_type)
+        value = self.model.readRegister(address, subindex, data_type)
         
         self.val.set(value)
     
@@ -59,4 +59,4 @@ class v_UPEL(views.v_Base):
             
         value = self.val.get()
         
-        self.model.debug_writeRegister(address, subindex, data_type, value)
+        self.model.writeRegister(address, subindex, data_type, value)

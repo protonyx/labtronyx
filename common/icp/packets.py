@@ -97,14 +97,49 @@ class HeartbeatPacket(UPEL_ICP_Packet):
 class FirmwareDownloadPacket(UPEL_ICP_Packet):
     pass
 
-class RegisterReadPacket(UPEL_ICP_Packet):
+class RegisterPacket(UPEL_ICP_Packet):
+    
+    def __init__(self):
+        self.PACKET_TYPE = 0x1
+    
+    data_types_pack = {
+        'int8': lambda data: struct.pack('!b', int(data)),
+        'int16': lambda data: struct.pack('!h', int(data)),
+        'int32': lambda data: struct.pack('!i', int(data)),
+        'int64': lambda data: struct.pack('!q', int(data)),
+        'float': lambda data: struct.pack('!f', float(data)),
+        'double': lambda data: struct.pack('!d', float(data)) }
+    
+    data_types_unpack = {
+        'int8': lambda data: struct.unpack('b', data)[0],
+        'int16': lambda data: struct.unpack('h', data)[0],
+        'int32': lambda data: struct.unpack('i', data)[0],
+        'int64': lambda data: struct.unpack('q', data)[0],
+        'float': lambda data: struct.unpack('f', data)[0],
+        'double': lambda data: struct.unpack('d', data)[0] }
+    
+    def get(self, data_type):
+        unpacker = self.data_types_unpack.get(data_type, None)
+        
+        if unpacker is not None:
+            return unpacker(self.getPayload())
+        else:
+            return self.getPayload()
+
+class RegisterReadPacket(RegisterPacket):
+ 
     def __init__(self, address, subindex):
         self.PACKET_TYPE = 0x8
         self.PAYLOAD = str(struct.pack('HxB', address, subindex))
 
-class RegisterWritePacket(UPEL_ICP_Packet):
-    def __init__(self, address, subindex, data):
+class RegisterWritePacket(RegisterPacket):
+    def __init__(self, address, subindex, data, data_type):
         self.PACKET_TYPE = 0x9
+        
+        packer = self.data_types_pack.get(data_type, None)
+        if packer is not None:
+            data = packer(data)
+        
         self.PAYLOAD = str(struct.pack('HxB', address, subindex)) + str(data)
 
 class ProcessDataReadPacket(UPEL_ICP_Packet):

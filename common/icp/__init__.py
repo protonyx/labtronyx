@@ -8,6 +8,7 @@ from sets import Set
 
 from packets import *
 from device import *
+from errors import *
 
 """
 Conforms to Rev 1.0 of the UPEL Instrument Control Protocol
@@ -143,7 +144,7 @@ class UPEL_ICP(threading.Thread):
         packet.setDestination(address)
 
         # Queue Discovery Packet
-        self.queueMessage(packet, 10.0)
+        self.__messageQueue.put(packet)
         
     def getDevice(self, address):
         return self.devices.get(address, None)
@@ -151,10 +152,10 @@ class UPEL_ICP(threading.Thread):
     def getResources(self):
         return self.resources
         
-    def queueMessage(self, packet_obj, ttl):
+    def queuePacket(self, packet_obj, ttl):
         """
         Insert a message into the queue
-        
+         
         :param packet_obj: ICP Packet Object
         :type packet_obj: UPEL_ICP_Packet
         :param ttl: Time to Live (seconds)
@@ -163,25 +164,25 @@ class UPEL_ICP(threading.Thread):
         """
         if len(self.__availableIDs) > 0:
             try:
-                
+                 
                 # Assign a PacketID
                 packetID = self.__availableIDs.pop()
-                
+                 
                 packet_obj.PACKET_ID = packetID
-                    
+                     
                 self.__messageQueue.put(packet_obj, False)
                 self.__expiration[packetID] = time.time() + ttl
-                
+                 
                 return packetID
-            
+             
             except KeyError:
                 # No IDs available
                 return None
-            
+             
             except Full:
                 # Failed to add to queue
                 return None
-            
+             
         else:
             return None
         
@@ -212,7 +213,7 @@ class UPEL_ICP(threading.Thread):
                         
                         if resID not in self.devices.keys():
                             # Create new device
-                            self.devices[resID] = UPEL_ICP_Device(resID, self.__messageQueue)
+                            self.devices[resID] = UPEL_ICP_Device(resID, self.queuePacket)
                             self.resources[resID] = res
                         
                             self.logger.info("Found UPEL ICP Device: %s %s" % res)
@@ -248,12 +249,14 @@ class UPEL_ICP(threading.Thread):
         """
         :returns: bool - True if the queue was not empty, False otherwise
         """
-        if not self.__messageQueue.empty():
+        if not self.__messageQueue.empty() and len(self.__availableIDs) > 0:
             try:
                 packet_obj = self.__messageQueue.get_nowait()
                 
                 if issubclass(packet_obj.__class__, UPEL_ICP_Packet):
                     destination = packet_obj.getDestination()
+                    
+                    # Assign a packet ID
                     packetID = packet_obj.PACKET_ID
                     
                     # Pack for transmission
@@ -282,6 +285,10 @@ class UPEL_ICP(threading.Thread):
                     
                 else:
                     return True
+                
+            except KeyError:
+                # No IDs available
+                return True
             
             except Queue.Empty:
                 return False
@@ -316,23 +323,6 @@ class UPEL_ICP(threading.Thread):
                     self.__availableIDs.add(packetID)
 
 
-#===============================================================================
-# Exceptions
-#===============================================================================
-class ICP_Error(RuntimeError):
-    pass
 
-class ICP_Invalid_Packet(ICP_Error):
-    pass
-
-class ICP_Timeout(ICP_Error):
-    pass
-
-class ICP_DeviceError(ICP_Error):
-    def __init__(self, error_packet=None):
-        self.error_packet = error_packet
-        
-    def get_errorPacket(self):
-        return self.error_packet
 
 

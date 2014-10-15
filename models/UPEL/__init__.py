@@ -37,8 +37,6 @@ class m_Generic(models.m_Base):
     registers = {}
     
     # Cached register data
-    # { name: (data, timestamp) }
-    register_cache = {}
     
     def _onLoad(self):
         self.instr = self.controller._getDevice(self.resID)
@@ -76,33 +74,21 @@ class m_Generic(models.m_Base):
     
     def readRegister(self, address, subindex, data_type):
         """
-        Read a register value from the ICP device. Forces a cache update.
+        Read a register value from the ICP device.
         """
         try:
-            res = self.instr.readReg(address, subindex, data_type)
-            key = (address, subindex)
-            self.register_cache[key] = res
+            res = self.instr.register_read(address, subindex, data_type)
             
             return res
             
         except:
+            self.logger.exception('')
             return 'INVALID'
-        
-    def readRegister_cache(self, address, subindex, data_type):
-        """
-        Read a register value from the cache. If no value exists in the cache,
-        a new value is fetched (using readRegister).
-        """
-        key = (address, subindex)
-        if key in self.register_cache:
-            return self.register_cache.get(key, None)
-        
-        else:
-            return readRegister(address, subindex, data_type)
     
     def writeRegister(self, address, subindex, data_type, value):
         try:
-            return self.instr.writeReg(address, subindex, value, data_type)
+            return self.instr.register_write(address, subindex, value, data_type)
         
         except:
+            self.logger.exception('')
             return 'INVALID'

@@ -49,10 +49,15 @@ class m_BDPC(m_Generic):
         """
         for x in range(1,self.numSensors+1):
             address = self.registers.get('SensorDescription')
-            self.readRegister(address, x, 'string')
+            self.instr.register_config_cache(address, x)
+            self.instr.register_read_queue(address, x, 'string')
             
             address = self.registers.get('SensorUnits')
-            self.readRegister(address, x, 'string')
+            self.instr.register_config_cache(address, x)
+            self.instr.register_read_queue(address, x, 'string')
+            
+            #address = self.registers.get('SensorData')
+            #self.instr.register_config_accumulate(address, x, data_type, depth, sample_time)
     
     def update(self):
         """
@@ -61,8 +66,9 @@ class m_BDPC(m_Generic):
             * Sensor Values
             * Control Angles (Phi AB/AD/DC)
         """
-        pass
-    
+        for x in range(1, self.numSensors+1):
+            address = self.registers.get('SensorData')
+            self.instr.register_read_queue(address, x, 'float')
     
     
     #===========================================================================
@@ -71,27 +77,27 @@ class m_BDPC(m_Generic):
     
     def getVoltage(self):
         address = self.registers.get('MMCParameters')
-        return self.instr.readReg(address, 0x01, 'float')
+        return self.instr.register_read(address, 0x01, 'float')
     
     def setVoltage(self, set_v):
         address = self.registers.get('MMCParameters')
-        return self.instr.writeReg(address, 0x1, set_v, 'float');
+        return self.instr.register_write(address, 0x1, set_v, 'float');
     
     def getCurrent(self):
         address = self.registers.get('MMCParameters')
-        return self.instr.readReg(address, 0x02, 'float')
+        return self.instr.register_read(address, 0x02, 'float')
     
     def setCurrent(self, set_i):
         address = self.registers.get('MMCParameters')
-        return self.instr.writeReg(address, 0x2, set_i, 'float');
+        return self.instr.register_write(address, 0x2, set_i, 'float');
     
     def getPower(self):
         address = self.registers.get('MMCParameters')
-        return self.instr.readReg(address, 0x03, 'float')
+        return self.instr.register_read(address, 0x03, 'float')
     
     def setPower(self, set_p):
         address = self.registers.get('MMCParameters')
-        return self.instr.writeReg(address, 0x3, set_p, 'float');
+        return self.instr.register_write(address, 0x3, set_p, 'float');
     
     #===========================================================================
     # Diagnostics
@@ -129,20 +135,20 @@ class m_BDPC(m_Generic):
     
     def getSensorValue(self, sensor):
         address = self.registers.get('SensorData')
-        return self.instr.readReg(address, sensor, 'float')
+        return self.instr.register_read(address, sensor, 'float')
     
     def getSensorType(self, sensor):
         ret = {}
         
         address = self.registers.get('SensorDescription')
         try:
-            ret['description'] = self.readRegister_cache(address, sensor, 'string')
+            ret['description'] = self.instr.register_read(address, sensor, 'string')
         except:
             ret['description'] = 'Unknown'
             
         address = self.registers.get('SensorUnits')
         try:
-            ret['units'] = self.readRegister_cache(address, sensor, 'string')
+            ret['units'] = self.instr.register_read(address, sensor, 'string')
         except:
             ret['units'] = '?'
         

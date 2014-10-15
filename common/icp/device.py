@@ -1,26 +1,41 @@
+import struct
+from errors import *
+from packets import *
+
 class UPEL_ICP_Device(object):
     """
     Instrument class for ICP devices. Used by Models to communicate with ICP
     devices over the network. 
     """
     
+    incomingPackets = {}
+    
+    #===========================================================================
+    # Registers
+    #===========================================================================
+    
     data_types_pack = {
-        'int8': lambda data: struct.pack('b', int(data)),
-        'int16': lambda data: struct.pack('h', int(data)),
-        'int32': lambda data: struct.pack('i', int(data)),
-        'int64': lambda data: struct.pack('q', int(data)),
-        'float': lambda data: struct.pack('f', float(data)),
-        'double': lambda data: struct.pack('d', float(data)) }
+        'int8': lambda data: struct.pack('!b', int(data)),
+        'int16': lambda data: struct.pack('!h', int(data)),
+        'int32': lambda data: struct.pack('!i', int(data)),
+        'int64': lambda data: struct.pack('!q', int(data)),
+        'float': lambda data: struct.pack('!f', float(data)),
+        'double': lambda data: struct.pack('!d', float(data)) }
     
     data_types_unpack = {
-        'int8': lambda data: struct.unpack('b', data)[0],
-        'int16': lambda data: struct.unpack('h', data)[0],
-        'int32': lambda data: struct.unpack('i', data)[0],
-        'int64': lambda data: struct.unpack('q', data)[0],
-        'float': lambda data: struct.unpack('f', data)[0],
-        'double': lambda data: struct.unpack('d', data)[0] }
+        'int8': lambda data: struct.unpack('!b', data)[0],
+        'int16': lambda data: struct.unpack('!h', data)[0],
+        'int32': lambda data: struct.unpack('!i', data)[0],
+        'int64': lambda data: struct.unpack('!q', data)[0],
+        'float': lambda data: struct.unpack('!f', data)[0],
+        'double': lambda data: struct.unpack('!d', data)[0] }
     
+    reg_outgoing = {} # { PacketID: (address, subindex) }
+    reg_config = {} # { (address, subindex): config }
+    
+    accumulators = {}
     cache = {}
+    
     
     def __init__(self, address, packetQueue):
         """
@@ -31,8 +46,6 @@ class UPEL_ICP_Device(object):
         """
         self.address = address
         self.queue = packetQueue
-        
-        self.incomingPackets = {}
         
     def _processTimeout(self, packetID):
         """
@@ -47,6 +60,19 @@ class UPEL_ICP_Device(object):
         received that originated from this instrument.
         """
         packetID = pkt.PACKET_ID
+        
+        if isinstance(pkt, RegisterPacket):
+            # Check if the register should be cached or accumulated
+            try:
+                address, subindex, data_type = self.reg_outgoing.pop(packetID)
+                key = (address, subindex)
+                
+                config = self.reg_config.get(key, None)
+                
+                if config == 'c':
+                    self.cache[key] = pkt.get(data_type)
+            except:
+                pass
         
         self.incomingPackets[packetID] = pkt
         
@@ -66,12 +92,19 @@ class UPEL_ICP_Device(object):
             if isinstance(pkt, ErrorPacket):
                 raise ICP_DeviceError(pkt)
             
+            elif isinstance(pkt, ICP_Timeout):
+                raise ICP_Timeout()
+            
             else:
-                unpacker = self.data_types_unpack.get(data_type, None)
-                if unpacker is not None:
-                    return unpacker(pkt.getPayload())
-                else:
-                    return pkt.getPayload()
+                return pkt
+            
+                #===============================================================
+                # unpacker = self.data_types_unpack.get(data_type, None)
+                # if unpacker is not None:
+                #     return unpacker(pkt.getPayload())
+                # else:
+                #     return pkt.getPayload()
+                #===============================================================
                 
         else:
             return None
@@ -96,22 +129,24 @@ class UPEL_ICP_Device(object):
     
     def getState(self):
         packet = StateChangePacket(0)
+        packet.setDestination(self.address)
         
-        self.arbiter.queueMessage(self.address, 10.0, packet)
+        packetID = self.queue(packet, 10.0)
         
         try:
-            return self._getResponse(10.0)
+            return self._getResponse(packetID, 'int8')
             
         except ICP_Timeout:
             return None
         
     def setState(self, new_state):
         packet = StateChangePacket(new_state)
+        packet.setDestination(self.address)
         
-        self.arbiter.queueMessage(self.address, 10.0, packet)
+        packetID = self.queue(packet, 10.0)
         
         try:
-            return self._getResponse(10.0)
+            return self._getResponse(packetID, 'int8')
             
         except ICP_Timeout:
             return None
@@ -120,32 +155,26 @@ class UPEL_ICP_Device(object):
     # Register Operations
     #===========================================================================
     
+    def register_config_cache(self, address, subindex):
+        """
+        Configure a register to cache the value. Used for static values that change infrequently
+        """
+        key = (address, subindex)
+        self.reg_config[key] = 'c'
+                
+    def register_config_accumulate(self, address, subindex, depth, sample_time):
+        """
+        Configure a register to accumulate values. Used to get sampled waveforms.
+        
+        :param depth: Number of samples
+        :type depth: int
+        :param sample_time: Sample Time (sec)
+        :type sample_time: float
+        """
+        key = (address, subindex)
+        self.reg_config[key] = 'a'
+    
     def register_write(self, address, subindex, data, data_type):
-        pass
-    
-    def register_write_queue(self, address, subindex, data, data_type):
-        pass
-    
-    def queue_writeReg(self, address, subindex, data, data_type):
-        """
-        Queue a write operation to a register. Returns packet ID for the sent
-        packet. If there are no packet IDs currently available, this call
-        blocks until one is available. Otherwise, this call returns immediately.
-        
-        :returns: packetID
-        """
-        packer = self.data_types_pack.get(data_type, None)
-        if packer is not None:
-            data = packer(data)
-            
-        packet = RegisterWritePacket(address, subindex, data)
-        packet.setDestination(self.address)
-        
-        packetID = self.arbiter.queueMessage(packet, 10.0)
-        
-        return packetID
-    
-    def writeReg(self, address, subindex, data, data_type):
         """
         Write a value to a register. Blocking operation.
         
@@ -155,7 +184,7 @@ class UPEL_ICP_Device(object):
             Models should use the appropriate writeReg function for the desired
             data type to avoid raising exceptions or corrupting data.
         """
-        packetID = self.queue_writeReg(address, subindex, data, data_type)
+        packetID = self.register_write_queue(address, subindex, data, data_type)
         
         if packetID is not None:
             while True:
@@ -163,35 +192,36 @@ class UPEL_ICP_Device(object):
                     data = self._getResponse(packetID, data_type)
                     
                     if data is not None:
-                        return data
+                        return data.get(data_type)
                 
                 except ICP_Timeout:
                     return None
-                
-    def register_cache(self, address, subindex):
+    
+    def register_write_queue(self, address, subindex, data, data_type):
         """
-        Configure a register to cache the value. Used for static values that change infrequently
-        """
-        pass
-                
-    def register_accumulate(self, address, subindex, depth, sample_time):
-        """
-        Configure a register to accumulate values. Used to get sampled waveforms.
+        Queue a write operation to a register. Returns packet ID for the sent
+        packet. If there are no packet IDs currently available, this call
+        blocks until one is available. Otherwise, this call returns immediately.
         
-        :param depth: Number of samples
-        :type depth: int
-        :param sample_time: Sample Time (sec)
-        :type sample_time: float
+        :returns: packetID
         """
-        pass
+            
+        packet = RegisterWritePacket(address, subindex, data, data_type)
+        packet.setDestination(self.address)
+        
+        packetID = self.queue(packet, 10.0)
+        
+        self.reg_outgoing[packetID] = (address, subindex, data_type)
+        
+        return packetID
+    
+    def queue_writeReg(self, address, subindex, data, data_type):
+        return self.register_write_queue(address, subindex, data, data_type)
+
+    def writeReg(self, address, subindex, data, data_type):
+        return self.register_write(address, subindex, data, data_type)
                 
     def register_read_queue(self, address, subindex, data_type):
-        pass
-    
-    def register_read(self, address, subindex, data_type):
-        pass
-            
-    def queue_readReg(self, address, subindex, data_type):
         """
         Queue a read operation to a register. Returns packet ID for the sent
         packet. If there are no packet IDs currently available, this call
@@ -202,11 +232,13 @@ class UPEL_ICP_Device(object):
         packet = RegisterReadPacket(address, subindex)
         packet.setDestination(self.address)
         
-        packetID = self.arbiter.queueMessage(packet, 10.0)
+        packetID = self.queue(packet, 10.0)
+        
+        self.reg_outgoing[packetID] = (address, subindex, data_type)
         
         return packetID
     
-    def readReg(self, address, subindex, data_type):
+    def register_read(self, address, subindex, data_type):
         """
         Read a value from a register. Blocks until data returns.
         
@@ -222,18 +254,30 @@ class UPEL_ICP_Device(object):
         :type subindex: int
         :returns: str
         """
-        packetID = self.queue_readReg(address, subindex, data_type)
+        key = (address, subindex)
         
-        if packetID is not None:
-            while True:
-                try:
-                    data = self._getResponse(packetID, data_type)
+        if self.reg_config.get(key, None) is None:
+            packetID = self.register_read_queue(address, subindex, data_type)
+            
+            if packetID is not None:
+                while True:
+                    try:
+                        data = self._getResponse(packetID, data_type)
+                        
+                        if data is not None:
+                            return data.get(data_type)
                     
-                    if data is not None:
-                        return data
-                
-                except ICP_Timeout:
-                    return None
+                    except ICP_Timeout:
+                        return None
+                        
+        else:
+            return self.cache.get(key, None)
+            
+    def queue_readReg(self, address, subindex, data_type):
+        return self.register_read_queue(address, subindex, data_type)
+    
+    def readReg(self, address, subindex, data_type):
+        return self.register_read(address, subindex, data_type)
     
     #===========================================================================
     # Process Data Operations
