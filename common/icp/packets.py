@@ -103,12 +103,12 @@ class RegisterPacket(UPEL_ICP_Packet):
         self.PACKET_TYPE = 0x1
     
     data_types_pack = {
-        'int8': lambda data: struct.pack('!b', int(data)),
-        'int16': lambda data: struct.pack('!h', int(data)),
-        'int32': lambda data: struct.pack('!i', int(data)),
-        'int64': lambda data: struct.pack('!q', int(data)),
-        'float': lambda data: struct.pack('!f', float(data)),
-        'double': lambda data: struct.pack('!d', float(data)) }
+        'int8': lambda data: struct.pack('b', int(data)),
+        'int16': lambda data: struct.pack('h', int(data)),
+        'int32': lambda data: struct.pack('i', int(data)),
+        'int64': lambda data: struct.pack('q', int(data)),
+        'float': lambda data: struct.pack('f', float(data)),
+        'double': lambda data: struct.pack('d', float(data)) }
     
     data_types_unpack = {
         'int8': lambda data: struct.unpack('b', data)[0],
