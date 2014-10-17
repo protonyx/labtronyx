@@ -54,7 +54,7 @@ class c_UPEL(controllers.c_Base):
         Treats an addResource request as a hint that a device exists. Attempts
         to send a discovery packet to the device to get more information.
         
-        The arbiter thread will automatically handle the creation of an
+        The ICP thread will automatically handle the creation of an
         instrument for the new resource.
         
         :param ResID: Resource ID (IP Address)

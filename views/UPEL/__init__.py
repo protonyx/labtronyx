@@ -102,12 +102,14 @@ class ICP_Value_Read(ICP_Widget):
         # Data
         self.val = Tk.StringVar()
         self.val.set("0")
-        self.l_data = Tk.Label(self, width=5, font=("Purisa", 12), textvariable=self.val, relief=Tk.RIDGE)
+        self.l_data = Tk.Label(self, width=6, font=("Purisa", 10), textvariable=self.val, relief=Tk.RIDGE)
         self.l_data.pack(side=Tk.RIGHT)
         
     def update(self):
         try:
             val = self.read_cb()
+            val = "{:.2f}".format(val)
+            
             self.val.set(val)
             
         except:
@@ -135,7 +137,7 @@ class ICP_Value_ReadWrite(ICP_Widget):
         # Data
         self.val = Tk.StringVar()
         self.val.set("0")
-        self.txt_data = Tk.Entry(self, width=5, textvariable=self.val)
+        self.txt_data = Tk.Entry(self, width=6, textvariable=self.val)
         self.txt_data.pack(side=Tk.RIGHT)
     
     def update(self):
