@@ -12,6 +12,8 @@ class ICP_Widget(Tk.Frame):
     def __init__(self, master, model, units_x=8, units_y=1):
         Tk.Frame.__init__(self, master, padx=2, pady=2)
         
+        self.model = model
+        
         width = units_x * self.PIXELS_PER_X
         height = units_y * self.PIXELS_PER_Y
         
@@ -20,34 +22,53 @@ class ICP_Widget(Tk.Frame):
         
 class ICP_Operation_Mode(ICP_Widget):
     def __init__(self, master, model):
-        ICP_Widget.__init__(self, master, model, 8, 4)
-        
-        self.columnconfigure(0, weight=1)
+        ICP_Widget.__init__(self, master, model, 8, 2)
         
         # Current Mode
-        Tk.Label(self, font=("Purisa", 12), text="Current Mode:", anchor=Tk.W, justify=Tk.LEFT).grid(row=0, column=0)
+        self.f_cmode = Tk.Frame(self)
+        Tk.Label(self.f_cmode, font=("Purisa", 12), text="Current Mode:", anchor=Tk.W, justify=Tk.LEFT).pack(side=Tk.LEFT)
         self.mode = Tk.StringVar()
-        self.mode.set("Off")
-        self.l_mode = Tk.Label(self, font=("Purisa", 12), textvariable=self.mode, anchor=Tk.E, justify=Tk.RIGHT)
-        self.l_mode.grid(row=0, column=1)
+        self.mode.set("")
+        self.l_mode = Tk.Label(self.f_cmode, width=14, font=("Purisa", 12), textvariable=self.mode, relief=Tk.RIDGE)
+        self.l_mode.pack(side=Tk.RIGHT)
+        self.f_cmode.pack(fill=Tk.X)
         
         # Set Mode
-        Tk.Label(self, font=("Purisa", 12), text="Set Mode:", anchor=Tk.W, justify=Tk.LEFT).grid(row=1, column=0)
-        self.mode_next = Tk.StringVar()
-        self.mode_next.set("On")
-        self.b_mode = Tk.Button(self, textvariable=self.mode_next, command=self.cb_set)
-        self.b_mode.grid(row=1, column=1)
+        self.f_smode = Tk.Frame(self, pady=2)
+        Tk.Label(self.f_smode, font=("Purisa", 12), text="Set Mode:", anchor=Tk.W, justify=Tk.LEFT).pack(side=Tk.LEFT)
+        self.b_next = []
+        self.f_smode.pack(fill=Tk.X)
+        
+        self.states = model.getStates() or {}
+        self.state_transitions = model.getStateTransitions() or {}
+        map(int, self.state_transitions.keys())
+        self.update()
         
     def update(self):
         state = self.model.getState()
-        self.mode.set(state)
         
-        state_next = '???'
-        self.mode_next.set(state_next)
+        state_text, _ = self.states.get(str(state), ('Invalid State', 'Invalid State'))
+        # Set Current State
+        self.mode.set(state_text)
+        
+        for widget in self.b_next:
+            widget.destroy()
+            del widget
+        
+        # Create buttons to make transitions
+        for next_state in self.state_transitions.get(state, [0x81]):
+            _, next_state_text = self.states.get(str(next_state), ('Invalid State', 'Invalid State'))
+            b_new = Tk.Button(self.f_smode, text=next_state_text, command=lambda: self.cb_set(next_state))
+            b_new.pack(side=Tk.RIGHT)
+            self.b_next.append(b_new)
+        
+        #state_next = '???'
+        #self.mode_next.set(state_next)
     
     def cb_set(self, mode):
-        pass
-        
+        self.model.setState(mode)
+        self.update()
+                
 class ICP_Launch_Window(ICP_Widget):
     def __init__(self, master, model, label, window_class):
         ICP_Widget.__init__(self, master, model, 8, 1)

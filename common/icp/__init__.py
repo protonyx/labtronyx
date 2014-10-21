@@ -17,7 +17,7 @@ Author: Kevin Kennedy
 """
 class UPEL_ICP(threading.Thread):
     """
-    The UPEL Arbiter thread manages communication in and out of the network socket
+    The UPEL ICP thread manages communication in and out of the network socket
     on port 7968.
     
     Structure
@@ -53,7 +53,7 @@ class UPEL_ICP(threading.Thread):
     not expected, and thus will never create an entry in the routing map, giving 
     a maximum of 255 possible entries in the routing map.
     
-    The routing map has the format: { PacketID: (TTL, ResponseQueue) }
+    The routing map has the format: { PacketID: Address }
     
     Execution Strategy
     ==================
@@ -154,7 +154,7 @@ class UPEL_ICP(threading.Thread):
         
     def queuePacket(self, packet_obj, ttl):
         """
-        Insert a message into the queue
+        Insert a packet into the queue. If unable to queue packet, raises Full
          
         :param packet_obj: ICP Packet Object
         :type packet_obj: UPEL_ICP_Packet
@@ -177,11 +177,11 @@ class UPEL_ICP(threading.Thread):
              
             except KeyError:
                 # No IDs available
-                return None
+                raise Full
              
             except Full:
                 # Failed to add to queue
-                return None
+                raise
              
         else:
             return None
@@ -200,7 +200,7 @@ class UPEL_ICP(threading.Thread):
                     sourceIP, _ = address
                     resp_pkt.setSource(sourceIP)
                     
-                    self.logger.debug("ICP RX [ID:%i, TYPE:%X] from %s", packetID, packetType, sourceIP)
+                    self.logger.debug("ICP RX [ID:%i, TYPE:%X, SIZE:%i] from %s", packetID, packetType, len(resp_pkt.getPayload()), sourceIP)
                     
                     # Route Packets
                     if packetType == 0xF and resp_pkt.isResponse():

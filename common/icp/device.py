@@ -90,38 +90,39 @@ class UPEL_ICP_Device(object):
         
         self.incomingPackets[packetID] = pkt
         
-    def _getResponse(self, packetID, data_type):
+    def _getResponse(self, packetID, block=False):
         """
-        Get 
+        Get a response packet from the incoming packet queue. Non-blocking
+        unless block is set to True.
+        
+        :param packetID: PacketID of desired packet
+        :type packetID: int
+        :param block: Block until packet is received or timeout occurs
+        :type block: bool
         :returns: UPEL_ICP_Packet object or None if no response
         """
-        pkt = self.incomingPackets.get(packetID, None)
-        
-        if isinstance(pkt, ICP_Timeout):
-            raise pkt
-            
-        elif pkt is not None:
-            self.incomingPackets.pop(packetID)
-            
-            if isinstance(pkt, ErrorPacket):
-                raise ICP_DeviceError(pkt)
-            
-            elif isinstance(pkt, ICP_Timeout):
-                raise ICP_Timeout()
-            
-            else:
-                return pkt
-            
-                #===============================================================
-                # unpacker = self.data_types_unpack.get(data_type, None)
-                # if unpacker is not None:
-                #     return unpacker(pkt.getPayload())
-                # else:
-                #     return pkt.getPayload()
-                #===============================================================
+        if block:
+            while (True):
+                ret = self._getResponse(packetID)
                 
+                if ret is not None:
+                    return ret
+            
         else:
-            return None
+            try:
+                pkt = self.incomingPackets.pop(packetID)
+            
+                if isinstance(pkt, ICP_Timeout):
+                    raise pkt
+                
+                elif isinstance(pkt, ErrorPacket):
+                    raise ICP_DeviceError(pkt)
+                
+                else:
+                    return pkt
+                
+            except KeyError:
+                return None
         
     #===========================================================================
     # def _getResponse(self, timeout):
@@ -171,13 +172,19 @@ class UPEL_ICP_Device(object):
     #===========================================================================
     
     def getState(self):
+        """
+        Query the ICP Device for the current state.
+        
+        :returns: int
+        """
         packet = StateChangePacket(0)
         packet.setDestination(self.address)
-        
-        packetID = self.queue(packet, 10.0)
-        
+
         try:
-            return self._getResponse(packetID, 'int8')
+            packetID = self.queue(packet, 10.0)
+            
+            pkt = self._getResponse(packetID, block=True)
+            return pkt.getState()
             
         except ICP_Timeout:
             return None
@@ -186,10 +193,11 @@ class UPEL_ICP_Device(object):
         packet = StateChangePacket(new_state)
         packet.setDestination(self.address)
         
-        packetID = self.queue(packet, 10.0)
-        
         try:
-            return self._getResponse(packetID, 'int8')
+            packetID = self.queue(packet, 10.0)
+            
+            pkt = self._getResponse(packetID, block=True)
+            return pkt.getState()
             
         except ICP_Timeout:
             return None
@@ -288,18 +296,16 @@ class UPEL_ICP_Device(object):
         :param data_type: Data type
         :type data_type: str
         """
-        packetID = self.register_write_queue(address, subindex, data, data_type)
+        try:
+            packetID = self.register_write_queue(address, subindex, data, data_type)
         
-        if packetID is not None:
-            while True:
-                try:
-                    data = self._getResponse(packetID, data_type)
+            data = self._getResponse(packetID, block=True)
                     
-                    if data is not None:
-                        return data.get(data_type)
+            if data is not None:
+                return data.get(data_type)
                 
-                except ICP_Timeout:
-                    return None
+        except ICP_Timeout:
+            return None
     
     def register_write_queue(self, address, subindex, data, data_type):
         """
@@ -321,11 +327,15 @@ class UPEL_ICP_Device(object):
         packet = RegisterWritePacket(address, subindex, data, data_type)
         packet.setDestination(self.address)
         
-        packetID = self.queue(packet, 10.0)
+        try:
+            packetID = self.queue(packet, 10.0)
         
-        self.reg_outgoing[packetID] = (address, subindex, data_type)
+            self.reg_outgoing[packetID] = (address, subindex, data_type)
         
-        return packetID
+            return packetID
+        
+        except:
+            raise
                 
     def register_read_queue(self, address, subindex, data_type):
         """
@@ -344,11 +354,15 @@ class UPEL_ICP_Device(object):
         packet = RegisterReadPacket(address, subindex)
         packet.setDestination(self.address)
         
-        packetID = self.queue(packet, 10.0)
+        try:
+            packetID = self.queue(packet, 10.0)
         
-        self.reg_outgoing[packetID] = (address, subindex, data_type)
+            self.reg_outgoing[packetID] = (address, subindex, data_type)
         
-        return packetID
+            return packetID
+        
+        except:
+            raise
     
     def register_read(self, address, subindex, data_type):
         """
@@ -377,18 +391,16 @@ class UPEL_ICP_Device(object):
             return self.reg_cache.get(key, None)
             
         else:
-            packetID = self.register_read_queue(address, subindex, data_type)
+            try:
+                packetID = self.register_read_queue(address, subindex, data_type)
             
-            if packetID is not None:
-                while True:
-                    try:
-                        data = self._getResponse(packetID, data_type)
+                data = self._getResponse(packetID, block=True)
                         
-                        if data is not None:
-                            return data.get(data_type)
+                if data is not None:
+                    return data.get(data_type)
                     
-                    except ICP_Timeout:
-                        return None
+            except ICP_Timeout:
+                return None
     
     #===========================================================================
     # Process Data Operations

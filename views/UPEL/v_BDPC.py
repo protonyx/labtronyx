@@ -35,6 +35,7 @@ class v_BDPC(views.v_Base):
     def run(self):
         # List of GUI elements to update
         self.update_elems = []
+        self.wm_title("BDPC")
          
         #=======================================================================
         # Parameters
@@ -86,6 +87,7 @@ class v_BDPC(views.v_Base):
         # Operation State
         self.ops_mode = ICP_Operation_Mode(self.frame_ops, self.model)
         self.ops_mode.pack()
+        self.update_elems.append(self.ops_mode)
         # Refresh Interval
         
         # Refresh Toggle
@@ -134,8 +136,11 @@ class v_BDPC(views.v_Base):
     
     def update(self):
         """
-        Update all elements in the window
+        Update all elements in the window. Makes a call to the Model
+        update function to quickly queue all operations
         """
+        self.model.update()
+        
         for elem in self.update_elems:
             try:
                 elem.update()

@@ -56,7 +56,9 @@ class m_BDPC(m_Generic):
             self.instr.register_config_cache(address, x)
             self.instr.register_read_queue(address, x, 'string')
             
-            
+            # Cache sensor data
+            address = self.registers.get('SensorUnits')
+            self.instr.register_config_cache(address, x)
             
     def autoupdate_start(self, depth=100, sample_time=1.0):
         """
@@ -74,6 +76,7 @@ class m_BDPC(m_Generic):
         for x in range(1,self.numSensors+1):
             address = self.registers.get('SensorData')
             self.instr.register_config_clear(address, x)
+            self.instr.register_config_cache(address, x)
     
     def update(self):
         """

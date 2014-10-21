@@ -36,7 +36,17 @@ class m_Generic(models.m_Base):
     
     registers = {}
     
-    # Cached register data
+    states = {
+        0x01: ('Running', 'Start'),
+        0x02: ('Stopped', 'Stop'),
+        0x80: ('Ready', 'Initialize'),
+        0x81: ('Reset', 'Reset') }
+    
+    state_transitions = {
+        0x01: [0x02, 0x80, 0x81],
+        0x02: [0x80, 0x81],
+        0x80: [0x01, 0x81],
+        0x81: [0x80]}
     
     def _onLoad(self):
         self.instr = self.controller._getDevice(self.resID)
@@ -55,6 +65,12 @@ class m_Generic(models.m_Base):
     #===========================================================================
     # Operation
     #===========================================================================
+    
+    def getStates(self):
+        return self.states
+    
+    def getStateTransitions(self):
+        return self.state_transitions
     
     def getState(self):
         return self.instr.getState()

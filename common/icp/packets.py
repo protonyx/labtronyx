@@ -86,6 +86,10 @@ class StateChangePacket(UPEL_ICP_Packet):
     def __init__(self, state):
         self.PACKET_TYPE = 0x0
         self.PAYLOAD = struct.pack('B', state)
+        
+    def getState(self):
+        # BUG: State should be 8-bits but is being transmitted as 16-bits
+        return struct.unpack('h', self.PAYLOAD)[0]
 
 class ErrorPacket(UPEL_ICP_Packet):
     def __init__(self):

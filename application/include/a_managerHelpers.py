@@ -82,7 +82,7 @@ class a_AddResource(Tk.Toplevel):
 class a_ViewSelector(Tk.Toplevel):
     
     def __init__(self, master, views, cb_func):
-        Tk.Toplevel.__init__(self, master)
+        Tk.Toplevel.__init__(self, master, padx=2, pady=2)
         
         # Store reference to parent window callback function
         self.cb_func = cb_func
