@@ -9,57 +9,7 @@ class c_Base(common.IC_Common):
 
     def getControllerName(self):
         return self.__class__.__name__
-        
-    def _open(self):
-        self.__ready = False
-        
-        try:
-            ret = self.open()
-            if type(ret) == bool:
-                if ret == True:
-                    self.__ready = True
-                else:
-                    self.__ready = False
-                return ret
-            
-            else:
-                self.logger.error("Controller function open() must return a bool type")
-                return False
-            
-        except NotImplementedError:
-            self.logger.error("Controller function open() is not implemented")
-    
-    def _ready(self):
-        """
-        If an interface error occurred, clear the ready flag to alert the calling class
-        """
-        return self.__ready
-    
-    def _scan(self):
-        if self.__ready:  
-            try:
-                ret = self.scan()
-                
-                if type(ret) == bool:
-                    return True
-                
-                else:
-                    self.logger.error("Controller function scan() must return a bool type")
-                    return False
-                
-            except NotImplementedError:
-                # Controllers do not have to implement scan
-                return True
-                
-        else:
-            self.logger.error("Controller not ready")
-    
-    def _close(self):
-        try:
-            return self.close()
-        except NotImplementedError:
-            self.logger.error("Controller function close() is not implemented")
-    
+
     # Inheriting classes must implement these functions:
     def open(self):
         """

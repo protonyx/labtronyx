@@ -102,8 +102,11 @@ class InstrumentManager(rpc.RpcBase):
                                 # Instantiate the controller with a link to the model dictionary
                                 testClass = getattr(testModule, className)(logger=self.logger)
                                 
-                                if testClass._open():
+                                if testClass.open() == True:
                                     self.controllers[className] = testClass
+                                    
+                                else:
+                                    testClass.close()
                             
                             except KeyError:
                                 # No models loaded have support for that controller

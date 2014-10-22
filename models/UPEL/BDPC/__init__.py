@@ -57,7 +57,7 @@ class m_BDPC(m_Generic):
             self.instr.register_read_queue(address, x, 'string')
             
             # Cache sensor data
-            address = self.registers.get('SensorUnits')
+            address = self.registers.get('SensorData')
             self.instr.register_config_cache(address, x)
             
     def autoupdate_start(self, depth=100, sample_time=1.0):
@@ -93,6 +93,11 @@ class m_BDPC(m_Generic):
     #===========================================================================
     # Parameters
     #===========================================================================
+    
+    def commitParameters(self):
+        address = self.registers.get('MMCParameters')
+        #return self.instr.register_write(address, 0x4, 1, 'int8');
+        # Implement this in the bridge
     
     def getVoltage(self):
         address = self.registers.get('MMCParameters')
@@ -154,7 +159,7 @@ class m_BDPC(m_Generic):
     
     def getSensorValue(self, sensor):
         address = self.registers.get('SensorData')
-        return self.instr.register_read(address, sensor, 'float')
+        return float(self.instr.register_read(address, sensor, 'float'))
     
     def getSensorType(self, sensor):
         ret = {}

@@ -9,7 +9,7 @@ class c_Dummy(controllers.c_Base):
     #===========================================================================
     
     def open(self):
-        self.resources['TestRes'] = ('Test', '12345')
+        #self.resources['TestRes'] = ('Test', '12345')
         return True
         
     def close(self):

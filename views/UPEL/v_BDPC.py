@@ -53,11 +53,10 @@ class v_BDPC(views.v_Base):
                                            label="Power", units="W", 
                                            read_cb=self.model.getPower, write_cb=self.model.setPower)
         self.param_p.pack()
+        self.param_setall = ICP_Button(self.frame_param, self.model,
+                                            label="Set All", button_label="Set", cb_func=self.cb_setAllParams)
+        self.param_setall.pack()
         self.frame_param.grid(row=0, column=0)
-        
-        self.update_elems.append(self.param_v)
-        self.update_elems.append(self.param_i)
-        self.update_elems.append(self.param_p)
         
         #=======================================================================
         # Diagnostics
@@ -149,6 +148,20 @@ class v_BDPC(views.v_Base):
         
     def cb_refreshToggle(self):
         pass
+    
+    def cb_setAllParams(self):
+        v = float(self.param_v.get())
+        i = float(self.param_i.get())
+        p = float(self.param_p.get())
+        
+        new_v = self.model.setVoltage(v)
+        new_i = self.model.setCurrent(i)
+        new_p = self.model.setPower(p)
+        self.model.commitParameters()
+        
+        self.param_v.set(new_v)
+        self.param_i.set(new_i)
+        self.param_p.set(new_p)
     
 class BDPC_Graph(Tk.Toplevel):
     

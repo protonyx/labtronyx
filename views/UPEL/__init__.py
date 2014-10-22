@@ -144,15 +144,19 @@ class ICP_Value_ReadWrite(ICP_Widget):
         self.write_cb = write_cb
         
         # Label
-        self.l_name = Tk.Label(self, width=15, font=("Purisa", 12), text=label, anchor=Tk.W, justify=Tk.LEFT)
+        self.l_name = Tk.Label(self, width=10, font=("Purisa", 12), text=label, anchor=Tk.W, justify=Tk.LEFT)
         self.l_name.pack(side=Tk.LEFT)
         
         # Set Button
         self.b_set = Tk.Button(self, text="Set", command=self.cb_set)
         self.b_set.pack(side=Tk.RIGHT)
         
+        # Get Button
+        self.b_set = Tk.Button(self, text="Get", command=self.cb_get)
+        self.b_set.pack(side=Tk.RIGHT, padx=3)
+        
         # Units
-        self.l_units = Tk.Label(self, width=3, font=("Purisa", 12), text=units)
+        self.l_units = Tk.Label(self, width=2, font=("Purisa", 12), text=units)
         self.l_units.pack(side=Tk.RIGHT)
         
         # Data
@@ -160,10 +164,25 @@ class ICP_Value_ReadWrite(ICP_Widget):
         self.val.set("0")
         self.txt_data = Tk.Entry(self, width=6, textvariable=self.val)
         self.txt_data.pack(side=Tk.RIGHT)
+        
+    def get(self):
+        return self.val.get()
+    
+    def set(self, val):
+        self.val.set(val)
     
     def update(self):
         val = self.read_cb()
         self.val.set(val)
+        
+    def cb_get(self):
+        try:
+            val = self.read_cb()
+            
+            self.val.set(val)
+            
+        except:
+            self.txt_data.config(bg='red')
         
     def cb_set(self):
         try:
