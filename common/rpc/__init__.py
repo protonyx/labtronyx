@@ -176,10 +176,10 @@ class RpcBase(object):
         if port is not None:
             try:
                 ts = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                ts.connect(('localhost', port))
+                ts.connect(('', port))
             
             except socket.error as e:
-                if e.errno == 10061: # Refused connection
+                if e.errno == 10061 or e.errno == 111: # Refused connection
                     return False
                 elif e.errno == 10054: # Connection reset
                     return False
