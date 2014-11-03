@@ -1,4 +1,5 @@
 import importlib
+import re
 
 import controllers
 
@@ -15,9 +16,13 @@ class c_VISA(controllers.c_Base):
     TODO: Make the key a RegEx expression to match. The scanner will try to match the first expression and use it to decode the identify
     """
     
-    __Vendors = {'Agilent Technologies': ('Agilent', lambda x: x[1]),
-                 'TEKTRONIX':            ('Tektronix', lambda x: x[1])
-                }
+    __Vendors = {r'(?:TEKTRONIX),([\w\d.]+),[\w\d.]+,[\w\d.]+':             'Tektronix',
+                 r'(?:Agilent Technologies),([\w\d.]+),[\w\d.]+,[\w\d.]+':  'Aglient'
+                 }
+    
+    #--------- __Vendors = {'Agilent Technologies': ('Agilent', lambda x: x[1]),
+                 #-------- 'TEKTRONIX':            ('Tektronix', lambda x: x[1])
+                #------------------------------------------------------------- }
     
     # Dict: ResID -> (VID, PID)
     resources = {}
@@ -83,12 +88,16 @@ class c_VISA(controllers.c_Base):
                         resp = instrument.ask("*IDN?").strip()
 
                         # Decode Identify
-                        ident = resp.split(',')
-                        key = c_VISA.__Vendors[ident[0]]
-                        vendor = key[0]
-                        deviceModel = key[1](ident)
+                        ident_vendor = "Unknown"
+                        deviceModel = "Unknown"
                         
-                        mid = (vendor, deviceModel)
+                        for reg_exp, vendor in self.__Vendors.items():
+                            res = re.findall(reg_exp, resp)
+                            if len(res) == 1:
+                                ident_vendor = vendor
+                                deviceModel = res[0]
+                        
+                        mid = (ident_vendor, deviceModel)
                         
                         self.logger.info("Found VISA Device: %s %s" % mid)
                         
