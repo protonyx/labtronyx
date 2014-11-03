@@ -4,7 +4,7 @@ class Config(object):
     
     def __init__(self):
         # Version
-        self.version = '141014'
+        self.version = '141103'
         
         #
         #  Logging
