@@ -17,7 +17,8 @@ class c_VISA(controllers.c_Base):
     """
     
     __Vendors = {r'(?:TEKTRONIX),([\w\d.]+),[\w\d.]+,[\w\d.]+':             'Tektronix',
-                 r'(?:Agilent Technologies),([\w\d.]+),[\w\d.]+,[\w\d.]+':  'Aglient'
+                 r'(?:Agilent Technologies),([\w\d.]+),[\w\d.]+,[\w\d.]+':  'Aglient',
+                 r'(?:BK PRECISION),([\w\d.]+),[\w\d.]+,[\w\d.]+':          'BK Precision'
                  }
     
     #--------- __Vendors = {'Agilent Technologies': ('Agilent', lambda x: x[1]),

@@ -194,9 +194,9 @@ class InstrumentManager(rpc.RpcBase):
     def __pathToModelName(self, path):
         # Get module name from relative path
         com_pre = os.path.commonprefix([self.rootPath, path])
-        r_path = path.replace(com_pre + "\\", '')
+        r_path = path.replace(com_pre + os.path.sep, '')
         
-        modulePath = r_path.replace("\\", '.')
+        modulePath = r_path.replace(os.path.sep, '.')
         return modulePath
 
     def _run(self):

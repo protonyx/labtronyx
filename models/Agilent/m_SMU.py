@@ -182,13 +182,16 @@ class m_SMU(m_Base):
     def powerOn(self):
         self.write(':OUTP ON')
         
+    def powerOff(self):
+        self.write(':OUTP OFF')
+        
     def powerOffZero(self):
         self.write(':OUTP:OFF:MODE ZERO')
-        self.write(':OUTP OFF')
+        self.powerOff()
         
     def powerOffFloat(self):
         self.write(':OUTP:OFF:MODE HIZ')
-        self.write(':OUTP OFF')
+        self.powerOff()
         
     def startProgram(self, channel=1):
         """
