@@ -33,13 +33,13 @@ class m_911X(models.m_Base):
         pass
     
     def getProperties(self):
-        ret = m_Base.getProperties(self)
+        ret = models.m_Base.getProperties(self)
         
-        ret['deviceVendor'] = 'Agilent'
+        ret['deviceVendor'] = 'BK Precision'
         if self.__identity is not None:
-            ret['deviceModel'] = self.__identity[1]
-            ret['deviceSerial'] = self.__identity[2]
-            ret['deviceFirmware'] = self.__identity[3]
+            ret['deviceModel'] = self.__identity[1].strip()
+            ret['deviceSerial'] = self.__identity[2].strip()
+            ret['deviceFirmware'] = self.__identity[3].strip()
             
         return ret
     
@@ -50,7 +50,7 @@ class m_911X(models.m_Base):
         self.__instr.write("SOUR:OUTP:STAT OFF")
         
     def setVoltage(self, voltage):
-        self.__instr.write("SOUR:VOLT:LEV:IMM:AMPL %f")
+        self.__instr.write("SOUR:VOLT:LEV:IMM:AMPL %f" % float(voltage))
         
     def measureVoltage(self):
         return self.__instr.ask("MEAS:VOLT?")

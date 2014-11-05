@@ -3,6 +3,11 @@ import re
 
 import controllers
 
+try:
+    import visa
+except:
+    pass
+
 class c_VISA(controllers.c_Base):
     """
     VISA Controller
@@ -16,10 +21,10 @@ class c_VISA(controllers.c_Base):
     TODO: Make the key a RegEx expression to match. The scanner will try to match the first expression and use it to decode the identify
     """
     
-    __Vendors = {r'(?:TEKTRONIX),([\w\d.]+),[\w\d.]+,[\w\d.]+':             'Tektronix',
-                 r'(?:Agilent Technologies),([\w\d.]+),[\w\d.]+,[\w\d.]+':  'Aglient',
-                 r'(?:BK PRECISION),([\w\d.]+),[\w\d.]+,[\w\d.]+':          'BK Precision'
-                 }
+    __Vendors = [(r'(?:TEKTRONIX),([\w\d.]+),[\w\d.]+,[\w\d.]+', 'Tektronix'),
+                 (r'(?:Agilent Technologies),([\w\d.]+),[\w\d.]+,[\w\d.]+', 'Aglient'),
+                 (r'(?:BK PRECISION),\s*([\w\d.]+),\s*[\w\d.]+,\s*[\w\d\-.]+', 'BK Precision'),
+                 (r'([\w\d\s]+),\s*[\w\d.]+,\s*[\w\d.]+', 'Unknown')]
     
     #--------- __Vendors = {'Agilent Technologies': ('Agilent', lambda x: x[1]),
                  #-------- 'TEKTRONIX':            ('Tektronix', lambda x: x[1])
@@ -85,18 +90,19 @@ class c_VISA(controllers.c_Base):
                     try:
                         self.logger.info("Identifying VISA Resource: %s", res)
                         
-                        instrument = self.__rm.get_instrument(res, timeout=0.5)
+                        instrument = self.__rm.open_resource(res)
                         resp = instrument.ask("*IDN?").strip()
 
                         # Decode Identify
                         ident_vendor = "Unknown"
                         deviceModel = "Unknown"
                         
-                        for reg_exp, vendor in self.__Vendors.items():
-                            res = re.findall(reg_exp, resp)
-                            if len(res) == 1:
+                        for reg_exp, vendor in self.__Vendors:
+                            modelTest = re.findall(reg_exp, resp)
+                            if len(modelTest) == 1:
                                 ident_vendor = vendor
-                                deviceModel = res[0]
+                                deviceModel = str(modelTest[0]).strip()
+                                break
                         
                         mid = (ident_vendor, deviceModel)
                         
@@ -105,7 +111,7 @@ class c_VISA(controllers.c_Base):
                         self.resources[res] = mid
                         self.instruments[res] = instrument
                     
-                    except visa.VisaIOError:
+                    except visa.VisaIOError as e:
                         self.logger.debug("VISA Device I/O Error, ignoring device.")
                     
                     except:  
