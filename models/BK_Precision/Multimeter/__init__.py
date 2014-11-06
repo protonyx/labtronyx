@@ -24,6 +24,15 @@ class m_MultimeterBase(models.m_Base):
     def _onUnload(self):
         pass
     
+    def _BK_ask(self, command):
+        resp = str(self.__instr.ask(command))
+        # Clean up the SCPI header
+        ind = resp.find(command) + len(command)
+        if ind != -1:
+            resp = resp[ind:]
+            
+        return resp
+    
     def reset(self):
         self.__instr.write("*RST")
     
@@ -55,12 +64,7 @@ class m_MultimeterBase(models.m_Base):
         self.__instr.write(":FUNC CONT")
         
     def getMeasurement(self):
-        measure = self.__instr.ask(":FETCH?")
-        
-        #:FUNC VOLT:DC
-        #:FETCH?
-        #-8.98e-5
-        
-        pass
+        measure = float(self._BK_ask(":FETCH?"))
+        return measure
         
         
