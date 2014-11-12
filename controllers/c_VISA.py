@@ -15,10 +15,8 @@ class c_VISA(controllers.c_Base):
     Wraps PyVISA. Requires a VISA driver to be installed on the system.
     
     __Vendors dictionary:
-    -KEY is the contents of the first comma-seperated segment of the identification string
-    -VALUE is a tuple with the human readable vendor string and a lambda expression to extract the model information from the identification string
-    
-    TODO: Make the key a RegEx expression to match. The scanner will try to match the first expression and use it to decode the identify
+    -KEY is a Regex Expression to match the *IDN? string returned from the device
+    -VALUE is the vendor of the device that matches the Regex Expression
     """
     
     __Vendors = [(r'(?:TEKTRONIX),([\w\d.]+),[\w\d.]+,[\w\d.]+', 'Tektronix'),
@@ -26,10 +24,6 @@ class c_VISA(controllers.c_Base):
                  (r'(?:BK PRECISION),\s*([\w\d.]+),\s*[\w\d.]+,\s*[\w\d\-.]+', 'BK Precision'),
                  (r'(?:CHROMA),\s*([\w\d\-.]+),\s*[\w\d.]+,\s*[\w\d.]+', 'Chroma'),
                  (r'([\w\d\s]+),\s*[\w\d.]+,\s*[\w\d.]+', 'Unknown')]
-    
-    #--------- __Vendors = {'Agilent Technologies': ('Agilent', lambda x: x[1]),
-                 #-------- 'TEKTRONIX':            ('Tektronix', lambda x: x[1])
-                #------------------------------------------------------------- }
     
     # Dict: ResID -> (VID, PID)
     resources = {}

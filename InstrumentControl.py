@@ -508,16 +508,26 @@ class InstrumentControl(object):
         else:
             return self.resources
         
-        #=======================================================================
-        # # Iterate through all resources to find
-        # for address in self.resources:
-        #     addr_res = self.resources.get(address, {})
-        #     for uuid, res in addr_res.items():
-        #         if uuid == res_uuid:
-        #             return res
-        #         
-        # return None
-        #=======================================================================
+    def findResource(self, address, resID):
+        """
+        Get the Resource UUID given an address and Resource ID.
+        
+        :param address: IP Address of host
+        :type address: str
+        :param ResID: Resource Identifier
+        :type ResID: str
+        :returns: list of matching UUIDs
+        """
+        allResources = self.getResources(address)
+        
+        ret = []
+        
+        for res_uuid, res in allResources.items:
+            _, _, test_resID, _, _ = res
+            if test_resID == resID:
+                ret.append(res_uuid)
+                
+        return ret
         
     def getResource_address(self, res_uuid):
         """
