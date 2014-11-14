@@ -500,7 +500,7 @@ class InstrumentControl(object):
             if address in self.hostnames.values():
                 
                 for res_uuid, res in self.resources.items():
-                    if res[0] is address:
+                    if res[0] == address:
                         ret[res_uuid] = res
                     
             return ret
@@ -522,7 +522,7 @@ class InstrumentControl(object):
         
         ret = []
         
-        for res_uuid, res in allResources.items:
+        for res_uuid, res in allResources.items():
             _, _, test_resID, _, _ = res
             if test_resID == resID:
                 ret.append(res_uuid)

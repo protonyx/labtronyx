@@ -444,7 +444,11 @@ class InstrumentManager(rpc.RpcBase):
                             self.resources[new_uuid] = int_res_id
                             
                             # Attempt to auto-load a Model
-                            self.loadModel(new_uuid)
+                            try:
+                                if c_obj.auto_load:
+                                    self.loadModel(new__uuid) 
+                            except:
+                                self.loadModel(new_uuid)
                                 
                     
                     # Purge unavailable resources

@@ -10,6 +10,8 @@ class c_Serial(controllers.c_Base):
     resources = {}
     # Dict: ResID -> Serial Object
     devices = {}
+    
+    auto_load = False
 
     def open(self):
         return True
