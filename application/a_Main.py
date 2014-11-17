@@ -334,7 +334,6 @@ class a_Main(object):
                 self.tree.set(lineID, 'Serial', res.get('deviceSerial', 'Unknown'))
 
     def loadView(self, uuid, viewModule, viewClass=None):
-        
         try:
             if viewClass is None:
                 viewClass = self.views.get(viewModule)[0]
@@ -357,6 +356,9 @@ class a_Main(object):
             
         except:
             self.logger.exception("Failed to load view: %s", viewModule)
+            
+    def loadModel(self, uuid, modelModule, modelClass):
+        pass
 
     #===========================================================================
     # Callback Functions
@@ -404,8 +406,38 @@ class a_Main(object):
     def cb_loadDriver(self, uuid):
         validModels = self.ICF.getValidModels(uuid)
         
-        if len(validModels) > 0:
-            tkMessageBox.showwarning('Unable to load driver', 'Driver conflict. Kevin\'s fault.')
+        if len(validModels) > 1:
+            # Spawn a window to select the driver to load
+            from include.a_managerHelpers import a_LoadDriver
+            
+            # Create the child window
+            w_ViewSelector = a_ViewSelector(self.myTk, validModels, lambda viewModule: self.loadView(uuid, viewModule, None))
+            
+        elif len(validModels) == 1:
+            viewModule, viewClass = validViews[0]
+            
+            self.loadView(uuid, viewModule, viewClass)
+            
+            if len(validModels) == 1:
+                modelClass = self.validModels[0]
+            
+            else:
+                
+            viewModule = importlib.import_module(viewModule)
+            viewClass = getattr(viewModule, viewClass)
+            
+            instrument = self.ICF.getInstrument(uuid)
+            
+            if instrument is not None:
+                viewWindow = viewClass(self.myTk, instrument)
+                
+                # Store the object in open views
+                self.openViews[uuid] = viewWindow
+                
+                viewWindow.run()
+                
+            else:
+                tkMessageBox.showwarning('Unable to load driver', 'Driver conflict. Kevin\'s fault.')
         
         else:
             tkMessageBox.showwarning('Unable to load driver', 'No valid drivers could be found for this device')
@@ -445,7 +477,7 @@ class a_Main(object):
             viewList = [x[0] for x in validViews]
             w_ViewSelector = a_ViewSelector(self.myTk, viewList, lambda viewModule: self.loadView(uuid, viewModule, None))
             
-        elif len(validViews) is 1:
+        elif len(validViews) == 1:
             viewModule, viewClass = validViews[0]
             
             self.loadView(uuid, viewModule, viewClass)

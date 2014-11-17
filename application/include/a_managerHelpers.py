@@ -109,3 +109,35 @@ class a_ViewSelector(Tk.Toplevel):
         
     def cb_Cancel(self):
         self.destroy()
+        
+class a_LoadDriver(Tk.Toplevel):
+    
+    def __init__(self, master, models, cb_func):
+        Tk.Toplevel.__init__(self, master, padx=2, pady=2)
+        
+        # Store reference to parent window callback function
+        self.cb_func = cb_func
+        self.view = Tk.StringVar(self)
+        self.view.set(views[0])
+        
+        self.wm_title('Load a Driver...')
+        Tk.Label(self, text='Multiple Drivers found, select one to load:').grid(row=0, column=0, columnspan=2)
+        self.lst_view = Tk.OptionMenu(self, self.view, *models).grid(row=1, column=0, columnspan=2)
+        Tk.Button(self, text='Cancel', command=lambda: self.cb_Cancel()).grid(row=2, column=0)
+        Tk.Button(self, text='Load', command=lambda: self.cb_Load()).grid(row=2, column=1)
+        
+        # Make this dialog modal
+        self.focus_set()
+        self.grab_set()
+        
+    def cb_Load(self):
+        view = self.view.get()
+        
+        self.cb_func(view)
+        
+        # Close this window
+        self.destroy()
+        
+    def cb_Cancel(self):
+        self.destroy()
+    
