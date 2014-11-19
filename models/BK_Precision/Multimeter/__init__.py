@@ -1,6 +1,6 @@
 import models
 
-class m_MultimeterBase(models.m_Base, models.Templates.m_DMM_Template):
+class m_MultimeterBase(models.m_Base):
     
     # Model device type
     deviceType = 'Multimeter'

@@ -1,94 +1,117 @@
 import time
 import struct
 import serial
+import csv
 
 import numpy as np
 
-from InstrumentControl import InstrumentControl
+import sys
+sys.path.append('.')
 
-def set_load(value):
-    print "USER: SET LOAD TO CV %s V" % value
-    test = raw_input("Press [ENTER] when completed...")
+from t_Base import t_Base
 
-class t_AMPED(object):
+class t_AMPED(t_Base):
+    
+    test_info = {
+        'name': "AMPED v2.2 Test Suite",
+        'version': 1.0
+    }
+    
+    test_requires = [
+        {'name': 'DMM - Primary Voltage', 'serial': '123F12106'},
+        {'name': 'DMM - Primary Current', 'serial': '343B12138'},
+        {'name': 'DMM - Secondary Voltage', 'serial': '123E12681'},
+        {'name': 'DMM - Secondary Current', 'serial': '123G11250'},
+        {'name': 'Source - Primary', 'serial': '602078010696820011'},
+        {'name': 'Source - Secondary', 'serial': '00257'},
+        {'name': 'AMPED Converter', 'model': 'models.UPEL.AMPED.m_BMS'},
+        {'name': 'Load - Secondary', 'model': 'models.BK_Precision.Load.m_85XX'}
+    ]
+    
+    test_names = {
+        'test_SecVoltageCalibration': 'Calibrate Secondary Voltage Sensor',
+        'test_PriVoltageCalibration': 'Calibrate Primary Voltage Sensor',
+        'test_CurrentSensorCalibration': 'Calibrate Current Sensor',
+        'test_ClosedLoopRegulation': 'Closed Loop Regulation',
+        'test_Efficiency': 'Test Efficiency'
+    }
     
     calibrationData = {}
     
     def open(self):
-        
-        instr = InstrumentControl()
-        
-        self.pri_voltage = instr.getInstrument_serial("123F12106")
-        self.pri_current = instr.getInstrument_serial("343B12138")
-        self.pri_source = instr.getInstrument_serial("602078010696820011")
-        self.sec_voltage = instr.getInstrument_serial("123E12681")
-        self.sec_current = instr.getInstrument_serial("123G11250")
-        self.sec_source = instr.getInstrument_serial("00257")
-        
-        conv_uuid = instr.findResource('localhost', 'COM3')[0] # COM15 for the nice RS-485 converters
-        instr.loadModel(conv_uuid, 'models.UPEL.AMPED.BMS', 'm_BMS')
-        self.conv = instr.getInstrument(conv_uuid)
-        
-        load_uuid = instr.findResource('localhost', 'COM4')[0]
-        instr.loadModel(conv_uuid, 'models.BK_Precision.Load.m_85XX', 'm_85XX')
-        self.load = instr.getInstrument(load_uuid)
-        
-        print "---------- AMPED v2.2 Test Suite ----------"
-        
-        self.convAddress = input("What device address is being calibrated? ")
-        self.conv.setAddress = self.convAddress
-        
-        #===============================================================================
-        # Read data from CSV
-        #===============================================================================
-        import csv
-        
         try:
-            with open('calibrationData.csv', 'r') as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    try:
-                        addr = int(row[0])
-                        self.calibrationData[addr] = row[1:]
-                    except:
-                        print "Error while reading CSV row: %s" % row
+            self.pri_voltage = self.instr.getInstrument_serial("123F12106")
+            self.pri_current = self.instr.getInstrument_serial("343B12138")
+            self.pri_source = self.instr.getInstrument_serial("602078010696820011")
+            self.sec_voltage = self.instr.getInstrument_serial("123E12681")
+            self.sec_current = self.instr.getInstrument_serial("123G11250")
+            self.sec_source = self.instr.getInstrument_serial("00257")
+            
+            conv_uuid = self.instr.findResource('localhost', 'COM3')[0] # COM15 for the nice RS-485 converters
+            self.instr.loadModel(conv_uuid, 'models.UPEL.AMPED.m_BMS', 'm_BMS')
+            self.conv = self.instr.getInstrument(conv_uuid)
+            
+            load_uuid = self.instr.findResource('localhost', 'COM4')[0]
+            self.instr.loadModel(conv_uuid, 'models.BK_Precision.Load.m_85XX', 'm_85XX')
+            self.load = self.instr.getInstrument(load_uuid)
+            
+            self.convAddress = input("What device address is being calibrated? ")
+            self.conv.setAddress = self.convAddress
+            
+            #===============================================================================
+            # Read data from CSV
+            #===============================================================================
+            
+            try:
+                with open('calibrationData.csv', 'r') as f:
+                    reader = csv.reader(f)
+                    for row in reader:
+                        try:
+                            addr = int(row[0])
+                            self.calibrationData[addr] = row[1:]
+                        except:
+                            print "Error while reading CSV row: %s" % row
+            except:
+                pass
+    
+            # Configuration
+            self.pri_voltage.setFunction_DC_Voltage()
+            self.pri_current.setFunction_DC_Current()
+            self.sec_voltage.setFunction_DC_Voltage()
+            self.sec_current.setFunction_DC_Current()
+            
+            #self.pri_source.powerOff()
+            self.pri_source.setVoltage(3.0)
+            self.pri_source.setCurrent(10.0)
+            #self.sec_source.powerOff()
+            self.sec_source.setVoltage(12.0)
+            self.sec_source.setCurrent(3.0)
+            time.sleep(1.0)
+            
+            # Power on primary
+            self.pri_source.powerOn()
+            time.sleep(1.0)
+            
+            # Power on secondary
+            print "Powering on..."
+            self.sec_source.powerOn()
+            time.sleep(2.0)
+            
+            # Initial setup of converter
+            
+            #convAddress = conv_identify()
+            #print "Address received from module is 0x%02X" %convAddress
+            
+            self.conv.calibrate(1, 1)
+            self.conv.enableSampling(convAddress)
+            self.conv.shutoff_wdt(convAddress)
+            
+            test = raw_input("Press [ENTER] after ensuring board is programmed ...")
+            test = raw_input("Press [ENTER] after ensuring load is turned OFF ...")
+        
         except:
-            pass
-
-        # Configuration
-        self.pri_voltage.setFunction_DC_Voltage()
-        self.pri_current.setFunction_DC_Current()
-        self.sec_voltage.setFunction_DC_Voltage()
-        self.sec_current.setFunction_DC_Current()
-        
-        #self.pri_source.powerOff()
-        self.pri_source.setVoltage(3.0)
-        self.pri_source.setCurrent(10.0)
-        #self.sec_source.powerOff()
-        self.sec_source.setVoltage(12.0)
-        self.sec_source.setCurrent(3.0)
-        time.sleep(1.0)
-        
-        # Power on primary
-        self.pri_source.powerOn()
-        time.sleep(1.0)
-        
-        # Power on secondary
-        print "Powering on..."
-        self.sec_source.powerOn()
-        time.sleep(2.0)
-        
-        # Initial setup of converter
-        
-        #convAddress = conv_identify()
-        #print "Address received from module is 0x%02X" %convAddress
-        
-        self.conv.calibrate(1, 1)
-        self.conv.enableSampling(convAddress)
-        self.conv.shutoff_wdt(convAddress)
-        
-        test = raw_input("Press [ENTER] after ensuring board is programmed ...")
-        test = raw_input("Press [ENTER] after ensuring load is turned OFF ...")
+            return False
+            
     
     def close(self):
         #===============================================================================
@@ -497,7 +520,7 @@ class t_AMPED(object):
     
 if __name__ == '__main__':
     test = t_AMPED()
-    test.open()
+    #test.open()
     
-    test.close()
+    #test.close()
 

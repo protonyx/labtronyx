@@ -627,6 +627,11 @@ class InstrumentManager(rpc.RpcBase):
                 try:
                     # Check if the specified model is valid
                     testModule = importlib.import_module(modelName)
+                    
+                    if className is None:
+                        # If no class name provided, assume it matches the file
+                        className = modelName.split('.')[-1]
+                    
                     testClass = getattr(testModule, className)
                     
                     # Load the model and store it

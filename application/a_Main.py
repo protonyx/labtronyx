@@ -357,8 +357,15 @@ class a_Main(object):
         except:
             self.logger.exception("Failed to load view: %s", viewModule)
             
-    def loadModel(self, uuid, modelModule, modelClass):
-        pass
+    def loadModel(self, uuid, modelModule=None, modelClass=None):
+        """
+        Wrapper for Instrument Control loadModel function.
+        
+        Used by the Driver Load window.
+        """
+        
+        if not self.ICF.loadModel(uuid, modelModule, modelClass):
+            tkMessageBox.showwarning('Unable to load driver', 'An error occured while loading the driver')
 
     #===========================================================================
     # Callback Functions
@@ -406,41 +413,13 @@ class a_Main(object):
     def cb_loadDriver(self, uuid):
         validModels = self.ICF.getValidModels(uuid)
         
-        if len(validModels) > 1:
-            # Spawn a window to select the driver to load
-            from include.a_managerHelpers import a_LoadDriver
-            
-            # Create the child window
-            w_ViewSelector = a_ViewSelector(self.myTk, validModels, lambda viewModule: self.loadView(uuid, viewModule, None))
-            
-        elif len(validModels) == 1:
-            viewModule, viewClass = validViews[0]
-            
-            self.loadView(uuid, viewModule, viewClass)
-            
-            if len(validModels) == 1:
-                modelClass = self.validModels[0]
-            
-            else:
-                
-            viewModule = importlib.import_module(viewModule)
-            viewClass = getattr(viewModule, viewClass)
-            
-            instrument = self.ICF.getInstrument(uuid)
-            
-            if instrument is not None:
-                viewWindow = viewClass(self.myTk, instrument)
-                
-                # Store the object in open views
-                self.openViews[uuid] = viewWindow
-                
-                viewWindow.run()
-                
-            else:
-                tkMessageBox.showwarning('Unable to load driver', 'Driver conflict. Kevin\'s fault.')
+        validModels = [x[0] for x in validModels]
         
-        else:
-            tkMessageBox.showwarning('Unable to load driver', 'No valid drivers could be found for this device')
+        # Spawn a window to select the driver to load
+        from include.a_managerHelpers import a_LoadDriver
+        
+        # Create the child window
+        w_DriverSelector = a_LoadDriver(self.myTk, validModels, lambda modelModule: self.loadModel(uuid, modelModule, None))
             
     def cb_unloadDriver(self, uuid):
         self.ICF.unloadModel(uuid)
@@ -449,7 +428,6 @@ class a_Main(object):
         self.cb_refreshTree()
         
     def cb_loadView(self, uuid):
-
         if uuid in self.openViews.keys():
             try:
                 # Do nothing? Bring window into focus?

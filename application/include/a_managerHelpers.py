@@ -117,12 +117,12 @@ class a_LoadDriver(Tk.Toplevel):
         
         # Store reference to parent window callback function
         self.cb_func = cb_func
-        self.view = Tk.StringVar(self)
-        self.view.set(views[0])
+        self.model = Tk.StringVar(self)
+        self.model.set(models[0])
         
         self.wm_title('Load a Driver...')
-        Tk.Label(self, text='Multiple Drivers found, select one to load:').grid(row=0, column=0, columnspan=2)
-        self.lst_view = Tk.OptionMenu(self, self.view, *models).grid(row=1, column=0, columnspan=2)
+        Tk.Label(self, text='Select a driver to load:').grid(row=0, column=0, columnspan=2)
+        self.lst_model = Tk.OptionMenu(self, self.model, *models).grid(row=1, column=0, columnspan=2)
         Tk.Button(self, text='Cancel', command=lambda: self.cb_Cancel()).grid(row=2, column=0)
         Tk.Button(self, text='Load', command=lambda: self.cb_Load()).grid(row=2, column=1)
         
@@ -131,9 +131,9 @@ class a_LoadDriver(Tk.Toplevel):
         self.grab_set()
         
     def cb_Load(self):
-        view = self.view.get()
+        model = self.model.get()
         
-        self.cb_func(view)
+        self.cb_func(model)
         
         # Close this window
         self.destroy()
