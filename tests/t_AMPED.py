@@ -28,15 +28,28 @@ class t_AMPED(t_Base):
         {'name': 'Load - Secondary', 'model': 'models.BK_Precision.Load.m_85XX'}
     ]
     
-    test_names = {
-        'test_SecVoltageCalibration': 'Calibrate Secondary Voltage Sensor',
-        'test_PriVoltageCalibration': 'Calibrate Primary Voltage Sensor',
-        'test_CurrentSensorCalibration': 'Calibrate Current Sensor',
-        'test_ClosedLoopRegulation': 'Closed Loop Regulation',
-        'test_Efficiency': 'Test Efficiency'
+    test_details = {
+        #=======================================================================
+        # 'test_SecVoltageCalibration': {
+        #     'name': 'Calibrate Secondary Voltage Sensor',
+        #     'order': 1 },
+        # 'test_PriVoltageCalibration': {
+        #     'name': 'Calibrate Primary Voltage Sensor',
+        #     'order': 2 },
+        # 'test_CurrentSensorCalibration': {
+        #     'name': 'Calibrate Current Sensor',
+        #     'order': 3 },
+        #=======================================================================
+        'test_Calibrate': {
+            'name': 'Calibrate',
+            'order': 1 },
+        'test_ClosedLoopRegulation': {
+            'name': 'Closed Loop Regulation',
+            'order': 2 },
+        'test_Efficiency': {
+            'name': 'Test Efficiency',
+            'order': 3 }
     }
-    
-    calibrationData = {}
     
     def open(self):
         try:
@@ -57,22 +70,6 @@ class t_AMPED(t_Base):
             
             self.convAddress = input("What device address is being calibrated? ")
             self.conv.setAddress = self.convAddress
-            
-            #===============================================================================
-            # Read data from CSV
-            #===============================================================================
-            
-            try:
-                with open('calibrationData.csv', 'r') as f:
-                    reader = csv.reader(f)
-                    for row in reader:
-                        try:
-                            addr = int(row[0])
-                            self.calibrationData[addr] = row[1:]
-                        except:
-                            print "Error while reading CSV row: %s" % row
-            except:
-                pass
     
             # Configuration
             self.pri_voltage.setFunction_DC_Voltage()
@@ -105,9 +102,6 @@ class t_AMPED(t_Base):
             self.conv.calibrate(1, 1)
             self.conv.enableSampling(convAddress)
             self.conv.shutoff_wdt(convAddress)
-            
-            test = raw_input("Press [ENTER] after ensuring board is programmed ...")
-            test = raw_input("Press [ENTER] after ensuring load is turned OFF ...")
         
         except:
             return False
@@ -127,172 +121,233 @@ class t_AMPED(t_Base):
         
         test = raw_input("Press [ENTER] after turning the load off ...")
         test = raw_input("Press [ENTER] to exit...")
+                    
+    def test_Calibrate(self):
         
-        #===============================================================================
+        #=======================================================================
+        # Read calibration data from CSV
+        #=======================================================================
+        calibrationData = {}
+        try:
+            with open('calibrationData.csv', 'r') as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    try:
+                        addr = int(row[0])
+                        self.calibrationData[addr] = row[1:]
+                    except:
+                        self.logger.exception("Error while reading CSV row: %s" % row)
+                        return False
+        except IOError:
+            # File doesn't exist
+            pass
+        
+        #=======================================================================
+        # Run Calibration scripts
+        #=======================================================================
+            z1 = self.cal_SecVoltage()
+            z2 = self.cal_PriVoltage()
+            z3 = self.cal_CurrentSensor()
+            
+            z = list(z1) + list(z2) + list(z3)
+            
+        #=======================================================================
         # Write data to CSV
-        #===============================================================================
-    
-        print "Testing finished, writing data to file"
+        #=======================================================================
+        try:
+            with open('calibrationData.csv', 'w+') as f:
+                writer = csv.writer(f)
+                for addr, data in self.calibrationData.items():
+                    try:
+                        writer.writerow([addr] + list(data))
+                    except:
+                        self.logger.exception("Error writing data for [%s] to file: %s" % (addr, str(data)))
+                        return False
+                        
+        except:
+            self.logger.exception("Error during calibration")
+            return False
         
-        with open('calibrationData.csv', 'a') as f:
-            writer = csv.writer(f)
-            for addr, data in self.calibrationData.items():
-                try:
-                    writer.writerow([addr] + list(data))
-                except:
-                    print "Error writing data for [%s] to file: %s" % (addr, str(data))
-    
-    def test_SecVoltageCalibration(self):
-        #===============================================================================
-        # Test 1 - Secondary Voltage Calibration
-        #===============================================================================
-        print "---------- TEST 1 / SEC VOLTAGE CALIBRATION ----------"
+    def cal_linearRegression(self, x, y):
+        """
+        Calculate the linear regression
+        """
+        # Phase 1 Polyfit
+        z = np.polyfit(y, x, 1)
         
-        # Set other instruments into known state
+        # Outlier Removal
+        outliers = []
+        for i, pt in enumerate(x):
+            # Calculate the point on the best-fit line
+            reg = (pt * z[0]) - z[1]
+            # Remove points that are far away from the line
+            if abs(reg - y[i]) > 20:
+                outliers.append[i]
+                
+        outliers = outliers.sort(reverse=True)
+        for i in outliers:
+            # Remove the outliers from the dataset, starting with the higher indicies
+            x.delete[i]
+            y.delete[i]
+            
+        # Run the polyfit again with the filtered data
+        z = np.polyfit(y, x, 1)
+        
+        return z
+    
+    def cal_SecVoltage(self):
+        
+        #=======================================================================
+        # Test Spinup
+        #=======================================================================
         self.load.powerOff()
         self.pri_source.powerOff()
+        self.sec_source.setVoltage(12.0)
         
-        # Sec Voltage
-        #  -Sweep operating points
+        #=======================================================================
+        # Calibration Parameters
+        #=======================================================================
+        minVoltage = 13.5
         maxVoltage = 16.2
-        startingVoltage = 13.5
-        points = 6
-        dataPointsPerPoint = 10
+        
+        num_operatingPoints = 6
+        num_dataPoints = 5
+        
+        #=======================================================================
+        # Test Variables
+        #=======================================================================
         x = []
         y = []
-        vout_avg = 0
-        dataPoint_avg = 0
-        dataPointsPerPointValid = dataPointsPerPoint
-        numFailures = 0
         
-        stepWidth = (maxVoltage - startingVoltage) / points
-        steps = [startingVoltage + stepWidth*pt for pt in range(points+1)]
+        stepWidth = (maxVoltage - minVoltage) / num_operatingPoints
+        steps = [minVoltage + stepWidth*pt for pt in range(points+1)]
+        sampleIndex = 0
+        
+        self.pri_source.setVoltage(startingVoltage)
+        
+        time.sleep(0.1)
+        
+        fmt = "| {0:7} | {1:16} | {2:16} | {3:16} |"
+        self.logger.info("-"*65)
+        self.logger.info(fmt.format('Sample', 'Operating Point', 'Multimeter', 'Converter'))
+        self.logger.info("-"*65)
         
         self.sec_source.setVoltage(startingVoltage)
         time.sleep(0.1)
         
         for opPoint in steps:
             self.sec_source.setVoltage(opPoint)
-            print "   Operating Point: %f V" % opPoint
             time.sleep(3.0)
-            vout_avg = 0
-            dataPoint_avg = 0
+            
             for desired_x in range(dataPointsPerPoint):
                 _, vout, _, _, _ = conv_getData(convAddress)
+                sampleIndex += 1
+                
                 try:
                     dataPoint = self.sec_voltage.getMeasurement()
                 except:
                     dataPoint = 0
-                if vout == 0 or dataPoint == 0:
-                    dataPointsPerPointValid -= 1
-                    numFailures += 1
+                    
+                if vin == 0 or dataPoint == 0:
+                    self.logger.info(fmt.format(sample, opPoint, "INVALID", "INVALID"))
                 else:
-                    vout_avg += vout
-                    dataPoint_avg += dataPoint
-                print "    Multimeter: %f V" % dataPoint
-                print "    Converter: %i (raw)" % vout
+                    self.logger.info(fmt.format(sample, opPoint, dataPoint, vout))
+                    x.append(dataPoint)
+                    y.append(vout)
+                                     
                 time.sleep(0.25)
-                
-            if dataPointsPerPointValid > dataPointsPerPoint/2:
-                vout_avg = vout_avg/dataPointsPerPointValid
-                dataPoint_avg = dataPoint_avg/dataPointsPerPointValid
-                x.append(vout_avg)
-                y.append(dataPoint_avg)
-            else:
-                print "Bad Data. Reading not included at operating point: %f V" %opPoint
+        
+        self.logger.info("-"*65)
+        
+        self.logger.info("Removing Outliers...")
         
         x=np.array(x)
         y=np.array(y)
-        z1 = np.polyfit(y, x, 1)
+        z = self.cal_linearRegression(x, y)
         
-        print "  Gain: %f" % z1[0]
-        print "  Offset: %f" % z1[1]
-        print "Number of Failures: %f " %numFailures
+        self.logger.info("Gain: %f" % z[0])
+        self.logger.info("Offset: %f" % z[1])
         
         # Set Secondary Source to nominal 12.0 V
         self.sec_source.setVoltage(12.0)
-    
-    def test_PriVoltageCalibration(self):
-        #===============================================================================
-        # Test 2 - Primary Voltage Calibration
-        #===============================================================================
-        print "---------- TEST 2 / PRI VOLTAGE CALIBRATION ----------"
         
-        # Set other instruments into known state
+        return z
+    
+    def cal_PriVoltage(self):
+        
+        #=======================================================================
+        # Test Spinup
+        #=======================================================================
         self.load.powerOff()
         self.pri_source.powerOff()
         self.sec_source.setVoltage(12.0)
         
-        # Pri Voltage
-        #  -Sweep operating points
+        #=======================================================================
+        # Calibration Parameters
+        #=======================================================================
+        minVoltage = 3.0
         maxVoltage = 4.2
-        startingVoltage = 3.0
-        ##points = 6 # to-do: set this to a higher value after testing the code
-        ##dataPointsPerPoint = 5
+        
+        num_operatingPoints = 6
+        num_dataPoints = 5
+        
+        #=======================================================================
+        # Test Variables
+        #=======================================================================
         x = []
         y = []
-        vout_avg = 0
-        dataPoint_avg = 0
-        dataPointsPerPointValid = dataPointsPerPoint
-        numFailures = 0
         
-        stepWidth = (maxVoltage - startingVoltage) / points
-        steps = [startingVoltage + stepWidth*pt for pt in range(points+1)]
+        stepWidth = (maxVoltage - minVoltage) / num_operatingPoints
+        steps = [minVoltage + stepWidth*pt for pt in range(points+1)]
+        sampleIndex = 0
         
         self.pri_source.setVoltage(startingVoltage)
         
         time.sleep(0.1)
         
+        fmt = "| {0:7} | {1:16} | {2:16} | {3:16} |"
+        self.logger.info("-"*65)
+        self.logger.info(fmt.format('Sample', 'Operating Point', 'Multimeter', 'Converter'))
+        self.logger.info("-"*65)
+        
         for opPoint in steps:
             self.pri_source.setVoltage(opPoint)
-            print "   Operating Point: %f V" % opPoint
-            time.sleep(1.0)
-            vout_avg = 0
-            vin_avg = 0
-            dataPoint_avg = 0
+            
             for desired_x in range(dataPointsPerPoint):
                 _, _, vin, _, _ = conv_getData(convAddress)
+                sampleIndex += 1
+                
                 try:
                     dataPoint = self.pri_voltage.getMeasurement()
                 except:
                     dataPoint = 0
+                    
                 if vin == 0 or dataPoint == 0:
-                    dataPointsPerPointValid -= 1
-                    numFailures += 1
+                    self.logger.info(fmt.format(sample, opPoint, "INVALID", "INVALID"))
                 else:
-                    vin_avg += vin
-                    dataPoint_avg += dataPoint
-                print "    Multimeter: %f V" % dataPoint
-                print "    Converter: %i (raw)" % vin
+                    self.logger.info(fmt.format(sample, opPoint, dataPoint, vin))
+                    x.append(dataPoint)
+                    y.append(vin)
+                                     
                 time.sleep(0.25)
                 
-            if dataPointsPerPointValid > dataPointsPerPoint/2:
-                vin_avg = vin_avg/dataPointsPerPointValid
-                dataPoint_avg = dataPoint_avg/dataPointsPerPointValid
-                x.append(vin_avg)
-                y.append(dataPoint_avg)
-            else:
-                print x
-                print y
-                print "Bad Data. Reading not included at operating point: %f V" %opPoint
+        self.logger.info("-"*65)
+        
+        self.logger.info("Removing Outliers...")
         
         x=np.array(x)
         y=np.array(y)
+        z = self.cal_linearRegression(x, y)
         
-        z2 = np.polyfit(y, x, 1)
+        self.logger.info("Gain: %f" % z[0])
+        self.logger.info("Offset: %f" % z[1])
         
-        print "  Gain: %f" % z2[0]
-        print "  Offset: %f" % z2[1]
-        print "Number of Failures: %f " %numFailures
+        return z
     
-    
-    def test_CurrentSensorCalibration(self):
-        #===============================================================================
-        # Test 3 - Current Sensor Calibration
-        #===============================================================================
-        print "---------- TEST 3 / CURRENT SENSOR CALIBRATION ----------"
-        
-        # Set other instruments into known state
+    def cal_CurrentSensor(self):
+        #=======================================================================
+        # Test Spinup
+        #=======================================================================
         self.sec_source.setVoltage(14.0)
         self.sec_source.powerOn()
         
@@ -304,7 +359,7 @@ class t_AMPED(t_Base):
         self.load.SetCVVoltage(13.5)
         self.load.powerOn()
         
-        # setup the converter again since power might have dropped out when the load was turned on
+        # Converter configuration
         self.conv.resetStatus(convAddress)
         time.sleep(0.2)
         self.conv.calibrate(convAddress)
@@ -318,70 +373,74 @@ class t_AMPED(t_Base):
         # Allow converter to start switching
         time.sleep(2.0)
         
-        _, _, _, _, status = self.conv.getData(convAddress)
+        _, _, _, _, status = conv_getData(convAddress)
         
-        #  -Sweep operating points
-        maxPhase = 1100 # absolute maximum is 1152 (75 ns)
-        startingPhase = 0
-        ##points = 8
-        ##dataPointsPerPoint = 2
+        #=======================================================================
+        # Calibration Parameters
+        #=======================================================================
+        minPhase = 0
+        maxPhase = 1100
+        
+        num_operatingPoints = 8
+        num_dataPoints = 2
+        
+        #=======================================================================
+        # Test Variables
+        #=======================================================================
         x = []
         y = []
-        iin_avg = 0
-        dataPoint_avg = 0
-        dataPointsPerPointValid = dataPointsPerPoint
-        numFailures = 0
         
-        stepWidth = (maxPhase - startingPhase) / points
-        steps = [startingPhase + stepWidth*pt for pt in range(points+1)]
+        stepWidth = (maxPhase - minPhase) / num_operatingPoints
+        steps = [minPhase + stepWidth*pt for pt in range(points+1)]
+        sampleIndex = 0
         
+        self.pri_source.setVoltage(startingVoltage)
+        
+        time.sleep(0.1)
+        
+        fmt = "| {0:7} | {1:16} | {2:16} | {3:16} |"
+        self.logger.info("-"*65)
+        self.logger.info(fmt.format('Sample', 'Operating Point', 'Multimeter', 'Converter'))
+        self.logger.info("-"*65)
+
         for opPoint in steps:
             conv_set_phase_angle(convAddress, long(opPoint))
-            print "   Operating Point: %i (phase units)" % opPoint
             time.sleep(0.75)
-            iin_avg = 0
-            dataPoint_avg = 0
+            
             for desired_x in range(dataPointsPerPoint):
                 _, _, _, iin, _ = conv_getData(convAddress)
+                
                 try:
                     dataPoint = self.pri_current.getMeasurement()
                 except:
                     dataPoint = 0
+                    
                 if iin == 0 or dataPoint == 0:
-                    dataPointsPerPointValid -= 1
-                    numFailures += 1
+                    self.logger.info(fmt.format(sample, opPoint, "INVALID", "INVALID"))
                 else:
-                    iin_avg += iin
-                    dataPoint_avg += dataPoint
-                print "    Multimeter: %f A" % dataPoint
-                print "    Converter: %i (raw)" % iin
+                    self.logger.info(fmt.format(sample, opPoint, dataPoint, iin))
+                    x.append(dataPoint)
+                    y.append(iin)
+                    
                 time.sleep(0.25)
         
-            # Consider the data valid if at least half the expected data points are okay    
-            if dataPointsPerPointValid > dataPointsPerPoint/2:
-                iin_avg = iin_avg/dataPointsPerPointValid
-                dataPoint_avg = dataPoint_avg/dataPointsPerPointValid
-                x.append(iin_avg)
-                y.append(dataPoint_avg)
-            else:
-                print "Bad Data. Reading not included at operating point: %i" %opPoint
+        self.logger.info("-"*65)
         
-        try:
-            x=np.array(x)
-            y=np.array(y)
-            z3 = np.polyfit(y, x, 1)
-        except:
-            z3 = np.array([0,0])
-            
-        print "  Gain: %f" % z3[0]
-        print "  Offset: %f" % z3[1]
-        print "Number of Failures: %f " %numFailures
+        self.logger.info("Removing Outliers...")
+        
+        x=np.array(x)
+        y=np.array(y)
+        z = self.cal_linearRegression(x, y)
+        
+        self.logger.info("Gain: %f" % z[0])
+        self.logger.info("Offset: %f" % z[1])
         
         # stop the power flow
         conv_set_phase_angle(convAddress, 0x0000)
         conv_disable_switching(convAddress)
         _, _, _, _, status = conv_getData(convAddress)
-    
+        
+        return z
     
     def test_ClosedLoopRegulation(self):
         #===============================================================================

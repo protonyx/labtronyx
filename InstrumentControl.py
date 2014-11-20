@@ -58,8 +58,8 @@ class InstrumentControl(object):
             sys.exit()
 
          # Setup Logger
-        if 'Logger' in kwargs:
-            self.logger = kwargs['Logger']
+        if 'Logger' in kwargs or 'logger' in kwargs:
+            self.logger = kwargs.get('Logger') or kwargs.get('logger')
         
         else:
             #loggerList = logging.Logger.manager.loggerDict
