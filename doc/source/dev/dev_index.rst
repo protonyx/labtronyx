@@ -15,6 +15,7 @@ Contents
    dev_controller
    dev_model
    dev_view
+   dev_test
 
 Coding Conventions
 ------------------

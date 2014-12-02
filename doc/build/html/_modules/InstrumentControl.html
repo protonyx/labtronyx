@@ -26,8 +26,8 @@
     <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="../index.html" />
     <link rel="up" title="Module code" href="index.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -41,7 +41,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <h1>Source code for InstrumentControl</h1><div class="highlight"><pre>
 <span class="kn">import</span> <span class="nn">sys</span>
@@ -104,8 +104,8 @@
             <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
 
          <span class="c"># Setup Logger</span>
-        <span class="k">if</span> <span class="s">&#39;Logger&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Logger&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s">&#39;Logger&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="s">&#39;logger&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Logger&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;logger&#39;</span><span class="p">)</span>
         
         <span class="k">else</span><span class="p">:</span>
             <span class="c">#loggerList = logging.Logger.manager.loggerDict</span>
@@ -173,7 +173,12 @@
             <span class="k">return</span> <span class="nb">input</span>
         
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostbyname</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">host</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostbyname</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">host</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">host</span>
     
 <div class="viewcode-block" id="InstrumentControl.isConnectedHost"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.isConnectedHost">[docs]</a>    <span class="k">def</span> <span class="nf">isConnectedHost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hostname</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -209,6 +214,20 @@
 <span class="sd">        :returns: List of connected hostnames</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostnames</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="InstrumentControl.getControllers"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getControllers">[docs]</a>    <span class="k">def</span> <span class="nf">getControllers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a list of controllers from a given InstrumentManager instance.</span>
+<span class="sd">        </span>
+<span class="sd">        :param address: IP Address</span>
+<span class="sd">        :type address: str - IPv4</span>
+<span class="sd">        :returns: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">address</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolveAddress</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">address</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">man</span><span class="o">.</span><span class="n">getControllers</span><span class="p">()</span>
     
     <span class="c">#===========================================================================</span>
     <span class="c"># Local Manager Operations</span>
@@ -298,7 +317,7 @@
                 
                 <span class="k">if</span> <span class="s">&#39;InstrumentManager&#39;</span> <span class="ow">in</span> <span class="n">banner</span><span class="p">:</span>
                     <span class="n">testSocket</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-                    <span class="k">return</span> <span class="bp">True</span>
+                <span class="k">return</span> <span class="bp">True</span>
             
             <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="k">pass</span>
@@ -527,24 +546,34 @@
             <span class="k">if</span> <span class="n">address</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hostnames</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
                 
                 <span class="k">for</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">res</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                    <span class="k">if</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="n">address</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">address</span><span class="p">:</span>
                         <span class="n">ret</span><span class="p">[</span><span class="n">res_uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span>
                     
             <span class="k">return</span> <span class="n">ret</span>
     
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span>
+        </div>
+<div class="viewcode-block" id="InstrumentControl.findResource"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.findResource">[docs]</a>    <span class="k">def</span> <span class="nf">findResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">resID</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the Resource UUID given an address and Resource ID.</span>
+<span class="sd">        </span>
+<span class="sd">        :param address: IP Address of host</span>
+<span class="sd">        :type address: str</span>
+<span class="sd">        :param ResID: Resource Identifier</span>
+<span class="sd">        :type ResID: str</span>
+<span class="sd">        :returns: list of matching UUIDs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">allResources</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getResources</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
         
-        <span class="c">#=======================================================================</span>
-        <span class="c"># # Iterate through all resources to find</span>
-        <span class="c"># for address in self.resources:</span>
-        <span class="c">#     addr_res = self.resources.get(address, {})</span>
-        <span class="c">#     for uuid, res in addr_res.items():</span>
-        <span class="c">#         if uuid == res_uuid:</span>
-        <span class="c">#             return res</span>
-        <span class="c">#         </span>
-        <span class="c"># return None</span>
-        <span class="c">#=======================================================================</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">allResources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">test_resID</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">res</span>
+            <span class="k">if</span> <span class="n">test_resID</span> <span class="o">==</span> <span class="n">resID</span><span class="p">:</span>
+                <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+                
+        <span class="k">return</span> <span class="n">ret</span>
         </div>
 <div class="viewcode-block" id="InstrumentControl.getResource_address"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getResource_address">[docs]</a>    <span class="k">def</span> <span class="nf">getResource_address</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -560,17 +589,13 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
     </div>
-<div class="viewcode-block" id="InstrumentControl.addResource"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.addResource">[docs]</a>    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">ResID</span><span class="p">,</span> <span class="n">VendorID</span><span class="p">,</span> <span class="n">ProductID</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentControl.addResource"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.addResource">[docs]</a>    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">ResID</span><span class="p">,</span> <span class="n">VendorID</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">ProductID</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a managed resource within a controller object</span>
 <span class="sd">        </span>
 <span class="sd">        If `controller` is not a valid controller on the remote manager instance,</span>
 <span class="sd">        or if the controller does not support manually adding resources, this </span>
 <span class="sd">        function will return False. </span>
-<span class="sd">        </span>
-<span class="sd">        Additional keyword arguments may be necessary, depending on the</span>
-<span class="sd">        requirements of the controller. See the controller documentation for</span>
-<span class="sd">        further requirements.</span>
 <span class="sd">        </span>
 <span class="sd">        .. note::</span>
 <span class="sd">        </span>
@@ -601,15 +626,28 @@
             
             <span class="c"># Does manager support manually adding resources?</span>
             <span class="k">if</span> <span class="n">man</span><span class="o">.</span><span class="n">canEditResources</span><span class="p">(</span><span class="n">controller</span><span class="p">):</span>
-                <span class="n">man</span><span class="o">.</span><span class="n">addResource</span><span class="p">(</span><span class="n">controller</span><span class="p">,</span> <span class="n">VendorID</span><span class="p">,</span> <span class="n">ProductID</span><span class="p">)</span>
-            <span class="n">res_dict</span><span class="p">[</span><span class="s">&#39;address&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">address</span>
-            <span class="n">res_dict</span><span class="p">[</span><span class="s">&#39;hostname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">address</span><span class="p">)</span><span class="o">.</span><span class="n">hostname</span>
-        
-            <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="p">[</span><span class="n">res_uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">res_dict</span>
-            <span class="k">return</span> <span class="bp">True</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">man</span><span class="o">.</span><span class="n">addResource</span><span class="p">(</span><span class="n">controller</span><span class="p">,</span> <span class="n">ResID</span><span class="p">,</span> <span class="n">VendorID</span><span class="p">,</span> <span class="n">ProductID</span><span class="p">)</span>
+                
+                <span class="c"># Force the manager to update the resource list</span>
+                <span class="n">man</span><span class="o">.</span><span class="n">refresh</span><span class="p">(</span><span class="n">controller</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+                
+                <span class="c"># Update the local resource cache</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cacheManager</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+                
+                <span class="k">return</span> <span class="n">res</span>
         
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
+        </div>
+<div class="viewcode-block" id="InstrumentControl.isValidResource"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.isValidResource">[docs]</a>    <span class="k">def</span> <span class="nf">isValidResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a resource is known.</span>
+<span class="sd">        </span>
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :returns: bool - True if resource was removed, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
     </div>
 <div class="viewcode-block" id="InstrumentControl.removeResource"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.removeResource">[docs]</a>    <span class="k">def</span> <span class="nf">removeResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -631,29 +669,28 @@
                 <span class="k">return</span> <span class="bp">True</span>
             
         <span class="k">return</span> <span class="bp">False</span>
-
-    <span class="c">#===========================================================================</span>
-    <span class="c"># Instrument Operations</span>
-    <span class="c">#</span>
-    <span class="c"># Instruments are RPC Client objects to local/remote instruments</span>
-    <span class="c">#===========================================================================</span>
     </div>
-<div class="viewcode-block" id="InstrumentControl.getInstrument"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getInstrument">[docs]</a>    <span class="k">def</span> <span class="nf">getInstrument</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentControl.getValidModels"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getValidModels">[docs]</a>    <span class="k">def</span> <span class="nf">getValidModels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get an Instrument :class:`common.rpc.RpcClient` object that is linked</span>
-<span class="sd">        to the remote model.</span>
+<span class="sd">        Get a list of models that are considered valid for a given Resource</span>
 <span class="sd">        </span>
 <span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
 <span class="sd">        :type res_uuid: str</span>
-<span class="sd">        :returns: :class:`common.rpc.RpcClient` object or None if unable to \</span>
-<span class="sd">        connect to Model</span>
+<span class="sd">        :param PID: Product Identifier</span>
+<span class="sd">        :type PID: str</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: list of tuples (ModuleName, ClassName)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instruments</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="n">man</span><span class="p">,</span><span class="n">_</span><span class="p">,</span><span class="n">_</span><span class="p">,</span><span class="n">_</span><span class="p">,</span><span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
         
-        <span class="k">if</span> <span class="n">ret</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">createInstrument</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
-            
-        <span class="k">return</span> <span class="n">ret</span>
+        <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">man</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">man</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">validModels</span> <span class="o">=</span> <span class="n">man</span><span class="o">.</span><span class="n">getValidModels</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">validModels</span>
+        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
     </div>
 <div class="viewcode-block" id="InstrumentControl.loadModel"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.loadModel">[docs]</a>    <span class="k">def</span> <span class="nf">loadModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="n">modelName</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">className</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -688,9 +725,9 @@
 <span class="sd">        :type className: str</span>
 <span class="sd">        :returns: bool - True if successful, False otherwise</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="n">man</span><span class="p">,</span><span class="n">_</span><span class="p">,</span><span class="n">_</span><span class="p">,</span><span class="n">_</span><span class="p">,</span><span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
         
-        <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="n">man</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">managers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">man</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="n">man</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">ret</span> <span class="o">=</span> <span class="n">man</span><span class="o">.</span><span class="n">loadModel</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="n">modelName</span><span class="p">,</span> <span class="n">className</span><span class="p">)</span>
@@ -722,6 +759,29 @@
         
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
+
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Instrument Operations</span>
+    <span class="c">#</span>
+    <span class="c"># Instruments are RPC Client objects to local/remote instruments</span>
+    <span class="c">#===========================================================================</span>
+    </div>
+<div class="viewcode-block" id="InstrumentControl.getInstrument"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.getInstrument">[docs]</a>    <span class="k">def</span> <span class="nf">getInstrument</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get an Instrument :class:`common.rpc.RpcClient` object that is linked</span>
+<span class="sd">        to the remote model.</span>
+<span class="sd">        </span>
+<span class="sd">        :param res_uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :type res_uuid: str</span>
+<span class="sd">        :returns: :class:`common.rpc.RpcClient` object or None if unable to \</span>
+<span class="sd">        connect to Model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instruments</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">ret</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">createInstrument</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
+            
+        <span class="k">return</span> <span class="n">ret</span>
     </div>
 <div class="viewcode-block" id="InstrumentControl.createInstrument"><a class="viewcode-back" href="../api.html#InstrumentControl.InstrumentControl.createInstrument">[docs]</a>    <span class="k">def</span> <span class="nf">createInstrument</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -914,27 +974,24 @@
     
 <span class="c"># Load GUI in interactive mode</span></div></div>
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="k">pass</span>
     <span class="c"># Load Application GUI</span>
-    <span class="c">#===========================================================================</span>
-    <span class="c"># try:</span>
-    <span class="c">#     #sys.path.append(&quot;..&quot;)</span>
-    <span class="c">#     from application.a_Main import a_Main</span>
-    <span class="c">#     main_gui = a_Main()</span>
-    <span class="c">#     </span>
-    <span class="c"># except Exception as e:</span>
-    <span class="c">#     print &quot;Unable to load main application&quot;</span>
-    <span class="c">#     raise</span>
-    <span class="c">#     sys.exit()</span>
-    <span class="c">#===========================================================================</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c">#sys.path.append(&quot;..&quot;)</span>
+        <span class="kn">from</span> <span class="nn">application.a_Main</span> <span class="kn">import</span> <span class="n">a_Main</span>
+        <span class="n">main_gui</span> <span class="o">=</span> <span class="n">a_Main</span><span class="p">()</span>
+         
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;Unable to load main application&quot;</span>
+        <span class="k">raise</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
 </pre></div>
 
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -951,7 +1008,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -961,9 +1018,9 @@
           <li><a href="index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2014, KKENNEDY.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3b1.
     </div>
   </body>
 </html>

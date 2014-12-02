@@ -28,8 +28,8 @@
     <link rel="next" title="Tektronix.Oscilloscope.m_DigitalPhosphor" href="Tektronix.Oscilloscope.m_DigitalPhosphor.html" />
     <link rel="prev" title="Supported Instruments (Models)" href="../supported_instruments.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -49,29 +49,29 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="tektronix-oscilloscope-m-oscilloscopebase">
 <h1>Tektronix.Oscilloscope.m_OscilloscopeBase<a class="headerlink" href="#tektronix-oscilloscope-m-oscilloscopebase" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase">
-<em class="property">class </em><tt class="descclassname">models.Tektronix.Oscilloscope.</tt><tt class="descname">m_OscilloscopeBase</tt><big>(</big><em>uuid</em>, <em>controller</em>, <em>resID</em>, <em>VID</em>, <em>PID</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">models.Tektronix.m_Tektronix</span></tt></p>
+<em class="property">class </em><code class="descclassname">models.Tektronix.Oscilloscope.</code><code class="descname">m_OscilloscopeBase</code><span class="sig-paren">(</span><em>uuid</em>, <em>controller</em>, <em>resID</em>, <em>VID</em>, <em>PID</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">models.Tektronix.m_Tektronix</span></code></p>
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.defaultSetup">
-<tt class="descname">defaultSetup</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.defaultSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.defaultSetup" title="Permalink to this definition">¶</a></dt>
+<code class="descname">defaultSetup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.defaultSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.defaultSetup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Resets the Oscilloscope to the Default Setup</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.exportWaveform">
-<tt class="descname">exportWaveform</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.exportWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.exportWaveform" title="Permalink to this definition">¶</a></dt>
+<code class="descname">exportWaveform</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.exportWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.exportWaveform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Export the oscilloscope waveform to a .csv file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Filename</strong> (<em>str</em>) &#8211; Filename of output file</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Filename</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Filename of output file</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">bool - True if successful, False otherwise</td>
 </tr>
@@ -81,7 +81,7 @@
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getControllerName">
-<tt class="descname">getControllerName</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getControllerName" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getControllerName</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getControllerName" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the Model&#8217;s Controller class name</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -95,7 +95,7 @@
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getEnabledWaveforms">
-<tt class="descname">getEnabledWaveforms</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.getEnabledWaveforms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getEnabledWaveforms" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getEnabledWaveforms</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.getEnabledWaveforms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getEnabledWaveforms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of the enabled waveforms.</p>
 <p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre>&gt;&gt; scope.getEnabledWaveforms()
@@ -114,7 +114,7 @@
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getModelName">
-<tt class="descname">getModelName</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getModelName" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getModelName</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getModelName" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the Model class name</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -127,14 +127,30 @@
 </dd></dl>
 
 <dl class="method">
+<dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getPackedWaveform">
+<code class="descname">getPackedWaveform</code><span class="sig-paren">(</span><em>ch</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.getPackedWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getPackedWaveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get packed binary waveform data for a given channel</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ch</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Channel - [&#8216;CH1&#8217;, &#8216;CH2&#8217;, &#8216;CH3&#8217;, &#8216;CH4&#8217;]</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">binary data</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getProbeInformation">
-<tt class="descname">getProbeInformation</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.getProbeInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getProbeInformation" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getProbeInformation</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.getProbeInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getProbeInformation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get Probe Data</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Waveform</strong> (<em>str</em>) &#8211; Channel - [&#8216;CH1&#8217;, &#8216;CH2&#8217;, &#8216;CH3&#8217;, &#8216;CH4&#8217;]</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Waveform</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Channel - [&#8216;CH1&#8217;, &#8216;CH2&#8217;, &#8216;CH3&#8217;, &#8216;CH4&#8217;]</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dict</td>
 </tr>
@@ -154,7 +170,7 @@
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getProductID">
-<tt class="descname">getProductID</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getProductID" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getProductID</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getProductID" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the Resource Product ID that is used to find compatible Models</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -168,7 +184,7 @@
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getResourceID">
-<tt class="descname">getResourceID</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getResourceID" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getResourceID</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getResourceID" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the Model Resource ID that identifies the resource to the
 Controller</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -183,7 +199,7 @@ Controller</p>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getSearchMarks">
-<tt class="descname">getSearchMarks</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.getSearchMarks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getSearchMarks" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getSearchMarks</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.getSearchMarks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getSearchMarks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of all mark locations. Manually iterates through all marks
 on the oscilloscope and gets the location.</p>
 <div class="admonition warning">
@@ -205,7 +221,7 @@ to complete</p>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getUUID">
-<tt class="descname">getUUID</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getUUID" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getUUID</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getUUID" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the Resource UUID that is provided to the Model</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -219,7 +235,7 @@ to complete</p>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getVendorID">
-<tt class="descname">getVendorID</tt><big>(</big><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getVendorID" title="Permalink to this definition">¶</a></dt>
+<code class="descname">getVendorID</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getVendorID" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the Resource Vendor ID that is used to find compatible Models</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -233,15 +249,13 @@ to complete</p>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.getWaveform">
-<tt class="descname">getWaveform</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.getWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getWaveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the raw waveform data from the oscilloscope. Returns dictionary 
-contains numpy arrays (if numpy is available, otherwise a list) with
-the channel as the key.</p>
+<code class="descname">getWaveform</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.getWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getWaveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refreshes the raw waveform data from the oscilloscope.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dict</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">bool - True if successful, False otherwise</td>
 </tr>
 </tbody>
 </table>
@@ -249,13 +263,13 @@ the channel as the key.</p>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.lock">
-<tt class="descname">lock</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.lock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.lock" title="Permalink to this definition">¶</a></dt>
+<code class="descname">lock</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.lock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.lock" title="Permalink to this definition">¶</a></dt>
 <dd><p>Lock the oscilloscope</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getConnections">
-<tt class="descname">rpc_getConnections</tt><big>(</big><em>connection=None</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getConnections" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rpc_getConnections</code><span class="sig-paren">(</span><em>connection=None</em><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getConnections" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the number of connections to the RPC server</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -269,7 +283,7 @@ the channel as the key.</p>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getHostname">
-<tt class="descname">rpc_getHostname</tt><big>(</big><em>connection</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getHostname" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rpc_getHostname</code><span class="sig-paren">(</span><em>connection</em><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getHostname" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the hostname of the RpcServer host.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -283,7 +297,7 @@ the channel as the key.</p>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getMethods">
-<tt class="descname">rpc_getMethods</tt><big>(</big><em>connection</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getMethods" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rpc_getMethods</code><span class="sig-paren">(</span><em>connection</em><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getMethods" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of methods in the target object. Used by RpcClient to populate
 remote objects.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -298,7 +312,7 @@ remote objects.</p>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getObjectName">
-<tt class="descname">rpc_getObjectName</tt><big>(</big><em>connection</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getObjectName" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rpc_getObjectName</code><span class="sig-paren">(</span><em>connection</em><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getObjectName" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the name of the object that may be extending RpcBase.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -312,7 +326,7 @@ remote objects.</p>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getPort">
-<tt class="descname">rpc_getPort</tt><big>(</big><em>connection=None</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getPort" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rpc_getPort</code><span class="sig-paren">(</span><em>connection=None</em><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getPort" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the bound port of a running RpcServer thread.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -326,7 +340,7 @@ remote objects.</p>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getUUID">
-<tt class="descname">rpc_getUUID</tt><big>(</big><em>connection=None</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getUUID" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rpc_getUUID</code><span class="sig-paren">(</span><em>connection=None</em><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_getUUID" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the RpcServer UUID</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -340,7 +354,7 @@ remote objects.</p>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_hasExclusiveAccess">
-<tt class="descname">rpc_hasExclusiveAccess</tt><big>(</big><em>connection</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_hasExclusiveAccess" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rpc_hasExclusiveAccess</code><span class="sig-paren">(</span><em>connection</em><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_hasExclusiveAccess" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check if the requesting connection has exclusive access.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -354,7 +368,7 @@ remote objects.</p>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_isRunning">
-<tt class="descname">rpc_isRunning</tt><big>(</big><em>connection=None</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_isRunning" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rpc_isRunning</code><span class="sig-paren">(</span><em>connection=None</em><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_isRunning" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check if there is an RpcServer thread running</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -368,7 +382,7 @@ remote objects.</p>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_releaseExclusiveAccess">
-<tt class="descname">rpc_releaseExclusiveAccess</tt><big>(</big><em>connection</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_releaseExclusiveAccess" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rpc_releaseExclusiveAccess</code><span class="sig-paren">(</span><em>connection</em><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_releaseExclusiveAccess" title="Permalink to this definition">¶</a></dt>
 <dd><p>Release exclusive access. If a connection does not have exclusive access,
 this function does nothing.</p>
 <div class="admonition note">
@@ -388,14 +402,14 @@ will expire automatically after 60 seconds.</p>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_requestExclusiveAccess">
-<tt class="descname">rpc_requestExclusiveAccess</tt><big>(</big><em>connection</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_requestExclusiveAccess" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rpc_requestExclusiveAccess</code><span class="sig-paren">(</span><em>connection</em><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_requestExclusiveAccess" title="Permalink to this definition">¶</a></dt>
 <dd><p>Request exclusive access to the target object from the RPC interface. 
 This acts as a lock on the target object, and no other connections can
 call functions.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Exclusive Access locks expire after 60 seconds, and must be renewed
-by another call to <tt class="xref py py-func docutils literal"><span class="pre">RpcBase.rpc_requestExclusiveAccess()</span></tt></p>
+by another call to <code class="xref py py-func docutils literal"><span class="pre">RpcBase.rpc_requestExclusiveAccess()</span></code></p>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -409,19 +423,19 @@ by another call to <tt class="xref py py-func docutils literal"><span class="pre
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_restart">
-<tt class="descname">rpc_restart</tt><big>(</big><em>connection=None</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_restart" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rpc_restart</code><span class="sig-paren">(</span><em>connection=None</em><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_restart" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stops and restarts a running RpcServer thread</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_start">
-<tt class="descname">rpc_start</tt><big>(</big><em>connection=None</em>, <em>port=None</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_start" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rpc_start</code><span class="sig-paren">(</span><em>connection=None</em>, <em>port=None</em><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_start" title="Permalink to this definition">¶</a></dt>
 <dd><p>Spawns an RpcServer thread to handle connections on the given port.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>port</strong> (<em>int</em>) &#8211; Port to bind</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>port</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Port to bind</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">bool - True if the RpcServer starts successfully, False otherwise</td>
 </tr>
@@ -431,19 +445,19 @@ by another call to <tt class="xref py py-func docutils literal"><span class="pre
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_stop">
-<tt class="descname">rpc_stop</tt><big>(</big><em>connection=None</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_stop" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rpc_stop</code><span class="sig-paren">(</span><em>connection=None</em><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stops a running RpcServer thread.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_test">
-<tt class="descname">rpc_test</tt><big>(</big><em>connection=None</em>, <em>port=None</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_test" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rpc_test</code><span class="sig-paren">(</span><em>connection=None</em>, <em>port=None</em><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_test" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tests if a port on the RpcServer host is being used.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>port</strong> (<em>int</em>) &#8211; Port to test</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>port</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Port to test</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">bool - True if the port is being used, False if it is free</td>
 </tr>
@@ -453,7 +467,7 @@ by another call to <tt class="xref py py-func docutils literal"><span class="pre
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_uptime">
-<tt class="descname">rpc_uptime</tt><big>(</big><em>connection=None</em><big>)</big><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_uptime" title="Permalink to this definition">¶</a></dt>
+<code class="descname">rpc_uptime</code><span class="sig-paren">(</span><em>connection=None</em><span class="sig-paren">)</span><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.rpc_uptime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the uptime of the RpcServer</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -467,16 +481,16 @@ by another call to <tt class="xref py py-func docutils literal"><span class="pre
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.saveScreenshot">
-<tt class="descname">saveScreenshot</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.saveScreenshot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.saveScreenshot" title="Permalink to this definition">¶</a></dt>
+<code class="descname">saveScreenshot</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.saveScreenshot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.saveScreenshot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save a screenshot of the oscilloscope display onto the oscilloscope.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>Filename</strong> (<em>str</em>) &#8211; Relative or absolute filename</li>
-<li><strong>Format</strong> (<em>str</em>) &#8211; File format - [&#8216;BMP&#8217;, &#8216;JPEG&#8217;, &#8216;PCX&#8217;, &#8216;PNG&#8217;, &#8216;TIFF&#8217;]</li>
-<li><strong>Palette</strong> (<em>str</em>) &#8211; Color Palette - [&#8216;COLOR&#8217;, &#8216;INKSAVER&#8217;, &#8216;BLACKANDWHITE&#8217;]</li>
+<li><strong>Filename</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Relative or absolute filename</li>
+<li><strong>Format</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; File format - [&#8216;BMP&#8217;, &#8216;JPEG&#8217;, &#8216;PCX&#8217;, &#8216;PNG&#8217;, &#8216;TIFF&#8217;]</li>
+<li><strong>Palette</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Color Palette - [&#8216;COLOR&#8217;, &#8216;INKSAVER&#8217;, &#8216;BLACKANDWHITE&#8217;]</li>
 </ul>
 </td>
 </tr>
@@ -489,7 +503,7 @@ by another call to <tt class="xref py py-func docutils literal"><span class="pre
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.setAcquisitionSetup">
-<tt class="descname">setAcquisitionSetup</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.setAcquisitionSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setAcquisitionSetup" title="Permalink to this definition">¶</a></dt>
+<code class="descname">setAcquisitionSetup</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.setAcquisitionSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setAcquisitionSetup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set Acquisition Modes</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -500,13 +514,13 @@ by another call to <tt class="xref py py-func docutils literal"><span class="pre
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>State</strong> (<em>str</em>) &#8211; Run state - [&#8216;SINGLE&#8217;, &#8216;OFF&#8217;, &#8216;ON&#8217;, &#8216;RUN&#8217;, &#8216;STOP&#8217;]</li>
-<li><strong>FastAcq</strong> (<em>str</em>) &#8211; Fast Acquisition Mode - [&#8216;ON&#8217;, &#8216;OFF&#8217;]</li>
-<li><strong>MagniVu</strong> (<em>str</em>) &#8211; MagniVu Mode - [&#8216;ON&#8217;, &#8216;OFF&#8217;]</li>
-<li><strong>Mode</strong> (<em>str</em>) &#8211; Operating Mode - [&#8216;Sample&#8217;, &#8216;PeakDetect&#8217;, &#8216;HighResolution&#8217;, &#8216;Average&#8217;, &#8216;WaveformDB&#8217;, &#8216;Envelope&#8217;]</li>
-<li><strong>Number</strong> (<em>int</em>) &#8211; Number of samples when Mode is &#8216;Average&#8217; or &#8216;Envelope&#8217;</li>
-<li><strong>RollMode</strong> (<em>str</em>) &#8211; Horizontal Roll Mode - [&#8216;AUTO&#8217;, &#8216;ON&#8217;, &#8216;OFF&#8217;]</li>
-<li><strong>SamplingMode</strong> (<em>str</em>) &#8211; Sampling Mode - [&#8216;RealTime&#8217;, &#8216;Equivalent&#8217;, &#8216;Interpolate&#8217;]</li>
+<li><strong>State</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Run state - [&#8216;SINGLE&#8217;, &#8216;OFF&#8217;, &#8216;ON&#8217;, &#8216;RUN&#8217;, &#8216;STOP&#8217;]</li>
+<li><strong>FastAcq</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Fast Acquisition Mode - [&#8216;ON&#8217;, &#8216;OFF&#8217;]</li>
+<li><strong>MagniVu</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; MagniVu Mode - [&#8216;ON&#8217;, &#8216;OFF&#8217;]</li>
+<li><strong>Mode</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Operating Mode - [&#8216;Sample&#8217;, &#8216;PeakDetect&#8217;, &#8216;HighResolution&#8217;, &#8216;Average&#8217;, &#8216;WaveformDB&#8217;, &#8216;Envelope&#8217;]</li>
+<li><strong>Number</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Number of samples when Mode is &#8216;Average&#8217; or &#8216;Envelope&#8217;</li>
+<li><strong>RollMode</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Horizontal Roll Mode - [&#8216;AUTO&#8217;, &#8216;ON&#8217;, &#8216;OFF&#8217;]</li>
+<li><strong>SamplingMode</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Sampling Mode - [&#8216;RealTime&#8217;, &#8216;Equivalent&#8217;, &#8216;Interpolate&#8217;]</li>
 </ul>
 </td>
 </tr>
@@ -560,26 +574,26 @@ MTM) changes the acquisition mode to WFMDB.
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.setCursorSetup">
-<tt class="descname">setCursorSetup</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.setCursorSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setCursorSetup" title="Permalink to this definition">¶</a></dt>
+<code class="descname">setCursorSetup</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.setCursorSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setCursorSetup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set cursor configuration.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>Type</strong> (<em>str</em>) &#8211; Cursor Type - [&#8216;HBARS&#8217;, &#8216;VBARS&#8217;, &#8216;SCREEN&#8217;, &#8216;WAVEFORM&#8217;]</li>
-<li><strong>Display</strong> (<em>str</em>) &#8211; Display Cursors - [&#8216;ON&#8217;, &#8216;OFF&#8217;]</li>
-<li><strong>Mode</strong> (<em>str</em>) &#8211; Cursor Mode - [&#8216;Track&#8217;, &#8216;Independent&#8217;]</li>
-<li><strong>LineStyle</strong> (<em>str</em>) &#8211; Cursor Line Style - [&#8216;DASHED&#8217;, &#8216;SDASHED&#8217;, &#8216;SOLID&#8217;]</li>
-<li><strong>Source1</strong> (<em>str</em>) &#8211; Waveform for Source1 - [&#8216;CH1&#8217;, &#8216;CH2&#8217;, &#8216;CH3&#8217;, &#8216;CH4&#8217;, &#8216;MATH1&#8217;, &#8216;MATH2&#8217;, &#8216;MATH3&#8217;, &#8216;MATH4&#8217;, &#8216;REF1&#8217;, &#8216;REF2&#8217;, &#8216;REF3&#8217;, &#8216;REF4&#8217;]</li>
-<li><strong>Source2</strong> (<em>str</em>) &#8211; Waveform for Source2 - [&#8216;CH1&#8217;, &#8216;CH2&#8217;, &#8216;CH3&#8217;, &#8216;CH4&#8217;, &#8216;MATH1&#8217;, &#8216;MATH2&#8217;, &#8216;MATH3&#8217;, &#8216;MATH4&#8217;, &#8216;REF1&#8217;, &#8216;REF2&#8217;, &#8216;REF3&#8217;, &#8216;REF4&#8217;]</li>
+<li><strong>Type</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Cursor Type - [&#8216;HBARS&#8217;, &#8216;VBARS&#8217;, &#8216;SCREEN&#8217;, &#8216;WAVEFORM&#8217;]</li>
+<li><strong>Display</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Display Cursors - [&#8216;ON&#8217;, &#8216;OFF&#8217;]</li>
+<li><strong>Mode</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Cursor Mode - [&#8216;Track&#8217;, &#8216;Independent&#8217;]</li>
+<li><strong>LineStyle</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Cursor Line Style - [&#8216;DASHED&#8217;, &#8216;SDASHED&#8217;, &#8216;SOLID&#8217;]</li>
+<li><strong>Source1</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Waveform for Source1 - [&#8216;CH1&#8217;, &#8216;CH2&#8217;, &#8216;CH3&#8217;, &#8216;CH4&#8217;, &#8216;MATH1&#8217;, &#8216;MATH2&#8217;, &#8216;MATH3&#8217;, &#8216;MATH4&#8217;, &#8216;REF1&#8217;, &#8216;REF2&#8217;, &#8216;REF3&#8217;, &#8216;REF4&#8217;]</li>
+<li><strong>Source2</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Waveform for Source2 - [&#8216;CH1&#8217;, &#8216;CH2&#8217;, &#8216;CH3&#8217;, &#8216;CH4&#8217;, &#8216;MATH1&#8217;, &#8216;MATH2&#8217;, &#8216;MATH3&#8217;, &#8216;MATH4&#8217;, &#8216;REF1&#8217;, &#8216;REF2&#8217;, &#8216;REF3&#8217;, &#8216;REF4&#8217;]</li>
 <li><strong>Pos1</strong> (<em>int or float</em>) &#8211; Pos1 in &#8216;HBARS&#8217;, &#8216;VBARS&#8217; or &#8216;WAVEFORM&#8217; Mode</li>
 <li><strong>Pos2</strong> (<em>int or float</em>) &#8211; Pos2 in &#8216;HBARS&#8217;, &#8216;VBARS&#8217; or &#8216;WAVEFORM&#8217; Mode</li>
 <li><strong>X1</strong> (<em>int or float</em>) &#8211; X1 in &#8216;SCREEN&#8217; Mode</li>
 <li><strong>X2</strong> (<em>int or float</em>) &#8211; X2 in &#8216;SCREEN&#8217; Mode</li>
 <li><strong>Y1</strong> (<em>int or float</em>) &#8211; Y1 in &#8216;SCREEN&#8217; Mode</li>
 <li><strong>Y2</strong> (<em>int or float</em>) &#8211; Y2 in &#8216;SCREEN&#8217; Mode</li>
-<li><strong>Style</strong> (<em>str</em>) &#8211; Cursor Style in &#8216;SCREEN&#8217; Mode - [&#8216;LINE_X&#8217;, &#8216;LINES&#8217;, &#8216;X&#8217;]</li>
+<li><strong>Style</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Cursor Style in &#8216;SCREEN&#8217; Mode - [&#8216;LINE_X&#8217;, &#8216;LINES&#8217;, &#8216;X&#8217;]</li>
 </ul>
 </td>
 </tr>
@@ -592,16 +606,16 @@ MTM) changes the acquisition mode to WFMDB.
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.setHorizontalSetup">
-<tt class="descname">setHorizontalSetup</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.setHorizontalSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setHorizontalSetup" title="Permalink to this definition">¶</a></dt>
+<code class="descname">setHorizontalSetup</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.setHorizontalSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setHorizontalSetup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set Horizontal configuration</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>Mode</strong> (<em>str</em>) &#8211; Horizontal Mode - [&#8216;AUTO&#8217;, &#8216;CONSTANT&#8217;, &#8216;MANUAL&#8217;]</li>
-<li><strong>SampleRate</strong> (<em>float</em>) &#8211; Samples per second</li>
-<li><strong>Scale</strong> (<em>float</em>) &#8211; Horizontal scale</li>
+<li><strong>Mode</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Horizontal Mode - [&#8216;AUTO&#8217;, &#8216;CONSTANT&#8217;, &#8216;MANUAL&#8217;]</li>
+<li><strong>SampleRate</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Samples per second</li>
+<li><strong>Scale</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Horizontal scale</li>
 <li><strong>Position</strong> (<em>int between 0-100</em>) &#8211; Horizontal Position - Percentage of screen</li>
 </ul>
 </td>
@@ -612,7 +626,7 @@ MTM) changes the acquisition mode to WFMDB.
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.setSearchSetup">
-<tt class="descname">setSearchSetup</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.setSearchSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setSearchSetup" title="Permalink to this definition">¶</a></dt>
+<code class="descname">setSearchSetup</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.setSearchSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setSearchSetup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set Search configuration</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -620,8 +634,8 @@ MTM) changes the acquisition mode to WFMDB.
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>Search</strong> (<em>int between 1-8</em>) &#8211; Search slot number</li>
-<li><strong>Type</strong> (<em>str</em>) &#8211; Search type - [&#8216;TRANSITION&#8217;]</li>
-<li><strong>Enable</strong> (<em>str</em>) &#8211; Enable Search - [&#8216;OFF&#8217;, &#8216;ON&#8217;]</li>
+<li><strong>Type</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Search type - [&#8216;TRANSITION&#8217;]</li>
+<li><strong>Enable</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Enable Search - [&#8216;OFF&#8217;, &#8216;ON&#8217;]</li>
 </ul>
 </td>
 </tr>
@@ -651,7 +665,7 @@ The full range of possible Search Types are:
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.setTriggerSetup">
-<tt class="descname">setTriggerSetup</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.setTriggerSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setTriggerSetup" title="Permalink to this definition">¶</a></dt>
+<code class="descname">setTriggerSetup</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.setTriggerSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setTriggerSetup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set Trigger Configuration</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -662,10 +676,10 @@ The full range of possible Search Types are:
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>Type</strong> (<em>str</em>) &#8211; Trigger Type - [&#8216;EDGE&#8217;, &#8216;TRANSITION&#8217;]</li>
-<li><strong>Source</strong> (<em>str</em>) &#8211; Trigger Source - [&#8216;CH1&#8217;, &#8216;CH2&#8217;, &#8216;CH3&#8217;, &#8216;CH4&#8217;, &#8216;REF1&#8217;, &#8216;REF2&#8217;, &#8216;REF3&#8217;, &#8216;REF4&#8217;, &#8216;MATH1&#8217;, &#8216;MATH2&#8217;, &#8216;MATH3&#8217;, &#8216;MATH4&#8217;]</li>
-<li><strong>Slope</strong> (<em>str</em>) &#8211; Edge to trigger on - [&#8216;RISE&#8217;, &#8216;FALL&#8217;, &#8216;EITHER&#8217;]</li>
-<li><strong>Level</strong> (<em>float</em>) &#8211; Level to trigger on</li>
+<li><strong>Type</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Trigger Type - [&#8216;EDGE&#8217;, &#8216;TRANSITION&#8217;]</li>
+<li><strong>Source</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Trigger Source - [&#8216;CH1&#8217;, &#8216;CH2&#8217;, &#8216;CH3&#8217;, &#8216;CH4&#8217;, &#8216;REF1&#8217;, &#8216;REF2&#8217;, &#8216;REF3&#8217;, &#8216;REF4&#8217;, &#8216;MATH1&#8217;, &#8216;MATH2&#8217;, &#8216;MATH3&#8217;, &#8216;MATH4&#8217;]</li>
+<li><strong>Slope</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Edge to trigger on - [&#8216;RISE&#8217;, &#8216;FALL&#8217;, &#8216;EITHER&#8217;]</li>
+<li><strong>Level</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Level to trigger on</li>
 </ul>
 </td>
 </tr>
@@ -675,21 +689,21 @@ The full range of possible Search Types are:
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.setVerticalSetup">
-<tt class="descname">setVerticalSetup</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.setVerticalSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setVerticalSetup" title="Permalink to this definition">¶</a></dt>
+<code class="descname">setVerticalSetup</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.setVerticalSetup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setVerticalSetup" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set Vertical Configuration</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>Waveform</strong> (<em>str</em>) &#8211; Channel - [&#8216;CH1&#8217;, &#8216;CH2&#8217;, &#8216;CH3&#8217;, &#8216;CH4&#8217;, &#8216;REF1&#8217;, &#8216;REF2&#8217;, &#8216;REF3&#8217;, &#8216;REF4&#8217;, &#8216;MATH1&#8217;, &#8216;MATH2&#8217;, &#8216;MATH3&#8217;, &#8216;MATH4&#8217;]</li>
-<li><strong>Display</strong> (<em>str</em>) &#8211; Display Channel - [&#8216;ON&#8217;, &#8216;OFF&#8217;]</li>
-<li><strong>Label</strong> (<em>str</em>) &#8211; Channel Label</li>
-<li><strong>Position</strong> (<em>float</em>) &#8211; Vertical Position of channel - divisions above or below center</li>
-<li><strong>Scale</strong> (<em>float</em>) &#8211; Channel Vertical scale</li>
-<li><strong>Coupling</strong> (<em>str</em>) &#8211; Input Attenuator Coupling Setting - [&#8216;AC&#8217;, &#8216;DC&#8217;, &#8216;DCREJECT&#8217;, &#8216;GND&#8217;]</li>
-<li><strong>Deskew</strong> (<em>float</em>) &#8211; Channel Deskew time (seconds)</li>
-<li><strong>Bandwidth</strong> (<em>str</em>) &#8211; Low-Pass Bandwidth Limit Filter (Megahertz) - [&#8216;FIVE&#8217;, &#8216;FULL&#8217;, &#8216;TWENTY&#8217;, &#8216;ONEFIFTY&#8217;, &#8216;TWOFIFTY&#8217;]</li>
+<li><strong>Waveform</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Channel - [&#8216;CH1&#8217;, &#8216;CH2&#8217;, &#8216;CH3&#8217;, &#8216;CH4&#8217;, &#8216;REF1&#8217;, &#8216;REF2&#8217;, &#8216;REF3&#8217;, &#8216;REF4&#8217;, &#8216;MATH1&#8217;, &#8216;MATH2&#8217;, &#8216;MATH3&#8217;, &#8216;MATH4&#8217;]</li>
+<li><strong>Display</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Display Channel - [&#8216;ON&#8217;, &#8216;OFF&#8217;]</li>
+<li><strong>Label</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Channel Label</li>
+<li><strong>Position</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Vertical Position of channel - divisions above or below center</li>
+<li><strong>Scale</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Channel Vertical scale</li>
+<li><strong>Coupling</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Input Attenuator Coupling Setting - [&#8216;AC&#8217;, &#8216;DC&#8217;, &#8216;DCREJECT&#8217;, &#8216;GND&#8217;]</li>
+<li><strong>Deskew</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Channel Deskew time (seconds)</li>
+<li><strong>Bandwidth</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Low-Pass Bandwidth Limit Filter (Megahertz) - [&#8216;FIVE&#8217;, &#8216;FULL&#8217;, &#8216;TWENTY&#8217;, &#8216;ONEFIFTY&#8217;, &#8216;TWOFIFTY&#8217;]</li>
 </ul>
 </td>
 </tr>
@@ -699,13 +713,13 @@ The full range of possible Search Types are:
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.singleAcquisition">
-<tt class="descname">singleAcquisition</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.singleAcquisition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.singleAcquisition" title="Permalink to this definition">¶</a></dt>
+<code class="descname">singleAcquisition</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.singleAcquisition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.singleAcquisition" title="Permalink to this definition">¶</a></dt>
 <dd><p>Put the Oscilloscope into Single Acquisition mode</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.statusBusy">
-<tt class="descname">statusBusy</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.statusBusy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.statusBusy" title="Permalink to this definition">¶</a></dt>
+<code class="descname">statusBusy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.statusBusy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.statusBusy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Queries the scope to find out if it is busy</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -719,21 +733,21 @@ The full range of possible Search Types are:
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.unlock">
-<tt class="descname">unlock</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.unlock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.unlock" title="Permalink to this definition">¶</a></dt>
+<code class="descname">unlock</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.unlock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.unlock" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unlock the oscilloscope</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.waitUntilReady">
-<tt class="descname">waitUntilReady</tt><big>(</big><em>interval=1.0</em>, <em>timeout=10.0</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.waitUntilReady"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.waitUntilReady" title="Permalink to this definition">¶</a></dt>
+<code class="descname">waitUntilReady</code><span class="sig-paren">(</span><em>interval=1.0</em>, <em>timeout=10.0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.waitUntilReady"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.waitUntilReady" title="Permalink to this definition">¶</a></dt>
 <dd><p>Poll the oscilloscope until ready or until <cite>timeout</cite> seconds has passed</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>interval</strong> (<em>float</em>) &#8211; Polling interval in seconds</li>
-<li><strong>timeout</strong> (<em>float</em>) &#8211; Seconds until timeout occurs</li>
+<li><strong>interval</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Polling interval in seconds</li>
+<li><strong>timeout</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Seconds until timeout occurs</li>
 </ul>
 </td>
 </tr>
@@ -746,8 +760,8 @@ The full range of possible Search Types are:
 
 <dl class="method">
 <dt id="models.Tektronix.Oscilloscope.m_OscilloscopeBase.waveformExport">
-<tt class="descname">waveformExport</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.waveformExport"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.waveformExport" title="Permalink to this definition">¶</a></dt>
-<dd><p>Alias for <tt class="xref py py-func docutils literal"><span class="pre">m_OscilloscopeBase.exportWaveform()</span></tt></p>
+<code class="descname">waveformExport</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models/Tektronix/Oscilloscope.html#m_OscilloscopeBase.waveformExport"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.Tektronix.Oscilloscope.m_OscilloscopeBase.waveformExport" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for <code class="xref py py-func docutils literal"><span class="pre">m_OscilloscopeBase.exportWaveform()</span></code></p>
 </dd></dl>
 
 </dd></dl>
@@ -758,7 +772,7 @@ The full range of possible Search Types are:
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
   <p class="topless"><a href="../supported_instruments.html"
@@ -766,12 +780,14 @@ The full range of possible Search Types are:
   <h4>Next topic</h4>
   <p class="topless"><a href="Tektronix.Oscilloscope.m_DigitalPhosphor.html"
                         title="next chapter">Tektronix.Oscilloscope.m_DigitalPhosphor</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="../_sources/models/Tektronix.Oscilloscope.m_OscilloscopeBase.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/models/Tektronix.Oscilloscope.m_OscilloscopeBase.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -788,7 +804,7 @@ The full range of possible Search Types are:
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -804,9 +820,9 @@ The full range of possible Search Types are:
           <li><a href="../supported_instruments.html" >Supported Instruments (Models)</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2014, KKENNEDY.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3b1.
     </div>
   </body>
 </html>

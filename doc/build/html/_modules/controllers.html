@@ -26,8 +26,8 @@
     <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="../index.html" />
     <link rel="up" title="Module code" href="index.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -41,7 +41,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <h1>Source code for controllers</h1><div class="highlight"><pre>
 <span class="kn">import</span> <span class="nn">common</span>
@@ -55,57 +55,7 @@
 
     <span class="k">def</span> <span class="nf">getControllerName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
-        
-    <span class="k">def</span> <span class="nf">_open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">__ready</span> <span class="o">=</span> <span class="bp">False</span>
-        
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
-            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span> <span class="o">==</span> <span class="nb">bool</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">ret</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">__ready</span> <span class="o">=</span> <span class="bp">True</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">__ready</span> <span class="o">=</span> <span class="bp">False</span>
-                <span class="k">return</span> <span class="n">ret</span>
-            
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Controller function open() must return a bool type&quot;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="bp">False</span>
-            
-        <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Controller function open() is not implemented&quot;</span><span class="p">)</span>
-    
-    <span class="k">def</span> <span class="nf">_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        If an interface error occurred, clear the ready flag to alert the calling class</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ready</span>
-    
-    <span class="k">def</span> <span class="nf">_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ready</span><span class="p">:</span>  
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan</span><span class="p">()</span>
-                
-                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span> <span class="o">==</span> <span class="nb">bool</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="bp">True</span>
-                
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Controller function scan() must return a bool type&quot;</span><span class="p">)</span>
-                    <span class="k">return</span> <span class="bp">False</span>
-                
-            <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
-                <span class="c"># Controllers do not have to implement scan</span>
-                <span class="k">return</span> <span class="bp">True</span>
-                
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Controller not ready&quot;</span><span class="p">)</span>
-    
-    <span class="k">def</span> <span class="nf">_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-        <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Controller function close() is not implemented&quot;</span><span class="p">)</span>
-    
+
     <span class="c"># Inheriting classes must implement these functions:</span>
 <div class="viewcode-block" id="c_Base.open"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -198,9 +148,9 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -217,7 +167,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -227,9 +177,9 @@
           <li><a href="index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2014, KKENNEDY.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3b1.
     </div>
   </body>
 </html>

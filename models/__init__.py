@@ -21,6 +21,10 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
     validVIDs = []
     validPIDs = []
     
+    _collector_thread = None
+    _collector_methods = {}
+    _collector_last_sample = {}
+    
     def __init__(self, uuid, controller, resID, VID, PID, **kwargs):
         common.rpc.RpcBase.__init__(self)
         common.IC_Common.__init__(self, **kwargs)
@@ -33,6 +37,64 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
         
         # Check for logger
         self.logger = kwargs.get('Logger', logging)
+        
+    #===========================================================================
+    # Collector Functionality
+    #===========================================================================
+    
+    def __collector_thread(self):
+        """
+        Asynchronous thread that automatically polls methods that are marked
+        for collection
+        """
+        next_sample = {}
+        
+        while (len(self.acc_config) > 0):
+            for reg, acc_config in self.acc_config.items():
+                # Check if it is time to get a new sample
+                if time.time() > next_sample.get(reg, 0.0):
+                    address, subindex = reg
+                    _, sample_time, data_type = acc_config
+                    
+                    # Queue a register read, the ICP thread will handle the data when it comes back
+                    self.register_read_queue(address, subindex, data_type)
+                    
+                    # Increment the next sample time
+                    next_sample[reg] = next_sample.get(reg, time.time()) + sample_time
+                    
+            # TODO: Calculate the time to the next sample and sleep until then
+        
+        # Clear reference to this thread before exiting
+        self._collector_thread = None
+        
+    def startCollector(self, method, interval, depth):
+        """
+        Starts a Collector thread to retrieve data at a regular interval.
+        
+        :param method: Name of the Model method to invoke
+        :type method: str
+        :param interval: Interval in milliseconds between method invokations
+        :type interval: int
+        :param depth: Number of samples to keep
+        :type depth: int
+        :returns: Boolean, True if successful, False otherwise.
+        """
+        key = (address, subindex)
+        self.reg_cache[key] = ''
+        self.acc_config[key] = (depth, sample_time, data_type)
+        
+        # Create a new accumulator object
+        self.accumulators[key] = UPEL_ICP_Accumulator(depth, data_type)
+        
+        # Start the accumulator thread
+        if self.acc_thread is None:
+            self.acc_thread = threading.Thread(target=self.__accumulator_thread)
+            self.acc_thread.start()
+    
+    def stopCollector(self, method):
+        pass
+    
+    
             
     #===========================================================================
     # Virtual Functions
@@ -42,7 +104,7 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
         """
         Called shortly after a Model is instantiated. Since Models can be run
         in a new thread, all member attributes in __init__ must be pickleable.
-        If there are attributes that cannot be picked, load them here.
+        If there are attributes that cannot be pickled, load them here.
         """
         raise NotImplementedError
     
@@ -115,3 +177,4 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
                  'deviceSerial': 'Unknown',
                  'deviceFirmware': 'Unknown'
                 }
+        

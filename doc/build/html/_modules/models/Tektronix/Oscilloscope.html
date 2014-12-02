@@ -26,8 +26,8 @@
     <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="../../../index.html" />
     <link rel="up" title="models" href="../../models.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -42,17 +42,18 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <h1>Source code for models.Tektronix.Oscilloscope</h1><div class="highlight"><pre>
 <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">m_Tektronix</span>
 
 <span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">from</span> <span class="nn">struct</span> <span class="kn">import</span> <span class="n">unpack</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">base64</span>
 <span class="kn">import</span> <span class="nn">csv</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 
-<div class="viewcode-block" id="m_OscilloscopeBase"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase">[docs]</a><span class="k">class</span> <span class="nc">m_OscilloscopeBase</span><span class="p">(</span><span class="n">m_Tektronix</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase">[docs]</a><span class="k">class</span> <span class="nc">m_OscilloscopeBase</span><span class="p">(</span><span class="n">m_Tektronix</span><span class="p">):</span>
     <span class="c"># Model Constants</span>
     
     <span class="n">validControllers</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;c_VISA&#39;</span><span class="p">]</span>
@@ -83,7 +84,7 @@
         <span class="k">except</span><span class="p">:</span>
             <span class="k">pass</span>
         
-<div class="viewcode-block" id="m_OscilloscopeBase.defaultSetup"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.defaultSetup">[docs]</a>    <span class="k">def</span> <span class="nf">defaultSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.defaultSetup"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.defaultSetup">[docs]</a>    <span class="k">def</span> <span class="nf">defaultSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resets the Oscilloscope to the Default Setup</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -99,7 +100,7 @@
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;HEADER OFF&#39;</span><span class="p">)</span>
         </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.getEnabledWaveforms"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getEnabledWaveforms">[docs]</a>    <span class="k">def</span> <span class="nf">getEnabledWaveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.getEnabledWaveforms"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.getEnabledWaveforms">[docs]</a>    <span class="k">def</span> <span class="nf">getEnabledWaveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get a list of the enabled waveforms.</span>
 <span class="sd">        </span>
@@ -119,7 +120,7 @@
         
         <span class="k">return</span> <span class="n">en_ch</span>
     </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.setAcquisitionSetup"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setAcquisitionSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setAcquisitionSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.setAcquisitionSetup"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.setAcquisitionSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setAcquisitionSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set Acquisition Modes</span>
 <span class="sd">        </span>
@@ -236,7 +237,7 @@
             <span class="k">elif</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;SamplingMode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;Interpolate&#39;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;ACQ::SAMPLINGMODE IT&#39;</span><span class="p">)</span>
                 </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.setCursorSetup"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setCursorSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setCursorSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.setCursorSetup"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.setCursorSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setCursorSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set cursor configuration.</span>
 <span class="sd">        </span>
@@ -328,7 +329,7 @@
         <span class="c"># TODO: Make this not a static delay</span>
         <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
     </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.setHorizontalSetup"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setHorizontalSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setHorizontalSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.setHorizontalSetup"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.setHorizontalSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setHorizontalSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set Horizontal configuration</span>
 <span class="sd">        </span>
@@ -355,7 +356,7 @@
         <span class="c"># Record Length</span>
         <span class="c"># Roll Mode</span>
         </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.setVerticalSetup"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setVerticalSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setVerticalSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.setVerticalSetup"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.setVerticalSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setVerticalSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set Vertical Configuration</span>
 <span class="sd">        </span>
@@ -403,7 +404,7 @@
             <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Waveform&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;REF&#39;</span><span class="p">:</span>
                 <span class="k">pass</span>
             </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.getProbeInformation"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getProbeInformation">[docs]</a>    <span class="k">def</span> <span class="nf">getProbeInformation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.getProbeInformation"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.getProbeInformation">[docs]</a>    <span class="k">def</span> <span class="nf">getProbeInformation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get Probe Data</span>
 <span class="sd">        </span>
@@ -430,7 +431,7 @@
             
         <span class="k">return</span> <span class="n">output</span>
             </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.setTriggerSetup"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setTriggerSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setTriggerSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.setTriggerSetup"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.setTriggerSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setTriggerSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set Trigger Configuration</span>
 <span class="sd">        </span>
@@ -457,7 +458,7 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;TRIG:A:LEVEL:&#39;</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Source&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39; &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Level&#39;</span><span class="p">]))</span>
         
                     </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.setSearchSetup"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.setSearchSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setSearchSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.setSearchSetup"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.setSearchSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setSearchSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set Search configuration</span>
 <span class="sd">        </span>
@@ -523,7 +524,7 @@
         <span class="k">return</span> <span class="bp">True</span>
         
     </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.getSearchMarks"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getSearchMarks">[docs]</a>    <span class="k">def</span> <span class="nf">getSearchMarks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.getSearchMarks"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.getSearchMarks">[docs]</a>    <span class="k">def</span> <span class="nf">getSearchMarks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get a list of all mark locations. Manually iterates through all marks</span>
 <span class="sd">        on the oscilloscope and gets the location.</span>
@@ -597,14 +598,14 @@
             <span class="k">return</span> <span class="p">[]</span>
 
         </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.singleAcquisition"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.singleAcquisition">[docs]</a>    <span class="k">def</span> <span class="nf">singleAcquisition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.singleAcquisition"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.singleAcquisition">[docs]</a>    <span class="k">def</span> <span class="nf">singleAcquisition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Put the Oscilloscope into Single Acquisition mode</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Entering Single Acquisition Mode&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setAcquisitionSetup</span><span class="p">(</span><span class="n">State</span><span class="o">=</span><span class="s">&#39;SINGLE&#39;</span><span class="p">)</span>
         </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.statusBusy"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.statusBusy">[docs]</a>    <span class="k">def</span> <span class="nf">statusBusy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.statusBusy"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.statusBusy">[docs]</a>    <span class="k">def</span> <span class="nf">statusBusy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Queries the scope to find out if it is busy</span>
 <span class="sd">        </span>
@@ -617,7 +618,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Instrument is ready&#39;</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">False</span>
         </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.waitUntilReady"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.waitUntilReady">[docs]</a>    <span class="k">def</span> <span class="nf">waitUntilReady</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">10.0</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.waitUntilReady"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.waitUntilReady">[docs]</a>    <span class="k">def</span> <span class="nf">waitUntilReady</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">10.0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Poll the oscilloscope until ready or until `timeout` seconds has passed</span>
 <span class="sd">        </span>
@@ -640,14 +641,19 @@
         <span class="k">except</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s">&quot;An error occurred in waitUntilReady()&quot;</span><span class="p">)</span>
             </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.getWaveform"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.getWaveform">[docs]</a>    <span class="k">def</span> <span class="nf">getWaveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.getWaveform"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.getWaveform">[docs]</a>    <span class="k">def</span> <span class="nf">getWaveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get the raw waveform data from the oscilloscope. Returns dictionary </span>
-<span class="sd">        contains numpy arrays (if numpy is available, otherwise a list) with</span>
-<span class="sd">        the channel as the key.</span>
+<span class="sd">        Refreshes the raw waveform data from the oscilloscope. </span>
 <span class="sd">        </span>
-<span class="sd">        :returns: dict</span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">numpy</span>
+            
+        <span class="k">except</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Unable to getWaveform without numpy library&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">waitUntilReady</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Unable to export waveform while oscilloscope is busy&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">False</span>
@@ -698,28 +704,49 @@
             <span class="n">elems</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">/</span> <span class="n">data_width</span>
             
             <span class="k">if</span> <span class="n">data_width</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="n">unpack</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">H&#39;</span> <span class="o">%</span> <span class="n">elems</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">H&#39;</span> <span class="o">%</span> <span class="n">elems</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">data_width</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="n">unpack</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">B&#39;</span> <span class="o">%</span> <span class="n">elems</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">B&#39;</span> <span class="o">%</span> <span class="n">elems</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Unhandled data width in getWaveform&#39;</span><span class="p">)</span>
                 
             <span class="c"># Utilize numpy if possible, its more efficient</span>
-            <span class="k">if</span> <span class="s">&#39;numpy&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
                 
             <span class="n">data_scaled</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">-</span> <span class="n">y_offset</span><span class="p">)</span> <span class="o">*</span> <span class="n">y_scale</span> <span class="o">+</span> <span class="n">y_zero</span>
             
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_scaled</span>
-
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_scaled</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            
+        <span class="k">return</span> <span class="bp">True</span>
+    
+    </div>
+<div class="viewcode-block" id="m_OscilloscopeBase.getPackedWaveform"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.getPackedWaveform">[docs]</a>    <span class="k">def</span> <span class="nf">getPackedWaveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ch</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get packed binary waveform data for a given channel</span>
+<span class="sd">        </span>
+<span class="sd">        :param ch: Channel - [&#39;CH1&#39;, &#39;CH2&#39;, &#39;CH3&#39;, &#39;CH4&#39;]</span>
+<span class="sd">        :type ch: str</span>
+<span class="sd">        :returns: binary data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">validWaveforms</span> <span class="ow">and</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">d_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">d_list</span><span class="p">)</span>
+            
+            <span class="c"># Pack the data</span>
+            <span class="n">packed</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">f&#39;</span> <span class="o">%</span> <span class="n">points</span><span class="p">,</span> <span class="o">*</span><span class="n">d_list</span><span class="p">))</span>
+            
+            <span class="c"># Base64 Encode the data</span>
+            <span class="n">enc</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">packed</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="n">enc</span>
         </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.waveformExport"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.waveformExport">[docs]</a>    <span class="k">def</span> <span class="nf">waveformExport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.waveformExport"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.waveformExport">[docs]</a>    <span class="k">def</span> <span class="nf">waveformExport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Alias for :func:`m_OscilloscopeBase.exportWaveform`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exportWaveform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.exportWaveform"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.exportWaveform">[docs]</a>    <span class="k">def</span> <span class="nf">exportWaveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.exportWaveform"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.exportWaveform">[docs]</a>    <span class="k">def</span> <span class="nf">exportWaveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Export the oscilloscope waveform to a .csv file. </span>
 <span class="sd">        </span>
@@ -767,7 +794,7 @@
                     
         <span class="k">return</span> <span class="bp">True</span>
                 </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.saveScreenshot"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.saveScreenshot">[docs]</a>    <span class="k">def</span> <span class="nf">saveScreenshot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.saveScreenshot"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.saveScreenshot">[docs]</a>    <span class="k">def</span> <span class="nf">saveScreenshot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Save a screenshot of the oscilloscope display onto the oscilloscope.</span>
 <span class="sd">        </span>
@@ -802,13 +829,13 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Save Screenshot needs parameters Filename and Format&quot;</span><span class="p">)</span>
             </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.lock"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.lock">[docs]</a>    <span class="k">def</span> <span class="nf">lock</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.lock"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.lock">[docs]</a>    <span class="k">def</span> <span class="nf">lock</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Lock the oscilloscope</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;LOCK ALL&#39;</span><span class="p">)</span>
         </div>
-<div class="viewcode-block" id="m_OscilloscopeBase.unlock"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_OscilloscopeBase.unlock">[docs]</a>    <span class="k">def</span> <span class="nf">unlock</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="m_OscilloscopeBase.unlock"><a class="viewcode-back" href="../../../models/Tektronix.Oscilloscope.m_OscilloscopeBase.html#models.Tektronix.Oscilloscope.m_DigitalPhosphor.m_OscilloscopeBase.unlock">[docs]</a>    <span class="k">def</span> <span class="nf">unlock</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Unlock the oscilloscope</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -819,9 +846,9 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
       <input type="text" name="q" />
@@ -838,7 +865,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -849,9 +876,9 @@
           <li><a href="../../models.html" >models</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2014, KKENNEDY.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3b1.
     </div>
   </body>
 </html>

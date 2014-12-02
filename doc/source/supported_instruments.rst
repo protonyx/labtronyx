@@ -23,6 +23,14 @@ Source-Measurement Units
 :doc:`B2901A </models/Agilent.m_SMU>`
 :doc:`B2902A </models/Agilent.m_SMU>`
 
+BK Precision
+------------
+
+DC Loads
+^^^^^^^^
+
+:doc:`8510 </models/BK_Precision.Load.m_85XX>`
+
 Tektronix
 ---------
 

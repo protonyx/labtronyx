@@ -22,18 +22,53 @@ new instruments. Developers are encouraged to contribute their drivers to the
 project.
 
 
-Contents
-========
+User Guide
+==========
+
+Learn how to use the graphical interface portion of InstrumentControl. 
+
+.. toctree::
+   :maxdepth: 2
+   
+   intro
+   using_application
+   tests
+   
+Supported Devices and Interfaces
+================================
+
+.. toctree::
+   :maxdepth: 2
+   
+   supported_instruments
+   supported_interfaces
+   
+Programmer Guide
+================
+
+In-depth guide to the scripting capabilities of InstrumentControl. Assumes an
+intermediate understanding of programming in Python.
 
 .. toctree::
    :maxdepth: 2
 
+   using_script
+   resources
+   models
+   tests
    api
-   supported_instruments
-   supported_interfaces
    common
-   dev/dev_index
    
+Developer Guide
+===============
+
+Guide to the inner workings of the InstrumentControl framework. Learn how to
+create Models, Controllers, Views and Tests.
+
+.. toctree::
+   :maxdepth: 3
+   
+   dev/dev_index  
 
 Indices and tables
 ==================

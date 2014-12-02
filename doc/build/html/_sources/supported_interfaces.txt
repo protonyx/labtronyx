@@ -9,4 +9,14 @@ will specify the dependencies required to use it.
 VISA
 ----
 
-VISA is supported. In fact, it is the only thing support right now.
+VISA is supported.
+
+Serial (RS-232)
+---------------
+
+Serial is also supported.
+
+UPEL ICP
+--------
+
+The UPEL Instrument Control Protocol is also supported, with flair.

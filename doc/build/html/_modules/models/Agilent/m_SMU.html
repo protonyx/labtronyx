@@ -26,8 +26,8 @@
     <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="../../../index.html" />
     <link rel="up" title="models" href="../../models.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -42,7 +42,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <h1>Source code for models.Agilent.m_SMU</h1><div class="highlight"><pre>
 <span class="kn">from</span> <span class="nn">models</span> <span class="kn">import</span> <span class="n">m_Base</span>
@@ -229,13 +229,16 @@
     <span class="k">def</span> <span class="nf">powerOn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;:OUTP ON&#39;</span><span class="p">)</span>
         
+    <span class="k">def</span> <span class="nf">powerOff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;:OUTP OFF&#39;</span><span class="p">)</span>
+        
     <span class="k">def</span> <span class="nf">powerOffZero</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;:OUTP:OFF:MODE ZERO&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;:OUTP OFF&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">powerOff</span><span class="p">()</span>
         
     <span class="k">def</span> <span class="nf">powerOffFloat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;:OUTP:OFF:MODE HIZ&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;:OUTP OFF&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">powerOff</span><span class="p">()</span>
         
 <div class="viewcode-block" id="m_SMU.startProgram"><a class="viewcode-back" href="../../../models/Agilent.m_SMU.html#models.Agilent.m_SMU.m_SMU.startProgram">[docs]</a>    <span class="k">def</span> <span class="nf">startProgram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -303,9 +306,9 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../search.html" method="get">
       <input type="text" name="q" />
@@ -322,7 +325,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -333,9 +336,9 @@
           <li><a href="../../models.html" >models</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2014, KKENNEDY.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3b1.
     </div>
   </body>
 </html>
