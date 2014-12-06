@@ -97,8 +97,10 @@ class InstrumentManager(rpc.RpcBase):
                             
                             self.logger.debug('Loading controller: %s', contModule)
                             
-                            testModule = importlib.import_module(contModule)
                             try:
+                                # Attempt to import the controller module
+                                testModule = importlib.import_module(contModule)
+                                
                                 # Instantiate the controller with a link to the model dictionary
                                 testClass = getattr(testModule, className)(logger=self.logger)
                                 
@@ -108,6 +110,8 @@ class InstrumentManager(rpc.RpcBase):
                                 else:
                                     testClass.close()
                             
+                            except ImportError:
+                                self.logger.error('Unable to import controller %s', contModule)
                             except KeyError:
                                 # No models loaded have support for that controller
                                 pass

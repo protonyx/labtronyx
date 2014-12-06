@@ -28,8 +28,8 @@
     <link rel="next" title="Controllers" href="dev_controller.html" />
     <link rel="prev" title="InstrumentManager Developer Guide" href="dev_index.html" /> 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
+  <body>
+    <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -49,7 +49,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body" role="main">
+          <div class="body">
             
   <div class="section" id="instrumentmanager">
 <h1>InstrumentManager<a class="headerlink" href="#instrumentmanager" title="Permalink to this headline">¶</a></h1>
@@ -118,15 +118,15 @@ See the <a class="reference internal" href="dev_model.html"><em>Model API Docume
 <div class="section" id="internal-api">
 <h2>Internal API<a class="headerlink" href="#internal-api" title="Permalink to this headline">¶</a></h2>
 <p>Like models, an InstrumentManager can also be connected to with a
-<code class="xref py py-class docutils literal"><span class="pre">RpcClient</span></code> instance. The following functions are listed only for
+<tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> instance. The following functions are listed only for
 reference, as the InstrumentControl API should be used to manage all
 communication with each InstrumentManager.</p>
 <dl class="class">
 <dt id="InstrumentManager.InstrumentManager">
-<em class="property">class </em><code class="descclassname">InstrumentManager.</code><code class="descname">InstrumentManager</code><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">InstrumentManager.</tt><tt class="descname">InstrumentManager</tt><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="InstrumentManager.InstrumentManager.addResource">
-<code class="descname">addResource</code><span class="sig-paren">(</span><em>controller</em>, <em>ResID</em>, <em>VID=None</em>, <em>PID=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.addResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.addResource" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">addResource</tt><big>(</big><em>controller</em>, <em>ResID</em>, <em>VID=None</em>, <em>PID=None</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.addResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.addResource" title="Permalink to this definition">¶</a></dt>
 <dd><p>Manually add a resource to a controller. VID and PID must be provided
 in order to correctly identify an appropriate model to load for the
 new resource.</p>
@@ -134,7 +134,7 @@ new resource.</p>
 <p class="first admonition-title">Note</p>
 <p class="last">This will return False if manually adding resources is not supported.
 To check if the controller supports manual resource management,
-use <a class="reference internal" href="#InstrumentManager.InstrumentManager.canEditResources" title="InstrumentManager.InstrumentManager.canEditResources"><code class="xref py py-func docutils literal"><span class="pre">InstrumentManager.canEditResources()</span></code></a></p>
+use <a class="reference internal" href="#InstrumentManager.InstrumentManager.canEditResources" title="InstrumentManager.InstrumentManager.canEditResources"><tt class="xref py py-func docutils literal"><span class="pre">InstrumentManager.canEditResources()</span></tt></a></p>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -157,7 +157,7 @@ use <a class="reference internal" href="#InstrumentManager.InstrumentManager.can
 
 <dl class="method">
 <dt id="InstrumentManager.InstrumentManager.canEditResources">
-<code class="descname">canEditResources</code><span class="sig-paren">(</span><em>controller</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.canEditResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.canEditResources" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">canEditResources</tt><big>(</big><em>controller</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.canEditResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.canEditResources" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check if a controller supports manually adding or removing resources.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -173,13 +173,13 @@ use <a class="reference internal" href="#InstrumentManager.InstrumentManager.can
 
 <dl class="method">
 <dt id="InstrumentManager.InstrumentManager.destroyResource">
-<code class="descname">destroyResource</code><span class="sig-paren">(</span><em>controller</em>, <em>res_uuid</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.destroyResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.destroyResource" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">destroyResource</tt><big>(</big><em>controller</em>, <em>res_uuid</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.destroyResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.destroyResource" title="Permalink to this definition">¶</a></dt>
 <dd><p>Manually destroy a resource within a controller</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">This will return False if manually destroying resources is not supported.
 To check if the controller supports manual resource management,
-use <a class="reference internal" href="#InstrumentManager.InstrumentManager.canEditResources" title="InstrumentManager.InstrumentManager.canEditResources"><code class="xref py py-func docutils literal"><span class="pre">InstrumentManager.canEditResources()</span></code></a></p>
+use <a class="reference internal" href="#InstrumentManager.InstrumentManager.canEditResources" title="InstrumentManager.InstrumentManager.canEditResources"><tt class="xref py py-func docutils literal"><span class="pre">InstrumentManager.canEditResources()</span></tt></a></p>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -200,7 +200,7 @@ use <a class="reference internal" href="#InstrumentManager.InstrumentManager.can
 
 <dl class="method">
 <dt id="InstrumentManager.InstrumentManager.getControllers">
-<code class="descname">getControllers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getControllers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getControllers" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getControllers</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getControllers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getControllers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of controllers known to InstrumentManager</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -214,7 +214,7 @@ use <a class="reference internal" href="#InstrumentManager.InstrumentManager.can
 
 <dl class="method">
 <dt id="InstrumentManager.InstrumentManager.getModelName">
-<code class="descname">getModelName</code><span class="sig-paren">(</span><em>res_uuid</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getModelName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getModelName" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getModelName</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getModelName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getModelName" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the class name for the model loaded for a given resource</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -230,7 +230,7 @@ use <a class="reference internal" href="#InstrumentManager.InstrumentManager.can
 
 <dl class="method">
 <dt id="InstrumentManager.InstrumentManager.getModelPort">
-<code class="descname">getModelPort</code><span class="sig-paren">(</span><em>res_uuid</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getModelPort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getModelPort" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getModelPort</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getModelPort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getModelPort" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the RPC Port for the model loaded for a given resource</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -246,7 +246,7 @@ use <a class="reference internal" href="#InstrumentManager.InstrumentManager.can
 
 <dl class="method">
 <dt id="InstrumentManager.InstrumentManager.getModels">
-<code class="descname">getModels</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getModels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getModels" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getModels</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getModels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getModels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a listing of all Models loaded</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -260,7 +260,7 @@ use <a class="reference internal" href="#InstrumentManager.InstrumentManager.can
 
 <dl class="method">
 <dt id="InstrumentManager.InstrumentManager.getProperties">
-<code class="descname">getProperties</code><span class="sig-paren">(</span><em>res_uuid=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getProperties" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getProperties</tt><big>(</big><em>res_uuid=None</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getProperties" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the properties dictionary for a given resource. If Resource UUID is
 not provided, a nested dictionary will be returned, with each property
 dictionary nested by Resource UUID.</p>
@@ -278,7 +278,7 @@ dictionary nested by Resource UUID.</p>
 
 <dl class="method">
 <dt id="InstrumentManager.InstrumentManager.getResources">
-<code class="descname">getResources</code><span class="sig-paren">(</span><em>controller=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getResources" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getResources</tt><big>(</big><em>controller=None</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getResources" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get all resources for a given or all controllers.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -294,7 +294,7 @@ dictionary nested by Resource UUID.</p>
 
 <dl class="method">
 <dt id="InstrumentManager.InstrumentManager.getValidModels">
-<code class="descname">getValidModels</code><span class="sig-paren">(</span><em>res_uuid</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getValidModels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getValidModels" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getValidModels</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getValidModels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getValidModels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of models that are considered valid for a given Resource</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -315,7 +315,7 @@ dictionary nested by Resource UUID.</p>
 
 <dl class="method">
 <dt id="InstrumentManager.InstrumentManager.getVersion">
-<code class="descname">getVersion</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getVersion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getVersion" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getVersion</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getVersion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getVersion" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the InstrumentManager version</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -329,7 +329,7 @@ dictionary nested by Resource UUID.</p>
 
 <dl class="method">
 <dt id="InstrumentManager.InstrumentManager.loadModel">
-<code class="descname">loadModel</code><span class="sig-paren">(</span><em>res_uuid</em>, <em>modelName=None</em>, <em>className=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.loadModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.loadModel" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">loadModel</tt><big>(</big><em>res_uuid</em>, <em>modelName=None</em>, <em>className=None</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.loadModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.loadModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load a model given a resource UUID. A model will be selected
 automatically. To load a specific model, provide <cite>modelName</cite> 
 (importable python module) and <cite>className</cite></p>
@@ -363,7 +363,7 @@ instantiation, the model will not be loaded.</p>
 
 <dl class="method">
 <dt id="InstrumentManager.InstrumentManager.refresh">
-<code class="descname">refresh</code><span class="sig-paren">(</span><em>controller=None</em>, <em>invoke_refresh=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.refresh" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">refresh</tt><big>(</big><em>controller=None</em>, <em>invoke_refresh=True</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.refresh" title="Permalink to this definition">¶</a></dt>
 <dd><p>Refresh all resources for a given controller. If <cite>controller</cite> is None, 
 all controllers will be refreshed</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -385,14 +385,14 @@ all controllers will be refreshed</p>
 
 <dl class="method">
 <dt id="InstrumentManager.InstrumentManager.stop">
-<code class="descname">stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.stop" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stop the InstrumentManager instance. Attempts to shutdown and free
 all resources.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="InstrumentManager.InstrumentManager.unloadModel">
-<code class="descname">unloadModel</code><span class="sig-paren">(</span><em>res_uuid</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.unloadModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.unloadModel" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">unloadModel</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.unloadModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.unloadModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unloads the model for a given resource.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -415,7 +415,7 @@ all resources.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
@@ -434,14 +434,12 @@ all resources.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="dev_controller.html"
                         title="next chapter">Controllers</a></p>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/dev/dev_manager.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/dev/dev_manager.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -458,7 +456,7 @@ all resources.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -474,9 +472,9 @@ all resources.</p>
           <li><a href="dev_index.html" >InstrumentManager Developer Guide</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer" role="contentinfo">
+    <div class="footer">
         &copy; Copyright 2014, KKENNEDY.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3b1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

@@ -27,8 +27,8 @@
     <link rel="next" title="Using the Test Framework" href="tests.html" />
     <link rel="prev" title="Managing Resources" href="resources.html" /> 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
+  <body>
+    <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -47,7 +47,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body" role="main">
+          <div class="body">
             
   <div class="section" id="managing-models-and-instruments">
 <h1>Managing Models and Instruments<a class="headerlink" href="#managing-models-and-instruments" title="Permalink to this headline">¶</a></h1>
@@ -64,14 +64,14 @@ to connect to an Instrument, a Model must first be loaded.</p>
 <p>Models are typically handled automatically by the InstrumentManager. There are
 a few cases, however, when you would need to manually load or unload a Model.
 These cases are:</p>
-<div class="highlight-python"><div class="highlight"><pre>* Multiple compatible Models exist, and the autoloader picked the wrong
-Model
-* The Controller does not support enumeration or autoloading Models
-* The Controller Resource was created manually
-* The Model you wish to load is not considered compatible (experimental
-code, etc.)
-</pre></div>
-</div>
+<blockquote>
+<div><ul class="simple">
+<li>Multiple compatible Models exist, and the autoloader picked the wrong Model</li>
+<li>The Controller does not support enumeration or autoloading Models</li>
+<li>The Controller Resource was created manually</li>
+<li>The Model you wish to load is not considered compatible (experimental code, etc.)</li>
+</ul>
+</div></blockquote>
 <p>To load a Model for a resource, you must get the UUID of the resource and then
 unload any existing Model:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">instr</span> <span class="o">=</span> <span class="n">InstrumentControl</span><span class="p">()</span>
@@ -85,13 +85,13 @@ unload any existing Model:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">instr</span><span class="o">.</span><span class="n">loadModel</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="s">&#39;models.Tektronix.Oscilloscope.m_DigitalPhosphor&#39;</span><span class="p">,</span> <span class="s">&#39;m_DigitalPhosphor&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>For more details, see <code class="xref py py-func docutils literal"><span class="pre">InstrumentControl.unloadModel()</span></code> and
-<code class="xref py py-func docutils literal"><span class="pre">InstrumentControl.loadModel()</span></code></p>
+<p>For more details, see <tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.unloadModel()</span></tt> and
+<tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.loadModel()</span></tt></p>
 </div>
 <div class="section" id="connecting-to-instruments">
 <h2>Connecting to Instruments<a class="headerlink" href="#connecting-to-instruments" title="Permalink to this headline">¶</a></h2>
 <p>InstrumentControl can connect to any Instrument on any machine that has been
-added using <code class="xref py py-func docutils literal"><span class="pre">InstrumentControl.addManager()</span></code>. You can find instruments by:</p>
+added using <tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.addManager()</span></tt>. You can find instruments by:</p>
 <blockquote>
 <div><ul class="simple">
 <li>Type</li>
@@ -129,14 +129,14 @@ number.</p>
 the hood, Instruments are an RPC-endpoint connected to a socket on the
 InstrumentManager. While this whole process should be mostly transparent to
 both the user and the developer, some things are limited:</p>
-<div class="highlight-python"><div class="highlight"><pre>* Only methods can be called, it is not possible to access object attributes
-* Accessing or Modifying attributes can only be done by wrapping the
-attribute in a set of methods (getters and setters)
-* Methods that begin with &#39;_&#39; are considered protected and cannot be
-accessed
-* The RPC subsystem introduces 2-20 milliseconds of latency
-</pre></div>
-</div>
+<blockquote>
+<div><ul class="simple">
+<li>Only methods can be called, it is not possible to access object attributes</li>
+<li>Accessing or Modifying attributes can only be done by wrapping the attribute in a set of methods (getters and setters)</li>
+<li>Methods that begin with &#8216;_&#8217; are considered protected and cannot be accessed</li>
+<li>The RPC subsystem introduces 2-20 milliseconds of latency</li>
+</ul>
+</div></blockquote>
 <p>see <a class="reference internal" href="supported_instruments.html"><em>Supported Instruments</em></a> for further
 documentation on each instrument.</p>
 </div>
@@ -158,10 +158,10 @@ data. This is done by calling <a href="#id1"><span class="problematic" id="id2">
 object.</p>
 <dl class="class">
 <dt id="models.m_Base">
-<em class="property">class </em><code class="descclassname">models.</code><code class="descname">m_Base</code><span class="sig-paren">(</span><em>uuid</em>, <em>controller</em>, <em>resID</em>, <em>VID</em>, <em>PID</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models.html#m_Base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.m_Base" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">models.</tt><tt class="descname">m_Base</tt><big>(</big><em>uuid</em>, <em>controller</em>, <em>resID</em>, <em>VID</em>, <em>PID</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/models.html#m_Base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.m_Base" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="models.m_Base.startCollector">
-<code class="descname">startCollector</code><span class="sig-paren">(</span><em>method</em>, <em>interval</em>, <em>callback</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/models.html#m_Base.startCollector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.m_Base.startCollector" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">startCollector</tt><big>(</big><em>method</em>, <em>interval</em>, <em>depth</em><big>)</big><a class="reference internal" href="_modules/models.html#m_Base.startCollector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.m_Base.startCollector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Starts a Collector thread to retrieve data at a regular interval.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -170,7 +170,7 @@ object.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>method</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Name of the Model method to invoke</li>
 <li><strong>interval</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Interval in milliseconds between method invokations</li>
-<li><strong>callback</strong> (<em>method</em>) &#8211; Method to call with returned data</li>
+<li><strong>depth</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Number of samples to keep</li>
 </ul>
 </td>
 </tr>
@@ -208,7 +208,7 @@ old collector will be destroyed and a new one will be created.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
@@ -227,14 +227,12 @@ old collector will be destroyed and a new one will be created.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="tests.html"
                         title="next chapter">Using the Test Framework</a></p>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/models.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/models.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
@@ -251,7 +249,7 @@ old collector will be destroyed and a new one will be created.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -266,9 +264,9 @@ old collector will be destroyed and a new one will be created.</p>
         <li><a href="index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer" role="contentinfo">
+    <div class="footer">
         &copy; Copyright 2014, KKENNEDY.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3b1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

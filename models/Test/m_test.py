@@ -1,8 +1,10 @@
 import models
 
+import math
+import time
+
 class m_test(models.m_Base):
     
-    # Model device type
     deviceType = 'Debug'
     
     # List of valid Controllers that are compatible with this Model
@@ -20,11 +22,14 @@ class m_test(models.m_Base):
         pass
     
     def getProperties(self):
-        prop = models.m_Base.getProperties(self)
+        ret = models.m_Base.getProperties(self)
         
-        # Add any additional properties here
-        return prop
+        ret['deviceVendor'] = 'ICP'
+        ret['deviceModel'] = 'Debugger Model'
+            
+        return ret
     
-    def doThing(self):
-        return 'Thing!'
+    def doCos(self):
+        # Return sinusoidal data
+        return math.cos(2*math.pi*0.1*time.time())
     

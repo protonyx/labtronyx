@@ -24,21 +24,21 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="index.html" />
-    <link rel="next" title="Supported Instruments (Models)" href="supported_instruments.html" />
-    <link rel="prev" title="Managing Models and Instruments" href="models.html" /> 
+    <link rel="next" title="Common Library" href="common.html" />
+    <link rel="prev" title="Using the Test Framework" href="tests.html" /> 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
+  <body>
+    <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="supported_instruments.html" title="Supported Instruments (Models)"
+          <a href="common.html" title="Common Library"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="models.html" title="Managing Models and Instruments"
+          <a href="tests.html" title="Using the Test Framework"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li> 
       </ul>
@@ -47,14 +47,14 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body" role="main">
+          <div class="body">
             
   <div class="section" id="instrumentcontrol-api">
 <h1>InstrumentControl API<a class="headerlink" href="#instrumentcontrol-api" title="Permalink to this headline">¶</a></h1>
 <p>The InstrumentControl API is the core of the Application GUI. It simplifies
 script development by abstracting local and remote instruments as simple Python
 objects and providing helper functions to handle all of the low-level
-communication with <code class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></code> instances.</p>
+communication with <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> instances.</p>
 <p>The InstrumentControl object is essentially a wrapper for InstrumentManager,
 but simplifies the API by managing the communication to InstrumentManager
 instances on multiple machines. All of the resources from all of the connected
@@ -62,7 +62,7 @@ InstrumentManager instances are cached locally and can be accessed using the
 API as if they were all local objects.</p>
 <dl class="class">
 <dt id="InstrumentControl.InstrumentControl">
-<em class="property">class </em><code class="descclassname">InstrumentControl.</code><code class="descname">InstrumentControl</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">InstrumentControl.</tt><tt class="descname">InstrumentControl</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -75,20 +75,20 @@ API as if they were all local objects.</p>
 communicate with any number of local or remote InstrumentManager instances.</p>
 <p>InstrumentControl simplifies the process of writing test instrument
 automation and control scripts. This is accomplished by abstracting the
-communication with <code class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></code> instances that contain the device
+communication with <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> instances that contain the device
 interface code.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">InstrumentManager must be running on the local or remote machine that you
-are trying to connect to. <a class="reference internal" href="#InstrumentControl.InstrumentControl.startWaitManager" title="InstrumentControl.InstrumentControl.startWaitManager"><code class="xref py py-func docutils literal"><span class="pre">InstrumentControl.startWaitManager()</span></code></a> can be
+are trying to connect to. <a class="reference internal" href="#InstrumentControl.InstrumentControl.startWaitManager" title="InstrumentControl.InstrumentControl.startWaitManager"><tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.startWaitManager()</span></tt></a> can be
 used to spawn a new process of InstrumentManager.</p>
 </div>
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.addManager">
-<code class="descname">addManager</code><span class="sig-paren">(</span><em>address</em>, <em>port=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.addManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.addManager" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">addManager</tt><big>(</big><em>address</em>, <em>port=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.addManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.addManager" title="Permalink to this definition">¶</a></dt>
 <dd><p>Connect to a manager instance at the given address and port. If the
 connection is successful, the remote resources are automatically
-added to the pool of resources using <code class="xref py py-func docutils literal"><span class="pre">refreshManager()</span></code></p>
+added to the pool of resources using <tt class="xref py py-func docutils literal"><span class="pre">refreshManager()</span></tt></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -108,7 +108,7 @@ added to the pool of resources using <code class="xref py py-func docutils liter
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.addResource">
-<code class="descname">addResource</code><span class="sig-paren">(</span><em>address</em>, <em>controller</em>, <em>ResID</em>, <em>VendorID=None</em>, <em>ProductID=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.addResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.addResource" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">addResource</tt><big>(</big><em>address</em>, <em>controller</em>, <em>ResID</em>, <em>VendorID=None</em>, <em>ProductID=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.addResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.addResource" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a managed resource within a controller object</p>
 <p>If <cite>controller</cite> is not a valid controller on the remote manager instance,
 or if the controller does not support manually adding resources, this 
@@ -144,11 +144,11 @@ communication can be established.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.cacheManager">
-<code class="descname">cacheManager</code><span class="sig-paren">(</span><em>address</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.cacheManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.cacheManager" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">cacheManager</tt><big>(</big><em>address</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.cacheManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.cacheManager" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the local cache of resources from a given Manager</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Use <code class="xref py py-func docutils literal"><span class="pre">addManager()</span></code> to establish a connection to a manager
+<p class="last">Use <tt class="xref py py-func docutils literal"><span class="pre">addManager()</span></tt> to establish a connection to a manager
 before calling this function.</p>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
@@ -165,7 +165,7 @@ before calling this function.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.cacheProperties">
-<code class="descname">cacheProperties</code><span class="sig-paren">(</span><em>res_uuid=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.cacheProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.cacheProperties" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">cacheProperties</tt><big>(</big><em>res_uuid=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.cacheProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.cacheProperties" title="Permalink to this definition">¶</a></dt>
 <dd><p>Refresh the cached property dictionary for a given resource. If no
 Resource UUID is provided, all resources properties will be updated.</p>
 <div class="admonition note">
@@ -187,9 +187,9 @@ resource.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.createInstrument">
-<code class="descname">createInstrument</code><span class="sig-paren">(</span><em>res_uuid</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.createInstrument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.createInstrument" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a <code class="xref py py-class docutils literal"><span class="pre">RpcClient</span></code> instance that is linked to a model on a
-local or remote machine. <code class="xref py py-func docutils literal"><span class="pre">createInstrument()</span></code> only works with
+<tt class="descname">createInstrument</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.createInstrument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.createInstrument" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> instance that is linked to a model on a
+local or remote machine. <tt class="xref py py-func docutils literal"><span class="pre">createInstrument()</span></tt> only works with
 resources that have models loaded.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -205,8 +205,8 @@ resources that have models loaded.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.destroyInstrument">
-<code class="descname">destroyInstrument</code><span class="sig-paren">(</span><em>res_uuid</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.destroyInstrument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.destroyInstrument" title="Permalink to this definition">¶</a></dt>
-<dd><p>Destroys the local instance of an <code class="xref py py-class docutils literal"><span class="pre">RpcClient</span></code> object linked to
+<tt class="descname">destroyInstrument</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.destroyInstrument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.destroyInstrument" title="Permalink to this definition">¶</a></dt>
+<dd><p>Destroys the local instance of an <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> object linked to
 a local or remote model.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -222,7 +222,7 @@ a local or remote model.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.findResource">
-<code class="descname">findResource</code><span class="sig-paren">(</span><em>address</em>, <em>resID</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.findResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.findResource" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">findResource</tt><big>(</big><em>address</em>, <em>resID</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.findResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.findResource" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the Resource UUID given an address and Resource ID.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -243,7 +243,7 @@ a local or remote model.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.getConnectedHosts">
-<code class="descname">getConnectedHosts</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getConnectedHosts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getConnectedHosts" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getConnectedHosts</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getConnectedHosts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getConnectedHosts" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of connected hostnames</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -257,7 +257,7 @@ a local or remote model.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.getControllers">
-<code class="descname">getControllers</code><span class="sig-paren">(</span><em>address</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getControllers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getControllers" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getControllers</tt><big>(</big><em>address</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getControllers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getControllers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of controllers from a given InstrumentManager instance.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -273,7 +273,7 @@ a local or remote model.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.getHostname">
-<code class="descname">getHostname</code><span class="sig-paren">(</span><em>address</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getHostname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getHostname" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getHostname</tt><big>(</big><em>address</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getHostname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getHostname" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the Hostname for the given address</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -289,8 +289,8 @@ a local or remote model.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.getInstrument">
-<code class="descname">getInstrument</code><span class="sig-paren">(</span><em>res_uuid</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getInstrument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getInstrument" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get an Instrument <a class="reference internal" href="rpc.html#common.rpc.RpcClient" title="common.rpc.RpcClient"><code class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></code></a> object that is linked
+<tt class="descname">getInstrument</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getInstrument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getInstrument" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get an Instrument <a class="reference internal" href="rpc.html#common.rpc.RpcClient" title="common.rpc.RpcClient"><tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt></a> object that is linked
 to the remote model.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -298,7 +298,7 @@ to the remote model.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>res_uuid</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Unique Resource Identifier (UUID)</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><a class="reference internal" href="rpc.html#common.rpc.RpcClient" title="common.rpc.RpcClient"><code class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></code></a> object or None if unable to         connect to Model</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><a class="reference internal" href="rpc.html#common.rpc.RpcClient" title="common.rpc.RpcClient"><tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt></a> object or None if unable to         connect to Model</td>
 </tr>
 </tbody>
 </table>
@@ -306,8 +306,8 @@ to the remote model.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.getInstrument_list">
-<code class="descname">getInstrument_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getInstrument_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getInstrument_list" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a list of <code class="xref py py-class docutils literal"><span class="pre">RpcClient</span></code> objects for all resources with models
+<tt class="descname">getInstrument_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getInstrument_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getInstrument_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects for all resources with models
 loaded</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -319,7 +319,7 @@ on remote InstrumentManagers if you don&#8217;t need them.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of <code class="xref py py-class docutils literal"><span class="pre">RpcClient</span></code> objects</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects</td>
 </tr>
 </tbody>
 </table>
@@ -327,8 +327,8 @@ on remote InstrumentManagers if you don&#8217;t need them.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.getInstrument_model">
-<code class="descname">getInstrument_model</code><span class="sig-paren">(</span><em>model_number</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getInstrument_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getInstrument_model" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a list of <code class="xref py py-class docutils literal"><span class="pre">RpcClient</span></code> objects for resources with the given 
+<tt class="descname">getInstrument_model</tt><big>(</big><em>model_number</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getInstrument_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getInstrument_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects for resources with the given 
 model number.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -338,7 +338,7 @@ model number.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of <code class="xref py py-class docutils literal"><span class="pre">RpcClient</span></code> objects</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects</td>
 </tr>
 </tbody>
 </table>
@@ -346,8 +346,8 @@ model number.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.getInstrument_serial">
-<code class="descname">getInstrument_serial</code><span class="sig-paren">(</span><em>serial_number</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getInstrument_serial"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getInstrument_serial" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a <code class="xref py py-class docutils literal"><span class="pre">RpcClient</span></code> object for the resource with the given serial
+<tt class="descname">getInstrument_serial</tt><big>(</big><em>serial_number</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getInstrument_serial"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getInstrument_serial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> object for the resource with the given serial
 number.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -357,7 +357,7 @@ number.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">RpcClient</span></code> object</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> object</td>
 </tr>
 </tbody>
 </table>
@@ -365,8 +365,8 @@ number.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.getInstrument_type">
-<code class="descname">getInstrument_type</code><span class="sig-paren">(</span><em>d_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getInstrument_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getInstrument_type" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a list of <code class="xref py py-class docutils literal"><span class="pre">RpcClient</span></code> objects for resources with the given 
+<tt class="descname">getInstrument_type</tt><big>(</big><em>d_type</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getInstrument_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getInstrument_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects for resources with the given 
 device type.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -376,7 +376,7 @@ device type.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of <code class="xref py py-class docutils literal"><span class="pre">RpcClient</span></code> objects</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects</td>
 </tr>
 </tbody>
 </table>
@@ -384,13 +384,13 @@ device type.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.getManager">
-<code class="descname">getManager</code><span class="sig-paren">(</span><em>address</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getManager" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getManager</tt><big>(</big><em>address</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getManager" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get an InstrumentManager object for the host at <cite>address</cite>. Object
-returned is an <a class="reference internal" href="rpc.html#common.rpc.RpcClient" title="common.rpc.RpcClient"><code class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></code></a> object that is linked to
+returned is an <a class="reference internal" href="rpc.html#common.rpc.RpcClient" title="common.rpc.RpcClient"><tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt></a> object that is linked to
 a remote InstrumentManager instance.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">This will always return an <a class="reference internal" href="rpc.html#common.rpc.RpcClient" title="common.rpc.RpcClient"><code class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></code></a> object, even
+<p class="last">This will always return an <a class="reference internal" href="rpc.html#common.rpc.RpcClient" title="common.rpc.RpcClient"><tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt></a> object, even
 if the InstrumentManager instance is on the local machine.</p>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
@@ -399,7 +399,7 @@ if the InstrumentManager instance is on the local machine.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; IP Address of manger</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><a class="reference internal" href="rpc.html#common.rpc.RpcClient" title="common.rpc.RpcClient"><code class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></code></a> object or None if there is no         existing connection to <cite>address</cite></td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><a class="reference internal" href="rpc.html#common.rpc.RpcClient" title="common.rpc.RpcClient"><tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt></a> object or None if there is no         existing connection to <cite>address</cite></td>
 </tr>
 </tbody>
 </table>
@@ -407,7 +407,7 @@ if the InstrumentManager instance is on the local machine.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.getProperties">
-<code class="descname">getProperties</code><span class="sig-paren">(</span><em>res_uuid=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getProperties" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getProperties</tt><big>(</big><em>res_uuid=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getProperties" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the cached property dictionary for a given resource. If no
 Resource UUID is provided, returns the resources properties for all
 resources in nested dictionaries by Resource UUID.</p>
@@ -425,7 +425,7 @@ resources in nested dictionaries by Resource UUID.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.getResource_address">
-<code class="descname">getResource_address</code><span class="sig-paren">(</span><em>res_uuid</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getResource_address"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getResource_address" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getResource_address</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getResource_address"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getResource_address" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the address where a resource is located.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -441,9 +441,9 @@ resources in nested dictionaries by Resource UUID.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.getResources">
-<code class="descname">getResources</code><span class="sig-paren">(</span><em>address=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getResources" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getResources</tt><big>(</big><em>address=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getResources" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a listing of all cached resources from the given address or from all
-<code class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></code> instances.</p>
+<tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> instances.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last"><cite>getResources</cite> will not trigger a refresh on the InstrumentManager,
@@ -464,7 +464,7 @@ so resources returned may not be valid</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.getValidModels">
-<code class="descname">getValidModels</code><span class="sig-paren">(</span><em>res_uuid</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getValidModels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getValidModels" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">getValidModels</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.getValidModels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.getValidModels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of models that are considered valid for a given Resource</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -485,7 +485,7 @@ so resources returned may not be valid</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.isConnectedHost">
-<code class="descname">isConnectedHost</code><span class="sig-paren">(</span><em>hostname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.isConnectedHost"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.isConnectedHost" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">isConnectedHost</tt><big>(</big><em>hostname</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.isConnectedHost"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.isConnectedHost" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check if a given host is connected</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -501,7 +501,7 @@ so resources returned may not be valid</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.isValidResource">
-<code class="descname">isValidResource</code><span class="sig-paren">(</span><em>res_uuid</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.isValidResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.isValidResource" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">isValidResource</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.isValidResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.isValidResource" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check if a resource is known.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -517,7 +517,7 @@ so resources returned may not be valid</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.loadModel">
-<code class="descname">loadModel</code><span class="sig-paren">(</span><em>res_uuid</em>, <em>modelName=None</em>, <em>className=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.loadModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.loadModel" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">loadModel</tt><big>(</big><em>res_uuid</em>, <em>modelName=None</em>, <em>className=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.loadModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.loadModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Signal the remote InstrumentManager to load a model for a given
 resource. The InstrumentManager will attempt to identify a compatible
 model to load automatically. To force load a particular model, provide
@@ -526,7 +526,7 @@ a <cite>modelName</cite> and <cite>className</cite>.</p>
 base folder used to locate the module is the <cite>models</cite> folder.</p>
 <p>On startup, the InstrumentManager will attempt to load models for all
 resources automatically. This function only needs to be called to
-override the default model. <code class="xref py py-func docutils literal"><span class="pre">unloadModel()</span></code> must be called before
+override the default model. <tt class="xref py py-func docutils literal"><span class="pre">unloadModel()</span></tt> must be called before
 loading a new model for a resource.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -558,8 +558,8 @@ False with no other indication.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.managerRunning">
-<code class="descname">managerRunning</code><span class="sig-paren">(</span><em>address</em>, <em>port=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.managerRunning"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.managerRunning" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check if an <code class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></code> instance is running. Attempts to
+<tt class="descname">managerRunning</tt><big>(</big><em>address</em>, <em>port=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.managerRunning"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.managerRunning" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if an <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> instance is running. Attempts to
 open a socket to the provided address and port.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -580,12 +580,12 @@ open a socket to the provided address and port.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.refreshManager">
-<code class="descname">refreshManager</code><span class="sig-paren">(</span><em>address=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.refreshManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.refreshManager" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">refreshManager</tt><big>(</big><em>address=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.refreshManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.refreshManager" title="Permalink to this definition">¶</a></dt>
 <dd><p>Force the remote InstrumentManager to refresh all of the controllers
 and enumerate any new resources.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Use <code class="xref py py-func docutils literal"><span class="pre">addManager()</span></code> to establish a connection to a manager
+<p class="last">Use <tt class="xref py py-func docutils literal"><span class="pre">addManager()</span></tt> to establish a connection to a manager
 before calling this function.</p>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
@@ -602,7 +602,7 @@ before calling this function.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.removeManager">
-<code class="descname">removeManager</code><span class="sig-paren">(</span><em>address</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.removeManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.removeManager" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">removeManager</tt><big>(</big><em>address</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.removeManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.removeManager" title="Permalink to this definition">¶</a></dt>
 <dd><p>Disconnect from the manager instance at <cite>address</cite> and purge all cached
 resources from that host.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -619,9 +619,9 @@ resources from that host.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.removeResource">
-<code class="descname">removeResource</code><span class="sig-paren">(</span><em>res_uuid</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.removeResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.removeResource" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">removeResource</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.removeResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.removeResource" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove a managed resource from a remote controller.</p>
-<p>Unlike <code class="xref py py-func docutils literal"><span class="pre">addResource()</span></code>, this function will find the IP Address and
+<p>Unlike <tt class="xref py py-func docutils literal"><span class="pre">addResource()</span></tt>, this function will find the IP Address and
 controller given <cite>res_uuid</cite>. If the resource cannot be found in the
 cache, this function will return False.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -638,16 +638,16 @@ cache, this function will return False.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.startManager">
-<code class="descname">startManager</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.startManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.startManager" title="Permalink to this definition">¶</a></dt>
-<dd><p>Start a local instance of <code class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></code> using 
-<code class="xref py py-func docutils literal"><span class="pre">subprocess.Popen()</span></code>.</p>
-<p>No attempt is made to check whether an <code class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></code>
+<tt class="descname">startManager</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.startManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.startManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start a local instance of <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> using 
+<tt class="xref py py-func docutils literal"><span class="pre">subprocess.Popen()</span></tt>.</p>
+<p>No attempt is made to check whether an <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt>
 process is already running. The default behavior for :class:&#8217;InstrumentManager&#8217;
 is to exit when the port is already in use.</p>
 <p>See :class:&#8217;InstrumentManager&#8217; documentation for more information.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">This function does not block! If the <code class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></code>
+<p class="last">This function does not block! If the <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt>
 instance is not fully initialized before attempting to connect to it,
 timeouts will occur.</p>
 </div>
@@ -655,11 +655,11 @@ timeouts will occur.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.startWaitManager">
-<code class="descname">startWaitManager</code><span class="sig-paren">(</span><em>timeout=10.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.startWaitManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.startWaitManager" title="Permalink to this definition">¶</a></dt>
-<dd><p>Start a local instance of <code class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></code> using 
-<code class="xref py py-func docutils literal"><span class="pre">subprocess.Popen()</span></code>. This function will block until the manager is
+<tt class="descname">startWaitManager</tt><big>(</big><em>timeout=10.0</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.startWaitManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.startWaitManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start a local instance of <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> using 
+<tt class="xref py py-func docutils literal"><span class="pre">subprocess.Popen()</span></tt>. This function will block until the manager is
 fully initialized.</p>
-<p>See <code class="xref py py-func docutils literal"><span class="pre">startManager()</span></code> for more.</p>
+<p>See <tt class="xref py py-func docutils literal"><span class="pre">startManager()</span></tt> for more.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -674,12 +674,12 @@ fully initialized.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.stopManager">
-<code class="descname">stopManager</code><span class="sig-paren">(</span><em>address</em>, <em>port=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.stopManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.stopManager" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">stopManager</tt><big>(</big><em>address</em>, <em>port=None</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.stopManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.stopManager" title="Permalink to this definition">¶</a></dt>
 <dd><p>Send a stop signal to a manager instance running on a local or remote
 machine.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last"><code class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></code> cannot be restarted once it is stopped</p>
+<p class="last"><tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> cannot be restarted once it is stopped</p>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -700,10 +700,10 @@ machine.</p>
 
 <dl class="method">
 <dt id="InstrumentControl.InstrumentControl.unloadModel">
-<code class="descname">unloadModel</code><span class="sig-paren">(</span><em>res_uuid</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.unloadModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.unloadModel" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">unloadModel</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="_modules/InstrumentControl.html#InstrumentControl.unloadModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentControl.InstrumentControl.unloadModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Signal the remote InstrumentManager to unload the currently loaded
 model for a given resource. This function must be called before 
-<code class="xref py py-func docutils literal"><span class="pre">loadModel()</span></code>.</p>
+<tt class="xref py py-func docutils literal"><span class="pre">loadModel()</span></tt>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -724,22 +724,20 @@ model for a given resource. This function must be called before
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
-  <p class="topless"><a href="models.html"
-                        title="previous chapter">Managing Models and Instruments</a></p>
+  <p class="topless"><a href="tests.html"
+                        title="previous chapter">Using the Test Framework</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="supported_instruments.html"
-                        title="next chapter">Supported Instruments (Models)</a></p>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/api.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
+  <p class="topless"><a href="common.html"
+                        title="next chapter">Common Library</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/api.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
@@ -756,24 +754,24 @@ model for a given resource. This function must be called before
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="supported_instruments.html" title="Supported Instruments (Models)"
+          <a href="common.html" title="Common Library"
              >next</a> |</li>
         <li class="right" >
-          <a href="models.html" title="Managing Models and Instruments"
+          <a href="tests.html" title="Using the Test Framework"
              >previous</a> |</li>
         <li><a href="index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer" role="contentinfo">
+    <div class="footer">
         &copy; Copyright 2014, KKENNEDY.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3b1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

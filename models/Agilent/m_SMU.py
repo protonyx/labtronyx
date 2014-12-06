@@ -5,8 +5,7 @@ import time
 class m_SMU(m_Base):
     
     deviceType = 'Source Measurement Unit'
-    view = None
-    
+
     # Model Lookup
     validControllers = ['c_VISA']
     validVIDs = ['Agilent']
@@ -44,6 +43,7 @@ class m_SMU(m_Base):
     def getProperties(self):
         ret = m_Base.getProperties(self)
         ret['deviceVendor'] = 'Agilent'
+        
         if self.__identity is not None:
             ret['deviceModel'] = self.__identity[1]
             ret['deviceSerial'] = self.__identity[2]

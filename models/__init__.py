@@ -1,29 +1,32 @@
 """
-Test
+Model Base Class
 """
 
 import common
 import common.rpc
 
+import time
 import sys
 import importlib
 import logging
+import threading
 
 import views
 
 class m_Base(common.rpc.RpcBase, common.IC_Common):
     
     deviceType = 'Generic'
-    view = None
-    
+
     # Model Lookup
     validControllers = []
     validVIDs = []
     validPIDs = []
     
+    # Collector Attributes
     _collector_thread = None
+    _collector_lock = threading.Lock()
+    _collectors = {}
     _collector_methods = {}
-    _collector_last_sample = {}
     
     def __init__(self, uuid, controller, resID, VID, PID, **kwargs):
         common.rpc.RpcBase.__init__(self)
@@ -42,27 +45,40 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
     # Collector Functionality
     #===========================================================================
     
-    def __collector_thread(self):
+    def __collector_thread(self, lock_obj):
         """
         Asynchronous thread that automatically polls methods that are marked
         for collection
         """
+        threading.current_thread().setName('collector_%s' % self.uuid)
         next_sample = {}
         
-        while (len(self.acc_config) > 0):
-            for reg, acc_config in self.acc_config.items():
+        while (len(self._collector_methods) > 0):
+            wait_next = 1.0
+            
+            for method, collector_config in self._collector_methods.items():
+                interval, depth = collector_config
+                
                 # Check if it is time to get a new sample
-                if time.time() > next_sample.get(reg, 0.0):
-                    address, subindex = reg
-                    _, sample_time, data_type = acc_config
+                sample_time = next_sample.get(method, 0.0)
+                if time.time() > sample_time:
                     
-                    # Queue a register read, the ICP thread will handle the data when it comes back
-                    self.register_read_queue(address, subindex, data_type)
+                    if hasattr(self, method):
+                        method_b = getattr(self, method)
+                        ret = method_b()
+                        
+                        with lock_obj:
+                            coll = self._collectors[method]
+                            coll.append((sample_time, ret))
+                            if len(coll) > depth:
+                                coll.pop(0)
+                        
+                    else:
+                        self.stopCollector(method)
+                        self.logger.error("Collector error: invalid method %s", method)
                     
                     # Increment the next sample time
-                    next_sample[reg] = next_sample.get(reg, time.time()) + sample_time
-                    
-            # TODO: Calculate the time to the next sample and sleep until then
+                    next_sample[method] = next_sample.get(method, time.time()) + interval
         
         # Clear reference to this thread before exiting
         self._collector_thread = None
@@ -73,28 +89,54 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
         
         :param method: Name of the Model method to invoke
         :type method: str
-        :param interval: Interval in milliseconds between method invokations
-        :type interval: int
+        :param interval: Interval in seconds between method invokations
+        :type interval: float
         :param depth: Number of samples to keep
         :type depth: int
         :returns: Boolean, True if successful, False otherwise.
         """
-        key = (address, subindex)
-        self.reg_cache[key] = ''
-        self.acc_config[key] = (depth, sample_time, data_type)
-        
-        # Create a new accumulator object
-        self.accumulators[key] = UPEL_ICP_Accumulator(depth, data_type)
+        self._collector_methods[method] = (interval, depth)
+        self._collectors[method] = []
         
         # Start the accumulator thread
-        if self.acc_thread is None:
-            self.acc_thread = threading.Thread(target=self.__accumulator_thread)
-            self.acc_thread.start()
+        if self._collector_thread is None:
+            self._collector_thread = threading.Thread(target=self.__collector_thread, args=(self._collector_lock,))
+            self._collector_thread.start()
     
     def stopCollector(self, method):
-        pass
-    
-    
+        try:
+            self._collector_methods.pop(method)
+            self._collectors.pop(method)
+        except:
+            pass
+        
+    def getCollector(self, method, time=0.0):
+        """
+        Get all data from a collector after a certain timestamp
+        
+        :param method: Name of collector-attached method
+        :type method: str
+        :param time: Lower bound of time for returned samples
+        :type time: float
+        :return: list
+        """
+        if method in self._collector_methods:
+            try:
+                coll = self._collectors.get(method)
+                
+                for index, entry in enumerate(coll):
+                    timestamp, _ = entry
+                    
+                    if timestamp > time:
+                        return coll[index:] # Return a slice of the list after the list entry
+                        
+                return []
+            
+            except:
+                self.logger.exception("Exception while retrieving collector data")
+        
+        else:
+            return None
             
     #===========================================================================
     # Virtual Functions

@@ -24,6 +24,13 @@ class m_MultimeterBase(models.m_Base):
     def _onUnload(self):
         pass
     
+    def getProperties(self):
+        ret = models.m_Base.getProperties(self)
+        
+        ret['deviceVendor'] = 'BK Precision'
+            
+        return ret
+    
     def _BK_ask(self, command):
         resp = str(self.__instr.ask(command))
         # Clean up the SCPI header

@@ -44,6 +44,18 @@ class m_85XX(m_Base):
     def _onUnload(self):
         self.instr.close()
         
+    def getProperties(self):
+        ret = m_Base.getProperties(self)
+        
+        ret['deviceVendor'] = 'BK Precision'
+        
+        prodInfo = self.GetProductInformation()
+        ret['deviceModel'] = prodInfo[0]
+        ret['deviceSerial'] = prodInfo[1]
+        ret['deviceFirmware'] = prodInfo[2]
+            
+        return ret
+        
     def setBaud(self, baudrate):
         self.instr.close()
         self.instr.baudrate = baudrate
@@ -504,6 +516,7 @@ class m_85XX(m_Base):
         demand_state = hex(self._DecodeInteger(response[16:18]))
         s = [str(voltage) + " V", str(current) + " A", str(power) + " W", str(op_state), str(demand_state)]
         return join(s, "\t")
+    
     # Returns model number, serial number, and firmware version number
     def GetProductInformation(self):
         "Returns model number, serial number, and firmware version"
@@ -517,5 +530,6 @@ class m_85XX(m_Base):
         fw = hex(ord(response[9]))[2:] + "."
         fw += hex(ord(response[8]))[2:] 
         serial_number = response[10:20]
-        return join((str(model), str(serial_number), str(fw)), "\t")
+        
+        return (str(model), str(serial_number), str(fw))
 

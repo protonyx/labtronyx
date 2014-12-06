@@ -18,14 +18,12 @@ Loading and Unloading Models
 
 Models are typically handled automatically by the InstrumentManager. There are
 a few cases, however, when you would need to manually load or unload a Model.
-These cases are::
+These cases are:
 
-	* Multiple compatible Models exist, and the autoloader picked the wrong
-	Model
+	* Multiple compatible Models exist, and the autoloader picked the wrong Model
 	* The Controller does not support enumeration or autoloading Models
 	* The Controller Resource was created manually
-	* The Model you wish to load is not considered compatible (experimental
-	code, etc.)
+	* The Model you wish to load is not considered compatible (experimental code, etc.)
 
 To load a Model for a resource, you must get the UUID of the resource and then
 unload any existing Model::
@@ -83,13 +81,11 @@ Using Instruments
 Instruments can be used like any Python object, with some limitations. Under
 the hood, Instruments are an RPC-endpoint connected to a socket on the
 InstrumentManager. While this whole process should be mostly transparent to
-both the user and the developer, some things are limited::
+both the user and the developer, some things are limited:
 
 	* Only methods can be called, it is not possible to access object attributes
-	* Accessing or Modifying attributes can only be done by wrapping the
-	attribute in a set of methods (getters and setters) 
-	* Methods that begin with '_' are considered protected and cannot be
-	accessed
+	* Accessing or Modifying attributes can only be done by wrapping the attribute in a set of methods (getters and setters) 
+	* Methods that begin with '_' are considered protected and cannot be accessed
 	* The RPC subsystem introduces 2-20 milliseconds of latency
 
 see :doc:`Supported Instruments <supported_instruments>` for further
@@ -137,3 +133,6 @@ interval. Only one collector can be running at a time for each method, so the
 old collector will be destroyed and a new one will be created.
 
 Retrieving data from collectors
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+

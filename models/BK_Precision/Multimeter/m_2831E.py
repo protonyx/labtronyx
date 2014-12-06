@@ -10,7 +10,6 @@ class m_2831E(m_MultimeterBase):
     def getProperties(self):
         ret = m_MultimeterBase.getProperties(self)
         
-        ret['deviceVendor'] = 'BK Precision'
         if self._identity is not None:
             ret['deviceModel'] = "2831E" #self.__identity[0]
             ret['deviceSerial'] = self._identity[2]

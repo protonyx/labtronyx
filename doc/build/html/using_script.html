@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Getting Started with the Programming Interface &mdash; Lab Instrument Control and Automation Framework 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="index.html" />
+    <link rel="next" title="Managing Resources" href="resources.html" />
+    <link rel="prev" title="Supported Interfaces (Controllers)" href="supported_interfaces.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="resources.html" title="Managing Resources"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="supported_interfaces.html" title="Supported Interfaces (Controllers)"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="getting-started-with-the-programming-interface">
+<h1>Getting Started with the Programming Interface<a class="headerlink" href="#getting-started-with-the-programming-interface" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="importing-instrumentcontrol">
+<h2>Importing InstrumentControl<a class="headerlink" href="#importing-instrumentcontrol" title="Permalink to this headline">¶</a></h2>
+<p>To use the InstrumentControl API:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">InstrumentControl</span> <span class="kn">import</span> <span class="n">InstrumentControl</span>
+<span class="n">instr</span> <span class="o">=</span> <span class="n">InstrumentControl</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">To import InstrumentControl, the folder must be in your PYTHONPATH</p>
+</div>
+</div>
+<div class="section" id="connecting-to-instrumentmanager-instances">
+<h2>Connecting to InstrumentManager instances<a class="headerlink" href="#connecting-to-instrumentmanager-instances" title="Permalink to this headline">¶</a></h2>
+<p>On instantiation, InstrumentControl will attempt to connect to a local
+InstrumentManager instance. Connections to InstrumentManager instances on remote
+machines can be added or removed using <tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.addManager()</span></tt> and
+<tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.removeManager()</span></tt>, respectively.</p>
+<p>When an InstrumentManager is added using <tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.addManager()</span></tt>,
+all of the remote resources are cached by an internal call to
+<tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.refreshManager()</span></tt>. Cached resources are indexed by their
+Unique Resource Identifier (UUID).</p>
+<p>If an <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> instance is not already running, you can start
+one using <tt class="xref py py-func docutils literal"><span class="pre">startWaitManager()</span></tt> or <tt class="xref py py-func docutils literal"><span class="pre">startManager()</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">instr</span><span class="o">.</span><span class="n">startWaitManager</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>By default, InstrumentControl will attempt to connect to a local instance of
+InstrumentManager. To connect to an InstrumentManager instance on another host:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">instr</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="s">&#39;192.168.0.1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>InstrumentControl can also resolve hostnames:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">instr</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="s">&#39;kkennedy&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Getting Started with the Programming Interface</a><ul>
+<li><a class="reference internal" href="#importing-instrumentcontrol">Importing InstrumentControl</a></li>
+<li><a class="reference internal" href="#connecting-to-instrumentmanager-instances">Connecting to InstrumentManager instances</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="supported_interfaces.html"
+                        title="previous chapter">Supported Interfaces (Controllers)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="resources.html"
+                        title="next chapter">Managing Resources</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/using_script.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="resources.html" title="Managing Resources"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="supported_interfaces.html" title="Supported Interfaces (Controllers)"
+             >previous</a> |</li>
+        <li><a href="index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, KKENNEDY.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

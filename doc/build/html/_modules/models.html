@@ -26,8 +26,8 @@
     <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="../index.html" />
     <link rel="up" title="Module code" href="index.html" /> 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
+  <body>
+    <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -41,7 +41,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body" role="main">
+          <div class="body">
             
   <h1>Source code for models</h1><div class="highlight"><pre>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -67,6 +67,10 @@
     <span class="n">validVIDs</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">validPIDs</span> <span class="o">=</span> <span class="p">[]</span>
     
+    <span class="n">_collector_thread</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">_collector_methods</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">_collector_last_sample</span> <span class="o">=</span> <span class="p">{}</span>
+    
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">resID</span><span class="p">,</span> <span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">common</span><span class="o">.</span><span class="n">rpc</span><span class="o">.</span><span class="n">RpcBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">common</span><span class="o">.</span><span class="n">IC_Common</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -79,6 +83,64 @@
         
         <span class="c"># Check for logger</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Logger&#39;</span><span class="p">,</span> <span class="n">logging</span><span class="p">)</span>
+        
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Collector Functionality</span>
+    <span class="c">#===========================================================================</span>
+    
+    <span class="k">def</span> <span class="nf">__collector_thread</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Asynchronous thread that automatically polls methods that are marked</span>
+<span class="sd">        for collection</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">next_sample</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="k">while</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">acc_config</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">reg</span><span class="p">,</span> <span class="n">acc_config</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">acc_config</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c"># Check if it is time to get a new sample</span>
+                <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">next_sample</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">):</span>
+                    <span class="n">address</span><span class="p">,</span> <span class="n">subindex</span> <span class="o">=</span> <span class="n">reg</span>
+                    <span class="n">_</span><span class="p">,</span> <span class="n">sample_time</span><span class="p">,</span> <span class="n">data_type</span> <span class="o">=</span> <span class="n">acc_config</span>
+                    
+                    <span class="c"># Queue a register read, the ICP thread will handle the data when it comes back</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">register_read_queue</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+                    
+                    <span class="c"># Increment the next sample time</span>
+                    <span class="n">next_sample</span><span class="p">[</span><span class="n">reg</span><span class="p">]</span> <span class="o">=</span> <span class="n">next_sample</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">sample_time</span>
+                    
+            <span class="c"># TODO: Calculate the time to the next sample and sleep until then</span>
+        
+        <span class="c"># Clear reference to this thread before exiting</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_collector_thread</span> <span class="o">=</span> <span class="bp">None</span>
+        
+<div class="viewcode-block" id="m_Base.startCollector"><a class="viewcode-back" href="../models.html#models.m_Base.startCollector">[docs]</a>    <span class="k">def</span> <span class="nf">startCollector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">depth</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Starts a Collector thread to retrieve data at a regular interval.</span>
+<span class="sd">        </span>
+<span class="sd">        :param method: Name of the Model method to invoke</span>
+<span class="sd">        :type method: str</span>
+<span class="sd">        :param interval: Interval in milliseconds between method invokations</span>
+<span class="sd">        :type interval: int</span>
+<span class="sd">        :param depth: Number of samples to keep</span>
+<span class="sd">        :type depth: int</span>
+<span class="sd">        :returns: Boolean, True if successful, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reg_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acc_config</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">depth</span><span class="p">,</span> <span class="n">sample_time</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+        
+        <span class="c"># Create a new accumulator object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accumulators</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">UPEL_ICP_Accumulator</span><span class="p">(</span><span class="n">depth</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+        
+        <span class="c"># Start the accumulator thread</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">acc_thread</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">acc_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__accumulator_thread</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">acc_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    </div>
+    <span class="k">def</span> <span class="nf">stopCollector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+        <span class="k">pass</span>
+    
+    
             
     <span class="c">#===========================================================================</span>
     <span class="c"># Virtual Functions</span>
@@ -161,28 +223,15 @@
                  <span class="s">&#39;deviceSerial&#39;</span><span class="p">:</span> <span class="s">&#39;Unknown&#39;</span><span class="p">,</span>
                  <span class="s">&#39;deviceFirmware&#39;</span><span class="p">:</span> <span class="s">&#39;Unknown&#39;</span>
                 <span class="p">}</span>
-        
-<div class="viewcode-block" id="m_Base.startCollector"><a class="viewcode-back" href="../models.html#models.m_Base.startCollector">[docs]</a>    <span class="k">def</span> <span class="nf">startCollector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Starts a Collector thread to retrieve data at a regular interval.</span>
-<span class="sd">        </span>
-<span class="sd">        :param method: Name of the Model method to invoke</span>
-<span class="sd">        :type method: str</span>
-<span class="sd">        :param interval: Interval in milliseconds between method invokations</span>
-<span class="sd">        :type interval: int</span>
-<span class="sd">        :param callback: Method to call with returned data</span>
-<span class="sd">        :type callback: method</span>
-<span class="sd">        :returns: Boolean, True if successful, False otherwise.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span></div></div>
+        </div>
 </pre></div>
 
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-<div id="searchbox" style="display: none" role="search">
+<div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -199,7 +248,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -209,9 +258,9 @@
           <li><a href="index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer" role="contentinfo">
+    <div class="footer">
         &copy; Copyright 2014, KKENNEDY.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3b1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

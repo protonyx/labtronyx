@@ -26,8 +26,8 @@
     <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
+  <body>
+    <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -41,7 +41,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body" role="main">
+          <div class="body">
             
   <h1>Source code for common.rpc</h1><div class="highlight"><pre>
 <span class="kn">import</span> <span class="nn">threading</span>
@@ -182,7 +182,7 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loggerObj</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">loggerObj</span>
       
-<div class="viewcode-block" id="RpcBase"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcBase">[docs]</a><span class="k">class</span> <span class="nc">RpcBase</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcBase"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase">[docs]</a><span class="k">class</span> <span class="nc">RpcBase</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    RpcBase provides helper functions to facilitate RPC operation. A server will </span>
 <span class="sd">    check if the target class inherits this base class to ensure that certain </span>
@@ -211,7 +211,7 @@
     <span class="k">def</span> <span class="nf">_getHELOResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__identity</span>
         
-<div class="viewcode-block" id="RpcBase.rpc_test"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcBase.rpc_test">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_test</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcBase.rpc_test"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase.rpc_test">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_test</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Tests if a port on the RpcServer host is being used.</span>
 <span class="sd">        </span>
@@ -245,7 +245,7 @@
             <span class="c"># No port was provided to check</span>
             <span class="k">return</span> <span class="bp">False</span>
     </div>
-<div class="viewcode-block" id="RpcBase.rpc_start"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcBase.rpc_start">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcBase.rpc_start"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase.rpc_start">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Spawns an RpcServer thread to handle connections on the given port.</span>
 <span class="sd">        </span>
@@ -269,7 +269,7 @@
             
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rpc_thread</span><span class="o">.</span><span class="n">alive</span><span class="o">.</span><span class="n">is_set</span><span class="p">()</span>
         </div>
-<div class="viewcode-block" id="RpcBase.rpc_stop"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcBase.rpc_stop">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcBase.rpc_stop"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase.rpc_stop">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Stops a running RpcServer thread.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -278,14 +278,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">rpc_thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rpc_thread</span> <span class="o">=</span> <span class="bp">None</span>
             </div>
-<div class="viewcode-block" id="RpcBase.rpc_restart"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcBase.rpc_restart">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_restart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcBase.rpc_restart"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase.rpc_restart">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_restart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Stops and restarts a running RpcServer thread</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rpc_stop</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rpc_start</span><span class="p">()</span>
         </div>
-<div class="viewcode-block" id="RpcBase.rpc_uptime"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcBase.rpc_uptime">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_uptime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcBase.rpc_uptime"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase.rpc_uptime">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_uptime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the uptime of the RpcServer</span>
 <span class="sd">        </span>
@@ -297,7 +297,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="mi">0</span>
         </div>
-<div class="viewcode-block" id="RpcBase.rpc_getPort"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcBase.rpc_getPort">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_getPort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcBase.rpc_getPort"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase.rpc_getPort">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_getPort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the bound port of a running RpcServer thread.</span>
 <span class="sd">        </span>
@@ -309,7 +309,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
         </div>
-<div class="viewcode-block" id="RpcBase.rpc_isRunning"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcBase.rpc_isRunning">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_isRunning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcBase.rpc_isRunning"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase.rpc_isRunning">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_isRunning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if there is an RpcServer thread running</span>
 <span class="sd">        </span>
@@ -321,7 +321,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
     </div>
-<div class="viewcode-block" id="RpcBase.rpc_getConnections"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcBase.rpc_getConnections">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_getConnections</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcBase.rpc_getConnections"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase.rpc_getConnections">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_getConnections</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the number of connections to the RPC server</span>
 <span class="sd">        </span>
@@ -333,7 +333,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="mi">0</span>
     </div>
-<div class="viewcode-block" id="RpcBase.rpc_getMethods"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcBase.rpc_getMethods">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_getMethods</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcBase.rpc_getMethods"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase.rpc_getMethods">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_getMethods</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get a list of methods in the target object. Used by RpcClient to populate</span>
 <span class="sd">        remote objects.</span>
@@ -353,7 +353,7 @@
                 
         <span class="k">return</span> <span class="n">validMethods</span>
     </div>
-<div class="viewcode-block" id="RpcBase.rpc_getUUID"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcBase.rpc_getUUID">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_getUUID</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcBase.rpc_getUUID"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase.rpc_getUUID">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_getUUID</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the RpcServer UUID</span>
 <span class="sd">        </span>
@@ -361,7 +361,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
     </div>
-<div class="viewcode-block" id="RpcBase.rpc_requestExclusiveAccess"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcBase.rpc_requestExclusiveAccess">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_requestExclusiveAccess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcBase.rpc_requestExclusiveAccess"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase.rpc_requestExclusiveAccess">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_requestExclusiveAccess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Request exclusive access to the target object from the RPC interface. </span>
 <span class="sd">        This acts as a lock on the target object, and no other connections can</span>
@@ -386,7 +386,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
             </div>
-<div class="viewcode-block" id="RpcBase.rpc_releaseExclusiveAccess"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcBase.rpc_releaseExclusiveAccess">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_releaseExclusiveAccess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcBase.rpc_releaseExclusiveAccess"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase.rpc_releaseExclusiveAccess">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_releaseExclusiveAccess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Release exclusive access. If a connection does not have exclusive access,</span>
 <span class="sd">        this function does nothing.</span>
@@ -408,7 +408,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
               </div>
-<div class="viewcode-block" id="RpcBase.rpc_hasExclusiveAccess"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcBase.rpc_hasExclusiveAccess">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_hasExclusiveAccess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcBase.rpc_hasExclusiveAccess"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase.rpc_hasExclusiveAccess">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_hasExclusiveAccess</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check if the requesting connection has exclusive access.</span>
 <span class="sd">        </span>
@@ -431,7 +431,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">False</span>
         
-<div class="viewcode-block" id="RpcBase.rpc_getHostname"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcBase.rpc_getHostname">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_getHostname</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcBase.rpc_getHostname"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase.rpc_getHostname">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_getHostname</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the hostname of the RpcServer host.</span>
 <span class="sd">        </span>
@@ -440,7 +440,7 @@
         <span class="n">hostname</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">hostname</span>
       </div>
-<div class="viewcode-block" id="RpcBase.rpc_getObjectName"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcBase.rpc_getObjectName">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_getObjectName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcBase.rpc_getObjectName"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcBase.rpc_getObjectName">[docs]</a>    <span class="k">def</span> <span class="nf">rpc_getObjectName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the name of the object that may be extending RpcBase.</span>
 <span class="sd">        </span>
@@ -600,7 +600,7 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loggerObj</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">loggerObj</span>
     
-<div class="viewcode-block" id="RpcClient"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcClient">[docs]</a><span class="k">class</span> <span class="nc">RpcClient</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcClient"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcClient">[docs]</a><span class="k">class</span> <span class="nc">RpcClient</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Flexible RPC client that connects to an RpcServer instance either on a local</span>
 <span class="sd">    host or remote host. Abstracts a remote object using the magic of Python.</span>
@@ -683,7 +683,7 @@
             
         <span class="bp">self</span><span class="o">.</span><span class="n">_setTimeout</span><span class="p">()</span> <span class="c"># Default</span>
             
-<div class="viewcode-block" id="RpcClient._setTimeout"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcClient._setTimeout">[docs]</a>    <span class="k">def</span> <span class="nf">_setTimeout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_to</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcClient._setTimeout"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcClient._setTimeout">[docs]</a>    <span class="k">def</span> <span class="nf">_setTimeout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_to</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the Timeout limit for an RPC Method call</span>
 <span class="sd">        </span>
@@ -708,7 +708,7 @@
     <span class="k">def</span> <span class="nf">_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
     
-<div class="viewcode-block" id="RpcClient._rpcCall"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcClient._rpcCall">[docs]</a>    <span class="k">def</span> <span class="nf">_rpcCall</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">remote_method</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcClient._rpcCall"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcClient._rpcCall">[docs]</a>    <span class="k">def</span> <span class="nf">_rpcCall</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">remote_method</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calls a function on the remote host with both positional and keyword</span>
 <span class="sd">        arguments</span>
@@ -751,7 +751,7 @@
             <span class="k">yield</span> <span class="nb">int</span><span class="p">(</span><span class="n">nextID</span><span class="p">)</span>
             <span class="n">nextID</span> <span class="o">+=</span> <span class="mi">1</span>
 
-<div class="viewcode-block" id="RpcClient._methodAlias"><a class="viewcode-back" href="../../rpc.html#models.Agilent.m_SMU.RpcClient._methodAlias">[docs]</a>    <span class="k">def</span> <span class="nf">_methodAlias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">methodName</span><span class="p">):</span>
+<div class="viewcode-block" id="RpcClient._methodAlias"><a class="viewcode-back" href="../../rpc.html#common.rpc.RpcClient._methodAlias">[docs]</a>    <span class="k">def</span> <span class="nf">_methodAlias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">methodName</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Dynamically create a method internal to the RpcClient object that will</span>
 <span class="sd">        invoke an RPC method call when called.</span>
@@ -777,9 +777,9 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-<div id="searchbox" style="display: none" role="search">
+<div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
       <input type="text" name="q" />
@@ -796,7 +796,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -806,9 +806,9 @@
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer" role="contentinfo">
+    <div class="footer">
         &copy; Copyright 2014, KKENNEDY.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3b1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>
