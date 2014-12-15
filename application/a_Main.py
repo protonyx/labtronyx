@@ -106,24 +106,22 @@ class a_Main(object):
                         # Check to make sure the correct class exists
                         testClass = getattr(testModule, className) # Will raise exception if doesn't exist
                         
-                        validVIDs = testClass.validVIDs
-                        validPIDs = testClass.validPIDs
+                        validModels = testClass.validModels
                         
-                        self.views[viewModule] = (className, validVIDs, validPIDs)
+                        self.views[viewModule] = (className, validModels)
                     
                     except Exception as e:
                         self.logger.error('Unable to load module %s: %s', viewModule, str(e))
                         continue
     
-    def _getValidViews(self, VID, PID):   
+    def _getValidViews(self, model):   
         validViews = []
         
         for viewModule, viewInfo in self.views.items():
-            viewClass, validVIDs, validPIDs = viewInfo
+            viewClass, validModels = viewInfo
         
-            if VID in validVIDs or len(validVIDs) == 0:
-                if PID in validPIDs or len(validPIDs) == 0:
-                    validViews.append((viewModule, viewClass))
+            if model in validModels or len(validModels) == 0:
+                validViews.append((viewModule, viewClass))
                 
         return validViews
     
@@ -442,10 +440,9 @@ class a_Main(object):
             
         # Load view selector
         props = self.ICF.getProperties(uuid)
-        VID = props.get('vendorID', None)
-        PID = props.get('productID', None)
+        lookup_val = props.get('modelName', None)
         
-        validViews = self._getValidViews(VID, PID)
+        validViews = self._getValidViews(lookup_val)
         
         if len(validViews) > 1:
             # Spawn a window to select the view to load

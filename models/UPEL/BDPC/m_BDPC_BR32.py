@@ -1,6 +1,6 @@
 from . import m_BDPC_ICP
 
-class m_BDPC_BR1(m_BDPC_ICP):
+class m_BDPC_BR2(m_BDPC_ICP):
     """
     
     """
@@ -10,13 +10,15 @@ class m_BDPC_BR1(m_BDPC_ICP):
     
     # List of Valid Vendor Identifier (VID) and Product Identifier (PID) values
     # that are compatible with this Model
-    validPIDs = ['BDPC_BR1']
+    validPIDs = ['BDPC_BR32']
     
     def getProperties(self):
-        prop = m_BDPC_ICP.getProperties(self)
+        prop = m_BDPC.getProperties(self)
         
         prop['deviceVendor'] = 'UPEL'
-        prop['deviceModel'] = 'BDPC Dual 2kW'
+        prop['deviceModel'] = 'BDPC 32kW'
         
-        # Add any additional properties here
         return prop
+    
+    def getSensorValue(self, sensor):
+        return self._getRegisterValue(0x2122, sensor)    

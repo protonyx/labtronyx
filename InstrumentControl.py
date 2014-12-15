@@ -926,6 +926,25 @@ class InstrumentControl(object):
                 
         return ret
     
+    def getInstrument_driver(self, d_driver):
+        """
+        Get a list of :class:`RpcClient` objects for resources with the given 
+        device driver (Model).
+        
+        .. note::
+        
+            Only resources that have a model loaded will report a device type.
+        
+        :returns: list of :class:`RpcClient` objects
+        """
+        ret = []
+        
+        for res_uuid, prop_dict in self.getProperties().items():
+            if prop_dict.get('modelName', None) == d_driver:
+                ret.append(self.createInstrument(res_uuid))
+                
+        return ret
+    
 # Load GUI in interactive mode
 if __name__ == "__main__":
     # Load Application GUI

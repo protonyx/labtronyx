@@ -16,23 +16,3 @@ class v_Base(Tk.Toplevel):
     def run(self):
         raise NotImplementedError
     
-    
-#===============================================================================
-# View Widgets
-#===============================================================================
-
-class vw_Plot(Tk.Frame):
-    """
-    Plotting Widget for views.
-    
-    Dependencies:
-    
-        * matplotlib
-        * numpy
-        
-    """
-    
-    def __init__(self, master, model, method):
-        Tk.Frame.__init__(self, master)
-        
-        

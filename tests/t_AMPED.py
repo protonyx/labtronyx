@@ -18,14 +18,45 @@ class t_AMPED(t_Base):
     }
     
     test_requires = [
-        {'name': 'DMM - Primary Voltage', 'serial': '123F12106'},
-        {'name': 'DMM - Primary Current', 'serial': '343B12138'},
-        {'name': 'DMM - Secondary Voltage', 'serial': '123E12681'},
-        {'name': 'DMM - Secondary Current', 'serial': '123G11250'},
-        {'name': 'Source - Primary', 'serial': '602078010696820011'},
-        {'name': 'Source - Secondary', 'serial': '00257'},
-        {'name': 'AMPED Converter', 'model': 'models.UPEL.AMPED.m_BMS'},
-        {'name': 'Load - Secondary', 'model': 'models.BK_Precision.Load.m_85XX'}
+        {'name': 'DMM - Primary Voltage', 
+         'serial': '123F12106',
+         'object': 'pri_voltage'
+        },
+                     
+        {'name': 'DMM - Primary Current', 
+         'serial': '343B12138',
+         'object': 'pri_current'
+         },
+                     
+        {'name': 'DMM - Secondary Voltage', 
+         'serial': '123E12681',
+         'object': 'sec_voltage'
+         },
+                     
+        {'name': 'DMM - Secondary Current', 
+         'serial': '123G11250',
+         'object': 'sec_current'
+         },
+                     
+        {'name': 'Source - Primary', 
+         'serial': '602078010696820011',
+         'object': 'pri_source'
+         },
+                     
+        {'name': 'Source - Secondary', 
+         'serial': '00257',
+         'object': 'sec_source'
+         },
+                     
+        {'name': 'AMPED Converter', 
+         'driver': 'models.UPEL.AMPED.m_BMS',
+         'object': 'conv'
+         },
+                     
+        {'name': 'Load - Secondary', 
+         'driver': 'models.BK_Precision.Load.m_85XX',
+         'object': 'load'
+         }
     ]
     
     test_details = {
@@ -51,7 +82,7 @@ class t_AMPED(t_Base):
             'order': 3 }
     }
     
-    def open(self):
+    def startup(self):
         try:
             self.pri_voltage = self.instr.getInstrument_serial("123F12106")
             self.pri_current = self.instr.getInstrument_serial("343B12138")
@@ -59,15 +90,15 @@ class t_AMPED(t_Base):
             self.sec_voltage = self.instr.getInstrument_serial("123E12681")
             self.sec_current = self.instr.getInstrument_serial("123G11250")
             self.sec_source = self.instr.getInstrument_serial("00257")
-            
-            conv_uuid = self.instr.findResource('localhost', 'COM3')[0] # COM15 for the nice RS-485 converters
-            self.instr.loadModel(conv_uuid, 'models.UPEL.AMPED.m_BMS', 'm_BMS')
-            self.conv = self.instr.getInstrument(conv_uuid)
-            
-            load_uuid = self.instr.findResource('localhost', 'COM4')[0]
-            self.instr.loadModel(conv_uuid, 'models.BK_Precision.Load.m_85XX', 'm_85XX')
-            self.load = self.instr.getInstrument(load_uuid)
-            
+             
+            #conv_uuid = self.instr.findResource('localhost', 'COM3')[0] # COM15 for the nice RS-485 converters
+            #self.instr.loadModel(conv_uuid, 'models.UPEL.AMPED.m_BMS', 'm_BMS')
+            self.conv = self.instr.getInstrument_driver('models.UPEL.AMPED.m_BMS') #(conv_uuid)
+             
+            #load_uuid = self.instr.findResource('localhost', 'COM4')[0]
+            #self.instr.loadModel(conv_uuid, 'models.BK_Precision.Load.m_85XX', 'm_85XX')
+            self.load = self.instr.getInstrument_driver('models.BK_Precision.Load.m_85XX') #(load_uuid)
+             
             self.convAddress = input("What device address is being calibrated? ")
             self.conv.setAddress = self.convAddress
     
@@ -90,7 +121,7 @@ class t_AMPED(t_Base):
             time.sleep(1.0)
             
             # Power on secondary
-            print "Powering on..."
+            self.logger.info("Powering On...")
             self.sec_source.powerOn()
             time.sleep(2.0)
             
@@ -104,13 +135,12 @@ class t_AMPED(t_Base):
             self.conv.shutoff_wdt(convAddress)
         
         except:
+            self.logger.exception("Exception during test startup")
             return False
             
+        return True
     
-    def close(self):
-        #===============================================================================
-        # Closing everything
-        #===============================================================================
+    def shutdown(self):
         # turn off so there's no voltage present when disconnecting/connecting modules
         self.conv.disableSwitching(convAddress)
         
@@ -118,9 +148,9 @@ class t_AMPED(t_Base):
         
         self.pri_source.powerOff()
         self.sec_source.powerOff()
+        self.load.powerOff()
         
-        test = raw_input("Press [ENTER] after turning the load off ...")
-        test = raw_input("Press [ENTER] to exit...")
+        return True
                     
     def test_Calibrate(self):
         

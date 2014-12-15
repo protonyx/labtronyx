@@ -29,8 +29,9 @@ class v_BDPC(views.v_Base):
         * Conversion Ratio
     """
     
-    validVIDs = ['UPEL']
-    validPIDs = []
+    validModels = ['UPEL.BDPC.m_BDPC_BR2',
+                   'UPEL.BDPC.m_BDPC_BR32',
+                   'UPEL.BDPC.m_BDPC']
     
     def run(self):
         # List of GUI elements to update

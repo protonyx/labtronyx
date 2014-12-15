@@ -1,7 +1,7 @@
 import threading
 from .. import m_Generic
 
-class m_BDPC(m_Generic):
+class m_BDPC_ICP(m_Generic):
     """
     Common model for all BDPC devices
     """
@@ -24,6 +24,17 @@ class m_BDPC(m_Generic):
         }
     
     numSensors = 4
+    
+    sensors = {
+        'PrimaryVoltage': 1,
+        'SecondaryVoltage': 2,
+        'PrimaryCurrent': 3,
+        'SecondaryCurrent': 4,
+        'ZVSCurrentA': 5,
+        'ZVSCurrentB': 6,
+        'ZVSCurrentC': 7,
+        'ZVSCurrentD': 8
+        }
     
     def _onLoad(self):
         m_Generic._onLoad(self)
@@ -88,7 +99,37 @@ class m_BDPC(m_Generic):
         for x in range(1, self.numSensors+1):
             address = self.registers.get('SensorData')
             self.instr.register_read_queue(address, x, 'float')
+            
+    #===========================================================================
+    # Sensors
+    #===========================================================================
     
+    def setCalibration(self, sensor, gain, offset):
+        pass
+    
+    def getCalibration(self, sensor):
+        pass
+    
+    def getSensorValue(self, sensor):
+        address = self.registers.get('SensorData')
+        return float(self.instr.register_read(address, sensor, 'float'))
+    
+    def getSensorType(self, sensor):
+        ret = {}
+        
+        address = self.registers.get('SensorDescription')
+        try:
+            ret['description'] = self.instr.register_read(address, sensor, 'string')
+        except:
+            ret['description'] = 'Unknown'
+            
+        address = self.registers.get('SensorUnits')
+        try:
+            ret['units'] = self.instr.register_read(address, sensor, 'string')
+        except:
+            ret['units'] = '?'
+        
+        return ret
     
     #===========================================================================
     # Parameters
@@ -130,7 +171,7 @@ class m_BDPC(m_Generic):
     
     
     #===========================================================================
-    # Sensor Data
+    # Composite Data
     #===========================================================================
     
     def getPrimaryPower(self):
@@ -157,23 +198,3 @@ class m_BDPC(m_Generic):
         
         return float(sp) / float(pp)
     
-    def getSensorValue(self, sensor):
-        address = self.registers.get('SensorData')
-        return float(self.instr.register_read(address, sensor, 'float'))
-    
-    def getSensorType(self, sensor):
-        ret = {}
-        
-        address = self.registers.get('SensorDescription')
-        try:
-            ret['description'] = self.instr.register_read(address, sensor, 'string')
-        except:
-            ret['description'] = 'Unknown'
-            
-        address = self.registers.get('SensorUnits')
-        try:
-            ret['units'] = self.instr.register_read(address, sensor, 'string')
-        except:
-            ret['units'] = '?'
-        
-        return ret

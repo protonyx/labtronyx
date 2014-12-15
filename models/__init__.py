@@ -213,7 +213,9 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
         return self.PID
     
     def getProperties(self):
-        return { 'deviceType': self.deviceType,
+        return { 'modelName': self.getModelName(),
+                 'controllerName': self.getControllerName(),
+                 'deviceType': self.deviceType,
                  'deviceVendor': 'Generic',
                  'deviceModel': 'Device',
                  'deviceSerial': 'Unknown',

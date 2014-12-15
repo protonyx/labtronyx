@@ -45,9 +45,16 @@ class t_Base(object):
         # Create a lock object to prevent multiple tests from running at once
         self.testLock = threading.Lock()
         
-        self.open()
-        
         self._runGUI()
+        
+    def _startup(self):
+        self.startup()
+    
+    def _shutdown(self):
+        for _, test in self.tests:
+            test.stop()
+            
+        self.shutdown()
         
     def _runGUI(self):
         self.myTk = Tk.Tk()
@@ -71,6 +78,14 @@ class t_Base(object):
                     temp_instr.pack(fill=Tk.BOTH)
         except:
             raise
+        
+        #=======================================================================
+        # Test State
+        #=======================================================================
+        Tk.Label(master, text="Test State:").pack()
+        
+        self.state_controller = self.g_StateController(master, self._startup, self._shutdown)
+        self.state_controller.pack(fill=Tk.BOTH)
         
         #=======================================================================
         # Tests
@@ -112,8 +127,6 @@ class t_Base(object):
         h_textHandler = self.g_ConsoleLoggerHandler(self.logConsole)
         h_textHandler.setFormatter(self.logFormatter)
         self.logger.addHandler(h_textHandler)
-        
-        self.logger.debug("Test Initialization Finished.")
         
         #=======================================================================
         # Run GUI
@@ -213,19 +226,35 @@ class t_Base(object):
             #self.instr_sel = 0
             
         def updateStatus(self):
-            if hasattr(self.instr_details, 'serial'):
+            assert type(self.instr_details) == dict
+            
+            if self.instr_details.get('serial', None) is not None:
                 # Serial
-                self.instr = self.ICF.getInstrument_serial(self.instr_details.get('serial', None))
+                instr_serial = self.instr_details.get('serial')
+                self.instr = self.ICF.getInstrument_serial(instr_serial)
             
-            elif hasattr(self.instr_details, 'model'):
+            elif self.instr_details.get('model', None) is not None:
                 # Model
-                self.instr = self.ICF.getInstrument_model(self.instr_details.get('model', None))
+                instr_model = self.instr_details.get('model')
+                self.instr = self.ICF.getInstrument_model(instr_model)
+                if len(self.instr) == 0:
+                    self.instr = None
             
-            elif hasattr(self.instr_details, 'type'):
+            elif self.instr_details.get('type', None) is not None:
                 # Type
-                self.instr = self.ICF.getInstrument_type(self.instr_details.get('type', None))
+                instr_type = self.instr_details.get('type')
+                self.instr = self.ICF.getInstrument_type(instr_type)
+                if len(self.instr) == 0:
+                    self.instr = None
                     
-            if len(self.instr) > 0:
+            elif self.instr_details.get('driver', None) is not None:
+                # Driver
+                instr_driver = self.instr_details.get('driver')
+                self.instr = self.ICF.getInstrument_driver(instr_driver)
+                if len(self.instr) == 0:
+                    self.instr = None
+                    
+            if self.instr is not None:
                 self.status.set("Ready")
                 self.l_status.config(fg='green3')
                 
@@ -240,6 +269,47 @@ class t_Base(object):
             else:
                 return False
         
+    class g_StateController(Tk.Frame):
+        
+        def __init__(self, master, m_startup, m_shutdown):
+            Tk.Frame.__init__(self, master, padx=3, pady=3)
+            
+            self.state = 0
+            self.m_startup = m_startup
+            self.m_shutdown = m_shutdown
+            
+            self.b_start = Tk.Button(self, text="Startup", command=self.cb_startup, width=10)
+            self.b_start.pack(side=Tk.LEFT)
+            self.b_stop = Tk.Button(self, text="Shutdown", command=self.cb_shutdown, width=10, state=Tk.DISABLED)
+            self.b_stop.pack(side=Tk.LEFT)
+            
+            self.status = Tk.StringVar()
+            self.l_status = Tk.Label(self, textvariable=self.status, font=("Helvetica", 12), width=10, justify=Tk.CENTER)
+            self.l_status.pack(side=Tk.RIGHT)
+            self.status.set("Not Ready")
+            
+        def getState(self):
+            return self.state
+            
+        def cb_startup(self):
+            ret = self.m_startup()
+            
+            if ret == True:
+                self.b_start.config(state=Tk.DISABLED)
+                self.b_stop.config(state=Tk.NORMAL)
+                
+                self.state = 1
+                self.status.set("Ready")
+        
+        def cb_shutdown(self):
+            ret = self.m_shutdown()
+            
+            if ret == True:
+                self.b_start.config(state=Tk.NORMAL)
+                self.b_stop.config(state=Tk.DISABLED)
+                
+                self.state = 0
+                self.status.set("Not Ready")
         
     class g_TestElement(Tk.Frame):
         
@@ -329,6 +399,10 @@ class t_Base(object):
             """
             self.testThread = threading.Thread(target=self._run_thread)
             self.testThread.start()
+            
+        def stop(self):
+            if self.testThread is not None:
+                self.testThread.join()
             
         def _run_thread(self):
             """

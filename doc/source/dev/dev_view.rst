@@ -15,3 +15,10 @@ purpose of views is to separate the GUI elements from the application logic.
 	Views are not used in any of the API functions, they can only be launched in 
 	Application mode. The Application GUI will index the `views` folder and 
 	make them available. This is a feature that does not exist yet.
+	
+Widgets
+-------
+
+Widgets are pre-built interface elements to perform common actions. A collection
+of widget are provided to make building views much easier. Widgets are
+instantiated
