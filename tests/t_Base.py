@@ -20,6 +20,13 @@ class t_Base(object):
     TIMER_UPDATE_TESTS = 250
     TIMER_UPDATE_INSTR = 1000
     
+    _instruments = []
+    _test_methods = [] # List of all test methods
+    _tests = []
+    
+    _g_instruments = []
+    _g_tests = []
+    
     def __init__(self):
         """
         Test Initialization
@@ -36,22 +43,36 @@ class t_Base(object):
         
         # Get a list of class attributes, identify test methods
         # Test methods must be prefixed by 'test_'
-        self.test_methods = []
         for func in dir(self.__class__):
             test = getattr(self.__class__, func)
             if func.startswith('test_') and inspect.ismethod(test):
-                self.test_methods.append(func)
+                new_test = {}
+                new_test['name'] = func
+                new_test['method'] = func
+                self._test_methods.append(new_test)
                 
         # Create a lock object to prevent multiple tests from running at once
         self.testLock = threading.Lock()
         
+        self.open()
+        
         self._runGUI()
         
     def _startup(self):
+        # Register all required instruments as object attributes in self
+        for req_instr in self._g_instruments:
+            attr_name = req_instr.getAttributeName()
+            instr_obj = req_instr.getInstrument()
+            
+            if type(instr_obj) == list and len(instr_obj) == 1:
+                setattr(self, attr_name, instr_obj[0])
+            else:
+                setattr(self, attr_name, instr_obj)
+                
         self.startup()
     
     def _shutdown(self):
-        for _, test in self.tests:
+        for test in self._g_tests:
             test.stop()
             
         self.shutdown()
@@ -68,14 +89,15 @@ class t_Base(object):
         #=======================================================================
         Tk.Label(master, text="Required Instruments:").pack()
         
-        self.req_instr = []
         try:
-            if len(self.test_requires) > 0:
-                for instr_details in self.test_requires:
+            if len(self._instruments) > 0:
+                # Create an instrument element for each instrument
+                for instr_details in self._instruments:
                     temp_instr = self.g_InstrElement(master, self.instr, instr_details)
-                        
-                    self.req_instr.append(temp_instr)
                     temp_instr.pack(fill=Tk.BOTH)
+                    
+                    self._g_instruments.append(temp_instr)
+                    
         except:
             raise
         
@@ -92,21 +114,13 @@ class t_Base(object):
         #=======================================================================
         Tk.Label(master, text="Tests:").pack()
         
-        self.tests = []
-        if len(self.test_methods) > 0:
+        if len(self._tests) > 0:
             # Create a test element for each test method
-            for func in self.test_methods:
-                testDetails = self.test_details.get(func, {}) or {}
-                order = testDetails.get('order', 999)
-                
-                elem = self.g_TestElement(master, self, func, self.logger, self.testLock)
-                self.tests.append((order, elem))
-                
-            self.tests.sort(key=lambda x: x[0])
-            
-            # Pack the test elements onto the GUI
-            for order, elem in self.tests:
+            for reg_test in self._tests:
+                elem = self.g_TestElement(master, self, reg_test, self.logger, self.testLock)
                 elem.pack()
+                
+                self._g_tests.append(elem)
                 
         #self.f_run = Tk.Frame(master)
         
@@ -131,30 +145,70 @@ class t_Base(object):
         #=======================================================================
         # Run GUI
         #=======================================================================
-        self.cb_TimerUpdateTests()
-        self.cb_TimerUpdateInstruments()
+        self._Timer_UpdateTests()
+        self._Timer_UpdateInstruments()
         self.myTk.mainloop()
         
     #===========================================================================
-    # Callbacks
+    # Timers
     #===========================================================================
     
-    def cb_TimerUpdateTests(self):
+    def _Timer_UpdateTests(self):
         # Update GUI elements
-        for order, test in self.tests:
+        for test in self._g_tests:
             test.updateStatus()
             
-        self.myTk.after(self.TIMER_UPDATE_TESTS, self.cb_TimerUpdateTests)
+        self.myTk.after(self.TIMER_UPDATE_TESTS, self._Timer_UpdateTests)
         
-    def cb_TimerUpdateInstruments(self):
+    def _Timer_UpdateInstruments(self):
         # Update Required Instruments
-        for instr in self.req_instr:
+        for instr in self._g_instruments:
             instr.updateStatus()
             
-        self.myTk.after(self.TIMER_UPDATE_INSTR, self.cb_TimerUpdateInstruments)
+        self.myTk.after(self.TIMER_UPDATE_INSTR, self._Timer_UpdateInstruments)
         
-    def cb_RunAllTests(self):
-        pass
+    #===========================================================================
+    # Helper Functions
+    #===========================================================================
+    
+    def requireInstrument(self, name, attr_name, **kwargs):
+        """
+        Notify the test framework to require an Instrument. Instrument will be
+        registered as an attribute during test startup. At least one of the
+        optional arguments must be provided to correctly identify an 
+        instrument.
+        
+        :param name: Human readable instrument name
+        :type name: str
+        :param attr_name: Attribute to register
+        :type attr_name: str
+        :param serial: Optional - Serial number to identify instrument
+        :type serial: str
+        :param model: Optional - Model number to identify instrument
+        :type model: str
+        :param type: Optional - Instrument type to identify instrument
+        :type type: str
+        :param driver: Optional - Instrument driver (Model) to identify instrument)
+        :type driver: str
+        """
+        kwargs['name'] = name
+        kwargs['object'] = attr_name
+        self._instruments.append(kwargs)
+        
+    def registerTest(self, name, method_name):
+        """
+        Notify the test framework to register a test function.
+        
+        :param name: Human readable test name
+        :type name: str
+        :param method_name: Method name
+        :type method_name: str
+        """
+        new_test = {}
+        new_test['name'] = name
+        new_test['method'] = method_name
+        
+        self._tests.append(new_test)
         
     #===========================================================================
     # GUI Frame Elements
@@ -204,6 +258,8 @@ class t_Base(object):
         
         def __init__(self, master, ICF, instr_details):
             Tk.Frame.__init__(self, master)
+            
+            assert type(instr_details) == dict
             
             self.ICF = ICF
             self.instr_details = instr_details
@@ -268,6 +324,12 @@ class t_Base(object):
             
             else:
                 return False
+            
+        def getInstrument(self):
+            return self.instr
+        
+        def getAttributeName(self):
+            return self.instr_details.get('object', None)
         
     class g_StateController(Tk.Frame):
         
@@ -315,15 +377,16 @@ class t_Base(object):
         
         states = ['On', 'Off']
         
-        def __init__(self, master, testObject, testMethodName, logger, lock):
+        def __init__(self, master, testObject, test_details, logger, lock):
             Tk.Frame.__init__(self, master, padx=3, pady=3)
             
             self.logger = logger
             self.lock = lock
             
-            self.testMethod = getattr(testObject, testMethodName)
-            defaultName = testMethodName.replace('test_', '')
-            self.testName = testObject.test_details.get(testMethodName, {}).get('name', defaultName) or defaultName
+            self.testMethodName = test_details.get('method')
+            self.testName = test_details.get('name')
+            
+            self.testMethod = getattr(testObject, self.testMethodName)
             
             self.state = 0
             self.v_state = Tk.StringVar()

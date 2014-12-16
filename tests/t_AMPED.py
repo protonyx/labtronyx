@@ -17,70 +17,21 @@ class t_AMPED(t_Base):
         'version': 1.0
     }
     
-    test_requires = [
-        {'name': 'DMM - Primary Voltage', 
-         'serial': '123F12106',
-         'object': 'pri_voltage'
-        },
-                     
-        {'name': 'DMM - Primary Current', 
-         'serial': '343B12138',
-         'object': 'pri_current'
-         },
-                     
-        {'name': 'DMM - Secondary Voltage', 
-         'serial': '123E12681',
-         'object': 'sec_voltage'
-         },
-                     
-        {'name': 'DMM - Secondary Current', 
-         'serial': '123G11250',
-         'object': 'sec_current'
-         },
-                     
-        {'name': 'Source - Primary', 
-         'serial': '602078010696820011',
-         'object': 'pri_source'
-         },
-                     
-        {'name': 'Source - Secondary', 
-         'serial': '00257',
-         'object': 'sec_source'
-         },
-                     
-        {'name': 'AMPED Converter', 
-         'driver': 'models.UPEL.AMPED.m_BMS',
-         'object': 'conv'
-         },
-                     
-        {'name': 'Load - Secondary', 
-         'driver': 'models.BK_Precision.Load.m_85XX',
-         'object': 'load'
-         }
-    ]
-    
-    test_details = {
-        #=======================================================================
-        # 'test_SecVoltageCalibration': {
-        #     'name': 'Calibrate Secondary Voltage Sensor',
-        #     'order': 1 },
-        # 'test_PriVoltageCalibration': {
-        #     'name': 'Calibrate Primary Voltage Sensor',
-        #     'order': 2 },
-        # 'test_CurrentSensorCalibration': {
-        #     'name': 'Calibrate Current Sensor',
-        #     'order': 3 },
-        #=======================================================================
-        'test_Calibrate': {
-            'name': 'Calibrate',
-            'order': 1 },
-        'test_ClosedLoopRegulation': {
-            'name': 'Closed Loop Regulation',
-            'order': 2 },
-        'test_Efficiency': {
-            'name': 'Test Efficiency',
-            'order': 3 }
-    }
+    def open(self):
+        # Instruments
+        self.requireInstrument('DMM - Primary Voltage', 'pri_voltage', serial='123F12106')
+        self.requireInstrument('DMM - Primary Current', 'pri_current', serial='343B12138')
+        self.requireInstrument('DMM - Secondary Voltage', 'sec_voltage', serial='123E12681')
+        self.requireInstrument('DMM - Secondary Current', 'sec_current', serial='123G11250')
+        self.requireInstrument('Source - Primary', 'pri_source', serial='602078010696820011')
+        self.requireInstrument('Source - Secondary', 'sec_source', serial='00257')
+        self.requireInstrument('AMPED Converter', 'conv', driver='models.UPEL.AMPED.m_BMS')
+        self.requireInstrument('Load - Secondary', 'load', driver='models.BK_Precision.Load.m_85XX')
+        
+        # Tests
+        self.registerTest('Calibrate', 'test_Calibrate')
+        self.registerTest('Closed Loop Regulation', 'test_ClosedLoopRegulation')
+        self.registerTest('Test Efficiency', 'test_Efficiency')
     
     def startup(self):
         try:
@@ -99,8 +50,7 @@ class t_AMPED(t_Base):
             #self.instr.loadModel(conv_uuid, 'models.BK_Precision.Load.m_85XX', 'm_85XX')
             self.load = self.instr.getInstrument_driver('models.BK_Precision.Load.m_85XX') #(load_uuid)
              
-            self.convAddress = input("What device address is being calibrated? ")
-            self.conv.setAddress = self.convAddress
+
     
             # Configuration
             self.pri_voltage.setFunction_DC_Voltage()
@@ -126,13 +76,13 @@ class t_AMPED(t_Base):
             time.sleep(2.0)
             
             # Initial setup of converter
-            
-            #convAddress = conv_identify()
-            #print "Address received from module is 0x%02X" %convAddress
+            # Issue an identify command to get the connected module
+            self.convAddress = self.conv.identify()
+            self.logger.info("Identified module: %i", self.convAddress)
             
             self.conv.calibrate(1, 1)
-            self.conv.enableSampling(convAddress)
-            self.conv.shutoff_wdt(convAddress)
+            self.conv.enableSampling(self.convAddress)
+            self.conv.shutoff_wdt(self.convAddress)
         
         except:
             self.logger.exception("Exception during test startup")
@@ -142,7 +92,7 @@ class t_AMPED(t_Base):
     
     def shutdown(self):
         # turn off so there's no voltage present when disconnecting/connecting modules
-        self.conv.disableSwitching(convAddress)
+        self.conv.disableSwitching(self.convAddress)
         
         time.sleep(1.0)
         
@@ -270,7 +220,7 @@ class t_AMPED(t_Base):
             time.sleep(3.0)
             
             for desired_x in range(dataPointsPerPoint):
-                _, vout, _, _, _ = conv_getData(convAddress)
+                _, vout, _, _, _ = conv_getData(self.convAddress)
                 sampleIndex += 1
                 
                 try:
@@ -344,7 +294,7 @@ class t_AMPED(t_Base):
             self.pri_source.setVoltage(opPoint)
             
             for desired_x in range(dataPointsPerPoint):
-                _, _, vin, _, _ = conv_getData(convAddress)
+                _, _, vin, _, _ = conv_getData(self.convAddress)
                 sampleIndex += 1
                 
                 try:
@@ -390,20 +340,16 @@ class t_AMPED(t_Base):
         self.load.powerOn()
         
         # Converter configuration
-        self.conv.resetStatus(convAddress)
-        time.sleep(0.2)
-        self.conv.calibrate(convAddress)
-        time.sleep(0.2)
-        self.conv.enableSampling(convAddress)
-        time.sleep(0.2)
-        self.conv.shutoff_wdt(convAddress)
-        time.sleep(0.2)
-        self.conv.enableSwitching(convAddress)
+        self.conv.resetStatus(self.convAddress)
+        self.conv.calibrate(self.convAddress)
+        self.conv.enableSampling(self.convAddress)
+        self.conv.shutoff_wdt(self.convAddress)
+        self.conv.enableSwitching(self.convAddress)
         
         # Allow converter to start switching
         time.sleep(2.0)
         
-        _, _, _, _, status = conv_getData(convAddress)
+        _, _, _, _, status = conv_getData(self.convAddress)
         
         #=======================================================================
         # Calibration Parameters
@@ -438,7 +384,7 @@ class t_AMPED(t_Base):
             time.sleep(0.75)
             
             for desired_x in range(dataPointsPerPoint):
-                _, _, _, iin, _ = conv_getData(convAddress)
+                _, _, _, iin, _ = conv_getData(self.convAddress)
                 
                 try:
                     dataPoint = self.pri_current.getMeasurement()
@@ -467,8 +413,8 @@ class t_AMPED(t_Base):
         
         # stop the power flow
         conv_set_phase_angle(convAddress, 0x0000)
-        conv_disable_switching(convAddress)
-        _, _, _, _, status = conv_getData(convAddress)
+        conv_disable_switching(self.convAddress)
+        _, _, _, _, status = conv_getData(self.convAddress)
         
         return z
     
@@ -476,7 +422,7 @@ class t_AMPED(t_Base):
         #===============================================================================
         # Test 4 - Closed Loop Regulation
         #===============================================================================
-        print "---------- TEST 4 / CLOSED LOOP REGULATION ----------"
+        self.logger.info("--- TEST 4 / CLOSED LOOP REGULATION ---")
         
         # Set instruments into known state
         self.sec_source.setVoltage(13.0)
@@ -493,25 +439,17 @@ class t_AMPED(t_Base):
         time.sleep(1.0)
         
         # setup the converter again since power might have dropped out when the load was turned on
-        self.conv.resetStatus(convAddress)
-        time.sleep(0.2)
-        self.conv.calibrate(convAddress)
-        time.sleep(0.2)
-        self.conv.enableSampling(convAddress)
-        time.sleep(0.2)
-        self.conv.shutoff_wdt(convAddress)
-        time.sleep(0.2)
+        self.conv.resetStatus(self.convAddress)
+        self.conv.calibrate(self.convAddress)
+        self.conv.enableSampling(self.convAddress)
+        self.conv.shutoff_wdt(self.convAddress)
         
         desiredSet = 15.0
         desiredSet_conv = int(desiredSet * z1[0])# - int(z1[1])
         
-        print "Setting CONV to [%i]" % desiredSet_conv
-        time.sleep(0.2)
         self.conv.set_vRef(convAddress, desiredSet_conv)
-        time.sleep(0.2)
-        self.conv.setMode_closedloop(convAddress)
-        time.sleep(0.2)
-        self.conv.enableSwitching(convAddress)
+        self.conv.setMode_closedloop(self.convAddress)
+        self.conv.enableSwitching(self.convAddress)
         
         # give time to settle
         time.sleep(2.0)
@@ -525,37 +463,37 @@ class t_AMPED(t_Base):
         while (points > 0):
         	try:	
         		dataPoint = self.sec_voltage.getMeasurement()
-        		_, vout, _, _, _ = conv_getData(convAddress)
-        		print "    MM: %f" % (dataPoint)
-        		print "    Conv: %i" % (vout)
+        		_, vout, _, _, _ = conv_getData(self.convAddress)
+        		self.logger.info("    MM: %f", dataPoint)
+        		self.logger.info("    Conv: %i", vout)
         		avg += dataPoint
         		vout_avg += vout
         		points -= 1
         		time.sleep(0.2)
+                
         	except:
-        		print "Invalid data point, retrying"
+        		self.logger.exception("Invalid data point, retrying")
         		points -=1 # temporary to basically disable this as it will go on forever - need to think of a better way
         		points_valid -= 1
-        		pass
         
         # setting converter back to open loop
-        self.conv.setMode_openloop(convAddress)
+        self.conv.setMode_openloop(self.convAddress)
         
         output = avg / points_valid
         vout_avg = vout_avg / points_valid
-        print "    MM AVG: [%f]" % output
-        print "    Conv AVG: [%f]" % vout_avg
+        self.logger.info("    MM AVG: [%f]", output)
+        self.logger.info("    Conv AVG: [%f]", vout_avg)
         
         pct_error = (abs(output - desiredSet)/desiredSet) * 100.0
-        print "    PERCENT ERROR (MM): [%f]" % pct_error
+        self.logger.info("    PERCENT ERROR (MM): [%f]", pct_error)
         pct_error = (abs(vout_avg - desiredSet_conv)/desiredSet_conv) * 100.0
-        print "    PERCENT ERROR (Conv): [%f]" % pct_error
+        self.logger.info("    PERCENT ERROR (Conv): [%f]", pct_error)
     
     def test_Efficiency(self):
         #===============================================================================
         # Test 5 - Efficiency
         #===============================================================================
-        print "---------- TEST 5 / EFFICIENCY ----------"
+        self.logger.info("--- TEST 5 / EFFICIENCY ---")
         
         # Set instruments into known state
         self.sec_source.setVoltage(13.0)
@@ -570,46 +508,38 @@ class t_AMPED(t_Base):
         self.load.powerOn()
         
         # setup the converter again since power might have dropped out when the load was turned on
-        self.conv.resetStatus(convAddress)
-        time.sleep(0.2)
-        self.conv.calibrate(convAddress)
-        time.sleep(0.2)
-        self.conv.enableSampling(convAddress)
-        time.sleep(0.2)
-        self.conv.shutoff_wdt(convAddress)
-        time.sleep(0.2)
-        self.conv.enableSwitching(convAddress)
+        self.conv.resetStatus(self.convAddress)
+        self.conv.calibrate(self.convAddress)
+        self.conv.enableSampling(self.convAddress)
+        self.conv.shutoff_wdt(self.convAddress)
+        self.conv.enableSwitching(self.convAddress)
         
         time.sleep(1.0)
         
         avg = 0
         points = 5
         while (points > 0):
-        	try:	
-        		vin = self.pri_voltage.getMeasurement()		
-        		vout = self.sec_voltage.getMeasurement()
-        		iin = self.pri_current.getMeasurement()
-        		iout = self.sec_current.getMeasurement()
-        		dataPoint = ((vout * iout)/(vin * iin)) * 100.0
-        		print "    Efficiency: %f" % (dataPoint)
-        		avg += dataPoint
-        		points -= 1
-        		time.sleep(0.2)
-        	except Exception as e:
-        		print "Invalid data point, retrying"
-        		print e.message
-        		points -=1 # basically disable this as it will go on forever - need to think of a better way
+            try:
+                vin = self.pri_voltage.getMeasurement()		
+                vout = self.sec_voltage.getMeasurement()
+                iin = self.pri_current.getMeasurement()
+                iout = self.sec_current.getMeasurement()
+                dataPoint = ((vout * iout)/(vin * iin)) * 100.0
+                self.logger.info("    Efficiency: %f", dataPoint)
+                avg += dataPoint
+                points -= 1
+                time.sleep(0.2)
+            except:
+                self.logger.exception("Invalid data point, retrying")
+                points -=1 # basically disable this as it will go on forever - need to think of a better way
         
         try:	
             output = avg / 5.0
         
-            print "    Avg Efficiency: %f" % output
+            self.logger.info("    Avg Efficiency: %f", output)
         except:
-            print "Efficiency Test Error"
+            self.logger.exception("Efficiency Test Exception")
     
 if __name__ == '__main__':
     test = t_AMPED()
-    #test.open()
-    
-    #test.close()
 

@@ -1,4 +1,5 @@
 import struct
+import time
 
 import models
 
@@ -19,9 +20,12 @@ class m_BMS(models.m_Base):
     validPIDs = ['']
     
     commands = {
-        'resetStatus':  0xBB,
         'calibrate':    0xAF,
+        'enableSampling': 0xB4,
+        'disableSampling': 0x5F,
+        'identify':     0xAA,
         'shutdown_wdt': 0xBD,
+        'resetStatus':  0xBB,
         'setMode_openloop': 0x2B,
         'setMode_closedloop': 0xB7
         }
@@ -37,6 +41,8 @@ class m_BMS(models.m_Base):
         self.instr.stopbits = 1
         
         self.instr.open()
+        
+        self.status = 0
     
     def _onUnload(self):
         self.instr.close()
@@ -47,33 +53,34 @@ class m_BMS(models.m_Base):
         # Add any additional properties here
         return prop
     
+    def getStatus(self):
+        return self.status
+    
     def sendCommand(self, address, cmd, data=''):
         """
         Send a command
         
         :returns: bool, True if successful, False otherwise
         """
-        # TODO: Waiting for standardized communication standard
+        self.sendCommand_noAck(address, cmd, data)
         
         try:
-            fmt = 'BBBB'
-            tx = struct.pack(fmt, address, address, cmd, cmd)
-            tx_full = str(tx) + str(data)
-            
-            self.instr.write(tx_full)
-            self.instr.flush()
-            
             # Verify the acknowledgement
-            rx = self.instr.read(4)
+            rx = self.instr.read(10)
             
-            if (tx == rx):
+            if (len(rx) == 10 and tx == rx[0:8]):
+                
+                self.status = struct.unpack('xxxxxxxxH', rx)
+                
+                time.sleep(0.2)
+                
                 return True
             
             else:
                 return False
             
         except:
-            self.logger.exception('Failed to send command')
+            self.logger.exception('Failed to receive response')
             return False
         
     def sendCommand_noAck(self, address, cmd, data=''):
@@ -82,11 +89,10 @@ class m_BMS(models.m_Base):
         
         :returns: bool, True if successful, False otherwise
         """
-        # TODO: Waiting for standardized communication standard
         
         try:
-            fmt = 'BBBB'
-            tx = struct.pack(fmt, address, address, cmd, cmd)
+            fmt = 'BBBBi'
+            tx = struct.pack(fmt, address, address, cmd, cmd, data)
             tx_full = str(tx) + str(data)
             
             self.instr.write(tx_full)
@@ -97,6 +103,30 @@ class m_BMS(models.m_Base):
         except:
             self.logger.exception('Failed to send command')
             return False
+        
+    def identify(self):
+        cmd = self.commands.get('identify', 0xAA)
+        self.sendCommand_noAck(0xFA, cmd, 0)
+        
+        try:
+            conv.write(tx)
+            conv.flush()
+            
+            rx = self.instr.read(10)
+            #rx = conv.read(512)
+            
+            if (len(rx) == 10):
+                
+                self.status = struct.unpack('xBxBxxxx', address, command)
+                
+                if (command == cmd):
+                    return address
+            
+            else:
+                return False
+            
+        except:
+            self.logger.exception('Failed during identify')
     
     def resetStatus(self, address):
         cmd = self.commands.get('resetStatus', 0xBB)
@@ -204,32 +234,3 @@ class m_BMS(models.m_Base):
         cmd = self.commands.get('disableSwitching', 0x64)
         self.sendCommand(address, cmd)
     
-    def identify(self):
-        returnaddress_a = 0xFF
-        cmd_a = 0xFF
-        cmd_b = 0xFF
-        
-        try:
-            fmt = 'BBBB'
-            cmd = 0xAA
-            address = 0xFF
-            tx = struct.pack(fmt, address, address, cmd, cmd)
-    
-            self.logger.debug("identify Tx: 0x%X", tx)
-            
-            conv.write(tx)
-            conv.flush()
-            
-            rx = conv.read(512)
-    
-            self.logger.debug("identify Rx: 0x%X", rx)
-            
-            # TODO: Iterate through all received bytes to interpret data
-    
-            #fmt = 'BBBB'
-            #returnedaddress_a, returnedaddress_b, cmd_a, cmd_b = struct.unpack(fmt, rx)
-    
-            return returnedaddress_a
-            
-        except:
-            self.logger.exception('Failed during identify')
