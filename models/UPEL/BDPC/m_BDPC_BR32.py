@@ -1,6 +1,6 @@
 from . import m_BDPC_ICP
 
-class m_BDPC_BR2(m_BDPC_ICP):
+class m_BDPC_BR32(m_BDPC_ICP):
     """
     
     """

@@ -49,6 +49,9 @@ class m_BMS(models.m_Base):
     
     def getProperties(self):
         prop = models.m_Base.getProperties(self)
+		
+	prop['deviceVendor'] = 'UPEL'
+	prop['deviceModel'] = 'AMPED BMS'
         
         # Add any additional properties here
         return prop

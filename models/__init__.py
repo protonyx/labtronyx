@@ -169,7 +169,13 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
         
         :returns: str
         """
-        return self.__class__.__name__
+        fqn = self.__class__.__name__
+
+        return fqn
+    
+        # Truncate class name from module
+        #fqn_split = fqn.split('.')
+        #return '.'.join(fqn_split[0:-1])
     
     def getUUID(self):
         """

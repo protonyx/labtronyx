@@ -1,6 +1,6 @@
 from . import m_BDPC_ICP
 
-class m_BDPC_BR1(m_BDPC_ICP):
+class m_BDPC_BR2(m_BDPC_ICP):
     """
     
     """
@@ -10,7 +10,7 @@ class m_BDPC_BR1(m_BDPC_ICP):
     
     # List of Valid Vendor Identifier (VID) and Product Identifier (PID) values
     # that are compatible with this Model
-    validPIDs = ['BDPC_BR1']
+    validPIDs = ['BDPC_BR2']
     
     def getProperties(self):
         prop = m_BDPC_ICP.getProperties(self)

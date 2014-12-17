@@ -59,23 +59,48 @@ class t_Base(object):
         self._runGUI()
         
     def _startup(self):
+        ready = True
+        
         # Register all required instruments as object attributes in self
         for req_instr in self._g_instruments:
-            attr_name = req_instr.getAttributeName()
-            instr_obj = req_instr.getInstrument()
-            
-            if type(instr_obj) == list and len(instr_obj) == 1:
-                setattr(self, attr_name, instr_obj[0])
-            else:
-                setattr(self, attr_name, instr_obj)
+            if req_instr.getStatus():
+                # Register instruments as test attributes
+                attr_name = req_instr.getAttributeName()
+                instr_obj = req_instr.getInstrument()
                 
-        self.startup()
+                if type(instr_obj) == list and len(instr_obj) == 1:
+                    setattr(self, attr_name, instr_obj[0])
+                else:
+                    setattr(self, attr_name, instr_obj)
+                    
+                if self.startup():
+                    for test in self._g_tests:
+                        test.enable()
+                        
+            else:
+                ready = False
+                
+        if not ready:
+            self.logger.error("Not all instruments are ready")
+                
+        return ready
     
     def _shutdown(self):
         for test in self._g_tests:
             test.stop()
             
-        self.shutdown()
+        res = self.shutdown()
+        
+        if res:
+            for test in self._g_tests:
+                test.disable()
+                
+        return res
+    
+    def _runTests(self):
+        for test in self._g_tests:
+            test.run()
+            test.wait()
         
     def _runGUI(self):
         self.myTk = Tk.Tk()
@@ -106,7 +131,7 @@ class t_Base(object):
         #=======================================================================
         Tk.Label(master, text="Test State:").pack()
         
-        self.state_controller = self.g_StateController(master, self._startup, self._shutdown)
+        self.state_controller = self.g_StateController(master, self._startup, self._shutdown, self._runTests)
         self.state_controller.pack(fill=Tk.BOTH)
         
         #=======================================================================
@@ -319,7 +344,7 @@ class t_Base(object):
                 self.l_status.config(fg='red')
             
         def getStatus(self):
-            if len(self.instr) > 0:
+            if self.instr is not None and len(self.instr) > 0:
                 return True
             
             else:
@@ -333,17 +358,20 @@ class t_Base(object):
         
     class g_StateController(Tk.Frame):
         
-        def __init__(self, master, m_startup, m_shutdown):
+        def __init__(self, master, m_startup, m_shutdown, m_run):
             Tk.Frame.__init__(self, master, padx=3, pady=3)
             
             self.state = 0
             self.m_startup = m_startup
             self.m_shutdown = m_shutdown
+            self.m_run = m_run
             
             self.b_start = Tk.Button(self, text="Startup", command=self.cb_startup, width=10)
-            self.b_start.pack(side=Tk.LEFT)
+            self.b_start.pack(side=Tk.LEFT, padx=2)
             self.b_stop = Tk.Button(self, text="Shutdown", command=self.cb_shutdown, width=10, state=Tk.DISABLED)
-            self.b_stop.pack(side=Tk.LEFT)
+            self.b_stop.pack(side=Tk.LEFT, padx=2)
+            self.b_run = Tk.Button(self, text="Run Tests", command=self.cb_run, width=10, state=Tk.DISABLED)
+            self.b_run.pack(side=Tk.LEFT, padx=2)
             
             self.status = Tk.StringVar()
             self.l_status = Tk.Label(self, textvariable=self.status, font=("Helvetica", 12), width=10, justify=Tk.CENTER)
@@ -359,6 +387,7 @@ class t_Base(object):
             if ret == True:
                 self.b_start.config(state=Tk.DISABLED)
                 self.b_stop.config(state=Tk.NORMAL)
+                self.b_run.config(state=Tk.NORMAL)
                 
                 self.state = 1
                 self.status.set("Ready")
@@ -369,9 +398,13 @@ class t_Base(object):
             if ret == True:
                 self.b_start.config(state=Tk.NORMAL)
                 self.b_stop.config(state=Tk.DISABLED)
+                self.b_run.config(state=Tk.DISABLED)
                 
                 self.state = 0
                 self.status.set("Not Ready")
+                
+        def cb_run(self):
+            self.m_run()
         
     class g_TestElement(Tk.Frame):
         
@@ -387,6 +420,7 @@ class t_Base(object):
             self.testName = test_details.get('name')
             
             self.testMethod = getattr(testObject, self.testMethodName)
+            self.active = False
             
             self.state = 0
             self.v_state = Tk.StringVar()
@@ -412,25 +446,39 @@ class t_Base(object):
             next_state = (self.state + 1) % len(self.states)
             
             self.setState(next_state)
+            
+        def enable(self):
+            self.active = True
+            self.updateState()
+        
+        def disable(self):
+            self.active = False
+            self.updateState()
                 
         def setState(self, new_state):
             if new_state < len(self.states):
                 self.state = new_state
-                stateIdent = self.states[self.state]
-                self.v_state.set(stateIdent)
-                
-                if stateIdent == "On":
-                    self.b_run.config(state=Tk.NORMAL)
-                    
-                elif stateIdent == "Off":
-                    self.b_run.config(state=Tk.DISABLED)
-                
-                # Reset test results
-                self.testThread = None
-                self.testResult = None
-                
+                self.updateState()
+            
             else:
                 raise IndexError
+                
+        def updateState(self):
+            stateIdent = self.states[self.state]
+            self.v_state.set(stateIdent)
+            
+            if stateIdent == "On" and self.active == True:
+                self.b_run.config(state=Tk.NORMAL)
+                
+            elif stateIdent == "Off" and self.active == True:
+                self.b_run.config(state=Tk.DISABLED)
+                
+            else:
+                self.b_run.config(state=Tk.DISABLED)
+            
+            # Reset test results
+            self.testThread = None
+            self.testResult = None
         
         def updateStatus(self):
             if self.testThread is None:
@@ -460,12 +508,18 @@ class t_Base(object):
             """
             Run the test in a new thread
             """
-            self.testThread = threading.Thread(target=self._run_thread)
-            self.testThread.start()
+            stateIdent = self.states[self.state]
             
-        def stop(self):
+            if stateIdent == "On":
+                self.testThread = threading.Thread(target=self._run_thread)
+                self.testThread.start()
+            
+        def wait(self):
             if self.testThread is not None:
                 self.testThread.join()
+                
+        def stop(self):
+            pass
             
         def _run_thread(self):
             """

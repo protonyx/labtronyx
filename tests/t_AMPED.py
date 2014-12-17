@@ -18,15 +18,27 @@ class t_AMPED(t_Base):
     }
     
     def open(self):
+        # Manually load some instruments
+        try:
+            conv_uuid = self.instr.findResource('localhost', 'COM4')[0] # COM15 for the nice RS-485 converters
+            self.instr.loadModel(conv_uuid, 'models.UPEL.AMPED.m_BMS', 'm_BMS')
+            self.logger.debug("Registered AMPED BMS on COM4")
+            
+            load_uuid = self.instr.findResource('localhost', 'COM20')[0]
+            self.instr.loadModel(conv_uuid, 'models.BK_Precision.Load.m_85XX', 'm_85XX')
+            self.logger.debug("Registered BK Load on COM20")
+        except:
+            pass
+            
         # Instruments
-        self.requireInstrument('DMM - Primary Voltage', 'pri_voltage', serial='123F12106')
+        self.requireInstrument('DMM - Primary Voltage', 'pri_voltage', serial='123E12681') #'123F12106')
         self.requireInstrument('DMM - Primary Current', 'pri_current', serial='343B12138')
-        self.requireInstrument('DMM - Secondary Voltage', 'sec_voltage', serial='123E12681')
-        self.requireInstrument('DMM - Secondary Current', 'sec_current', serial='123G11250')
+        self.requireInstrument('DMM - Secondary Voltage', 'sec_voltage', serial='123G11250') #'123E12681')
+        self.requireInstrument('DMM - Secondary Current', 'sec_current', serial='123F12106') #'123G11250')
         self.requireInstrument('Source - Primary', 'pri_source', serial='602078010696820011')
         self.requireInstrument('Source - Secondary', 'sec_source', serial='00257')
-        self.requireInstrument('AMPED Converter', 'conv', driver='models.UPEL.AMPED.m_BMS')
-        self.requireInstrument('Load - Secondary', 'load', driver='models.BK_Precision.Load.m_85XX')
+        self.requireInstrument('AMPED Converter', 'conv', driver='m_BMS')
+        self.requireInstrument('Load - Secondary', 'load', driver='m_85XX')
         
         # Tests
         self.registerTest('Calibrate', 'test_Calibrate')
