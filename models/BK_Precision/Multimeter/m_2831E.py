@@ -12,8 +12,12 @@ class m_2831E(m_MultimeterBase):
         
         if self._identity is not None:
             ret['deviceModel'] = "2831E" #self.__identity[0]
-            ret['deviceSerial'] = self._identity[2]
-            ret['deviceFirmware'] = self._identity[1]
+            try:
+                ret['deviceSerial'] = self._identity[2]
+                ret['deviceFirmware'] = self._identity[1]
+            except:
+                ret['deviceSerial'] = "ERROR"
+                ret['deviceFirmware'] = "ERROR"
             
         return ret
 

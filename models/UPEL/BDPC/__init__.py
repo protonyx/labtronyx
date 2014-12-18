@@ -1,29 +1,14 @@
 import threading
 from .. import m_Generic
 
-class m_BDPC_ICP(m_Generic):
+class m_BDPC_Base(m_Generic):
     """
     Common model for all BDPC devices
     """
     
     # Model device type
-    deviceType = 'Source'
-    
-    registers = {
-        'SensorGain': 0x2110,
-        'SensorOffset': 0x2111,
-        'SensorDescription': 0x2120,
-        'SensorUnits': 0x2121,
-        'SensorData': 0x2122,
-        'SensorDataRaw': 0x2123,
-        # Main Controller
-        'FeedbackLoopGain': 0x2210,
-        'PowerCommand': 0x2211,
-        'MMCParameters': 0x2220,
-        'MMCDiagnostics': 0x2222
-        }
-    
-    numSensors = 4
+    deviceType = 'Bidirectional Power Supply'
+
     
     sensors = {
         'PrimaryVoltage': 1,
@@ -36,140 +21,65 @@ class m_BDPC_ICP(m_Generic):
         'ZVSCurrentD': 8
         }
     
-    def _onLoad(self):
-        m_Generic._onLoad(self)
-        
-        # Spawn a thread to update static values from device
-        t = threading.Thread(target=self.update_startup)
-        t.start()
+    options = {
+        'switching_enabled': 1,
+        'parameter_latch': 100
+        }
     
     def getProperties(self):
         prop = m_Generic.getProperties(self)
         
-        prop['numSensors'] = self.numSensors
+        prop['numSensors'] = len(self.sensors)
         
         # Add any additional properties here
         return prop
     
-    def update_startup(self):
-        """
-        Called on startup to get the following values:
-        
-            * Sensor types for all sensors
-            * MMC Parameters (P/V/I)
-        """
-        for x in range(1,self.numSensors+1):
-            address = self.registers.get('SensorDescription')
-            self.instr.register_config_cache(address, x)
-            self.instr.register_read_queue(address, x, 'string')
-            
-            address = self.registers.get('SensorUnits')
-            self.instr.register_config_cache(address, x)
-            self.instr.register_read_queue(address, x, 'string')
-            
-            # Cache sensor data
-            address = self.registers.get('SensorData')
-            self.instr.register_config_cache(address, x)
-            
-    def autoupdate_start(self, depth=100, sample_time=1.0):
-        """
-        
-        """
-        for x in range(1,self.numSensors+1):
-            address = self.registers.get('SensorData')
-            self.instr.register_config_accumulate(address, x, 'float', depth, sample_time)
-        
-        
-    def autoupdate_stop(self):
-        """
-        
-        """
-        for x in range(1,self.numSensors+1):
-            address = self.registers.get('SensorData')
-            self.instr.register_config_clear(address, x)
-            self.instr.register_config_cache(address, x)
+        # Model device type
+
+    #===========================================================================
+    # Options
+    #===========================================================================
     
-    def update(self):
-        """
-        Update the following values:
-        
-            * Sensor Values
-            * Control Angles (Phi AB/AD/DC)
-        """
-        for x in range(1, self.numSensors+1):
-            address = self.registers.get('SensorData')
-            self.instr.register_read_queue(address, x, 'float')
-            
+    def setOption(self, **kwargs):
+        for arg in kwargs:
+            if arg in self.control_bits:
+                bit_number = self.control_bits.get(arg)
+    
     #===========================================================================
     # Sensors
     #===========================================================================
     
-    def setCalibration(self, sensor, gain, offset):
-        pass
-    
-    def getCalibration(self, sensor):
-        pass
-    
-    def getSensorValue(self, sensor):
-        address = self.registers.get('SensorData')
-        return float(self.instr.register_read(address, sensor, 'float'))
-    
-    def getSensorType(self, sensor):
-        ret = {}
-        
-        address = self.registers.get('SensorDescription')
-        try:
-            ret['description'] = self.instr.register_read(address, sensor, 'string')
-        except:
-            ret['description'] = 'Unknown'
-            
-        address = self.registers.get('SensorUnits')
-        try:
-            ret['units'] = self.instr.register_read(address, sensor, 'string')
-        except:
-            ret['units'] = '?'
-        
-        return ret
-    
+    def setSensorGain(self, sensor, gain):
+        raise NotImplementedError
+
     #===========================================================================
     # Parameters
     #===========================================================================
     
-    def commitParameters(self):
-        address = self.registers.get('MMCParameters')
-        #return self.instr.register_write(address, 0x4, 1, 'int8');
-        # Implement this in the bridge
+    def getVoltageReference(self):
+        raise NotImplementedError
     
-    def getVoltage(self):
-        address = self.registers.get('MMCParameters')
-        return self.instr.register_read(address, 0x01, 'float')
+    def setVoltageReference(self, set_v):
+        raise NotImplementedError
     
-    def setVoltage(self, set_v):
-        address = self.registers.get('MMCParameters')
-        return self.instr.register_write(address, 0x1, set_v, 'float');
+    def getCurrentReference(self):
+        raise NotImplementedError
     
-    def getCurrent(self):
-        address = self.registers.get('MMCParameters')
-        return self.instr.register_read(address, 0x02, 'float')
+    def setCurrentReference(self, set_i):
+        raise NotImplementedError
     
-    def setCurrent(self, set_i):
-        address = self.registers.get('MMCParameters')
-        return self.instr.register_write(address, 0x2, set_i, 'float');
+    def getPowerReference(self):
+        raise NotImplementedError
     
-    def getPower(self):
-        address = self.registers.get('MMCParameters')
-        return self.instr.register_read(address, 0x03, 'float')
-    
-    def setPower(self, set_p):
-        address = self.registers.get('MMCParameters')
-        return self.instr.register_write(address, 0x3, set_p, 'float');
+    def setPowerReference(self, set_p):
+        raise NotImplementedError
     
     #===========================================================================
     # Diagnostics
     #===========================================================================
     
     
-    
+
     #===========================================================================
     # Composite Data
     #===========================================================================

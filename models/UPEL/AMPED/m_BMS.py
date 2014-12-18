@@ -26,8 +26,8 @@ class m_BMS(models.m_Base):
         'identify':     0xAA,
         'shutdown_wdt': 0xBD,
         'resetStatus':  0xBB,
-        'setMode_openloop': 0x2B,
-        'setMode_closedloop': 0xB7
+        'enableSwitching': 0x7F,
+        'enableSwitching_open': 0x73
         }
     
     def _onLoad(self):
@@ -56,37 +56,38 @@ class m_BMS(models.m_Base):
         # Add any additional properties here
         return prop
     
-    def getStatus(self):
+    def getLastStatus(self):
         return self.status
     
-    def sendCommand(self, address, cmd, data=''):
+    def sendCommand(self, address, cmd, data=0):
         """
         Send a command
         
         :returns: bool, True if successful, False otherwise
         """
+        time.sleep(0.2)
         self.sendCommand_noAck(address, cmd, data)
         
         try:
             # Verify the acknowledgement
             rx = self.instr.read(10)
             
-            if (len(rx) == 10 and tx == rx[0:8]):
+            if (len(rx) == 10):
                 
-                self.status = struct.unpack('xxxxxxxxH', rx)
+                (address_r, command_r, status) = struct.unpack('xBxBxxxxH', rx)
+                self.status = status
                 
-                time.sleep(0.2)
-                
-                return True
+                return address_r == address and command_r == cmd
             
             else:
+                self.logger.error("Identify returned an invalid number of bytes: %i", len(rx))
                 return False
             
         except:
             self.logger.exception('Failed to receive response')
             return False
         
-    def sendCommand_noAck(self, address, cmd, data=''):
+    def sendCommand_noAck(self, address, cmd, data=0):
         """
         Send a command, does not expect an acknowledgement frame
         
@@ -96,9 +97,8 @@ class m_BMS(models.m_Base):
         try:
             fmt = 'BBBBi'
             tx = struct.pack(fmt, address, address, cmd, cmd, data)
-            tx_full = str(tx) + str(data)
             
-            self.instr.write(tx_full)
+            self.instr.write(tx)
             self.instr.flush()
             
             return True
@@ -112,20 +112,27 @@ class m_BMS(models.m_Base):
         self.sendCommand_noAck(0xFA, cmd, 0)
         
         try:
-            conv.write(tx)
-            conv.flush()
+            old_timeout = self.instr.timeout
+            self.instr.timeout = 1.2
             
             rx = self.instr.read(10)
-            #rx = conv.read(512)
+            #rx = self.instr.read(512)
+
+            self.instr.timeout = old_timeout
             
             if (len(rx) == 10):
-                
-                self.status = struct.unpack('xBxBxxxx', address, command)
+
+                self.logger.debug("IDENTIFY RX: %s", rx.encode('hex'))
+                (address, command) = struct.unpack('xBxBxxxxxx', rx)
                 
                 if (command == cmd):
                     return address
+
+                else:
+                    return False
             
             else:
+                self.logger.error("Identify returned an invalid number of bytes: %i", len(rx))
                 return False
             
         except:
@@ -137,43 +144,28 @@ class m_BMS(models.m_Base):
     
     def calibrate(self, address, data1=1, data2=1):
         cmd = self.commands.get('calibrate', 0xAF)
-        
-        fmt = 'BB'
-        data = struct.pack(fmt, data1, data2)
+
+        data = (data1 << 8) | (data2)
         
         self.sendCommand(address, cmd, data)
-        
-        # Read additional 4 bytes after ack
-        rx = conv.read(4)
     
     def shutoff_wdt(self, address):
         cmd = self.commands.get('shutdown_wdt', 0xBD)
         self.sendCommand(address, cmd)
     
-    def setMode_openloop(self, address):
-        cmd = self.commands.get('setMode_openloop', 0x2B)
-        self.sendCommand(address, cmd)
-            
-    def setMode_closedloop(self, address):
-        cmd = self.commands.get('setMode_closedloop', 0xB7)
-        self.sendCommand(address, cmd)
-    
     def set_phaseAngle(self, address, phase):
         cmd = self.commands.get('set_phaseAngle', 0x46)
         
-        fmt = 'xH'
-        data = struct.pack(fmt, phase)
+        data = phase & 0xFFFF
         
         self.sendCommand(address, cmd, data)
     
     def set_vRef(self, address, vref):
         cmd = self.commands.get('set_vRef', 0xB9)
         
-        fmt = 'H'
-        data = struct.pack(fmt, vref)
+        data = vref & 0xFFFF
         
         self.sendCommand(address, cmd, data)
-    
             
     def enableSampling(self, address):
         cmd = self.commands.get('enableSampling', 0xB4)
@@ -190,12 +182,13 @@ class m_BMS(models.m_Base):
         self.sendCommand_noAck(address, cmd)
         
         try:
-            rx = conv.read(10)
+            rx = self.instr.read(10)
             
             fmt = '>HHHHH' #note the big endian ">" in the format code - this is required if you don't want funky data
             phase, vout, vin, iin, status = struct.unpack(fmt, rx)
             
             ret = (phase, vout, vin, iin, status)
+            self.status = status
         
         except:
             self.logger.exception('Failed during getData')
@@ -212,15 +205,14 @@ class m_BMS(models.m_Base):
         """
         for x in range(3):
             try:
-                _,_,_,_,status = conv_getData(address)
+                _,_,_,_,status = self.getData(address)
         
                 if ((status & 0xFF08 == 0) and (status & 0x2 == 0x2)):
                     
-                    cmd = self.commands.get('enableSwitching', 0x73)
+                    cmd = self.commands.get('enableSwitching', 0x7F)
                     
-                    fmt = 'BBB'
                     initial_phase = 0x00
-                    data = struct.pack(fmt, address, address, cmd, cmd, initial_phase, initial_phase, initial_phase)
+                    data = (initial_phase << 16) | (initial_phase << 8) | initial_phase
         
                     if self.sendCommand(address, cmd, data):
                         return True
@@ -232,6 +224,40 @@ class m_BMS(models.m_Base):
                 pass
             
         return False
+
+    def enableSwitching_open(self, address):
+        """
+        Enable Switching in open loop mode
+        
+        Tries 3 times to start switching since this seems to be so buggy
+        
+        :returns: True if switching started, False otherwise
+        """
+        for x in range(3):
+            try:
+                _,_,_,_,status = self.getData(address)
+        
+                if ((status & 0xFF08 == 0) and (status & 0x2 == 0x2)):
+                    
+                    cmd = self.commands.get('enableSwitching_open', 0x73)
+                    
+                    initial_phase = 0x00
+                    data = (initial_phase << 16) | (initial_phase << 8) | initial_phase
+        
+                    if self.sendCommand(address, cmd, data):
+                        return True
+                
+                else:
+                    self.logger.debug("Failed attempt %i to start switching, not ready", x)
+                    
+            except:
+                pass
+            
+        return False
+
+    def close_loop(self, address):
+        cmd = self.commands.get('close_loop', 0xB7)
+        self.sendCommand(address, cmd)
     
     def disableSwitching(self, address):
         cmd = self.commands.get('disableSwitching', 0x64)

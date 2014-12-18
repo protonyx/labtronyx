@@ -67,21 +67,25 @@ class t_Base(object):
                 # Register instruments as test attributes
                 attr_name = req_instr.getAttributeName()
                 instr_obj = req_instr.getInstrument()
+
+                self.logger.debug("Attr [%s] registered", attr_name)
                 
                 if type(instr_obj) == list and len(instr_obj) == 1:
                     setattr(self, attr_name, instr_obj[0])
                 else:
-                    setattr(self, attr_name, instr_obj)
-                    
-                if self.startup():
-                    for test in self._g_tests:
-                        test.enable()
-                        
+                    setattr(self, attr_name, instr_obj)                        
             else:
                 ready = False
                 
         if not ready:
             self.logger.error("Not all instruments are ready")
+        else:
+            if self.startup():
+                for test in self._g_tests:
+                    test.enable()
+
+
+        self.logger.info("All instruments enumerated and registered")
                 
         return ready
     
@@ -344,7 +348,7 @@ class t_Base(object):
                 self.l_status.config(fg='red')
             
         def getStatus(self):
-            if self.instr is not None and len(self.instr) > 0:
+            if self.instr is not None:
                 return True
             
             else:

@@ -5,9 +5,6 @@ class m_BDPC_BR2(m_BDPC_ICP):
     
     """
     
-    # Model device type
-    deviceType = 'Source'
-    
     # List of Valid Vendor Identifier (VID) and Product Identifier (PID) values
     # that are compatible with this Model
     validPIDs = ['BDPC_BR2']
