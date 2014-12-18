@@ -1,0 +1,3 @@
+
+class DAU(object):
+	pass
