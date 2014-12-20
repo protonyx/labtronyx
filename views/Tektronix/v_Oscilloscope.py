@@ -9,10 +9,10 @@ from matplotlib.figure import Figure
 
 class v_Oscilloscope(views.v_Base):
     
-    validModels = ['Tektronix.Oscilloscope.m_OscilloscopeBase', 
-                   'Tektronix.Oscilloscope.m_DigitalPhosphor',
-                   'Tektronix.Oscilloscope.m_MixedDomain',
-                   'Tektronix.Oscilloscope.m_MixedSignal']
+    validModels = ['models.Tektronix.Oscilloscope.m_OscilloscopeBase', 
+                   'models.Tektronix.Oscilloscope.m_DigitalPhosphor',
+                   'models.Tektronix.Oscilloscope.m_MixedDomain',
+                   'models.Tektronix.Oscilloscope.m_MixedSignal']
     
     def _plot(self):
         if self.model.data != {}:

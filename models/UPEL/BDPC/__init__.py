@@ -1,6 +1,8 @@
 import threading
 from .. import m_Generic
 
+__all__ = ['Base_ICP', 'Base_Serial']
+
 class m_BDPC_Base(m_Generic):
     """
     Common model for all BDPC devices
@@ -22,8 +24,27 @@ class m_BDPC_Base(m_Generic):
         }
     
     options = {
-        'switching_enabled': 1,
-        'parameter_latch': 100
+        'switching': 0,
+        'require_external_enable': 1,
+        'master_mode': 2,
+        'slave_mode': 3,
+        'latch_param_reg': 4,
+        'latch_diagnostic_reg': 5,
+        'open_main_loop': 6,
+        'open_aux_loops': 7,
+        'manual_dead_time': 8,
+        'fixed_gain': 9,
+        'manual_fet_control': 10,
+        'manual_input_voltage': 11
+        }
+    
+    status = {
+        'soft_start': 0,
+        'switching': 1,
+        'feedback_control': 2,
+        'ZVS_compensator': 3,
+        'secondary_overvoltage': 4,
+        'primary_overvoltage': 5
         }
     
     def getProperties(self):
@@ -41,17 +62,44 @@ class m_BDPC_Base(m_Generic):
     #===========================================================================
     
     def setOption(self, **kwargs):
-        for arg in kwargs:
-            if arg in self.control_bits:
-                bit_number = self.control_bits.get(arg)
+        raise NotImplementedError
+                
+    def getOption(self):
+        raise NotImplementedError
     
     #===========================================================================
     # Sensors
     #===========================================================================
+    def getSensors(self):
+        raise NotImplementedError
     
     def setSensorGain(self, sensor, gain):
         raise NotImplementedError
-
+    
+    def getSensorGain(self, sensor):
+        raise NotImplementedError
+    
+    def setSensorOffset(self, sensor, offset):
+        raise NotImplementedError
+    
+    def getSensorOffset(self, sensor):
+        raise NotImplementedError
+    
+    def getSensorValue(self, sensor):
+        raise NotImplementedError
+    
+    def getSensorValue_ext(self, sensor, module):
+        pass
+    
+    def getSensorRawValue(self, sensor):
+        raise NotImplementedError
+    
+    def getSensorUnits(self, sensor):
+        raise NotImplementedError
+    
+    def getSensorDescription(self, sensor):
+        raise NotImplementedError
+    
     #===========================================================================
     # Parameters
     #===========================================================================
@@ -74,11 +122,44 @@ class m_BDPC_Base(m_Generic):
     def setPowerReference(self, set_p):
         raise NotImplementedError
     
+    def setPowerCommand(self, command):
+        raise NotImplementedError
+    
+    def setPhaseShift(self, angle):
+        raise NotImplementedError
+    
+    def getPhaseShift(self):
+        raise NotImplementedError
+    
+    def setPhaseAngle(self, leg, angle):
+        raise NotImplementedError
+    
+    def setDeadTime(self, leg, nanoseconds):
+        raise NotImplementedError
+    
+    def setGain(self, gain):
+        raise NotImplementedError
+    
     #===========================================================================
     # Diagnostics
     #===========================================================================
-    
-    
+    def getStatus(self):
+		raise NotImplementedError
+		
+    def getConversionRatioMeasured(self):
+		raise NotImplementedError
+		
+    def getPowerCommand(self):
+		raise NotImplementedError
+		
+    def getPhaseAngle(self):
+		raise NotImplementedError
+	
+    def getGain(self):
+		raise NotImplementedError
+		
+    def getMMCMode(self):
+		raise NotImplementedError    
 
     #===========================================================================
     # Composite Data
@@ -96,7 +177,7 @@ class m_BDPC_Base(m_Generic):
         
         return sv*si
     
-    def getConversionRatio(self):
+    def getConversionRatioCalc(self):
         pv = self.getSensorValue(1) 
         sv = self.getSensorValue(2)
         

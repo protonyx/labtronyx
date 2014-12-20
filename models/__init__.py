@@ -169,7 +169,7 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
         
         :returns: str
         """
-        fqn = self.__class__.__name__
+        fqn = self.__class__.__module__
 
         return fqn
     

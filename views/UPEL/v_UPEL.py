@@ -1,12 +1,14 @@
 
 import views
 
+
 import Tkinter as Tk
 
 class v_UPEL(views.v_Base):
     
-    validVIDs = ['UPEL']
-    validPIDs = []
+    validModels = ['models.UPEL.BDPC.m_BDPC_BR2',
+                   'models.UPEL.BDPC.m_BDPC_BR32',
+                   'models.UPEL.BDPC.m_BDPC']
     
     def run(self):
         self.wm_title("UPEL ICP Test")

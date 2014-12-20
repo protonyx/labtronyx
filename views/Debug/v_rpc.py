@@ -7,8 +7,7 @@ import Tkinter as Tk
 
 class v_rpc(views.v_Base):
     
-    validVIDs = ['Test']
-    validPIDs = ['12345']
+    validModels = [] # Valid for all models
         
     def run(self):
         self.wm_title("RPC Test")

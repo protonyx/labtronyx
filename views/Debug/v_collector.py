@@ -15,8 +15,7 @@ from matplotlib.backend_bases import key_press_handler
 
 class v_collector(views.v_Base):
     
-    validVIDs = ['Test']
-    validPIDs = ['12345']
+    validModels = ['models.Test.m_test'] 
     
     lastTime = 0.0
     data = []

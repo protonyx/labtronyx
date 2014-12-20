@@ -1,7 +1,8 @@
 import threading
+
 from . import m_BDPC_Base
 
-class m_BDPC_ICP_Base(m_BDPC_Base):
+class Base_ICP(m_BDPC_Base):
     
     validVIDs = ['UPEL']
     
@@ -16,7 +17,9 @@ class m_BDPC_ICP_Base(m_BDPC_Base):
         'FeedbackLoopGain': 0x2210,
         'PowerCommand': 0x2211,
         'MMCParameters': 0x2220,
-        'MMCDiagnostics': 0x2222
+        'MMCDiagnostics': 0x2222,
+#         This StatusReg function will return only the value of the status register to use here
+        'StatusReg': 0x2000
         }
     
     #===========================================================================

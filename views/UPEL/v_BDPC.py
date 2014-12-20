@@ -1,5 +1,7 @@
 
 import views
+import common.widgets as vw
+
 import Tkinter as Tk
 
 from . import *
@@ -29,9 +31,9 @@ class v_BDPC(views.v_Base):
         * Conversion Ratio
     """
     
-    validModels = ['UPEL.BDPC.m_BDPC_BR2',
-                   'UPEL.BDPC.m_BDPC_BR32',
-                   'UPEL.BDPC.m_BDPC']
+    validModels = ['models.UPEL.BDPC.m_BDPC_BR2',
+                   'models.UPEL.BDPC.m_BDPC_BR32',
+                   'models.UPEL.BDPC.m_BDPC']
     
     def run(self):
         # List of GUI elements to update
@@ -42,40 +44,60 @@ class v_BDPC(views.v_Base):
         # Parameters
         #=======================================================================
         self.frame_param = Tk.LabelFrame(self, text="Parameters", padx=5, pady=5)
-        self.param_v = ICP_Value_ReadWrite(self.frame_param, self.model,
+        self.param_v = vw.vw_GetSetValue(self.frame_param, self.model,
                                            label="Voltage", units="V", 
-                                           read_cb=self.model.getVoltage, write_cb=self.model.setVoltage)
+                                           get_cb=self.model.getVoltage, 
+                                           set_cb=self.model.setVoltage)
         self.param_v.pack()
-        self.param_i = ICP_Value_ReadWrite(self.frame_param, self.model,
+        
+        self.param_i = vw.vw_GetSetValue(self.frame_param, self.model,
                                            label="Current", units="A", 
-                                           read_cb=self.model.getCurrent, write_cb=self.model.setCurrent)
+                                           get_cb=self.model.getCurrent, 
+                                           set_cb=self.model.setCurrent)
         self.param_i.pack()
-        self.param_p = ICP_Value_ReadWrite(self.frame_param, self.model,
+        
+        self.param_p = vw.vw_GetSetValue(self.frame_param, self.model,
                                            label="Power", units="W", 
-                                           read_cb=self.model.getPower, write_cb=self.model.setPower)
+                                           get_cb=self.model.getPower, 
+                                           set_cb=self.model.setPower)
         self.param_p.pack()
-        self.param_setall = ICP_Button(self.frame_param, self.model,
-                                            label="Set All", button_label="Set", cb_func=self.cb_setAllParams)
+        
+        self.param_setall = vw.vw_Trigger(self.frame_param, self.model,
+                                            label="Set All", button_label="Set", 
+                                            cb_func=self.cb_setAllParams)
         self.param_setall.pack()
+        
+        # Switching Control
+        self.ops_switching = vw_Toggle(self.frame_param,
+                                            label="Switching", 
+                                            cb_func=lambda x: self.model.setOptions(enable_switching=x))
+        self.ops_refresh_toggle.pack()
+        
+        # Refresh Toggle
+        self.ops_refresh_toggle = vw_Toggle(self.frame_param,
+                                            label="Auto Update", 
+                                            cb_func=self.cb_refreshToggle)
+        self.ops_refresh_toggle.pack()
+        
+        # Immediate update
+        self.ops_update_immed = vw_Trigger(self.frame_param,
+                                           label="Update Immediately", button_label="Update", 
+                                           cb_func=self.update)
+        self.ops_update_immed.pack()
+        
         self.frame_param.grid(row=0, column=0)
         
         #=======================================================================
         # Diagnostics
         #=======================================================================
         self.frame_diag = Tk.LabelFrame(self, text="Diagnostics", padx=5, pady=5)
-        self.diag_efficiency = ICP_Value_Read(self.frame_diag, self.model,
-                                              label="Efficiency", units="%", read_cb=self.model.getEfficiency)
+        self.diag_efficiency = vw_GetValue(self.frame_diag, self.model,
+                                              label="Efficiency", units="%", get_cb=self.model.getEfficiency)
         self.diag_efficiency.pack()
-        self.diag_convRatio = ICP_Value_Read(self.frame_diag, self.model,
-                                              label="Conversion Ratio", units="", read_cb=self.model.getConversionRatio)
+        self.diag_convRatio = vw_GetValue(self.frame_diag, self.model,
+                                              label="Conversion Ratio", units="", get_cb=self.model.getConversionRatio)
         self.diag_convRatio.pack()
-        self.diag_mainController = ICP_Launch_Window(self.frame_diag, self.model,
-                                                     label="Main Controller", window_class=None)
-        self.diag_mainController.pack()
-        self.diag_auxController = ICP_Launch_Window(self.frame_diag, self.model,
-                                                     label="Aux Controllers", window_class=None)
-        self.diag_auxController.pack()
-        self.frame_diag.grid(row=0, column=1)
+        self.frame_diag.grid(row=1, column=0)
         
         self.update_elems.append(self.diag_efficiency)
         self.update_elems.append(self.diag_convRatio)
@@ -83,52 +105,45 @@ class v_BDPC(views.v_Base):
         #=======================================================================
         # Operation
         #=======================================================================
-        self.frame_ops = Tk.LabelFrame(self, text="Operation", padx=5, pady=5)
-        # Operation State
-        self.ops_mode = ICP_Operation_Mode(self.frame_ops, self.model)
-        self.ops_mode.pack()
-        self.update_elems.append(self.ops_mode)
-        # Refresh Interval
-        
-        # Refresh Toggle
-        self.ops_refresh_toggle = ICP_Value_Toggle(self.frame_ops, self.model,
-                                                   label="Auto Update", states=["Off", "On"], cb=self.cb_refreshToggle)
-        self.ops_refresh_toggle.pack()
-        # Immediate update
-        self.ops_update_immed = ICP_Button(self.frame_ops, self.model,
-                                           label="Update Immediately", button_label="Update", cb_func=self.update)
-        self.ops_update_immed.pack()
-        self.frame_ops.grid(row=0, column=2)
+#===============================================================================
+#         self.frame_ops = Tk.LabelFrame(self, text="Operation", padx=5, pady=5)
+#         # Operation State
+#         self.ops_mode = ICP_Operation_Mode(self.frame_ops, self.model)
+#         self.ops_mode.pack()
+#         self.update_elems.append(self.ops_mode)
+# 
+#         self.frame_ops.grid(row=0, column=2)
+#===============================================================================
         
         #=======================================================================
         # Primary
         #=======================================================================
         self.frame_primary = Tk.LabelFrame(self, text="Primary", padx=5, pady=5)
-        self.pri_sensor_voltage = ICP_Sensor(self.frame_primary, self.model, 1)
+        self.pri_sensor_voltage = BDPC_Sensor(self.frame_primary, self.model, 'PrimaryVoltage')
         self.pri_sensor_voltage.pack()
-        self.pri_sensor_current = ICP_Sensor(self.frame_primary, self.model, 3)
+        self.pri_sensor_current = BDPC_Sensor(self.frame_primary, self.model, 'PrimaryCurrent')
         self.pri_sensor_current.pack()
-        self.pri_power = ICP_Value_Read(self.frame_primary, self.model, 
-                                        label="Input Power", units="W", read_cb=self.model.getPrimaryPower)
+        self.pri_power = vw_GetValue(self.frame_primary, 
+                                        label="Input Power", units="W", 
+                                        get_cb=self.model.getPrimaryPower)
         self.pri_power.pack()
-        self.frame_primary.grid(row=1, column=0)
+        self.frame_primary.grid(row=0, column=1)
         
         self.update_elems.append(self.pri_sensor_voltage)
         self.update_elems.append(self.pri_sensor_current)
         self.update_elems.append(self.pri_power)
         
-        # Picture Frame
-        
         # Secondary
         self.frame_secondary = Tk.LabelFrame(self, text="Secondary", padx=5, pady=5)
-        self.sec_sensor_voltage = ICP_Sensor(self.frame_secondary, self.model, 2)
+        self.sec_sensor_voltage = BDPC_Sensor(self.frame_secondary, self.model, 'SecondaryVoltage')
         self.sec_sensor_voltage.pack()
-        self.sec_sensor_current = ICP_Sensor(self.frame_secondary, self.model, 4)
+        self.sec_sensor_current = BDPC_Sensor(self.frame_secondary, self.model, 'SecondaryCurrent')
         self.sec_sensor_current.pack()
-        self.sec_power = ICP_Value_Read(self.frame_secondary, self.model, 
-                                        label="Output Power", units="W", read_cb=self.model.getSecondaryPower)
+        self.sec_power = vw_GetValue(self.frame_secondary, 
+                                        label="Output Power", units="W", 
+                                        get_cb=self.model.getSecondaryPower)
         self.sec_power.pack()
-        self.frame_secondary.grid(row=1, column=2)
+        self.frame_secondary.grid(row=1, column=1)
         
         self.update_elems.append(self.sec_sensor_voltage)
         self.update_elems.append(self.sec_sensor_current)
@@ -164,10 +179,30 @@ class v_BDPC(views.v_Base):
         self.param_i.set(new_i)
         self.param_p.set(new_p)
     
-class BDPC_Graph(Tk.Toplevel):
+class BDPC_Sensor(vw_Base):
+    """
+    ICP Sensor Class is a specific type of register for
+    sensors.
     
-    def __init__(self):
-        pass
+    TODO: Add Calibration editor
+    """
+    
+    def __init__(self, master, model, sensor):
+        vw_Base.__init__(self, master, 8, 2)
+        
+        self.model = model
+        
+        name = self.model.getSensorDescription(sensor)
+        units = self.model.getSensorUnits(sensor)
+        
+        self.vw_SensorValue = vw_GetValue(self, label=name, units=units, 
+                                          get_cb=lambda: self.model.getSensorValue(sensor))
+        
+    def get(self):
+        return self.vw_SensorValue.get()
+        
+    def update(self):
+        self.vw_SensorValue.update()
     
 class BDPC_MainController(Tk.Toplevel):
     """

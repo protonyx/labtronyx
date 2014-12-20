@@ -1,6 +1,6 @@
-from . import m_BDPC_ICP
+from . import *
 
-class m_BDPC_BR2(m_BDPC_ICP):
+class m_BDPC_BR2(Base_ICP.Base_ICP):
     """
     
     """
@@ -10,7 +10,7 @@ class m_BDPC_BR2(m_BDPC_ICP):
     validPIDs = ['BDPC_BR2']
     
     def getProperties(self):
-        prop = m_BDPC_ICP.getProperties(self)
+        prop = Base_ICP.Base_ICP.getProperties(self)
         
         prop['deviceVendor'] = 'UPEL'
         prop['deviceModel'] = 'BDPC Dual 2kW'
