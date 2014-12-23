@@ -1,5 +1,6 @@
 import threading
 import socket
+import errno
 import select
 import re
 import uuid
@@ -178,13 +179,17 @@ class RpcBase(object):
                 ts = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 ts.connect(('localhost', port))
             
+            
             except socket.error as e:
-                if e.errno == 10061 or e.errno == 111: # Refused connection
+                if e.errno == errno.ECONNREFUSED: #10061 or e.errno == 111 or e.errno == 61: # Refused connection
                     return False
-                elif e.errno == 10054: # Connection reset
+                
+                elif e.errno == errno.ECONNRESET: #10054: # Connection reset
                     return False
-                elif e.errno == 10060: # Time out
+                
+                elif e.errno == errno.ETIMEDOUT: #10060: # Time out
                     return False
+                
                 else:
                     # Something else is wrong, assume port cannot be used
                     return True

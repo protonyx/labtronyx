@@ -1,6 +1,6 @@
 import Tkinter as Tk
 
-__all__ = ["entry", "plots", "state"]
+__all__ = ["entry", "info", "plots", "state"]
 
 class vw_Base(Tk.Frame):
     PIXELS_PER_X = 30

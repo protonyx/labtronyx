@@ -948,6 +948,7 @@ class InstrumentControl(object):
 # Load GUI in interactive mode
 if __name__ == "__main__":
     # Load Application GUI
+    
     try:
         #sys.path.append("..")
         from application.a_Main import a_Main

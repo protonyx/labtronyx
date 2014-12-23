@@ -179,7 +179,7 @@ class v_BDPC(views.v_Base):
         self.param_i.set(new_i)
         self.param_p.set(new_p)
     
-class BDPC_Sensor(vw_Base):
+class BDPC_Sensor(vw.vw_Base):
     """
     ICP Sensor Class is a specific type of register for
     sensors.
@@ -188,7 +188,7 @@ class BDPC_Sensor(vw_Base):
     """
     
     def __init__(self, master, model, sensor):
-        vw_Base.__init__(self, master, 8, 2)
+        vw.vw_Base.__init__(self, master, 8, 2)
         
         self.model = model
         

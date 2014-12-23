@@ -1,7 +1,6 @@
 
 import views
 
-
 import Tkinter as Tk
 
 class v_UPEL(views.v_Base):

@@ -64,13 +64,13 @@ class a_Main(object):
         # TODO: Persistent Settings
         
         self.run()
-        
-    def __pathToModelName(self, path):
+    
+    def __pathToModuleName(self, path):
         # Get module name from relative path
         com_pre = os.path.commonprefix([self.rootPath, path])
-        r_path = path.replace(com_pre + "\\", '')
+        r_path = path.replace(com_pre + os.path.sep, '')
         
-        modulePath = r_path.replace("\\", '.')
+        modulePath = r_path.replace(os.path.sep, '.')
         return modulePath
         
     def __loadViews(self):
@@ -89,7 +89,7 @@ class a_Main(object):
             elif '__init__.py' not in dir[2]:
                 # Directory must be a python module
                 # TODO: Create an __init__.py file if one does not exist
-                self.logger.warning('Non-module model found: %s', dir[0])
+                self.logger.warning('Non-module folder found: %s', dir[0])
                 continue
             
             for file in dir[2]:
@@ -97,7 +97,7 @@ class a_Main(object):
                 if file[-3:] == '.py' and '__init__' not in file:
                     # Get module name from relative path     
                     className = file.replace('.py', '')
-                    viewModule = self.__pathToModelName(dir[0]) + '.' + className
+                    viewModule = self.__pathToModuleName(dir[0]) + '.' + className
 
                     # Attempt to load the view
                     try:

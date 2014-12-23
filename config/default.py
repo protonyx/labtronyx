@@ -1,4 +1,5 @@
 import logging
+import sys
 
 class Config(object):
     
@@ -16,9 +17,17 @@ class Config(object):
         
         # Log to file
         self.logToFile = True
-        self.logPath = 'C:/temp/'
         self.logFilename = 'InstrControl.log'
         self.logBackups = 1
+        
+        if sys.platform.startswith('win'):
+            self.logPath = 'C:/temp/'
+        elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+            self.logPath = '/var/log/' # User directory
+        elif sys.platform.startswith('darwin'):
+            self.logPath = '/var/log' # User directory
+        else:
+            raise EnvironmentError('Unsupported platform')
         
         # Log levels
         self.logLevel_console = logging.DEBUG
