@@ -1,10 +1,9 @@
 import sys
 import serial
 
-import controllers
-from common.icp import UPEL_ICP
+from . import c_Base
 
-class c_Serial(controllers.c_Base):
+class c_Serial(c_Base):
     
     # Dict: ResID -> (VID, PID)
     resources = {}

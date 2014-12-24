@@ -1,6 +1,7 @@
 
 import views
-import common.widgets as vw
+from common.widgets import *
+#import common.widgets as vw
 
 import Tkinter as Tk
 
@@ -36,6 +37,9 @@ class v_BDPC(views.v_Base):
                    'models.UPEL.BDPC.m_BDPC']
     
     def run(self):
+        # TODO: Make this work
+        # self.model = self.getModelObject()
+        
         # List of GUI elements to update
         self.update_elems = []
         self.wm_title("BDPC")
@@ -44,43 +48,43 @@ class v_BDPC(views.v_Base):
         # Parameters
         #=======================================================================
         self.frame_param = Tk.LabelFrame(self, text="Parameters", padx=5, pady=5)
-        self.param_v = vw.vw_GetSetValue(self.frame_param, self.model,
-                                           label="Voltage", units="V", 
-                                           get_cb=self.model.getVoltage, 
-                                           set_cb=self.model.setVoltage)
+        self.param_v = vw_entry.vw_GetSetValue(self.frame_param,
+                                           get_cb=self.model.getVoltageReference, 
+                                           set_cb=self.model.setVoltageReference,
+                                           label="Voltage", units="V")
         self.param_v.pack()
         
-        self.param_i = vw.vw_GetSetValue(self.frame_param, self.model,
-                                           label="Current", units="A", 
-                                           get_cb=self.model.getCurrent, 
-                                           set_cb=self.model.setCurrent)
+        self.param_i = vw_entry.vw_GetSetValue(self.frame_param,
+                                        get_cb=self.model.getCurrentReference, 
+                                        set_cb=self.model.setCurrentReference,
+                                        label="Current", units="A")
         self.param_i.pack()
         
-        self.param_p = vw.vw_GetSetValue(self.frame_param, self.model,
-                                           label="Power", units="W", 
-                                           get_cb=self.model.getPower, 
-                                           set_cb=self.model.setPower)
+        self.param_p = vw_entry.vw_GetSetValue(self.frame_param,
+                                        get_cb=self.model.getPowerReference, 
+                                        set_cb=self.model.setPowerReference,
+                                        label="Power", units="W")
         self.param_p.pack()
         
-        self.param_setall = vw.vw_Trigger(self.frame_param, self.model,
-                                            label="Set All", button_label="Set", 
-                                            cb_func=self.cb_setAllParams)
+        self.param_setall = vw_state.vw_Trigger(self.frame_param,
+                                          cb_func=self.cb_setAllParams,
+                                          label="Set All", button_label="Set")
         self.param_setall.pack()
         
         # Switching Control
-        self.ops_switching = vw_Toggle(self.frame_param,
-                                            label="Switching", 
-                                            cb_func=lambda x: self.model.setOptions(enable_switching=x))
+        self.ops_switching = vw_state.vw_Toggle(self.frame_param,
+                                       cb_func=lambda x: self.model.setOptions(enable_switching=x),
+                                       label="Switching")
         self.ops_refresh_toggle.pack()
         
         # Refresh Toggle
-        self.ops_refresh_toggle = vw_Toggle(self.frame_param,
+        self.ops_refresh_toggle = vw_state.vw_Toggle(self.frame_param,
                                             label="Auto Update", 
                                             cb_func=self.cb_refreshToggle)
         self.ops_refresh_toggle.pack()
         
         # Immediate update
-        self.ops_update_immed = vw_Trigger(self.frame_param,
+        self.ops_update_immed = vw_state.w_Trigger(self.frame_param,
                                            label="Update Immediately", button_label="Update", 
                                            cb_func=self.update)
         self.ops_update_immed.pack()
@@ -91,11 +95,13 @@ class v_BDPC(views.v_Base):
         # Diagnostics
         #=======================================================================
         self.frame_diag = Tk.LabelFrame(self, text="Diagnostics", padx=5, pady=5)
-        self.diag_efficiency = vw_GetValue(self.frame_diag, self.model,
-                                              label="Efficiency", units="%", get_cb=self.model.getEfficiency)
+        self.diag_efficiency = vw_entry.vw_GetValue(self.frame_diag,
+                                           get_cb=self.model.getEfficiency,
+                                           label="Efficiency", units="%")
         self.diag_efficiency.pack()
-        self.diag_convRatio = vw_GetValue(self.frame_diag, self.model,
-                                              label="Conversion Ratio", units="", get_cb=self.model.getConversionRatio)
+        self.diag_convRatio = vw_entry.vw_GetValue(self.frame_diag,
+                                          get_cb=self.model.getConversionRatio,
+                                          label="Conversion Ratio", units="")
         self.diag_convRatio.pack()
         self.frame_diag.grid(row=1, column=0)
         
@@ -123,7 +129,7 @@ class v_BDPC(views.v_Base):
         self.pri_sensor_voltage.pack()
         self.pri_sensor_current = BDPC_Sensor(self.frame_primary, self.model, 'PrimaryCurrent')
         self.pri_sensor_current.pack()
-        self.pri_power = vw_GetValue(self.frame_primary, 
+        self.pri_power = vw_entry.vw_GetValue(self.frame_primary, 
                                         label="Input Power", units="W", 
                                         get_cb=self.model.getPrimaryPower)
         self.pri_power.pack()
@@ -139,7 +145,7 @@ class v_BDPC(views.v_Base):
         self.sec_sensor_voltage.pack()
         self.sec_sensor_current = BDPC_Sensor(self.frame_secondary, self.model, 'SecondaryCurrent')
         self.sec_sensor_current.pack()
-        self.sec_power = vw_GetValue(self.frame_secondary, 
+        self.sec_power = vw_entry.vw_GetValue(self.frame_secondary, 
                                         label="Output Power", units="W", 
                                         get_cb=self.model.getSecondaryPower)
         self.sec_power.pack()
@@ -195,7 +201,7 @@ class BDPC_Sensor(vw.vw_Base):
         name = self.model.getSensorDescription(sensor)
         units = self.model.getSensorUnits(sensor)
         
-        self.vw_SensorValue = vw_GetValue(self, label=name, units=units, 
+        self.vw_SensorValue = vw_entry.vw_GetValue(self, label=name, units=units, 
                                           get_cb=lambda: self.model.getSensorValue(sensor))
         
     def get(self):

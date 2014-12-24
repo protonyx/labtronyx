@@ -2,6 +2,8 @@ from . import vw_Base
 
 import Tkinter as Tk
 
+#__all__ = ['vm_GetSetValue', 'vw_GetValue']
+
 class vw_GetSetValue(vw_Base):
     """
     Widget to get and set values        

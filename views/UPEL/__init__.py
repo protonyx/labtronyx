@@ -7,9 +7,9 @@ from common.icp.errors import *
 
 import common.widgets as vw
         
-class ICP_Operation_Mode(vw_Base):
+class ICP_Operation_Mode(vw.vw_Base):
     def __init__(self, master, model):
-        vw_Base.__init__(self, master, 8, 2)
+        vw.vw_Base.__init__(self, master, 8, 2)
         
         # Current Mode
         self.f_cmode = Tk.Frame(self)
@@ -55,28 +55,3 @@ class ICP_Operation_Mode(vw_Base):
     def cb_set(self, mode):
         self.model.setState(mode)
         self.update()
-                
-class ICP_Launch_Window(ICP_Widget):
-    def __init__(self, master, model, label, window_class):
-        ICP_Widget.__init__(self, master, model, 8, 1)
-        
-        self.window_class = window_class
-        self.window_obj = None
-        
-        # Label
-        self.l_name = Tk.Label(self, width=15, font=("Purisa", 12), text=label, anchor=Tk.W, justify=Tk.LEFT)
-        self.l_name.pack(side=Tk.LEFT)
-
-        # Launch Button
-        self.b_launch = Tk.Button(self, text="Open", command=self.cb_open)
-        self.b_launch.pack(side=Tk.RIGHT)
-        
-    def cb_open(self):
-        if self.window_obj is None:
-            try:
-                self.window_obj = self.window_class()
-                
-            except:
-                # TODO: Popup!
-                pass
-            

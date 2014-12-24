@@ -1,6 +1,8 @@
+from . import vw_Base
+
 import Tkinter as Tk
 
-class vw_Plot(Tk.Frame):
+class vw_Plot(vw_Base):
     """
     Plotting Widget for views.
     
@@ -34,7 +36,7 @@ class vw_Plot(Tk.Frame):
         :param update_interval: Update interval in milliseconds
         :type update_interval: int
         """
-        Tk.Frame.__init__(self, master)
+        vw_Base.__init__(self, master, 8, 1)
         
         # Plot parameters
         self.max_samples = sample_depth

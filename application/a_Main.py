@@ -246,7 +246,15 @@ class a_Main(object):
         h_textHandler.setFormatter(self.logFormatter)
         self.logger.addHandler(h_textHandler)
         
-        self.tree.bind('<Button-3>', self.e_TreeRightClick)
+        # Bind Right Click
+        if sys.platform.startswith('darwin'):
+            # OS X
+            self.tree.bind('<Button-2>', self.e_TreeRightClick)
+        else:
+            # Windows, Linux
+            self.tree.bind('<Button-3>', self.e_TreeRightClick)
+            
+        # Bind Double Click
         self.tree.bind('<Double-Button-1>', self.e_TreeDoubleClick)
         
     def resize(self):

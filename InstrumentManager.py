@@ -60,12 +60,14 @@ class InstrumentManager(rpc.RpcBase):
                 # else:
                 #     self.logFilename = os.path.normpath(os.path.join(self.config.logPath, self.config.logFilename))
                 #===============================================================
-                    
-                fh = logging.handlers.RotatingFileHandler(self.logFilename, backupCount=self.config.logBackups)
-                fh.setLevel(self.config.logLevel_file)
-                fh.setFormatter(formatter)
-                self.logger.addHandler(fh)  
-                fh.doRollover()
+                try:
+                    fh = logging.handlers.RotatingFileHandler(self.logFilename, backupCount=self.config.logBackups)
+                    fh.setLevel(self.config.logLevel_file)
+                    fh.setFormatter(formatter)
+                    self.logger.addHandler(fh)  
+                    fh.doRollover()
+                except Exception as e:
+                    self.logger.error("Unable to open log file for writing: %s", str(e))
     
     def __loadControllers(self):
         """
@@ -117,8 +119,9 @@ class InstrumentManager(rpc.RpcBase):
                                 pass
                             except AttributeError:
                                 self.logger.error('Controller %s does not have a class %s', contModule, className)
-                            except:
-                                self.logger.exception("Failed to load controller: %s" % contModule)
+                                
+                            except Exception as e:
+                                self.logger.error("Unable to load controller %s: %s", contModule, str(e))
                                 
                 
     def __loadModels(self):
@@ -163,7 +166,7 @@ class InstrumentManager(rpc.RpcBase):
                         testClass = getattr(testModule, className) # Will raise exception if doesn't exist
                     
                     except Exception as e:
-                        self.logger.exception('Unable to load module %s: %s', modelModule, str(e))
+                        self.logger.exception('Unable to load model %s: %s', modelModule, str(e))
                         continue
                     
                     #===========================================================

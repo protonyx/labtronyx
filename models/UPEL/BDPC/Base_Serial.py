@@ -7,7 +7,7 @@ from . import m_BDPC_Base
 class Base_Serial(m_BDPC_Base):
     
     # List of valid Controllers that are compatible with this Model
-    validControllers = ['c_Serial']
+    validControllers = ['c_Serial', 'c_Dummy']
     
     # List of Valid Vendor Identifier (VID) and Product Identifier (PID) values
     # that are compatible with this Model
