@@ -13,6 +13,8 @@ class vw_Plot(vw_Base):
         
     """
     
+    methods = []
+    
     lastTime = 0.0
     data = []
     max_samples = 100
@@ -21,14 +23,10 @@ class vw_Plot(vw_Base):
     
     sampling = False
     
-    def __init__(self, master, model, method_y, sample_interval, sample_depth, update_interval):
+    def __init__(self, master, **kwargs):
         """
         :param master: Tkinter master element
         :type master: object
-        :param model: Model object
-        :type model: object
-        :param method_y: Y-Axis data method name
-        :type method_y: str
         :param sample_interval: Sample interval in seconds
         :type sample_interval: float
         :param sample_depth: Number of samples to display
@@ -39,9 +37,9 @@ class vw_Plot(vw_Base):
         vw_Base.__init__(self, master, 8, 1)
         
         # Plot parameters
-        self.max_samples = sample_depth
-        self.sample_time = sample_interval
-        self.update_time = update_interval
+        self.max_samples = kwargs.get('sample_depth', 100)
+        self.sample_time = kwargs.get('sample_interval', 0.1)
+        self.update_time = kwargs.get('update_interval', 0.25)
         
         # Dependent Imports
         import numpy as np
@@ -74,13 +72,26 @@ class vw_Plot(vw_Base):
         
         # Update plot
         self.cb_update()
+        
+    def addPlot(self, model, method, **kwargs):
+        """
+        :param model: Model object
+        :type model: object
+        :param method: Y-Axis data method name
+        :type method: str
+        """
+        self.methods.append((model, method))
 
     def cb_start(self):
-        self.model.startCollector('doCos', self.sample_time, self.max_samples)
+        for model, method in self.methods:
+            model.startCollector(method, self.sample_time, self.max_samples)
+            
         self.sampling = True
         
     def cb_stop(self):
-        self.model.stopCollector('doCos')
+        for model, method in self.methods:
+            model.stopCollector(method)
+            
         self.sampling = False
         
     def cb_update(self):
@@ -107,7 +118,7 @@ class vw_Plot(vw_Base):
                 self.canvas.draw()
             
             except Exception as e:
-                print 'exception'
+                pass
         
         self.after(self.update_time, self.cb_update)
         

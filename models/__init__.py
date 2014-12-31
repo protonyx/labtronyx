@@ -33,10 +33,12 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
         common.IC_Common.__init__(self, **kwargs)
         
         self.uuid = uuid
-        self.controller = controller
         self.resID = resID
         self.VID = VID
         self.PID = PID
+        
+        # Controller Object
+        self._controller_object = controller
         
         # Check for logger
         self.logger = kwargs.get('Logger', logging)
@@ -185,13 +187,21 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
         """
         return self.uuid
     
+    def getControllerObject(self):
+        """
+        Returns the Model's Controller object
+        
+        :returns: object
+        """
+        return self._controller_object
+    
     def getControllerName(self):
         """
         Returns the Model's Controller class name
         
         :returns: str
         """
-        return self.controller.getControllerName()
+        return self._controller_object.getControllerName()
     
     def getResourceID(self):
         """

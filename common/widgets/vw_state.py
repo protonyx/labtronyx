@@ -3,8 +3,8 @@ from . import vw_Base
 import Tkinter as Tk
 
 class vw_Trigger(vw_Base):
-    def __init__(self, master, model, cb_func, **kwargs):
-        vw_Base.__init__(self, master, model, 8, 1)
+    def __init__(self, master, cb_func, **kwargs):
+        vw_Base.__init__(self, master, 8, 1)
         
         # Label
         if 'label' in kwargs:

@@ -7,8 +7,9 @@ class c_UPEL(controllers.c_Base):
     
     # Dict: ResID -> (VID, PID)
     resources = {}
+    
     # Dict: ResID -> UPEL_ICP_Device Object
-    devices = {}
+    resourceObjects = {}
 
     def open(self):
         
@@ -27,6 +28,22 @@ class c_UPEL(controllers.c_Base):
     def canEditResources(self):
         return True
     
+    def openResourceObject(self, resID):
+        resource = self.resourceObjects.get(resID, None)
+        if resource is not None:
+            return resource
+        else:
+            resource = self.icp_manager.getDevice(resID)
+            self.resourceObjects[resID] = resource
+            return resource
+        
+    def closeResourceObject(self, resID):
+        resource = self.resourceObjects.get(resID, None)
+        
+        if resource is not None:
+            resource.close()
+            del self.resourceObjects[resID]
+    
     #===========================================================================
     # Optional - Automatic Controllers
     #===========================================================================
@@ -39,11 +56,13 @@ class c_UPEL(controllers.c_Base):
         
         self.resources = self.icp_manager.getResources()
 
-    def _getInstrument(self, resID):
-        return self.icp_manager.getDevice(resID)
-        
-    def _getDevice(self, resID):
-        return self.icp_manager.getDevice(resID)
+    #===========================================================================
+    # def _getInstrument(self, resID):
+    #     return self.icp_manager.getDevice(resID)
+    #     
+    # def _getDevice(self, resID):
+    #     return self.icp_manager.getDevice(resID)
+    #===========================================================================
     
     #===========================================================================
     # Optional - Manual Controllers

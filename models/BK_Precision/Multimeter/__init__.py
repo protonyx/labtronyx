@@ -10,10 +10,11 @@ class m_MultimeterBase(models.m_Base):
     
     def _onLoad(self):
         self._identity = None
+        self.controller = self.getControllerObject()
         
         try:
             # Use c_VISA
-            self.__instr = self.controller._getInstrument(self.resID)
+            self.__instr = self.controller.openResourceObject(self.resID)
             
             resp = self.__instr.ask("*IDN?")
             self._identity = resp.strip().split(',')

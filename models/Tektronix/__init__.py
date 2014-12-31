@@ -11,10 +11,11 @@ class m_Tektronix(m_Base):
 
     def _onLoad(self):
         self.__identity = None
+        self.controller = self.getControllerObject()
         
         try:
             # All Tektronix models use c_VISA
-            self.__instr = self.controller._getInstrument(self.resID)
+            self.__instr = self.controller.openResourceObject(self.resID)
             
             # Bring VISA Instrument functions into this context
             self.write = self.__instr.write

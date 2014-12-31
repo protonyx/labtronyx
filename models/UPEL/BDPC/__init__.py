@@ -71,7 +71,7 @@ class m_BDPC_Base(m_Generic):
     # Sensors
     #===========================================================================
     def getSensors(self):
-        raise NotImplementedError
+        return self.sensors
     
     def setSensorGain(self, sensor, gain):
         raise NotImplementedError

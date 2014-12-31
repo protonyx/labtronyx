@@ -15,7 +15,8 @@ class m_GSS(m_Base):
     validPIDs = ['']
     
     def _onLoad(self):
-        self.instr = self.controller._getInstrument(self.resID)
+        self.controller = self.getControllerObject()
+        self.instr = self.controller.openResourceObject(self.resID)
         
         # Configure the COM Port
         self.instr.baudrate = 38400

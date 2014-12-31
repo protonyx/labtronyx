@@ -59,6 +59,28 @@ class c_Base(common.IC_Common):
         """
         raise NotImplementedError
     
+    def openResourceObject(self, resID, **kwargs):
+        """
+        Return an open resource object for a Model to interact with the
+        controller through. Additional parameters may be required, depending
+        on the needs of the controller
+        
+        :param resID: Resource ID
+        :type resID: str
+        :returns: object
+        """
+        raise NotImplementedError
+        
+    def closeResourceObject(self, resID):
+        """
+        Close a resource object and free any associated system resources.
+        
+        :param resID: Resource ID
+        :type resID: str
+        :returns: object
+        """
+        raise NotImplementedError
+    
     #===========================================================================
     # Automatic Controllers
     #===========================================================================
@@ -97,3 +119,16 @@ class c_Base(common.IC_Common):
         :returns: bool - True if successful, False otherwise
         """
         raise NotImplementedError
+
+class c_ResourceObjectBase(object):
+    def open(self):
+        pass
+    
+    def close(self):
+        pass
+    
+    def write(self, data):
+        pass
+    
+    def read(self):
+        pass

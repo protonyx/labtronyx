@@ -3,11 +3,6 @@ import re
 
 import controllers
 
-try:
-    import visa
-except:
-    pass
-
 class c_VISA(controllers.c_Base):
     """
     VISA Controller
@@ -27,8 +22,9 @@ class c_VISA(controllers.c_Base):
     
     # Dict: ResID -> (VID, PID)
     resources = {}
+    
     # Dict: ResID -> PyVISA Instrument Object
-    instruments = {}
+    resourceObjects = {}
     
     #===========================================================================
     # Required API Function Definitions
@@ -42,11 +38,11 @@ class c_VISA(controllers.c_Base):
         
         Return True if success, False if an error occurred
         """
-        
+            
         try:
             # Dependency: pyVISA
-            import visa
-
+            importlib.import_module('visa')
+            
             # Load the VISA Resource Manager
             self.__rm = visa.ResourceManager()
             self.logger.debug(str(self.__rm))
@@ -55,9 +51,14 @@ class c_VISA(controllers.c_Base):
             
             return True
             
+        except ImportError:
+            self.logger.error("PyVISA Dependency Missing")
+            
         except:
+            self.logger.exception("Failed to initialize VISA Controller")
+        
+        finally:
             self.__rm = None
-            self.logger.exception("Failed to initialize VISA interface")
             return False
         
         # Setup vendor map dictionary
@@ -83,9 +84,9 @@ class c_VISA(controllers.c_Base):
             for res in res_list:
                 if res not in self.resources.keys():
                     try:
-                        self.logger.info("Identifying VISA Resource: %s", res)
+                        instrument = self.getResourceObject(res)
                         
-                        instrument = self.__rm.open_resource(res)
+                        self.logger.info("Identifying VISA Resource: %s", res)
                         resp = instrument.ask("*IDN?").strip()
 
                         # Decode Identify
@@ -111,6 +112,9 @@ class c_VISA(controllers.c_Base):
                     
                     except:  
                         self.logger.exception("Unhandled VISA Exception occurred")
+                        
+                    finally:
+                        self.closeResourceObject(res)
             
             # Purge resources that are no longer available
             for res in self.resources.keys():
@@ -132,8 +136,18 @@ class c_VISA(controllers.c_Base):
     # Protected or Private Function Definitions
     #===========================================================================
     
-    def _getInstrument(self, res_id):
-        """
-        Instruments are maintained by calling refresh()
-        """
-        return self.instruments.get(res_id, None)
+    def openResourceObject(self, resID):
+        resource = self.resourceObjects.get(resID, None)
+        if resource is not None:
+            return resource
+        else:
+            resource = self.__rm.open_resource(resID)
+            self.resourceObjects[resID] = resource
+            return resource
+        
+    def closeResourceObject(self, resID):
+        resource = self.resourceObjects.get(resID, None)
+        
+        if resource is not None:
+            resource.close()
+            del self.resourceObjects[resID]

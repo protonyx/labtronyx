@@ -49,7 +49,8 @@ class m_Generic(models.m_Base):
         0x81: [0x80]}
     
     def _onLoad(self):
-        self.instr = self.controller._getDevice(self.resID)
+        self.controller = self.getControllerObject()
+        self.instr = self.controller.openResourceObject(self.resID)
         
         self.register_cache = {}
     

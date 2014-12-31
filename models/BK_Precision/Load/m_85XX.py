@@ -29,7 +29,8 @@ class m_85XX(m_Base):
     modes = {"cc":0, "cv":1, "cw":2, "cr":3}
     
     def _onLoad(self):
-        self.instr = self.controller._getInstrument(self.resID)
+        self.controller = self.getControllerObject()
+        self.instr = self.controller.openResourceObject(self.resID)
         
         # Configure the COM Port
         self.instr.timeout = 0.5

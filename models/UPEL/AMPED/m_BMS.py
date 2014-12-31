@@ -31,7 +31,7 @@ class m_BMS(models.m_Base):
         }
     
     def _onLoad(self):
-        self.instr = self.controller._getInstrument(self.resID)
+        self.instr = self.controller.openResourceObject(self.resID)
         
         # Configure the COM Port
         self.instr.baudrate = 1500000

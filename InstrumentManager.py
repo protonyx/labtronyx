@@ -634,6 +634,7 @@ class InstrumentManager(rpc.RpcBase):
                 try:
                     # Check if the specified model is valid
                     testModule = importlib.import_module(modelName)
+                    #reload(testModule) # Reload the module in case anything has changed
                     
                     if className is None:
                         # If no class name provided, assume it matches the file

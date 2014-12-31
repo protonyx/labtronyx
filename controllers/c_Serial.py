@@ -1,5 +1,5 @@
+import importlib
 import sys
-import serial
 
 from . import c_Base
 
@@ -7,16 +7,29 @@ class c_Serial(c_Base):
     
     # Dict: ResID -> (VID, PID)
     resources = {}
+    
     # Dict: ResID -> Serial Object
-    devices = {}
+    resourceObjects = {}
     
     auto_load = False
 
     def open(self):
-        return True
+        try:
+            # Dependency: pySerial
+            importlib.import_module('serial')
+            return True
+            
+        except ImportError:
+            self.logger.error("PySerial Dependency Missing")
+            
+        except:
+            self.logger.exception("Failed to initialize Serial Controller")
+        
+        finally:
+            return False
     
     def close(self):
-        for dev in self.devices:
+        for dev in self.resourceObjects:
             try:
                 if dev.isOpen():
                     dev.close()
@@ -63,18 +76,22 @@ class c_Serial(c_Base):
             except (OSError, serial.SerialException):
                 pass
 
-    def _getInstrument(self, resID):
-        """
-        :returns: serial.Serial object
-        """
-        ser = self.devices.get(resID, None)
+    def openResourceObject(self, resID, **kwargs):
+        resource = self.resourceObjects.get(resID, None)
+        if resource is not None:
+            return resource
+        else:
+            resource = serial.Serial()
+            resource.port = resID
+            self.resourceObjects[resID] = resource
+            return resource
         
-        if ser is None:
-            ser = serial.Serial()
-            ser.port = resID
-            self.devices[resID] = ser
-            
-        return ser
+    def closeResourceObject(self, resID):
+        resource = self.resourceObjects.get(resID, None)
+        
+        if resource is not None:
+            resource.close()
+            del self.resourceObjects[resID]
         
                 
         

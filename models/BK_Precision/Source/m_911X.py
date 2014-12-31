@@ -15,10 +15,11 @@ class m_911X(models.m_Base):
     
     def _onLoad(self):
         self.__identity = None
+        self.controller = self.getControllerObject()
         
         try:
             # Use c_VISA
-            self.__instr = self.controller._getInstrument(self.resID)
+            self.__instr = self.controller.openResourceObject(self.resID)
             
             resp = self.__instr.ask("*IDN?")
             self.__identity = resp.strip().split(',')

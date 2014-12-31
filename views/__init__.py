@@ -16,3 +16,12 @@ class v_Base(Tk.Toplevel):
     def run(self):
         raise NotImplementedError
     
+    def _NotImplemented(self):
+        raise NotImplementedError
+    
+    def methodWrapper(self, refObject, refMethod):
+        if hasattr(refObject, refMethod):
+            return getattr(refObject, refMethod)
+        
+        else:
+            return self._NotImplemented

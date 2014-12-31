@@ -143,7 +143,8 @@ class Base_Serial(m_BDPC_Base):
         }
     
     def _onLoad(self):
-        self.instr = self.controller._getInstrument(self.resID)
+        self.controller = self.getControllerObject()
+        self.instr = self.controller.openResourceObject(self.resID)
         
         # Configure the COM Port
         self.instr.baudrate = 115200
@@ -264,9 +265,6 @@ class Base_Serial(m_BDPC_Base):
     #===========================================================================
     # Sensors
     #===========================================================================
-    
-    def getSensors(self):
-        return self.sensors
     
     def setSensorGain(self, sensor, gain):
         self.sensor_gain[sensor] = gain
