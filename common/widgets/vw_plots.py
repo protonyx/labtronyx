@@ -12,16 +12,10 @@ class vw_Plot(vw_Base):
         * numpy
         
     """
-    
-    methods = []
-    
-    lastTime = 0.0
+    # Data
+    methods = [] # (Model object, Method)
+    lastTime = {}
     data = []
-    max_samples = 100
-    sample_time = 0.10
-    update_time = 250 # Milliseconds
-    
-    sampling = False
     
     def __init__(self, master, **kwargs):
         """
@@ -33,45 +27,53 @@ class vw_Plot(vw_Base):
         :type sample_depth: int
         :param update_interval: Update interval in milliseconds
         :type update_interval: int
+        :param start: Enable sampling immediately
+        :type start: bool
         """
         vw_Base.__init__(self, master, 8, 1)
         
         # Plot parameters
         self.max_samples = kwargs.get('sample_depth', 100)
         self.sample_time = kwargs.get('sample_interval', 0.1)
-        self.update_time = kwargs.get('update_interval', 0.25)
+        self.update_time = kwargs.get('update_interval', 0.25) * 1000
+        self.sampling = kwargs.get('start', False)
         
-        # Dependent Imports
-        import numpy as np
-
-        import matplotlib
-        matplotlib.use('TkAgg')
-        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
-        from matplotlib.backend_bases import key_press_handler
-        
-        # Initialize Data
-        # self.time_axis = [x/self.sample_time for x in xrange(0, self.max_samples)]
-        self.time_axis = np.arange(0.0, self.max_samples * self.sample_time, self.sample_time)
-        self.data = [0.0] * self.max_samples
-        
-        # GUI Elements
-        # Figure
-        self.fig = matplotlib.figure.Figure(figsize=(5,4))
-        self.subplot_1 = self.fig.add_subplot(111)
-        self.dataset_1 = self.subplot_1.plot(self.time_axis, self.data)
-        self.subplot_1.grid(True)
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self)
-        self.canvas.show()
-        self.canvas.get_tk_widget().grid(row=0,column=0,columnspan=2)
-
-        # Buttons
-        self.btnStart = Tk.Button(self, text="Start", command=self.cb_start)
-        self.btnStart.grid(row=1,column=0)
-        self.btnStop = Tk.Button(self, text="Stop", command=self.cb_stop)
-        self.btnStop.grid(row=1,column=1)
-        
-        # Update plot
-        self.cb_update()
+        try:
+            # Dependent Imports
+            import numpy as np
+    
+            import matplotlib
+            matplotlib.use('TkAgg')
+            from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+            from matplotlib.backend_bases import key_press_handler
+            
+            # Initialize Data
+            # self.time_axis = [x/self.sample_time for x in xrange(0, self.max_samples)]
+            self.time_axis = np.arange(0.0, self.max_samples * self.sample_time, self.sample_time)
+            self.data = [0.0] * self.max_samples
+            
+            # GUI Elements
+            # Figure
+            self.fig = matplotlib.figure.Figure(figsize=(5,4))
+            self.subplot_1 = self.fig.add_subplot(111)
+            self.dataset_1 = self.subplot_1.plot(self.time_axis, self.data)
+            self.subplot_1.grid(True)
+            self.canvas = FigureCanvasTkAgg(self.fig, master=self)
+            self.canvas.show()
+            self.canvas.get_tk_widget().grid(row=0,column=0,columnspan=2)
+    
+            # Buttons
+            self.txt_btnRun = Tk.StringVar()
+            self.txt_btnRun.set('Start')
+            self.sampling = False
+            self.btnRun = Tk.Button(self, textvariable=self.txt_btnRun, command=self.cb_run)
+            self.btnRun.grid(row=1,column=0)
+            
+            # Update plot
+            self.cb_update()
+            
+        except Exception as e:
+            Tk.Label(self, text="Missing Dependencies!").pack()
         
     def addPlot(self, model, method, **kwargs):
         """
@@ -82,17 +84,20 @@ class vw_Plot(vw_Base):
         """
         self.methods.append((model, method))
 
-    def cb_start(self):
-        for model, method in self.methods:
-            model.startCollector(method, self.sample_time, self.max_samples)
+    def cb_run(self):
+        if self.sampling == False:
+            for model, method in self.methods:
+                model.startCollector(method, self.sample_time, self.max_samples)
+                
+            self.txt_btnRun.set('Stop')
+            self.sampling = True
+        else:
+            for model, method in self.methods:
+                model.stopCollector(method)
             
-        self.sampling = True
+            self.txt_btnRun.set('Start')
+            self.sampling = False
         
-    def cb_stop(self):
-        for model, method in self.methods:
-            model.stopCollector(method)
-            
-        self.sampling = False
         
     def cb_update(self):
         
