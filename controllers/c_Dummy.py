@@ -13,7 +13,7 @@ class c_Dummy(controllers.c_Base):
     #===========================================================================
     
     def open(self):
-        self.resources['DEBUG'] = ('', '')
+        #self.resources['DEBUG'] = ('', '')
         return True
         
     def close(self):

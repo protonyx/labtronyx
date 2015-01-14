@@ -81,15 +81,16 @@ class Base_Serial(m_BDPC_Base):
        'D': 'TDA_D' 
     }
     
+    # Default Sensor Gains
     sensor_gain = {
-        'PrimaryVoltage': 1,
-        'SecondaryVoltage': 1,
-        'PrimaryCurrent': 1,
-        'SecondaryCurrent': 1,
-        'ZVSCurrentA': 1,
-        'ZVSCurrentB': 1,
-        'ZVSCurrentC': 1,
-        'ZVSCurrentD': 1
+        'PrimaryVoltage': 1.0,
+        'SecondaryVoltage': 1.0,
+        'PrimaryCurrent': 1.0,
+        'SecondaryCurrent': 1.0,
+        'ZVSCurrentA': 1.0,
+        'ZVSCurrentB': 1.0,
+        'ZVSCurrentC': 1.0,
+        'ZVSCurrentD': 1.0
         }
     
     sensor_os_regs = {
@@ -104,10 +105,10 @@ class Base_Serial(m_BDPC_Base):
         'SecondaryVoltage': 'MVOUT',
         'PrimaryCurrent': 'MIIN',
         'SecondaryCurrent': 'MIOUT',
-        'ZVSCurrentA': '',
-        'ZVSCurrentB': 1,
-        'ZVSCurrentC': 1,
-        'ZVSCurrentD': 1
+        'ZVSCurrentA': 'AVGQ_A',
+        'ZVSCurrentB': 'AVGQ_B',
+        'ZVSCurrentC': 'AVGQ_C',
+        'ZVSCurrentD': 'AVGQ_D'
         }
     
     sensor_description = {
@@ -170,6 +171,9 @@ class Base_Serial(m_BDPC_Base):
      # Helper Functions   
      #==========================================================================
      
+    def _SRC_comm_reset(self):
+        pass
+     
     def _SRC_pack(self, address, data):
         data_h = (data >> 8) & 0xFF
         data_l = data & 0xFF
@@ -178,24 +182,34 @@ class Base_Serial(m_BDPC_Base):
     def _SRC_unpack(self, packet):
         assert len(packet) == self.pkt_struct.size
         
-        _, addr1, addr2, data_h1, data_l1, data_h2, data_l2, _ = self.pkt_struct.unpack(packet)
+        start_sync, addr1, addr2, data_h1, data_l1, data_h2, data_l2, end_sync = self.pkt_struct.unpack(packet)
         
         data1 = (data_h1 << 8) | data_l1
         data2 = (data_h2 << 8) | data_l2
         
+        assert start_sync == 0x24
+        assert end_sync == 0x1E
         assert addr1 == addr2
         assert data1 == data2
         
-        return (addr1, data1)
+        return ((addr1 & 0x7F), data1)
     
     def _SRC_read_packet(self):
+        """
+        Return an SRC packet from the serial buffer. Throws away bytes until
+        a start sync sequence (0x24) is found, and then returns the next 8 bytes
+        
+        :returns: str
+        """
         bytes_waiting = self.instr.inWaiting()
         if bytes_waiting >= self.pkt_struct.size:
         
             buf = self.instr.read(bytes_waiting)
             for index, chunk in enumerate(buf):
                 if chunk == chr(0x24) and (index + self.pkt_struct.size) <= bytes_waiting:
-                    return buf[index:(index+self.pkt_struct.size)]
+                    recv_pkt = buf[index:(index+self.pkt_struct.size)]
+                    self.logger.debug("SRC RX: %s", recv_pkt.encode('hex'))
+                    return recv_pkt
                 
             return None
         
@@ -204,33 +218,52 @@ class Base_Serial(m_BDPC_Base):
         
         packet = self._SRC_pack(addr, 0)
         
-        self.instr.write(packet)
-        time.sleep(0.1)
-        recv_pkt = self._SRC_read_packet()
+        for attempt in range(3):
+            self.instr.write(packet)
+            time.sleep(0.1)
+            recv_pkt = self._SRC_read_packet()
+            
+            if recv_pkt is not None:
+                addr, data = self._SRC_unpack(recv_pkt)
+                
+                if addr == address:
+                    return data
+                
+            # Attempt failed, try a comm reset
+            self._SRC_comm_reset()
         
-        if recv_pkt is not None:
-            return self._SRC_unpack(recv_pkt)
-        
-        else:
-            return None
+        # Retries failed
+        self.logger.error("Unable to read register %s", address)
+        raise RuntimeError
     
     def _SRC_write_register(self, address, data):
         addr = address | 0x80
         
         packet = self._SRC_pack(addr, data)
         
-        self.instr.write(packet)
-        time.sleep(0.1)
-        recv_pkt = self._SRC_read_packet()
-        
-        return self._SRC_unpack(recv_pkt)
+        for attempt in range(3):
+            self.instr.write(packet)
+            time.sleep(0.1)
+            recv_pkt = self._SRC_read_packet()
+            
+            if recv_pkt is not None:
+                addr, data_ret = self._SRC_unpack(recv_pkt)
+                
+                if addr == address and data_ret == data:
+                    return data_ret
+            
+            # Attempt failed, try a comm reset
+            self._SRC_comm_reset()
+            
+        # Retries failed
+        self.logger.error("Unable to write register %s", address)    
+        raise RuntimeError
     
     def convert_twoscomp(self, num, total_bits):
         if ( (num&(1<<(total_bits-1))) != 0):
             num = num - (1<<total_bits)
             
         return num
-        
     
     #===========================================================================
     # Options
@@ -238,7 +271,7 @@ class Base_Serial(m_BDPC_Base):
     
     def setOption(self, **kwargs):
         address = self.registers.get('CONTROL')
-        _, control_reg = self._SRC_read_register(address)
+        control_reg = self._SRC_read_register(address)
         
         for arg in kwargs:
             if arg in self.options:
@@ -252,7 +285,7 @@ class Base_Serial(m_BDPC_Base):
                 
     def getOption(self):
         address = self.registers.get('CONTROL')
-        _, control_reg = self._SRC_read_register(address)
+        control_reg = self._SRC_read_register(address)
         
         temp_dict = {}
         
@@ -285,7 +318,7 @@ class Base_Serial(m_BDPC_Base):
     def getSensorValue(self, sensor):
         sensor_reg = self.sensor_regs.get(sensor)
         address = self.registers.get(sensor_reg)
-        _, value = self._SRC_read_register(address)
+        value = self._SRC_read_register(address)
         
         gain = self.sensor_gain.get(sensor)
         
@@ -307,18 +340,22 @@ class Base_Serial(m_BDPC_Base):
     #===========================================================================
     def getVoltageReference(self):
         address = self.registers.get('VLIMIT')
-        return self._SRC_read_register(address)
+        set_v = self._SRC_read_register(address)
+        return (float(set_v) / float(self.getSensorGain('SecondaryVoltage')))
     
     def setVoltageReference(self, set_v):
         address = self.registers.get('VLIMIT')
+        set_v = int(float(set_v) * self.getSensorGain('SecondaryVoltage'))
         return self._SRC_write_register(address, set_v);
     
     def getCurrentReference(self):
         address = self.registers.get('ILIMIT')
-        return self._SRC_read_register(address)
-    
+        set_i = self._SRC_read_register(address)
+        return (float(set_i) / float(self.getSensorGain('SecondaryCurrent')))
+
     def setCurrentReference(self, set_i):
         address = self.registers.get('ILIMIT')
+        set_i = int(float(set_i) * self.getSensorGain('SecondaryCurrent'))
         return self._SRC_write_register(address, set_i);
     
     def getPowerReference(self):
@@ -341,7 +378,7 @@ class Base_Serial(m_BDPC_Base):
         
     def getPhaseShift(self):
         address = self.registers.get('MPS')
-        _, angle = self._SRC_read_register(address)
+        angle = self._SRC_read_register(address)
         return float(angle * 180) / 0x7FF
         
     def setPhaseAngle(self, leg, angle):        
@@ -378,7 +415,7 @@ class Base_Serial(m_BDPC_Base):
     #===========================================================================
     def getStatus(self):
         address = self.registers.get('STATUS')
-        _, status_reg = self._SRC_read_register(address)
+        status_reg = self._SRC_read_register(address)
         
         temp_dict = {}
         
@@ -390,13 +427,13 @@ class Base_Serial(m_BDPC_Base):
         
     def getConversionRatioMeasured(self):
         address = self.registers.get('CONVRATIO')
-        _, conv_ratio = self._SRC_read_register(address)
+        conv_ratio = self._SRC_read_register(address)
         conv_ratio_normalized = float(conv_ratio)/0xFFF        
         return conv_ratio_normalized
         
     def getPowerCommand(self):
         address = self.registers.get('MPCMD')
-        _, pcmd = self._SRC_read_register(address)
+        pcmd = self._SRC_read_register(address)
         pcmd = self.convert_twoscomp(pcmd, total_bits=12)
         pcmd_normalized = float(pcmd) / 0x7FF        
         return pcmd_normalized
@@ -418,10 +455,10 @@ class Base_Serial(m_BDPC_Base):
                 
     def getGain(self):
         address_a = self.registers.get('GAINA_RO')
-        _, gain_a = self._SRC_read_register(address) 
+        gain_a = self._SRC_read_register(address) 
         
         address_b = self.registers.get('GAINB_RO')
-        _, gain_b = self._SRC_read_register(address)
+        gain_b = self._SRC_read_register(address)
         
         return float(gain_a) / (2**gain_b)
     
@@ -432,9 +469,9 @@ class Base_Serial(m_BDPC_Base):
         
         dict = {}
         
-        _, dict['power'] =  self._SRC_read_register(address_p)    
-        _, dict['voltage'] = self._SRC_read_register(address_v)
-        _, dict['current'] = self._SRC_read_register(address_i)
+        dict['power'] =  self._SRC_read_register(address_p)    
+        dict['voltage'] = self._SRC_read_register(address_v)
+        dict['current'] = self._SRC_read_register(address_i)
         
         return min(dict)      
         
@@ -443,20 +480,20 @@ class Base_Serial(m_BDPC_Base):
     #===========================================================================
     
     def getPrimaryPower(self):
-        pv = self.getSensorValue(1)
-        pi = self.getSensorValue(3)
+        pv = self.getSensorValue('PrimaryVoltage')
+        pi = self.getSensorValue('PrimaryCurrent')
         
         return pv*pi
     
     def getSecondaryPower(self):
-        sv = self.getSensorValue(2)
-        si = self.getSensorValue(4)
+        sv = self.getSensorValue('SecondaryVoltage')
+        si = self.getSensorValue('SecondaryCurrent')
         
         return sv*si
     
     def getConversionRatioCalc(self):
-        pv = self.getSensorValue(1) 
-        sv = self.getSensorValue(2)
+        pv = self.getSensorValue('PrimaryVoltage') 
+        sv = self.getSensorValue('SecondaryVoltage')
         
         return float(sv) / float(pv)
     

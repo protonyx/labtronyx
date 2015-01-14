@@ -15,7 +15,8 @@ class c_VISA(controllers.c_Base):
     """
     
     __Vendors = [(r'(?:TEKTRONIX),([\w\d.]+),[\w\d.]+,[\w\d.]+', 'Tektronix'),
-                 (r'(?:Agilent Technologies),([\w\d.]+),[\w\d.]+,[\w\d.]+', 'Aglient'),
+                 (r'(?:Agilent Technologies),([\w\d.]+),[\w\d.]+,[\w\d.]+', 'Agilent'),
+                 (r'(?:AGILENT TECHNOLOGIES),([\w\d.]+),[\w\d.]+,[\w\d.]+', 'Agilent')
                  (r'(?:BK PRECISION),\s*([\w\d.]+),\s*[\w\d.]+,\s*[\w\d\-.]+', 'BK Precision'),
                  (r'(?:CHROMA),\s*([\w\d\-.]+),\s*[\w\d.]+,\s*[\w\d.]+', 'Chroma'),
                  (r'([\w\d\s]+),\s*[\w\d.]+,\s*[\w\d.]+', 'Unknown')]
@@ -41,7 +42,8 @@ class c_VISA(controllers.c_Base):
             
         try:
             # Dependency: pyVISA
-            importlib.import_module('visa')
+            import visa
+            #visa = importlib.import_module('visa')
             
             # Load the VISA Resource Manager
             self.__rm = visa.ResourceManager()
@@ -71,6 +73,8 @@ class c_VISA(controllers.c_Base):
         """
         Refresh the VISA Resource list
         """
+        import visa 
+        
         if self.__rm is not None:
             self.logger.info("Refreshing VISA Resource list")
             try:
@@ -84,7 +88,7 @@ class c_VISA(controllers.c_Base):
             for res in res_list:
                 if res not in self.resources.keys():
                     try:
-                        instrument = self.getResourceObject(res)
+                        instrument = self.openResourceObject(res)
                         
                         self.logger.info("Identifying VISA Resource: %s", res)
                         resp = instrument.ask("*IDN?").strip()

@@ -110,13 +110,16 @@ class InstrumentManager(rpc.RpcBase):
                                     self.controllers[className] = testClass
                                     
                                 else:
+                                    self.logger.warning('Controller %s failed to initialize', contModule)
                                     testClass.close()
                             
                             except ImportError:
                                 self.logger.error('Unable to import controller %s', contModule)
+                                
                             except KeyError:
                                 # No models loaded have support for that controller
-                                pass
+                                self.logger.warning('No models have been loaded with support for controller %s', contModule)
+                                
                             except AttributeError:
                                 self.logger.error('Controller %s does not have a class %s', contModule, className)
                                 
@@ -472,6 +475,9 @@ class InstrumentManager(rpc.RpcBase):
                     
                 except NotImplementedError:
                     pass
+                
+                except:
+                    self.logger.exception("Exception during controller refresh")
         
     #===========================================================================
     # Individual Controller Operations

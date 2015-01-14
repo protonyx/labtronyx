@@ -49,25 +49,50 @@ class v_BDPC(views.v_Base):
         # Control
         #=======================================================================
         self.frame_control = Tk.LabelFrame(self.frame_left, text="Control", padx=5, pady=5)
+        
+        self.ops_control = vw_state.vw_BinaryFields(self.frame_control,
+                                        cb_get=self.methodWrapper(self.model, 'getOption'),
+                                        cb_set=self.methodWrapper(self.model, 'setOption'),
+                                        fields=self.methodWrapper(self.model, 'getOptionDescriptions')() )
+        self.ops_control.pack()
+        
+
         # Switching Control
-        self.ops_switching = vw_state.vw_Toggle(self.frame_control,
-                                       cb_func=lambda x: self.methodWrapper(self.model, 'setOptions')(enable_switching=x),
-                                       label="Switching")
-        self.ops_switching.pack()
-        
-        # Refresh Toggle
-        self.ops_refresh_toggle = vw_state.vw_Toggle(self.frame_control,
-                                            label="Auto Update", 
-                                            cb_func=self.cb_refreshToggle)
-        self.ops_refresh_toggle.pack()
-        
-        # Immediate update
-        self.ops_update_immed = vw_state.vw_Trigger(self.frame_control,
-                                           label="Update Immediately", button_label="Update", 
-                                           cb_func=self.update)
-        self.ops_update_immed.pack()
+        #=======================================================================
+        # self.ops_switching = vw_state.vw_Toggle(self.frame_control,
+        #                                cb_func=lambda x: self.methodWrapper(self.model, 'setOption')(enable_switching=x),
+        #                                label="Switching")
+        # self.ops_switching.pack()
+        #=======================================================================
+        #=======================================================================
+        # # Refresh Toggle
+        # self.ops_refresh_toggle = vw_state.vw_Toggle(self.frame_control,
+        #                                     label="Auto Update", 
+        #                                     cb_func=self.cb_refreshToggle)
+        # self.ops_refresh_toggle.pack()
+        # 
+        # # Immediate update
+        # self.ops_update_immed = vw_state.vw_Trigger(self.frame_control,
+        #                                    label="Update Immediately", button_label="Update", 
+        #                                    cb_func=self.update)
+        # self.ops_update_immed.pack()
+        #=======================================================================
         
         self.frame_control.pack()
+        
+        #=======================================================================
+        # Status
+        #=======================================================================
+        
+        self.frame_status = Tk.LabelFrame(self.frame_left, text="Status", padx=5, pady=5)
+        
+        self.ops_status = vw_state.vw_BinaryFields(self.frame_control,
+                                        cb_get=self.methodWrapper(self.model, 'getStatus'),
+                                        cb_set=None,
+                                        fields=self.methodWrapper(self.model, 'getStatusDescriptions')() )
+        self.ops_status.pack()
+        
+        self.frame_status.pack()
         
         #=======================================================================
         # Parameters

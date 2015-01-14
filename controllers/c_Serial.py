@@ -25,8 +25,7 @@ class c_Serial(c_Base):
         except:
             self.logger.exception("Failed to initialize Serial Controller")
         
-        finally:
-            return False
+        return False
     
     def close(self):
         for dev in self.resourceObjects:
@@ -53,6 +52,8 @@ class c_Serial(c_Base):
         :raises EnvironmentError: On unsupported or unknown platforms
         :returns: A list of available serial ports
         """
+        import serial
+        
         if sys.platform.startswith('win'):
             ports = ['COM' + str(i + 1) for i in range(256)]
     
@@ -77,6 +78,8 @@ class c_Serial(c_Base):
                 pass
 
     def openResourceObject(self, resID, **kwargs):
+        import serial
+        
         resource = self.resourceObjects.get(resID, None)
         if resource is not None:
             return resource

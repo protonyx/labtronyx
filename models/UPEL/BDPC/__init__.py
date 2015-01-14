@@ -38,6 +38,21 @@ class m_BDPC_Base(m_Generic):
         'manual_input_voltage': 11
         }
     
+    option_descriptions = {
+        'switching': 'Switching Enabled',
+        'require_external_enable': 'External Enable',
+        'master_mode': 'Master',
+        'slave_mode': 'Slave',
+        'latch_param_reg': 'Latch Parameters',
+        'latch_diagnostic_reg': 'Latch Diagnostics',
+        'open_main_loop': 'Open Loop',
+        'open_aux_loops': 'Open ZVS',
+        'manual_dead_time': 'Adj. Dead Time',
+        'fixed_gain': 'Adj. Loop Gain',
+        'manual_fet_control': 'Control FETs',
+        'manual_input_voltage': 'Adj. Input Voltage'
+        }
+    
     status = {
         'soft_start': 0,
         'switching': 1,
@@ -45,6 +60,15 @@ class m_BDPC_Base(m_Generic):
         'ZVS_compensator': 3,
         'secondary_overvoltage': 4,
         'primary_overvoltage': 5
+        }
+    
+    status_descriptions = {
+        'soft_start': 'Soft Start',
+        'switching': 'Switching',
+        'feedback_control': 'Feedback Control',
+        'ZVS_compensator': 'ZVS Compensating',
+        'secondary_overvoltage': 'Secondary Overvoltage',
+        'primary_overvoltage': 'Primary Overvoltage'
         }
     
     def getProperties(self):
@@ -66,6 +90,9 @@ class m_BDPC_Base(m_Generic):
                 
     def getOption(self):
         raise NotImplementedError
+    
+    def getOptionDescriptions(self):
+        return self.option_descriptions
     
     #===========================================================================
     # Sensors
@@ -146,6 +173,9 @@ class m_BDPC_Base(m_Generic):
     def getStatus(self):
 		raise NotImplementedError
 		
+    def getStatusDescriptions(self):
+        return self.status_descriptions
+        
     def getConversionRatioMeasured(self):
 		raise NotImplementedError
 		
