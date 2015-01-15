@@ -16,7 +16,7 @@ class c_VISA(controllers.c_Base):
     
     __Vendors = [(r'(?:TEKTRONIX),([\w\d.]+),[\w\d.]+,[\w\d.]+', 'Tektronix'),
                  (r'(?:Agilent Technologies),([\w\d.]+),[\w\d.]+,[\w\d.]+', 'Agilent'),
-                 (r'(?:AGILENT TECHNOLOGIES),([\w\d.]+),[\w\d.]+,[\w\d.]+', 'Agilent')
+                 (r'(?:AGILENT TECHNOLOGIES),([\w\d.]+),[\w\d.]+,[\w\d.]+', 'Agilent'),
                  (r'(?:BK PRECISION),\s*([\w\d.]+),\s*[\w\d.]+,\s*[\w\d\-.]+', 'BK Precision'),
                  (r'(?:CHROMA),\s*([\w\d\-.]+),\s*[\w\d.]+,\s*[\w\d.]+', 'Chroma'),
                  (r'([\w\d\s]+),\s*[\w\d.]+,\s*[\w\d.]+', 'Unknown')]
@@ -59,9 +59,7 @@ class c_VISA(controllers.c_Base):
         except:
             self.logger.exception("Failed to initialize VISA Controller")
         
-        finally:
-            self.__rm = None
-            return False
+        return False
         
         # Setup vendor map dictionary
         # Maps the first chunk of an identify to a function
@@ -109,7 +107,7 @@ class c_VISA(controllers.c_Base):
                         self.logger.info("Found VISA Device: %s %s" % mid)
                         
                         self.resources[res] = mid
-                        self.instruments[res] = instrument
+                        self.resourceObjects[res] = instrument
                     
                     except visa.VisaIOError as e:
                         self.logger.debug("VISA Device I/O Error, ignoring device.")

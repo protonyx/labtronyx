@@ -1,5 +1,7 @@
 import models
 
+import time
+
 class m_3441XA(models.m_Base):
     
     # Model device type
@@ -32,7 +34,7 @@ class m_3441XA(models.m_Base):
             self.__instr = self.controller.openResourceObject(self.resID)
             
             resp = self.__instr.ask("*IDN?")
-            self._identity = resp.strip().split(',')
+            self.__identity = resp.strip().split(',')
             
         except:
             self.logger.exception("Internal error while attaching to VISA instrument")
@@ -44,14 +46,62 @@ class m_3441XA(models.m_Base):
         ret = models.m_Base.getProperties(self)
         
         ret['deviceVendor'] = 'Agilent'
+        
+        if self.__identity is not None:
+            ret['deviceModel'] = self.__identity[1]
             
         return ret
+    
+    def reset(self):
+        self.__instr.write("*RST")
+
+    def getFunction(self):
+        return self.__instr.ask("CONF?")
+
+    def setFunction(self, func):
+        self.func = func
+        self.__instr.write("CONF:%s" % self.func)
+    
+    def setFunction_DC_Voltage(self):
+        self.setFunction("VOLT:DC")
+        
+    def setFunction_AC_Voltage(self):
+        self.setFunction("VOLT:AC")
+        
+    def setFunction_DC_Current(self):
+        self.setFunction("CURR:DC")
+        
+    def setFunction_AC_Current(self):
+        self.setFunction("CURR:AC")
+        
+    def setFunction_Resistance(self):
+        self.setFunction("RES")
+        
+    def setFunction_Frequency(self):
+        self.setFunction("FREQ")
+        
+    def setFunction_Period(self):
+        self.setFunction("PER")
+        
+    def setFunction_Diode(self):
+        self.setFunction("DIOD")
+        
+    def setFunction_Continuity(self):
+        self.setFunction("CONT")
+
+    def setRange(self, new_range):
+        # Set to autorange no matter what is passed
+        self.__instr.write('SENS:VOLT:DC:RANGE:AUTO ON')
     
     def getMeasurement(self):
         # Attempt three times to get a measurement
         for x in range(3):
             try:
-                meas_raw = self.__instr.ask(":FETCH?")
+                # Initiate a measurement
+                self.__instr.write("INIT")
+                time.sleep(0.1)
+                
+                meas_raw = self.__instr.ask("FETC?")
                 measure = float(meas_raw)
                 
                 return measure

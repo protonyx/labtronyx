@@ -124,7 +124,7 @@ class InstrumentManager(rpc.RpcBase):
                                 self.logger.error('Controller %s does not have a class %s', contModule, className)
                                 
                             except Exception as e:
-                                self.logger.error("Unable to load controller %s: %s", contModule, str(e))
+                                self.logger.exception("Unable to load controller %s: %s", contModule, str(e))
                                 
                 
     def __loadModels(self):
