@@ -1,4 +1,5 @@
 import models
+import time
 
 class m_MultimeterBase(models.m_Base):
     
@@ -80,10 +81,23 @@ class m_MultimeterBase(models.m_Base):
     def setFunction_Continuity(self):
         self.setFunction("CONT")
 
+    def getRange(self):
+        cmd = ":" + self.func + ":RANG?"
+        range_raw = self._BK_ask(cmd)
+        self.logger.debug("Range: %s" % str(range_raw))
+
     def setRange(self, new_range):
-        cmd = ":" + self.func + ":RANG " + str(new_range)
-        self.logger.debug(cmd)
-        self.__instr.write(cmd)
+        # :CURR:DC:RANG 20
+        current_range = self.getRange()
+        
+        cmd = ":" + self.func + ":RANG"
+        cmd1 = cmd + ":AUTO 0"
+        cmd2 = cmd + " " + str(new_range)
+        self.logger.debug(cmd1)
+        self.__instr.write(cmd1)
+        time.sleep(0.1)
+        self.logger.debug(cmd2)
+        self.__instr.write(cmd2)
         
     def getMeasurement(self):
         # Attempt three times to get a measurement

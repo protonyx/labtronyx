@@ -31,6 +31,7 @@ class m_BMS(models.m_Base):
         }
     
     def _onLoad(self):
+        self.controller = self.getControllerObject()
         self.instr = self.controller.openResourceObject(self.resID)
         
         # Configure the COM Port

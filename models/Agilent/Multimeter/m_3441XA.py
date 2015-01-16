@@ -49,6 +49,8 @@ class m_3441XA(models.m_Base):
         
         if self.__identity is not None:
             ret['deviceModel'] = self.__identity[1]
+            ret['deviceSerial'] = self.__identity[2]
+            ret['deviceFirmware'] = self.__identity[3]
             
         return ret
     
