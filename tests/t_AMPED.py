@@ -31,31 +31,43 @@ class t_AMPED(t_Base):
             pass
             
         # Instruments
-        self.requireInstrument('DMM - Primary Voltage', 'pri_voltage', serial='123E12681') #'123F12106')
+        self.requireInstrument('DMM - Primary Voltage', 'pri_voltage', serial='MY48005640') #'123F12106')
         self.requireInstrument('DMM - Primary Current', 'pri_current', serial='123D12535')
-        self.requireInstrument('DMM - Secondary Voltage', 'sec_voltage', serial='123G11250') #'123E12681')
+        self.requireInstrument('DMM - Secondary Voltage', 'sec_voltage', serial='MY48005608') #'123E12681')
         self.requireInstrument('DMM - Secondary Current', 'sec_current', serial='123F12106') #'123G11250')
         self.requireInstrument('Source - Primary', 'pri_source', serial='602078010696820011')
         self.requireInstrument('Source - Secondary', 'sec_source', serial='00257')
-        self.requireInstrument('AMPED Converter', 'conv', driver='m_BMS')
-        self.requireInstrument('Load - Secondary', 'load', driver='m_85XX')
+        self.requireInstrument('AMPED Converter', 'conv', driver='models.UPEL.AMPED.m_BMS')
+        self.requireInstrument('Load - Secondary', 'load', driver='models.BK_Precision.Load.m_85XX')
         
         # Tests
-        self.registerTest('Identify', 'test_Identify')
-        self.registerTest('Calibrate', 'test_Calibrate')
+        #self.registerTest('Identify', 'test_Identify') # Identify is now done during startup
+        self.registerTest('Calibrate Secondary Voltage', 'test_CalibrateSecVoltage')
+        self.registerTest('Calibrate Primary Voltage', 'test_CalibratePriVoltage')
+        self.registerTest('Calibrate Current Sensor', 'test_CalibrateCurrent')
         self.registerTest('Closed Loop Regulation', 'test_ClosedLoopRegulation')
         self.registerTest('Test Efficiency', 'test_Efficiency')
     
     def startup(self):
         try:
             # Configuration
+            #self.pri_current.reset()
+            #self.sec_current.reset()
+            #time.sleep(3.0)
+            
             self.logger.debug("Setting Instrument Functions...")
             self.pri_voltage.setFunction_DC_Voltage()
             self.pri_current.setFunction_DC_Current()
-            self.pri_current.setRange(10)
             self.sec_voltage.setFunction_DC_Voltage()
             self.sec_current.setFunction_DC_Current()
-            self.sec_current.setRange(10)
+            
+            time.sleep(0.5)
+            self.pri_current.setRange_Manual()
+            self.sec_current.setRange_Manual()
+            
+            time.sleep(0.5)
+            self.pri_current.setRange(20)
+            self.sec_current.setRange(20)
             
             self.pri_source.powerOff()
             self.pri_source.setVoltage(3.5)
@@ -115,9 +127,8 @@ class t_AMPED(t_Base):
         else:
             self.logger.info("No response")
             return False
-                    
-    def test_Calibrate(self):
         
+    def readCalibration(self):
         #=======================================================================
         # Read calibration data from CSV
         #=======================================================================
@@ -136,47 +147,119 @@ class t_AMPED(t_Base):
             # File doesn't exist
             pass
         
-        #=======================================================================
-        # Run Calibration scripts
-        #=======================================================================
-        z1 = self.cal_SecVoltage()
-        z2 = self.cal_PriVoltage()
-        z3 = self.cal_CurrentSensor()
-
-        fmt = " {0:20} | {1:15} | {2:15}"
-        self.logger.info("-"*50)
-        self.logger.info("CALIBRATION SUMMARY:")
-        self.logger.info("-"*50)
-        self.logger.info(fmt.format('Sensor', 'Gain', 'Offset'))
-        self.logger.info("-"*50)
-        self.logger.info(fmt.format('Secondary Voltage', z1[0], z1[1]))
-        self.logger.info(fmt.format('Primary Voltage', z2[0], z2[1]))
-        self.logger.info(fmt.format('Current', z3[0], z3[1]))
-        self.logger.info("-"*50)
-            
-        z = list(z1) + list(z2) + list(z3)
-
-        calibrationData[self.convAddress] = z
-            
+        return calibrationData
+    
+    def writeCalibration(self, calibrationData):
         #=======================================================================
         # Write data to CSV
         #=======================================================================
         try:
-            with open('calibrationData.csv', 'w+') as f:
-                writer = csv.writer(f)
-                for addr, data in calibrationData.items():
-                    try:
-                        writer.writerow([addr] + list(data))
-                    except:
-                        self.logger.exception("Error writing data for [%s] to file: %s" % (addr, str(data)))
-                        return False
-                        
+            f = open('calibrationData.csv', 'w+')
         except:
-            self.logger.exception("Error during calibration")
+            f = open('calibrationDataTemp_' + int(time.time()) + '.csv', 'w+')
+            
+        try:
+            writer = csv.writer(f)
+            for addr, data in calibrationData.items():
+                writer.writerow([addr] + list(data))
+                    
+        except:
+            self.logger.exception("Error writing data for [%s] to file: %s" % (addr, str(data)))
             return False
+        
+        finally: 
+            f.close()
 
         return True
-        
+
+    def test_CalibrateSecVoltage(self):
+        if self.convAddress is None or self.convAddress == 0xFA:
+            self.logger.error("Unable to identify a module to calibrate.")
+            return False
+            
+        else:
+            calibrationData = self.readCalibration()
+            calDevice = calibrationData.get(self.convAddress, [1.0, 0.0, 1.0, 0.0, 1.0, 0.0])
+            
+            res = self.cal_SecVoltage()
+            if len(res) == 2:
+                calDevice[0] = res[0]
+                calDevice[1] = res[1]
+            else:
+                return False
+
+            calibrationData[self.convAddress] = calDevice
+            self.writeCalibration(calibrationData)
+            
+        return True
+    
+    def test_CalibratePriVoltage(self):
+        if self.convAddress is None or self.convAddress == 0xFA:
+            self.logger.error("Unable to identify a module to calibrate.")
+            return False
+            
+        else:
+            calibrationData = self.readCalibration()
+            calDevice = calibrationData.get(self.convAddress, [1.0, 0.0, 1.0, 0.0, 1.0, 0.0])
+            
+            res = self.cal_PriVoltage()
+            if len(res) == 2:
+                calDevice[2] = res[0]
+                calDevice[3] = res[1]
+            else:
+                return False
+
+            calibrationData[self.convAddress] = calDevice
+            self.writeCalibration(calibrationData)
+            
+        return True
+    
+    def test_CalibrateCurrent(self):
+        if self.convAddress is None or self.convAddress == 0xFA:
+            self.logger.error("Unable to identify a module to calibrate.")
+            return False
+            
+        else:
+            calibrationData = self.readCalibration()
+            calDevice = calibrationData.get(self.convAddress, [1.0, 0.0, 1.0, 0.0, 1.0, 0.0])
+            
+            res = self.cal_CurrentSensor()
+            if len(res) == 2:
+                calDevice[4] = res[0]
+                calDevice[5] = res[1]
+            else:
+                return False
+
+            calibrationData[self.convAddress] = calDevice
+            self.writeCalibration(calibrationData)
+            
+        return True
+                    
+    #def test_Calibrate(self):
+        #=======================================================================
+        # Run Calibration scripts
+        #=======================================================================
+#===============================================================================
+#         z1 = self.cal_SecVoltage()
+#         z2 = self.cal_PriVoltage()
+#         z3 = self.cal_CurrentSensor()
+# 
+#         fmt = " {0:20} | {1:15} | {2:15}"
+#         self.logger.info("-"*50)
+#         self.logger.info("CALIBRATION SUMMARY:")
+#         self.logger.info("-"*50)
+#         self.logger.info(fmt.format('Sensor', 'Gain', 'Offset'))
+#         self.logger.info("-"*50)
+#         self.logger.info(fmt.format('Secondary Voltage', z1[0], z1[1]))
+#         self.logger.info(fmt.format('Primary Voltage', z2[0], z2[1]))
+#         self.logger.info(fmt.format('Current', z3[0], z3[1]))
+#         self.logger.info("-"*50)
+#             
+#         z = list(z1) + list(z2) + list(z3)
+# 
+#         calibrationData[self.convAddress] = z
+#===============================================================================
+
     def cal_linearRegression(self, x, y):
         """
         Calculate the linear regression

@@ -37,18 +37,25 @@ class m_MultimeterBase(models.m_Base):
     
     def _BK_ask(self, command):
         resp = str(self.__instr.ask(command))
-        # Clean up the SCPI header
-        ind = resp.find(command) + len(command)
+        self.logger.debug(resp)
+        
+        # Check that the SCPI header was not retuned
+        ind = resp.find(command)
         if ind != -1:
+            ind = ind + len(command)
             resp = resp[ind:]
             
         return resp
     
     def reset(self):
         self.__instr.write("*RST")
+        
+    def getError(self):
+        resp = self._BK_ask(":SYST:ERR?")
+        return resp
 
     def getFunction(self):
-        return self._BK_ask(":FUNC?")
+        return self._BK_ask("FUNC?")
 
     def setFunction(self, func):
         self.func = func
@@ -82,28 +89,31 @@ class m_MultimeterBase(models.m_Base):
         self.setFunction("CONT")
 
     def getRange(self):
-        cmd = ":" + self.func + ":RANG?"
+        cmd = self.func + ":RANG?"
         range_raw = self._BK_ask(cmd)
         self.logger.debug("Range: %s" % str(range_raw))
+        
+    def setRange_Manual(self):
+        cmd = self.func + ":RANG:AUTO OFF"
+        self.logger.debug(cmd)
+        self.__instr.write(cmd)
+        
+    def setRange_Auto(self):
+        cmd = self.func + ":RANG:AUTO ON"
+        self.logger.debug(cmd)
+        self.__instr.write(cmd)
 
     def setRange(self, new_range):
-        # :CURR:DC:RANG 20
-        current_range = self.getRange()
+        cmd = self.func + ":RANG " + str(new_range)
         
-        cmd = ":" + self.func + ":RANG"
-        cmd1 = cmd + ":AUTO 0"
-        cmd2 = cmd + " " + str(new_range)
-        self.logger.debug(cmd1)
-        self.__instr.write(cmd1)
-        time.sleep(0.1)
-        self.logger.debug(cmd2)
-        self.__instr.write(cmd2)
+        self.logger.debug(cmd)
+        self.__instr.write(cmd)
         
     def getMeasurement(self):
         # Attempt three times to get a measurement
         for x in range(3):
             try:
-                meas_raw = self._BK_ask(":FETCH?")
+                meas_raw = self._BK_ask("FETC?")
                 self.logger.debug(meas_raw)
                 measure = float(meas_raw)
                 if measure > 500 or measure is None: # Arbitrary value
