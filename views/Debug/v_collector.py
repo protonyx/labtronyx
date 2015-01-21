@@ -49,7 +49,7 @@ class v_collector(views.v_Base):
         self.btnStop.grid(row=1,column=1)
         
         # Update plot
-        self.cb_update()
+        self.event_update()
         
     def cb_start(self):
         self.model.startCollector('doCos', self.sample_time, self.max_samples)
@@ -59,7 +59,7 @@ class v_collector(views.v_Base):
         self.model.stopCollector('doCos')
         self.sampling = False
         
-    def cb_update(self):
+    def event_update(self):
         
         if self.sampling:
             try:
@@ -85,4 +85,4 @@ class v_collector(views.v_Base):
             except Exception as e:
                 print 'exception'
         
-        self.after(250, self.cb_update)
+        self.after(250, self.event_update)
