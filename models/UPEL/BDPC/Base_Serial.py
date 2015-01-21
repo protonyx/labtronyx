@@ -175,6 +175,10 @@ class Base_Serial(m_BDPC_Base):
         pass
      
     def _SRC_pack(self, address, data):
+        """
+        Will throw a TypeError if data is not an int
+        """
+        data = int(data)
         data_h = (data >> 8) & 0xFF
         data_l = data & 0xFF
         return self.pkt_struct.pack(0x24, address, address, data_h, data_l, data_h, data_l, 0x1E)
@@ -205,8 +209,9 @@ class Base_Serial(m_BDPC_Base):
         if bytes_waiting >= self.pkt_struct.size:
         
             buf = self.instr.read(bytes_waiting)
+            self.logger.debug("SRC RX BUFFER: %s [%s]", buf.encode('hex'), buf)
             for index, chunk in enumerate(buf):
-                if chunk == chr(0x24) and (index + self.pkt_struct.size) <= bytes_waiting:
+                if chunk == chr(0x24) and (index + self.pkt_struct.size) <= bytes_waiting and buf[(index + self.pkt_struct.size)-1] == chr(0x1E):
                     recv_pkt = buf[index:(index+self.pkt_struct.size)]
                     self.logger.debug("SRC RX: %s", recv_pkt.encode('hex'))
                     return recv_pkt
@@ -218,8 +223,9 @@ class Base_Serial(m_BDPC_Base):
         
         packet = self._SRC_pack(addr, 0)
         
-        for attempt in range(3):
+        for attempt in range(2):
             self.instr.write(packet)
+            self.logger.debug("SRC TX: %s", packet.encode('hex'))
             time.sleep(0.1)
             recv_pkt = self._SRC_read_packet()
             
@@ -243,6 +249,7 @@ class Base_Serial(m_BDPC_Base):
         
         for attempt in range(3):
             self.instr.write(packet)
+            self.logger.debug("SRC TX: %s", packet.encode('hex'))
             time.sleep(0.1)
             recv_pkt = self._SRC_read_packet()
             
