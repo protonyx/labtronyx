@@ -1,5 +1,7 @@
 import importlib
 import re
+import threading
+import time
 
 import controllers
 
@@ -12,6 +14,8 @@ class c_VISA(controllers.c_Base):
     __Vendors dictionary:
     -KEY is a Regex Expression to match the *IDN? string returned from the device
     -VALUE is the vendor of the device that matches the Regex Expression
+    
+    TODO: 
     """
     
     __Vendors = [(r'(?:TEKTRONIX),([\w\d.]+),[\w\d.]+,[\w\d.]+', 'Tektronix'),
@@ -21,11 +25,21 @@ class c_VISA(controllers.c_Base):
                  (r'(?:CHROMA),\s*([\w\d\-.]+),\s*[\w\d.]+,\s*[\w\d.]+', 'Chroma'),
                  (r'([\w\d\s]+),\s*[\w\d.]+,\s*[\w\d.]+', 'Unknown')]
     
-    # Dict: ResID -> (VID, PID)
+    # Dict: ResID -> r_VISA Object
     resources = {}
     
-    # Dict: ResID -> PyVISA Instrument Object
-    resourceObjects = {}
+    e_alive = threading.Event()
+    
+    #===========================================================================
+    # Controller Thread
+    #===========================================================================
+    
+    def __thread_run(self):
+        while(self.e_alive.isAlive()):
+            
+            self.refresh()
+            
+            time.sleep(60.0)
     
     #===========================================================================
     # Required API Function Definitions
@@ -46,10 +60,12 @@ class c_VISA(controllers.c_Base):
             #visa = importlib.import_module('visa')
             
             # Load the VISA Resource Manager
-            self.__rm = visa.ResourceManager()
-            self.logger.debug(str(self.__rm))
+            self.__resource_manager = visa.ResourceManager()
             
-            self.refresh()
+            self.e_alive.set()
+            
+            self.__controller_thread = threading.Thread(name="c_VISA", target=self.__thread_run)
+            self.__controller_thread.run()
             
             return True
             
@@ -65,6 +81,10 @@ class c_VISA(controllers.c_Base):
         # Maps the first chunk of an identify to a function
         
     def close(self):
+        # Stop Controller Thread
+        self.e_alive.clear()
+        self.__controller_thread.join()
+        
         return True
     
     def refresh(self):
@@ -73,10 +93,10 @@ class c_VISA(controllers.c_Base):
         """
         import visa 
         
-        if self.__rm is not None:
+        if self.__resource_manager is not None:
             self.logger.info("Refreshing VISA Resource list")
             try:
-                res_list = self.__rm.list_resources()
+                res_list = self.__resource_manager.list_resources()
             
             except visa.VisaIOError:
                 # Exception thrown when there are no resources
@@ -86,6 +106,8 @@ class c_VISA(controllers.c_Base):
             for res in res_list:
                 if res not in self.resources.keys():
                     try:
+                        new_resource = r_VISA(res, self.__resource_manager)
+                        
                         instrument = self.openResourceObject(res)
                         
                         self.logger.info("Identifying VISA Resource: %s", res)
@@ -153,3 +175,51 @@ class c_VISA(controllers.c_Base):
         if resource is not None:
             resource.close()
             del self.resourceObjects[resID]
+            
+class r_VISA(controllers.r_Base):
+    """
+    VISA Resource Base class.
+    
+    Wraps PyVISA Resource Class
+    
+    All VISA complient devices will adhere to the IEEE 488.2 standard
+    for responses to the *IDN? query. The expected format is:
+    <Manufacturer>,<Model>,<Serial>,<Firmware>
+    """
+    
+    type = "VISA"
+        
+    def __init__(self, resID, resource_manager):
+        controllers.r_Base.__init__(self)
+        
+        self.resID = resID
+        self.resource_manager = resource_manager
+        self.instrument = resource_manager.open_resource(resID)
+        
+        self.logger.info("Identifying VISA Resource: %s", res)
+        self.identity = self.instrument.ask("*IDN?").strip()
+        
+        if len(self.identity) == 4:
+            vendor, model, serial, firmware = self.identity
+            self.logger.info("Vendor: %s", vendor)
+            self.logger.info("Model:  %s", model)
+            self.logger.info("Serial: %s", serial)
+            self.logger.info("F/W:    %s", firmware)
+            
+        else:
+            pass
+        
+    def open(self):
+        pass
+    
+    def close(self):
+        pass
+    
+    def write(self, data):
+        pass
+    
+    def read(self):
+        pass
+    
+    def query(self):
+        pass

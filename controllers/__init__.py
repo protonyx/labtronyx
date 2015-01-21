@@ -1,11 +1,18 @@
+import uuid
+
 import common
 
-class c_Base(common.IC_Common):
+class c_Base(object):
 
     # TODO: Controllers will have hooks into the persistence config to "remember" how
     #       a particular device is configured when the program is run in the future.
     
     resources = {}
+    
+    def __init__(self):
+        common_globals = common.ICF_Common()
+        self.config = common_globals.getConfig()
+        self.logger = common_globals.getLogger()
 
     def getControllerName(self):
         return self.__class__.__name__
@@ -120,15 +127,37 @@ class c_Base(common.IC_Common):
         """
         raise NotImplementedError
 
-class c_ResourceObjectBase(object):
+class r_Base(object):
+    type = "Generic"
+    
+    def __init__(self):
+        self.uuid = str(uuid.uuid4())
+        
+    def getUUID(self):
+        return self.uuid
+    
+    def getType(self):
+        return self.type
+    
+    #===========================================================================
+    # Resource State
+    #===========================================================================
+        
     def open(self):
-        pass
+        raise NotImplementedError
     
     def close(self):
-        pass
+        raise NotImplementedError
+    
+    #===========================================================================
+    # Data Transmission
+    #===========================================================================
     
     def write(self, data):
-        pass
+        raise NotImplementedError
     
     def read(self):
-        pass
+        raise NotImplementedError
+    
+    def query(self):
+        raise NotImplementedError

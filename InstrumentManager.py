@@ -6,6 +6,7 @@ import uuid
 import importlib, inspect
 import logging, logging.handlers
 
+import common
 import common.rpc as rpc
 
 class InstrumentManager(rpc.RpcBase):
@@ -15,59 +16,6 @@ class InstrumentManager(rpc.RpcBase):
     controllers = {} # Controller name -> controller object
     resources = {} # UUID -> (Controller, ResID, VID, PID)
     devices = {} # UUID -> model object
-        
-    def __loadConfig(self, configFile):
-        # Get the root path
-        can_path = os.path.dirname(os.path.realpath(__file__)) # Resolves symbolic links
-        
-        self.rootPath = os.path.abspath(can_path)
-        self.configPath = os.path.join(self.rootPath, 'config')
-        self.configFile = os.path.join(self.configPath, '%s.py' % configFile)
-        
-        try:
-            import imp
-            cFile = imp.load_source('config', self.configFile)
-            self.config = cFile.Config()
-            
-        except Exception as e:
-            print("FATAL ERROR: Unable to import config file")
-            sys.exit()
-        
-    def __configureLogger(self):
-        self.logger = logging.getLogger(__name__)
-        formatter = logging.Formatter(self.config.logFormat)
-                
-         # Configure logging level
-        self.logger.setLevel(self.config.logLevel_console)
-            
-        # Logging Handler configuration, only done once
-        if self.logger.handlers == []:
-            # Console Log Handler
-            lh_console = logging.StreamHandler(sys.stdout)
-            lh_console.setFormatter(formatter)
-            lh_console.setLevel(self.config.logLevel_console)
-            self.logger.addHandler(lh_console)
-            
-            # File Log Handler
-            if self.config.logToFile:
-                if not os.path.exists(self.config.logPath):
-                    os.makedirs(self.config.logPath)
-                
-                self.logFilename = os.path.normpath(os.path.join(self.config.logPath, 'InstrControl_Manager.log'))
-                #===============================================================
-                # if self.config.logFilename == None:
-                #     self.logFilename = os.path.normpath(os.path.join(self.config.logPath, 'InstrControl_Manager.log'))
-                # else:
-                #     self.logFilename = os.path.normpath(os.path.join(self.config.logPath, self.config.logFilename))
-                #===============================================================
-                try:
-                    fh = logging.handlers.RotatingFileHandler(self.logFilename, backupCount=self.config.logBackups)
-                    fh.setLevel(self.config.logLevel_file)
-                    fh.setFormatter(formatter)
-                    self.logger.addHandler(fh)  
-                    fh.doRollover()
-                except Exception as e:
-                    self.logger.error("Unable to open log file for writing: %s", str(e))
     
     def __loadControllers(self):
         """
@@ -104,7 +52,7 @@ class InstrumentManager(rpc.RpcBase):
                                 testModule = importlib.import_module(contModule)
                                 
                                 # Instantiate the controller with a link to the model dictionary
-                                testClass = getattr(testModule, className)(logger=self.logger)
+                                testClass = getattr(testModule, className)()
                                 
                                 if testClass.open() == True:
                                     self.controllers[className] = testClass
@@ -136,7 +84,7 @@ class InstrumentManager(rpc.RpcBase):
         """
         self.logger.info('Loading Models...')
         # Clear the model map dictionary
-        self.models = {} 
+        self.models = {}
         
         # Build model map dictionary
         model_dir = os.path.join(self.rootPath, 'models')
@@ -213,17 +161,16 @@ class InstrumentManager(rpc.RpcBase):
         """
         Main InstrumentManager logic. Blocks until stopped.
         """
-        # Load the config file
-        self.__loadConfig('default')
+        common_globals = common.ICF_Common()
+        self.rootPath = common_globals.getRootPath()
+        self.config = common_globals.getConfig()
+        self.logger = common_globals.getLogger()
         
         # Make sure another manager is not running
         if not self.rpc_test(port=self.config.managerPort):
             
             # Configure RPC Identity
             self._setHELOResponse('InstrumentManager/%s' % self.config.version)
-
-            # Configure Logger
-            self.__configureLogger()
             
             self.logger.info("Instrument Manager Started")
             self.logger.info("Version: %s", self.config.version)
