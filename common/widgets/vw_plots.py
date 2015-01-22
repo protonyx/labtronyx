@@ -1,7 +1,6 @@
 from . import vw_Base
 
 import Tkinter as Tk
-from aifc import data
 
 class vw_Plot(vw_Base):
     """
