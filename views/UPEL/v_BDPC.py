@@ -1,7 +1,6 @@
 
 import views
 from common.widgets import *
-#import common.widgets as vw
 
 import Tkinter as Tk
 

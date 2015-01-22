@@ -171,12 +171,15 @@ class Base_Serial(m_BDPC_Base):
      # Helper Functions   
      #==========================================================================
      
-    def _SRC_comm_reset(self):
-        pass
-     
     def _SRC_pack(self, address, data):
         """
         Will throw a TypeError if data is not an int
+        
+        :param address: Register Address
+        :type address: int
+        :param data: Data
+        :type data: int
+        :returns: SRC_Packet
         """
         data = int(data)
         data_h = (data >> 8) & 0xFF
@@ -184,6 +187,10 @@ class Base_Serial(m_BDPC_Base):
         return self.pkt_struct.pack(0x24, address, address, data_h, data_l, data_h, data_l, 0x1E)
     
     def _SRC_unpack(self, packet):
+        """
+        :param packet: SRC_Packet
+        :returns: tuple (address, data)
+        """
         assert len(packet) == self.pkt_struct.size
         
         start_sync, addr1, addr2, data_h1, data_l1, data_h2, data_l2, end_sync = self.pkt_struct.unpack(packet)
@@ -198,69 +205,104 @@ class Base_Serial(m_BDPC_Base):
         
         return ((addr1 & 0x7F), data1)
     
+    def _SRC_write_packet(self, addr, data):
+        """
+        Send a formatted SRC packet
+        
+        :param address: Register Address
+        :type address: int
+        :param data: Data
+        :type data: int
+        """
+        packet = self._SRC_pack(addr, data)
+        self.instr.write(packet)
+        self.logger.debug("SRC TX: %s", packet.encode('hex'))
+    
     def _SRC_read_packet(self):
         """
-        Return an SRC packet from the serial buffer. Throws away bytes until
-        a start sync sequence (0x24) is found, and then returns the next 8 bytes
+        Scans the serial buffer for an SRC packet. Must be called multiple times
+        if multiple packets are in the serial buffer
         
-        :returns: str
+        :returns: tuple (address, data) if found, None otherwise
         """
-        bytes_waiting = self.instr.inWaiting()
-        if bytes_waiting >= self.pkt_struct.size:
         
-            buf = self.instr.read(bytes_waiting)
-            self.logger.debug("SRC RX BUFFER: %s [%s]", buf.encode('hex'), buf)
-            for index, chunk in enumerate(buf):
-                if chunk == chr(0x24) and (index + self.pkt_struct.size) <= bytes_waiting and buf[(index + self.pkt_struct.size)-1] == chr(0x1E):
-                    recv_pkt = buf[index:(index+self.pkt_struct.size)]
-                    self.logger.debug("SRC RX: %s", recv_pkt.encode('hex'))
-                    return recv_pkt
-                
-            return None
+        while (self.instr.inWaiting() > 0):
+            # Read the next byte in the serial buffer
+            buf = self.instr.read(1)
+            # Check if the byte is a START_SYNC
+            if (buf == chr(0x24)):
+                bytesWaiting = self.instr.inWaiting()
+                if (bytesWaiting >= (self.pkt_struct.size - 1)):
+                    # Retrieve the rest of the packet
+                    buf = buf + self.instr.read(self.pkt_struct.size - 1)
+                    
+                    # Is there an END_SYNC at the end of the packet?
+                    if buf[-1] == chr(0x1E):
+                        # Attempt to unpack the packet
+                        try:
+                            address, data = self._SRC_unpack(buf)
+                            
+                            self.logger.debug("SRC RX Packet: %s", buf.encode('hex'))
+                            
+                            # Check for an error packet
+                            # TODO: What should happen if we receive an error packet?
+                            if address == 0xFF:
+                                pass
+                            
+                            return (address, data)
+                    
+                        except:
+                            # Something was wrong with the packet
+                            self.logger.error("SRC RX Invalid Packet: %s", buf.encode('hex'))
+                        
+                        # Keep searching for a valid packet
+                else:
+                    # START_SYNC but not full packet in the queue
+                    buf = buf + self.instr.read(self.instr.inWaiting())
+                    self.logger.error("SRC RX Incomplete Packet: %s", buf.encode('hex'))
+                    
+        return None
         
     def _SRC_read_register(self, address):
-        addr = address & 0x7F
+        address = address & 0x7F
         
-        packet = self._SRC_pack(addr, 0)
-        
-        for attempt in range(2):
-            self.instr.write(packet)
-            self.logger.debug("SRC TX: %s", packet.encode('hex'))
+        for attempt in range(3):
+            self._SRC_write_packet(address, 0)
             time.sleep(0.1)
-            recv_pkt = self._SRC_read_packet()
             
-            if recv_pkt is not None:
-                addr, data = self._SRC_unpack(recv_pkt)
+            recv = self._SRC_read_packet()
+            if recv is not None:
+                addr, data = recv
                 
                 if addr == address:
                     return data
+                else:
+                    self.logger.error("SRC RX address did not match TX address, retrying")
                 
-            # Attempt failed, try a comm reset
-            self._SRC_comm_reset()
+            # Attempt failed, try again
         
         # Retries failed
         self.logger.error("Unable to read register %s", address)
         raise RuntimeError
     
     def _SRC_write_register(self, address, data):
-        addr = address | 0x80
-        
-        packet = self._SRC_pack(addr, data)
+        address_write = int(address) | 0x80
+        data = int(data)
         
         for attempt in range(3):
-            self.instr.write(packet)
-            self.logger.debug("SRC TX: %s", packet.encode('hex'))
+            self._SRC_write_packet(address_write, data)
             time.sleep(0.1)
-            recv_pkt = self._SRC_read_packet()
             
-            if recv_pkt is not None:
-                addr, data_ret = self._SRC_unpack(recv_pkt)
+            recv = self._SRC_read_packet()
+            if recv is not None:
+                addr, data_ret = recv
                 
                 if addr == address and data_ret == data:
                     return data_ret
-            
-            # Attempt failed, try a comm reset
-            self._SRC_comm_reset()
+                else:
+                    self.logger.error("SRC RX did not match TX, retrying")
+                
+            # Attempt failed, try again
             
         # Retries failed
         self.logger.error("Unable to write register %s", address)    
