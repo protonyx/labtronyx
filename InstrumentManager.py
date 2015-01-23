@@ -52,7 +52,7 @@ class InstrumentManager(rpc.RpcBase):
                                 testModule = importlib.import_module(contModule)
                                 
                                 # Instantiate the controller with a link to the model dictionary
-                                testClass = getattr(testModule, className)()
+                                testClass = getattr(testModule, className)(self)
                                 
                                 if testClass.open() == True:
                                     self.controllers[className] = testClass
@@ -60,15 +60,8 @@ class InstrumentManager(rpc.RpcBase):
                                 else:
                                     self.logger.warning('Controller %s failed to initialize', contModule)
                                     testClass.close()
-                            
-                            except ImportError:
-                                self.logger.error('Unable to import controller %s', contModule)
-                                
-                            except KeyError:
-                                # No models loaded have support for that controller
-                                self.logger.warning('No models have been loaded with support for controller %s', contModule)
-                                
-                            except AttributeError:
+                    
+                            except AttributeError as e:
                                 self.logger.error('Controller %s does not have a class %s', contModule, className)
                                 
                             except Exception as e:
@@ -82,7 +75,7 @@ class InstrumentManager(rpc.RpcBase):
         
         Models: { Controller -> { VendorID -> { (moduleName, className) -> [ ProductID ] } } }
         """
-        self.logger.info('Loading Models...')
+        self.logger.info('Verifying Models...')
         # Clear the model map dictionary
         self.models = {}
         
@@ -156,6 +149,17 @@ class InstrumentManager(rpc.RpcBase):
         
         modulePath = r_path.replace(os.path.sep, '.')
         return modulePath
+    
+    def _notify_new_resource(self, res_obj):
+        """
+        Notify InstrumentManager of the creation of a new resource. Called by
+        controllers
+        """
+        res_uuid = res_obj.getUUID()
+        
+        if res_uuid not in self.resources:
+            self.logger.info("New Resource: %s", res_uuid)
+            self.resources[res_uuid] = res_obj
 
     def _run(self):
         """
@@ -165,6 +169,19 @@ class InstrumentManager(rpc.RpcBase):
         self.rootPath = common_globals.getRootPath()
         self.config = common_globals.getConfig()
         self.logger = common_globals.getLogger()
+        
+        # Check command line arguments
+        #=======================================================================
+        # try:
+        #     opts, args = getopt.getopt(sys.argv[1:], "d")
+        #     for opt, arg in opts:
+        #         if opt == "-d":
+        #             self.logger.info("Starting in Debug mode")
+        #             global _debug
+        #             _debug = 1
+        # except:
+        #     pass
+        #=======================================================================
         
         # Make sure another manager is not running
         if not self.rpc_test(port=self.config.managerPort):
@@ -182,7 +199,7 @@ class InstrumentManager(rpc.RpcBase):
             self.__loadControllers()
             
             # Scan devices
-            self.refresh()
+            #self.refresh()
             
             # Start RPC server
             # This operation will timeout after 2 seconds. If that happens,
@@ -270,7 +287,7 @@ class InstrumentManager(rpc.RpcBase):
             return None
         
     #===========================================================================
-    # Mass Controller Operations
+    # Controller Operations
     #===========================================================================
     
     def getControllers(self):
@@ -281,9 +298,19 @@ class InstrumentManager(rpc.RpcBase):
         """
         return self.controllers.keys()
     
+    def enableController(self, controller):
+        pass
+    
+    def disableController(self, controller):
+        pass
+        
+    #===========================================================================
+    # Resource Operations
+    #===========================================================================
+    
     def getResources(self, controller=None):
         """
-        Get all resources for a given or all controllers.
+        Get a list of all resources and their properties
         
         :param controller: Controller to filter (optional)
         :type controller: str

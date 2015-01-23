@@ -2,6 +2,7 @@ import importlib
 import re
 import threading
 import time
+import visa
 
 import controllers
 
@@ -37,7 +38,24 @@ class c_VISA(controllers.c_Base):
     def __thread_run(self):
         while(self.e_alive.isAlive()):
             
-            self.refresh()
+            if self.__resource_manager is not None:
+                try:
+                    res_list = self.__resource_manager.list_resources()
+                    
+                    # Check for new resources
+                    for res in res_list:
+                        if res not in self.resources.keys():
+                            try:
+                                new_resource = r_VISA(res, self.__resource_manager)
+                                
+                                self.resources[res] = new_resource
+                            
+                            except:
+                                self.logger.exception("Unhandled VISA Exception occurred while creating new resource: %s", res)
+                
+                except visa.VisaIOError:
+                    # Exception thrown when there are no resources
+                    res_list = []
             
             time.sleep(60.0)
     
@@ -47,18 +65,12 @@ class c_VISA(controllers.c_Base):
     
     def open(self):
         """
-        Initialize the interface
-        
-        Use self.logger to log events and errors
+        Initialize the VISA Controller. Instantiates a VISA Resource Manager
+        and starts the controller thread.
         
         Return True if success, False if an error occurred
         """
-            
         try:
-            # Dependency: pyVISA
-            import visa
-            #visa = importlib.import_module('visa')
-            
             # Load the VISA Resource Manager
             self.__resource_manager = visa.ResourceManager()
             
@@ -68,113 +80,27 @@ class c_VISA(controllers.c_Base):
             self.__controller_thread.run()
             
             return True
-            
-        except ImportError:
-            self.logger.error("PyVISA Dependency Missing")
-            
+        
         except:
             self.logger.exception("Failed to initialize VISA Controller")
         
-        return False
-        
-        # Setup vendor map dictionary
-        # Maps the first chunk of an identify to a function
+            return False
         
     def close(self):
+        """
+        Stops the VISA Controller. Stops the controller thread and frees all
+        resources associated with the controller.
+        """
         # Stop Controller Thread
         self.e_alive.clear()
         self.__controller_thread.join()
         
+        # TODO: Free all resources associated with the controller
+        
         return True
     
-    def refresh(self):
-        """
-        Refresh the VISA Resource list
-        """
-        import visa 
-        
-        if self.__resource_manager is not None:
-            self.logger.info("Refreshing VISA Resource list")
-            try:
-                res_list = self.__resource_manager.list_resources()
-            
-            except visa.VisaIOError:
-                # Exception thrown when there are no resources
-                res_list = []
-                
-            # Add new resources
-            for res in res_list:
-                if res not in self.resources.keys():
-                    try:
-                        new_resource = r_VISA(res, self.__resource_manager)
-                        
-                        instrument = self.openResourceObject(res)
-                        
-                        self.logger.info("Identifying VISA Resource: %s", res)
-                        resp = instrument.ask("*IDN?").strip()
-
-                        # Decode Identify
-                        ident_vendor = "Unknown"
-                        deviceModel = "Unknown"
-                        
-                        for reg_exp, vendor in self.__Vendors:
-                            modelTest = re.findall(reg_exp, resp)
-                            if len(modelTest) == 1:
-                                ident_vendor = vendor
-                                deviceModel = str(modelTest[0]).strip()
-                                break
-                        
-                        mid = (ident_vendor, deviceModel)
-                        
-                        self.logger.info("Found VISA Device: %s %s" % mid)
-                        
-                        self.resources[res] = mid
-                        self.resourceObjects[res] = instrument
-                    
-                    except visa.VisaIOError as e:
-                        self.logger.debug("VISA Device I/O Error, ignoring device.")
-                    
-                    except:  
-                        self.logger.exception("Unhandled VISA Exception occurred")
-                        
-                    finally:
-                        self.closeResourceObject(res)
-            
-            # Purge resources that are no longer available
-            for res in self.resources.keys():
-                if res not in res_list:
-                    # Close the resource and mark as disconnected
-                    res_obj = self.resources.pop(res)
-                    inst_obj = self.instruments.pop(res)
-                    del inst_obj
-
-            return True
-        
-        else:
-            return False
-        
     def getResources(self):
         return self.resources
-    
-    #===========================================================================
-    # Protected or Private Function Definitions
-    #===========================================================================
-    
-    def openResourceObject(self, resID):
-        resource = self.resourceObjects.get(resID, None)
-        if resource is not None:
-            return resource
-        else:
-            resource = self.__rm.open_resource(resID)
-            self.resourceObjects[resID] = resource
-            return resource
-        
-    def closeResourceObject(self, resID):
-        resource = self.resourceObjects.get(resID, None)
-        
-        if resource is not None:
-            resource.close()
-            del self.resourceObjects[resID]
             
 class r_VISA(controllers.r_Base):
     """
@@ -189,37 +115,68 @@ class r_VISA(controllers.r_Base):
     
     type = "VISA"
         
-    def __init__(self, resID, resource_manager):
-        controllers.r_Base.__init__(self)
+    def __init__(self, resID, controller, resource_manager):
+        controllers.r_Base.__init__(self, resID, controller)
         
-        self.resID = resID
         self.resource_manager = resource_manager
-        self.instrument = resource_manager.open_resource(resID)
-        
-        self.logger.info("Identifying VISA Resource: %s", res)
-        self.identity = self.instrument.ask("*IDN?").strip()
-        
-        if len(self.identity) == 4:
-            vendor, model, serial, firmware = self.identity
-            self.logger.info("Vendor: %s", vendor)
-            self.logger.info("Model:  %s", model)
-            self.logger.info("Serial: %s", serial)
-            self.logger.info("F/W:    %s", firmware)
+
+        try:
+            self.logger.info("Identifying VISA Resource: %s", res)
+            self.instrument = resource_manager.open_resource(resID)
+            self.identity = self.instrument.ask("*IDN?").strip()
             
-        else:
+            if len(self.identity) == 4:
+                self.VID, self.PID, self.serial, self.firmware = self.identity
+                self.logger.info("Vendor: %s", self.VID)
+                self.logger.info("Model:  %s", self.PID)
+                self.logger.info("Serial: %s", self.serial)
+                self.logger.info("F/W:    %s", self.firmware)
+                
+            else:
+                # Resource provided a non-standard identify response
+                # Screw you BK Precision
+                # TODO: What should we do when a non-standard identify is received?
+                pass
+            
+        except visa.VisaIOError as e:
+            # Resource cannot be opened, etc.
             pass
         
+    #===========================================================================
+    # Resource State
+    #===========================================================================
+        
     def open(self):
-        pass
+        self.instrument.open()
     
     def close(self):
-        pass
+        self.instrument.close()
+        
+    def lock(self):
+        self.instrument.lock()
+        
+    def unlock(self):
+        self.instrument.unlock()
+        
+    #===========================================================================
+    # Data Transmission
+    #===========================================================================
     
     def write(self, data):
-        pass
+        return self.instrument.write(data)
     
     def read(self):
+        return self.instrument.read()
+    
+    def query(self, data):
+        return self.instrument.query(data)
+    
+    #===========================================================================
+    # Models
+    #===========================================================================
+    
+    def loadModel(self):
         pass
     
-    def query(self):
+    def unloadModel(self):
         pass

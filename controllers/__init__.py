@@ -1,6 +1,7 @@
 import uuid
 
 import common
+import common.rpc
 
 class c_Base(object):
 
@@ -9,10 +10,16 @@ class c_Base(object):
     
     resources = {}
     
-    def __init__(self):
+    def __init__(self, manager):
+        """
+        :param manager: Reference to the InstrumentManager instance
+        :type manager: InstrumentManager object
+        """
         common_globals = common.ICF_Common()
         self.config = common_globals.getConfig()
         self.logger = common_globals.getLogger()
+        
+        self.manager = manager
 
     def getControllerName(self):
         return self.__class__.__name__
@@ -127,11 +134,24 @@ class c_Base(object):
         """
         raise NotImplementedError
 
-class r_Base(object):
+class r_Base(common.rpc.RpcBase):
     type = "Generic"
     
-    def __init__(self):
+    def __init__(self, resID, controller, **kwargs):
+        common.rpc.RpcBase.__init__(self)
+        
+        common_globals = common.ICF_Common()
+        self.config = common_globals.getConfig()
+        self.logger = common_globals.getLogger()
+        
         self.uuid = str(uuid.uuid4())
+        
+        self.groupTag = kwargs.get('groupTag', '')
+        
+        self.resID = resID
+        self.controller = controller
+        
+        self.rpc_start()
         
     def getUUID(self):
         return self.uuid
@@ -139,14 +159,57 @@ class r_Base(object):
     def getType(self):
         return self.type
     
+    def getStatus(self):
+        pass
+    
+    def getPort(self):
+        try:
+            # Start the RPC server if it isn't already started
+            if not self.rpc_isRunning():
+                self.rpc_start()    
+            
+            return self.rpc_getPort()
+        
+        except:
+            pass
+    
+    def getProperties(self):
+        return {
+            'uuid': self.uuid,
+            'controller': self.controller.getControllerName(),
+            'resourceID': self.resID,
+            'resourceType': self.type,
+            'VID': self.VID,
+            'PID': self.PID,
+            'groupTag': self.groupTag,
+            'status': self.getStatus(),
+            'port': self.getPort()
+            }
+    
     #===========================================================================
     # Resource State
     #===========================================================================
         
     def open(self):
+        """
+        Open the resource
+        
+        :returns: True if open was successful, False otherwise
+        """
         raise NotImplementedError
     
     def close(self):
+        """
+        Close the resource
+        
+        :returns: True if close was successful, False otherwise
+        """
+        raise NotImplementedError
+    
+    def lock(self):
+        raise NotImplementedError
+    
+    def unlock(self):
         raise NotImplementedError
     
     #===========================================================================
@@ -161,3 +224,17 @@ class r_Base(object):
     
     def query(self):
         raise NotImplementedError
+    
+    #===========================================================================
+    # Models
+    #===========================================================================
+    
+    def loadModel(self):
+        """
+        Load a Model.
+        
+        """
+        pass
+    
+    def unloadModel(self):
+        pass
