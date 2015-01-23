@@ -14,8 +14,9 @@ class InstrumentManager(rpc.RpcBase):
     models = {} # Lookup table of available model drivers
     
     controllers = {} # Controller name -> controller object
-    resources = {} # UUID -> (Controller, ResID, VID, PID)
-    devices = {} # UUID -> model object
+    
+    resources = {} # UUID -> Resource Object
+    properties = {} # UUID -> Property Dictionary
     
     def __loadControllers(self):
         """
@@ -160,6 +161,8 @@ class InstrumentManager(rpc.RpcBase):
         if res_uuid not in self.resources:
             self.logger.info("New Resource: %s", res_uuid)
             self.resources[res_uuid] = res_obj
+            
+            self.updateResource(res_uuid)
 
     def _run(self):
         """
@@ -232,60 +235,6 @@ class InstrumentManager(rpc.RpcBase):
         """
         return self.config.version
         
-    def getProperties(self, res_uuid=None):
-        """
-        Get the properties dictionary for a given resource. If Resource UUID is
-        not provided, a nested dictionary will be returned, with each property
-        dictionary nested by Resource UUID.
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: dict
-        """
-        if res_uuid is None:
-            # Recursively get properties
-            ret = {}
-            for res_uuid, res in self.resources.items():
-                ret[res_uuid] = self.getProperties(res_uuid)
-                
-            return ret
-                
-        elif res_uuid in self.resources.keys():
-            # Get Resource
-            (controller, resID, VID, PID) = self.resources.get(res_uuid)
-            
-            # Default properties
-            prop = {}
-            
-            if res_uuid in self.devices.keys():
-                # Get Model object
-                dev = self.devices.get(res_uuid)
-                
-                # Call Model's getProperties
-                prop = dev.getProperties()
-                
-                # Inject Model identity information
-                prop['modelName'] = dev.getModelName()
-                prop['port'] = dev.rpc_getPort()
-            
-            # Inject resource information
-            prop['uuid'] = res_uuid
-            prop['controller'] = controller
-            prop['resourceID'] = resID
-            prop['vendorID'] = VID
-            prop['productID'] = PID
-            
-            prop.setdefault('deviceType', 'Generic')
-            prop.setdefault('deviceVendor', 'Generic')
-            prop.setdefault('deviceModel', 'Device')
-            prop.setdefault('deviceSerial', 'Unknown')
-            prop.setdefault('deviceFirmware', 'Unknown')
-            
-            return prop
-        
-        else:
-            return None
-        
     #===========================================================================
     # Controller Operations
     #===========================================================================
@@ -308,178 +257,60 @@ class InstrumentManager(rpc.RpcBase):
     # Resource Operations
     #===========================================================================
     
-    def getResources(self, controller=None):
+    def getResource(self, res_uuid=None):
         """
-        Get a list of all resources and their properties
+        Get information about a resource. If Resource UUID is not provided, a
+        dictionary with all resources will be returned, nested by UUID
         
-        :param controller: Controller to filter (optional)
-        :type controller: str
-        :returns: dict - { UUID: (`controller`, `ResID`, `VendorID`, ProductID`) }
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: dict
         """
-        if controller is not None:
+        if res_uuid is None:
             ret = {}
-            
-            if controller  in self.controllers:
-
-                for res_uuid, res in self.resources.items():
-                    if res[0] is controller:
-                        ret[res_uuid] = res
-                        
+            for res_uuid in self.resources:
+                ret[res_uuid] = self.properties.get(res_uuid, {})
+                
             return ret
         
         else:
-            return self.resources
+            return self.properties.get(res_uuid, {})
     
-    def getModels(self):
+    def updateResource(self, res_uuid=None):
         """
-        Get a listing of all Models loaded
+        Refresh the properties dictionary for a given resource. If Resource UUID 
+        is not provided, all resources will be refreshed
         
-        :returns: tuple - (`ModelName`, `Port`)
-        """
-        ret = {}
-        
-        for res_uuid, dev in self.devices.items():
-            ret[res_uuid] = (dev.getModelName(), dev.rpc_getPort())
-            
-        return ret
-    
-    def getModelName(self, res_uuid):
-        """
-        Get the class name for the model loaded for a given resource
-
         :param res_uuid: Unique Resource Identifier (UUID)
         :type res_uuid: str
-        :returns: str or None if no model loaded
+        :returns: dict
         """
-        dev = self.devices.get(res_uuid, None)
+        if res_uuid is None:
+            # Recursively get properties
+            ret = {}
+            for res_uuid, res in self.resources.items():
+                ret[res_uuid] = self.getProperties(res_uuid)
+                
+            return ret
         
-        if dev is not None:
-            return dev.getModelName()
+        elif res_uuid in self.resources():
+            res = self.resources.get(res_uuid)
             
+            # Refresh Resource
+            self.resources[res_uuid] = res.getProperties()
+            
+            self.resources[res_uuid].setdefault('deviceType', 'Generic')
+            self.resources[res_uuid].setdefault('deviceVendor', 'Generic')
+            self.resources[res_uuid].setdefault('deviceModel', 'Device')
+            self.resources[res_uuid].setdefault('deviceSerial', 'Unknown')
+            self.resources[res_uuid].setdefault('deviceFirmware', 'Unknown')
+        
         else:
-            return None
+            return {}
     
-    def getModelPort(self, res_uuid):
+    def addResource(self, controller, ResID):
         """
-        Get the RPC Port for the model loaded for a given resource
-
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: int or None if no model loaded
-        """
-        dev = self.devices.get(res_uuid, None)
-        
-        if dev is not None:
-            
-            try:
-                # Start the RPC server if it isn't already started
-                if not dev.rpc_isRunning():
-                    dev.rpc_start()    
-                
-                return dev.rpc_getPort()
-            
-            except:
-                pass
-
-        return None
-    
-    def refresh(self, controller=None, invoke_refresh=True):
-        """
-        Refresh all resources for a given controller. If `controller` is None, 
-        all controllers will be refreshed
-        
-        :param controller: Controller to refresh
-        :type controller: str
-        :param invoke_refresh: Call Controller refresh()
-        :type invoke_refresh: bool
-        :returns: None
-        """
-        if len(self.controllers) == 0:
-            self.logger.error("No controllers are initialized")
-            
-        elif controller is None:
-            self.logger.info("Refreshing resources...")
-            
-            for c_name in self.controllers:
-                self.refresh(c_name, invoke_refresh)
-                
-            self.logger.info("Refresh finished")
-            
-        elif controller in self.controllers.keys():
-                self.logger.debug('Refreshing %s', controller)
-                c_obj = self.controllers.get(controller)
-                
-                try:
-                    # Signal the controller to refresh resources
-                    if invoke_refresh:
-                        c_obj.refresh()
-                    
-                    # Get updated list of resources
-                    new_res = c_obj.getResources() # { ResID -> (VID, PID) }
-                    
-                    # Create new resources
-                    for resID, res_tup in new_res.items():
-                        int_res_id = (controller, resID) + res_tup
-                        
-                        if int_res_id not in self.resources.values():
-                            new_uuid = str(uuid.uuid4())
-                            self.logger.debug('Res: %s Assigned UUID: %s', resID, new_uuid)
-                            
-                            self.resources[new_uuid] = int_res_id
-                            
-                            # Attempt to auto-load a Model
-                            try:
-                                if c_obj.auto_load:
-                                    self.loadModel(new__uuid) 
-                            except:
-                                self.loadModel(new_uuid)
-                                
-                    
-                    # Purge unavailable resources
-                    for res_uuid, res_tup in self.resources.items():
-                        res_cont, resID, _, _ = res_tup
-                        
-                        if res_cont is controller and resID not in new_res.keys():
-                            self.unloadModel(res_uuid)
-                            self.resources.pop(res_uuid)
-                            
-                except AttributeError:
-                    # Controller returned something invalid
-                    pass
-                    
-                except NotImplementedError:
-                    pass
-                
-                except:
-                    self.logger.exception("Exception during controller refresh")
-        
-    #===========================================================================
-    # Individual Controller Operations
-    #
-    # API Interfaces
-    #===========================================================================
-    
-    def canEditResources(self, controller):
-        """
-        Check if a controller supports manually adding or removing resources.
-        
-        :param controller: Controller name
-        :type controller: str
-        :returns: bool - True if supported, False otherwise
-        """
-        if controller in self.controllers:
-            try:
-                cont_obj = self.controllers.get(controller)
-                return cont_obj.canEditResources()
-            
-            except NotImplementedError:
-                return False
-    
-    def addResource(self, controller, ResID, VID=None, PID=None):
-        """
-        Manually add a resource to a controller. VID and PID must be provided
-        in order to correctly identify an appropriate model to load for the
-        new resource.
+        Manually add a resource to a controller. Not supported by all controllers
         
         .. note::
         
@@ -491,22 +322,20 @@ class InstrumentManager(rpc.RpcBase):
         :type controller: str
         :param ResID: Resource Identifier
         :type ResID: str
-        :param VID: Vendor Identifier
-        :type VID: str
-        :param PID: Product Identifier
-        :type PID: str
         :returns: bool - True if successful, False otherwise
         """
         if controller in self.controllers:
             try:
                 cont_obj = self.controllers.get(controller)
-                return cont_obj.addResource(ResID, VID, PID)
+                return cont_obj.addResource(ResID)
             
             except NotImplementedError:
                 return False
             
             except AttributeError:
                 return False
+        
+        return False
     
     def destroyResource(self, controller, res_uuid):
         """

@@ -174,7 +174,7 @@ class r_Base(common.rpc.RpcBase):
             pass
     
     def getProperties(self):
-        return {
+        res_prop = {
             'uuid': self.uuid,
             'controller': self.controller.getControllerName(),
             'resourceID': self.resID,
@@ -185,6 +185,11 @@ class r_Base(common.rpc.RpcBase):
             'status': self.getStatus(),
             'port': self.getPort()
             }
+        
+        # Append Model properties if a Model is loaded
+        # TODO
+        
+        return res_prop
     
     #===========================================================================
     # Resource State
@@ -229,12 +234,34 @@ class r_Base(common.rpc.RpcBase):
     # Models
     #===========================================================================
     
-    def loadModel(self):
+    def getModels(self):
         """
-        Load a Model.
+        Get a list of models that are compatible with this resource
         
+        :returns: list
+        """
+        pass
+    
+    def loadModel(self, modelName=None):
+        """
+        Load a Model. A Model name can be specified to load a specific model,
+        even if it may not be compatible with this resource. Reloads model
+        when importing, in case an update has occured.
+        
+        Priorities when searching for a compatible model:
+          * Resource Type, VID and PID match
+          * Resource Type matches, VID and PID are empty
+          
+        If more than one compatible model is found, no model will be loaded
+        
+        :param modelName: Module name of the desired model
+        :type modelName: str
+        :returns: True if successful, False otherwise
         """
         pass
     
     def unloadModel(self):
+        """
+        :returns: True if successful, False otherwise
+        """
         pass

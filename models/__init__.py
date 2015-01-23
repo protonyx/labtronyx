@@ -13,7 +13,7 @@ import threading
 
 import views
 
-class m_Base(common.rpc.RpcBase):
+class m_Base(object):
     
     deviceType = 'Generic'
 
@@ -29,7 +29,6 @@ class m_Base(common.rpc.RpcBase):
     _collector_methods = {}
     
     def __init__(self, uuid, controller, resID, VID, PID, **kwargs):
-        common.rpc.RpcBase.__init__(self)
         
         common_globals = common.ICF_Common()
         self.config = common_globals.getConfig()
