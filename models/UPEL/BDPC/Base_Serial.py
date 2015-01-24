@@ -322,13 +322,21 @@ class Base_Serial(m_BDPC_Base):
         address = self.registers.get('CONTROL')
         control_reg = self._SRC_read_register(address)
         
-        for arg in kwargs:
-            if arg in self.options:
-                bit_number = self.options.get(arg)
-        
-                changing_bit = (int(kwargs.get(arg)) & 0x1) << bit_number
-        
-                control_reg = control_reg ^ changing_bit
+        for field_tag in kwargs:
+            if field_tag in self.options.values():
+                try:
+                    bit_number = [k for k,v in self.options.items() if v == field_tag][0]
+                    val = kwargs.get(field_tag)
+            
+                    mask = 0x1 << bit_number
+            
+                    if val:
+                        control_reg = control_reg | mask
+                    else:
+                        control_reg = control_reg & ~mask
+                except:
+                    # field_tag was not found in options dictionary
+                    pass
         
         self._SRC_write_register(address, control_reg)
                 
@@ -338,9 +346,13 @@ class Base_Serial(m_BDPC_Base):
         
         temp_dict = {}
         
-        for i, key in enumerate(self.options):
-            bit = (control_reg >> i) & 0x1
-            temp_dict[key] = bit
+        for bit, field_tag in self.options.items():
+            mask = 0x1 << bit
+            val = control_reg & mask
+            if val > 0:
+                temp_dict[field_tag] = 1
+            else:
+                temp_dict[field_tag] = 0
         
         return temp_dict
         
@@ -468,9 +480,13 @@ class Base_Serial(m_BDPC_Base):
         
         temp_dict = {}
         
-        for i, key in enumerate(self.status):
-            status_bit = (status_reg >> i) & 0x1
-            temp_dict[key] = status_bit
+        for bit, field_tag in self.status.items():
+            mask = 0x1 << bit
+            val = status_reg & mask
+            if val > 0:
+                temp_dict[field_tag] = 1
+            else:
+                temp_dict[field_tag] = 0
             
         return temp_dict 
         
