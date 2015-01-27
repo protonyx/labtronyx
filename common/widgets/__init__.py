@@ -15,3 +15,22 @@ class vw_Base(Tk.Frame):
         self.config(width=width, height=height)
         self.pack_propagate(0)
         
+        self.update_interval = None
+        
+    def _schedule_update(self):
+        if self.update_interval is not None:
+            self.after(self.update_interval, self.e_update)
+        else:
+            self.after(100, self.cb_update)
+            
+    def e_update(self):
+        """
+        Event to handle self-updating
+        """
+        self.cb_update()
+        
+        if self.update_interval is not None:
+            self._schedule_update()
+            
+    def cb_update(self):
+        raise NotImplementedError

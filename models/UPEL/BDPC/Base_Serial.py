@@ -580,5 +580,8 @@ class Base_Serial(m_BDPC_Base):
         pp = self.getPrimaryPower()
         sp = self.getSecondaryPower()
         
-        return float(sp) / float(pp)
+        try:
+            return float(sp) / float(pp)
+        except ZeroDivisionError:
+            return 0.0
 

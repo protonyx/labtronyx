@@ -45,17 +45,7 @@ class vw_GetSetValue(vw_Base):
         self.txt_data.pack(side=Tk.RIGHT)
         
         self.update_interval = kwargs.get('update_interval', None)
-        
-        self.e_update()
-        
-    def e_update(self):
-        """
-        Event to handle self-updating
-        """
-        self.cb_update()
-        
-        if self.update_interval is not None:
-            self.after(self.update_interval, self.e_update)
+        self._schedule_update()
         
     def get(self):
         # Get the value in the entry
@@ -101,7 +91,7 @@ class vw_GetValue(vw_Base):
             self.l_name.pack(side=Tk.LEFT)
             
         # Get Button
-        self.b_set = Tk.Button(self, text="Get", command=self.update)
+        self.b_set = Tk.Button(self, text="Get", command=self.cb_update)
         self.b_set.pack(side=Tk.RIGHT, padx=3)
         
         # Units
@@ -116,10 +106,13 @@ class vw_GetValue(vw_Base):
         self.l_data = Tk.Label(self, width=6, font=("Purisa", 10), textvariable=self.val, relief=Tk.RIDGE)
         self.l_data.pack(side=Tk.RIGHT)
         
+        self.update_interval = kwargs.get('update_interval', None)
+        self._schedule_update()
+        
     def get(self):
         return self.val.get()
-        
-    def update(self):
+            
+    def cb_update(self):
         try:
             val = self.get_cb()
             val = "{:.2f}".format(val)

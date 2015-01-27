@@ -114,16 +114,20 @@ class v_BDPC(views.v_Base):
         self.sensor_widgets = []
 
         self.frame_sensors = Tk.LabelFrame(self.frame_middle, text="Sensors", padx=5, pady=5)
-        sensor1 = BDPC_Sensor(self.frame_sensors, self.model, 'PrimaryVoltage')
+        sensor1 = BDPC_Sensor(self.frame_sensors, self.model, 'PrimaryVoltage',
+                              update_interval=1000)
         sensor1.pack()
         self.sensor_widgets.append(sensor1)
-        sensor2 = BDPC_Sensor(self.frame_sensors, self.model, 'SecondaryVoltage')
+        sensor2 = BDPC_Sensor(self.frame_sensors, self.model, 'SecondaryVoltage',
+                              update_interval=1000)
         sensor2.pack()
         self.sensor_widgets.append(sensor2)
-        sensor3 = BDPC_Sensor(self.frame_sensors, self.model, 'PrimaryCurrent')
+        sensor3 = BDPC_Sensor(self.frame_sensors, self.model, 'PrimaryCurrent',
+                              update_interval=1000)
         sensor3.pack()
         self.sensor_widgets.append(sensor3)
-        sensor4 = BDPC_Sensor(self.frame_sensors, self.model, 'SecondaryCurrent')
+        sensor4 = BDPC_Sensor(self.frame_sensors, self.model, 'SecondaryCurrent',
+                              update_interval=1000)
         sensor4.pack()
         self.sensor_widgets.append(sensor4)
         self.frame_sensors.pack()
@@ -249,17 +253,7 @@ class BDPC_Sensor(vw.vw_Base):
         self.f_bottom.grid(row=1, column=0, sticky=Tk.E+Tk.S+Tk.W)
         
         self.update_interval = kwargs.get('update_interval', None)
-            
-        self.e_update()
-        
-    def e_update(self):
-        """
-        Event to handle self-updating
-        """
-        self.cb_update()
-        
-        if self.update_interval is not None:
-            self.after(self.update_interval, self.e_update)
+        self._schedule_update()
 
     def cb_update(self):
         try:

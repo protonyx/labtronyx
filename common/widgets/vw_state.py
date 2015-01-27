@@ -45,6 +45,9 @@ class vw_Toggle(vw_Base):
         # Init
         self.setState(self.state)
         
+        self.update_interval = kwargs.get('update_interval', None)
+        self._schedule_update()
+        
     def cb_buttonPressed(self):
         next_state = (self.state + 1) % len(self.states)
         
@@ -62,7 +65,7 @@ class vw_Toggle(vw_Base):
     def getState(self):
         return self.state
     
-    def update(self):
+    def cb_update(self):
         pass
 
 class vw_BinaryFields(vw_Base):
@@ -97,17 +100,7 @@ class vw_BinaryFields(vw_Base):
             self.field_objects[field_tag] = obj_temp 
             
         self.update_interval = kwargs.get('update_interval', None)
-            
-        self.e_update()
-        
-    def e_update(self):
-        """
-        Event to handle self-updating
-        """
-        self.cb_update()
-        
-        if self.update_interval is not None:
-            self.after(self.update_interval, self.e_update)
+        self._schedule_update()
 
     def cb_update(self):
         field_vals = self.cb_get()

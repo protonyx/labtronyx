@@ -35,7 +35,7 @@ class vw_Plot(vw_Base):
         # Plot parameters
         self.max_samples = kwargs.get('sample_depth', 100)
         self.sample_time = kwargs.get('sample_interval', 0.1)
-        self.update_time = int(kwargs.get('update_interval', 0.25) * 1000)
+        self.update_interval = int(kwargs.get('update_interval', 0.25) * 1000)
         self.sampling = kwargs.get('start', False)
         self.title = kwargs.get('title', 'Generic Plot')
         
@@ -85,7 +85,7 @@ class vw_Plot(vw_Base):
             self.frame_control.grid(row=0, column=1)
             
             # Update plot
-            self.e_update()
+            self._schedule_update()
             
         except ImportError:
             Tk.Label(self, text="Missing Dependencies!").pack()
@@ -122,8 +122,13 @@ class vw_Plot(vw_Base):
             method = plot_attr.get('method')
             
             model.startCollector(method, self.sample_time, self.max_samples)
+            
+        self.sampling = True
+        self._schedule_update()
 
     def stopSampling(self):
+        self.sampling = False
+        
         for plotID, plot_attr in self.plots.items():
             model = plot_attr.get('model')
             method = plot_attr.get('method')
@@ -134,18 +139,14 @@ class vw_Plot(vw_Base):
         if self.sampling == False:
             self.startSampling()
             self.txt_btnRun.set('Stop')
-            self.sampling = True
+            
             self._schedule_update()
             
         else:
             self.stopSampling()
             self.txt_btnRun.set('Start')
-            self.sampling = False
         
-    def _schedule_update(self):
-        self.after(self.update_time, self.e_update)
-        
-    def e_update(self):
+    def cb_update(self):
         if self.sampling:
             for plotID, plot_attr in self.plots.items():
                 model = plot_attr.get('model')
@@ -175,8 +176,6 @@ class vw_Plot(vw_Base):
                     
                 except:
                     pass
-        
-            self._schedule_update()
         
 class vw_XYPlot(Tk.Frame):
     pass
