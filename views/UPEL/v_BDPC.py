@@ -103,34 +103,9 @@ class v_BDPC(views.v_Base):
         
         self.frame_param.pack()
         
-        #=======================================================================
-        # Diagnostics
-        #=======================================================================
-        self.frame_diag = Tk.LabelFrame(self.frame_left, text="Diagnostics", padx=5, pady=5)
-        self.pri_power = vw_entry.vw_GetValue(self.frame_diag, 
-                                        label="Input Power", units="W", 
-                                        get_cb=self.methodWrapper(self.model, 'getPrimaryPower'))
-        self.pri_power.pack()
-        self.sec_power = vw_entry.vw_GetValue(self.frame_diag, 
-                                        label="Output Power", units="W", 
-                                        get_cb=self.methodWrapper(self.model, 'getSecondaryPower'))
-        self.sec_power.pack()
-        self.diag_efficiency = vw_entry.vw_GetValue(self.frame_diag,
-                                        get_cb=self.methodWrapper(self.model, 'getEfficiency'),
-                                        label="Efficiency", units="%",
-                                        update_interval=5000)
-        self.diag_efficiency.pack()
-        self.diag_convRatio = vw_entry.vw_GetValue(self.frame_diag,
-                                        get_cb=self.methodWrapper(self.model, 'getConversionRatioCalc'),
-                                        label="Conversion Ratio", units="")
-        self.diag_convRatio.pack()
-        self.diag_pcmd = vw_entry.vw_GetValue(self.frame_diag,
-                                        get_cb=self.methodWrapper(self.model, 'getPowerCommand'),
-                                        label="Power Command", units="%")
-        self.diag_pcmd.pack()
-        self.frame_diag.pack()
-        
         self.frame_left.grid(row=0, column=0, rowspan=2)
+        
+        #-----------------------------------------------------------------------
         
         self.frame_middle = Tk.Frame(self)
         #=======================================================================
@@ -168,16 +143,47 @@ class v_BDPC(views.v_Base):
         self.sensor_widgets.append(sensor4)
         self.frame_zvs.pack()
         
+        #=======================================================================
+        # Diagnostics
+        #=======================================================================
+        self.frame_diag = Tk.LabelFrame(self.frame_middle, text="Diagnostics", padx=5, pady=5)
+        self.pri_power = vw_entry.vw_GetValue(self.frame_diag, 
+                                        label="Input Power", units="W", 
+                                        get_cb=self.methodWrapper(self.model, 'getPrimaryPower'))
+        self.pri_power.pack()
+        self.sec_power = vw_entry.vw_GetValue(self.frame_diag, 
+                                        label="Output Power", units="W", 
+                                        get_cb=self.methodWrapper(self.model, 'getSecondaryPower'))
+        self.sec_power.pack()
+        self.diag_efficiency = vw_entry.vw_GetValue(self.frame_diag,
+                                        get_cb=self.methodWrapper(self.model, 'getEfficiency'),
+                                        label="Efficiency", units="%",
+                                        update_interval=5000)
+        self.diag_efficiency.pack()
+        self.diag_convRatio = vw_entry.vw_GetValue(self.frame_diag,
+                                        get_cb=self.methodWrapper(self.model, 'getConversionRatioCalc'),
+                                        label="Conversion Ratio", units="")
+        self.diag_convRatio.pack()
+        self.diag_pcmd = vw_entry.vw_GetValue(self.frame_diag,
+                                        get_cb=self.methodWrapper(self.model, 'getPowerCommand'),
+                                        label="Power Command", units="%")
+        self.diag_pcmd.pack()
+        self.frame_diag.pack()
+        
         self.frame_middle.grid(row=0, column=1, rowspan=2)
         
         #=======================================================================
         # Graphs
         #=======================================================================
-        self.graph1 = vw_plots.vw_Plot(self, title="Graph 1")
-        self.graph1.grid(row=0, column=2)
+        self.graph_input = vw_plots.vw_Plot(self, title="Input")
+        self.graph_input.addPlot(model=self.model, method='getInputVoltage')
+        self.graph_input.addPlot(model=self.model, method='getInputCurrent')
+        self.graph_input.grid(row=0, column=2)
         
-        self.graph2 = vw_plots.vw_Plot(self, title="Graph 2")
-        self.graph2.grid(row=1, column=2)
+        self.graph_output = vw_plots.vw_Plot(self, title="Output")
+        self.graph_output.addPlot(model=self.model, method='getOutputVoltage')
+        self.graph_output.addPlot(model=self.model, method='getOutputCurrent')
+        self.graph_output.grid(row=1, column=2)
     
     def update(self):
         """

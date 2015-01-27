@@ -385,6 +385,20 @@ class Base_Serial(m_BDPC_Base):
         
         return gain * value
     
+    # Helper functions
+    
+    def getInputVoltage(self):
+        return self.getSensorValue('PrimaryVoltage')
+    
+    def getInputCurrent(self):
+        return self.getSensorValue('PrimaryCurrent')
+        
+    def getOutputVoltage(self):
+        return self.getSensorValue('SecondaryVoltage')
+        
+    def getOutputCurrent(self):
+        return self.getSensorValue('SecondaryCurrent')
+    
     def getSensorRawValue(self, sensor):
         sensor_reg = self.sensor_regs.get(sensor)
         address = self.registers.get(sensor_reg)
