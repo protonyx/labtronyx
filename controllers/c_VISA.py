@@ -83,6 +83,7 @@ class c_VISA(controllers.c_Base):
         
         except:
             self.logger.exception("Failed to initialize VISA Controller")
+            self.e_alive.clear()
         
             return False
         
@@ -171,12 +172,3 @@ class r_VISA(controllers.r_Base):
     def query(self, data):
         return self.instrument.query(data)
     
-    #===========================================================================
-    # Models
-    #===========================================================================
-    
-    def loadModel(self):
-        pass
-    
-    def unloadModel(self):
-        pass

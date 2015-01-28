@@ -194,6 +194,9 @@ class r_Base(common.rpc.RpcBase):
     #===========================================================================
     # Resource State
     #===========================================================================
+    
+    def isOpen(self):
+        raise NotImplementedError
         
     def open(self):
         """
