@@ -1,6 +1,5 @@
 import importlib
 import re
-import threading
 import time
 import visa
 
@@ -28,37 +27,27 @@ class c_VISA(controllers.c_Base):
     
     # Dict: ResID -> r_VISA Object
     resources = {}
-    
-    e_alive = threading.Event()
-    
-    #===========================================================================
-    # Controller Thread
-    #===========================================================================
-    
-    def __thread_run(self):
-        while(self.e_alive.isAlive()):
             
-            if self.__resource_manager is not None:
-                try:
-                    res_list = self.__resource_manager.list_resources()
-                    
-                    # Check for new resources
-                    for res in res_list:
-                        if res not in self.resources.keys():
-                            try:
-                                new_resource = r_VISA(res, self.__resource_manager)
-                                
-                                self.resources[res] = new_resource
-                            
-                            except:
-                                self.logger.exception("Unhandled VISA Exception occurred while creating new resource: %s", res)
+    def refresh(self):
+        if self.__resource_manager is not None:
+            try:
+                res_list = self.__resource_manager.list_resources()
                 
-                except visa.VisaIOError:
-                    # Exception thrown when there are no resources
-                    res_list = []
+                # Check for new resources
+                for res in res_list:
+                    if res not in self.resources.keys():
+                        try:
+                            new_resource = r_VISA(res, self, self.__resource_manager)
+                            
+                            self.resources[res] = new_resource
+                        
+                        except:
+                            self.logger.exception("Unhandled VISA Exception occurred while creating new resource: %s", res)
             
-            time.sleep(60.0)
-    
+            except visa.VisaIOError:
+                # Exception thrown when there are no resources
+                res_list = []
+                
     #===========================================================================
     # Required API Function Definitions
     #===========================================================================
@@ -74,16 +63,12 @@ class c_VISA(controllers.c_Base):
             # Load the VISA Resource Manager
             self.__resource_manager = visa.ResourceManager()
             
-            self.e_alive.set()
-            
-            self.__controller_thread = threading.Thread(name="c_VISA", target=self.__thread_run)
-            self.__controller_thread.run()
-            
+            self.startThread()
             return True
         
         except:
             self.logger.exception("Failed to initialize VISA Controller")
-            self.e_alive.clear()
+            self.stopThread()
         
             return False
         
@@ -93,8 +78,7 @@ class c_VISA(controllers.c_Base):
         resources associated with the controller.
         """
         # Stop Controller Thread
-        self.e_alive.clear()
-        self.__controller_thread.join()
+        self.stopThread()
         
         # TODO: Free all resources associated with the controller
         
@@ -122,11 +106,11 @@ class r_VISA(controllers.r_Base):
         self.resource_manager = resource_manager
 
         try:
-            self.logger.info("Identifying VISA Resource: %s", res)
+            self.logger.info("Identified new VISA Resource: %s", resID)
             self.instrument = resource_manager.open_resource(resID)
-            self.identity = self.instrument.ask("*IDN?").strip()
+            self.identity = self.instrument.ask("*IDN?").strip(',')
             
-            if len(self.identity) == 4:
+            if type(self.identity) == list and len(self.identity) == 4:
                 self.VID, self.PID, self.serial, self.firmware = self.identity
                 self.logger.info("Vendor: %s", self.VID)
                 self.logger.info("Model:  %s", self.PID)
@@ -140,8 +124,13 @@ class r_VISA(controllers.r_Base):
                 pass
             
         except visa.VisaIOError as e:
-            # Resource cannot be opened, etc.
-            pass
+            if e.abbreviation == "VI_ERROR_RSRC_BUSY":
+                self.locked = True
+                self.logger.info("Unable to Identify, resource is busy")
+            elif e.abbreviation == "VI_ERROR_RSRC_NFOUND":
+                pass
+            else:
+                self.logger.exception("Unknown VISA Exception")
         
     #===========================================================================
     # Resource State

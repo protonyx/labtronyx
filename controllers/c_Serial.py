@@ -13,49 +13,22 @@ class c_Serial(controllers.c_Base):
     resources = {}
     
     auto_load = False
-    
-    e_alive = threading.Event()
-    
-    #===========================================================================
-    # Controller Thread
-    #===========================================================================
-    
-    def __thread_run(self):
-        while(self.e_alive.isAlive()):
-            
-            try:
-                res_list = list(serial.tools.list_ports.comports()) 
-                
-                # Check for new resources
-                for res in res_list:
-                    resID, _, _ = res
-                        
-                    if resID not in self.resources:
-                        new_resource = r_Serial(resID, self)
-                        self.resources[resID] = new_resource
-
-            except:
-                # Exception thrown when there are no resources
-                self.logger.exception("Unhandled Exception occurred while creating new Serial resource: %s", resID)
-            
-            time.sleep(60.0)
 
     def open(self):
         try:
-            self.e_alive.set()
-            
-            self.__controller_thread = threading.Thread(name="c_Serial", target=self.__thread_run)
-            self.__controller_thread.run()
+            self.startThread()
             
             return True
         
         except:
             self.logger.exception("Failed to initialize Serial Controller")
-            self.e_alive.clear()
+            self.stopThread()
         
             return False
     
     def close(self):
+        self.stopThread()
+        
         for resID, res in self.resources.items():
             try:
                 if res.isOpen():
@@ -77,34 +50,47 @@ class c_Serial(controllers.c_Base):
     
     def refresh(self):
         """
-        Lists serial ports
-    
-        :raises EnvironmentError: On unsupported or unknown platforms
-        :returns: A list of available serial ports
+        Scans system for new resources and creates resource objects for them.
         """
-        
-        if sys.platform.startswith('win'):
-            ports = ['COM' + str(i + 1) for i in range(256)]
-    
-        elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
-            # this is to exclude your current terminal "/dev/tty"
-            ports = glob.glob('/dev/tty[A-Za-z]*')
-    
-        elif sys.platform.startswith('darwin'):
-            ports = glob.glob('/dev/tty.*')
-    
-        else:
-            raise EnvironmentError('Unsupported platform')
-    
-        result = []
-        for port in ports:
-            try:
-                s = serial.Serial(port)
-                s.close()
-                self.resources[port] = ('', '')
-                self.logger.debug('Found Serial Device %s', port)
-            except (OSError, serial.SerialException):
-                pass
+        try:
+            res_list = list(serial.tools.list_ports.comports()) 
+            
+            # Check for new resources
+            for res in res_list:
+                resID, _, _ = res
+                    
+                if resID not in self.resources:
+                    new_resource = r_Serial(resID, self)
+                    self.resources[resID] = new_resource
+
+        except:
+            # Exception thrown when there are no resources
+            self.logger.exception("Unhandled Exception occurred while creating new Serial resource: %s", resID)
+            
+    #===========================================================================
+    #     if sys.platform.startswith('win'):
+    #         ports = ['COM' + str(i + 1) for i in range(256)]
+    # 
+    #     elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+    #         # this is to exclude your current terminal "/dev/tty"
+    #         ports = glob.glob('/dev/tty[A-Za-z]*')
+    # 
+    #     elif sys.platform.startswith('darwin'):
+    #         ports = glob.glob('/dev/tty.*')
+    # 
+    #     else:
+    #         raise EnvironmentError('Unsupported platform')
+    # 
+    #     result = []
+    #     for port in ports:
+    #         try:
+    #             s = serial.Serial(port)
+    #             s.close()
+    #             self.resources[port] = ('', '')
+    #             self.logger.debug('Found Serial Device %s', port)
+    #         except (OSError, serial.SerialException):
+    #             pass
+    #===========================================================================
 
 
         
@@ -114,8 +100,15 @@ class r_Serial(controllers.r_Base):
     def __init__(self, resID, controller):
         controllers.r_Base.__init__(self, resID, controller)
         
-        self.instrument = serial.Serial()
-        self.instrument.port = resID
+        try:
+            self.instrument = serial.Serial(resID)
+            
+            self.logger.info("Identified new Serial resource: %s", resID)
+            
+        except serial.SerialException:
+            pass
+        except:
+            pass
         
     #===========================================================================
     # Resource State

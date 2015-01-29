@@ -1,7 +1,10 @@
 import uuid
+import time
 
 import common
 import common.rpc
+
+import threading
 
 class c_Base(object):
 
@@ -20,6 +23,29 @@ class c_Base(object):
         self.logger = common_globals.getLogger()
         
         self.manager = manager
+        
+        self.e_alive = threading.Event()
+        
+    #===========================================================================
+    # Controller Thread
+    #===========================================================================
+    
+    def __thread_run(self):
+        while(self.e_alive.isSet()):
+            
+            self.refresh()
+            
+            time.sleep(60.0)
+            
+    def startThread(self):
+        self.e_alive.set()
+            
+        self.__controller_thread = threading.Thread(name=self.getControllerName(), target=self.__thread_run)
+        self.__controller_thread.start()
+        
+    def stopThread(self):
+        self.e_alive.clear()
+        self.__controller_thread.join()
 
     def getControllerName(self):
         return self.__class__.__name__
