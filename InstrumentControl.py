@@ -345,14 +345,15 @@ class InstrumentControl(object):
                 self.managers[address] = testManager
                 
                 # Update the resource cache
-                self.cacheManager(address)
+                self.refreshManager(address)
                 
             return True
         
     def refreshManager(self, address=None):
         """
-        Force the remote InstrumentManager to refresh all of the controllers
-        and enumerate any new resources.
+        Refresh the local resource cache of all connected InstrumentManager
+        instances. If an address is provided, only the specified cache will be
+        refreshed.
         
         .. note::
            Use :func:`addManager` to establish a connection to a manager
@@ -368,11 +369,11 @@ class InstrumentControl(object):
         if address in self.managers:
             man = self.managers.get(address)
             
-            # Force a remote device scan
-            man.refresh()
+            # Force a resource refresh
+            remote_resources = man.getResources()
             
-            # Update the local resource cache
-            self.cacheManager(address)
+            for res_uuid, res_dict in remote_resources.items():
+                self.properties[res_uuid] = res_dict
 
         elif address is None:
             for addr in self.managers:
@@ -382,47 +383,6 @@ class InstrumentControl(object):
             return False
         
         return True
-    
-    def cacheManager(self, address):
-        """
-        Update the local cache of resources from a given Manager
-        
-        .. note::
-           Use :func:`addManager` to establish a connection to a manager
-           before calling this function.
-        
-        :param address: IP Address to check
-        :type address: str
-        :returns: True unless there is no existing connection to `address`
-        """
-        address = self._resolveAddress(address)
-        
-        if address in self.managers:
-            man = self.managers.get(address)
-            
-            # Get the list of resources for the address
-            cached_resources = self.getResources(address)
-            
-            # Get resources from the remote manager
-            remote_resources = man.getResources() or {}
-            
-            # Add new resources
-            for res_uuid, res in remote_resources.items():
-                if res_uuid not in cached_resources.keys():
-                    # Expects res == (Controller, ResID, VID, PID)
-                     self.resources[res_uuid] = (address,) + tuple(res)
-                     
-                     # Cache the properties dict for new resources
-                     self.cacheProperties(res_uuid)
-
-            # Purge resources that are no longer available
-            for res_uuid, res in cached_resources.items():
-                if res_uuid not in remote_resources.keys():
-                    self.resources.pop(res_uuid)
-                    
-                    # Purge cached properties
-                    self.properties.pop(res_uuid)
-        
     
     def removeManager(self, address):
         """
@@ -476,68 +436,7 @@ class InstrumentControl(object):
     #===========================================================================
     # Resource Operations
     #===========================================================================
-        
-    def getResources(self, address=None):
-        """
-        Get a listing of all resources from the InstrumentManager instance at a
-        given address or from all connected InstrumentManager instances.
-        
-        :param address: IP Address of host (optional)
-        :type address: str
-        
-        :returns: dict (Resource UUID as key)
-        """
-        if address is not None:
-            address = self._resolveAddress(address)
-            
-            ret = {}
-            
-            if address in self.hostnames.values():
-                
-                for res_uuid, res in self.resources.items():
-                    if res[0] == address:
-                        ret[res_uuid] = res
-                    
-            return ret
-    
-        else:
-            return self.resources
-        
-    def findResource(self, address, resID):
-        """
-        Get the Resource UUID given an address and Resource ID.
-        
-        :param address: IP Address of host
-        :type address: str
-        :param ResID: Resource Identifier
-        :type ResID: str
-        :returns: list of matching UUIDs
-        """
-        allResources = self.getResources(address)
-        
-        ret = []
-        
-        for res_uuid, res in allResources.items():
-            _, _, test_resID, _, _ = res
-            if test_resID == resID:
-                ret.append(res_uuid)
-                
-        return ret
-        
-    def getResource_address(self, res_uuid):
-        """
-        Get the address where a resource is located.
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: str - IP Address
-        """
-        if res_uuid in self.resources.keys():
-            return self.resources.get(res_uuid)[0]
-        
-        else:
-            return None
-    
+
     def addResource(self, address, controller, ResID, VendorID=None, ProductID=None):
         """
         Create a managed resource within a controller object
@@ -581,12 +480,35 @@ class InstrumentControl(object):
                 man.refresh(controller, False)
                 
                 # Update the local resource cache
-                self.cacheManager(address)
+                self.refreshManager(address)
                 
                 return res
         
         else:
             return False
+  
+    def getResources(self):
+        """
+        Get a listing of all resources from all InstrumentManager instances.
+        
+        :returns: dict (Resource UUID as key)
+        """
+        return self.properties
+        
+    def findResource(self, **kwargs):
+        """
+        Get a list of all resources that match search criteria
+        
+        :param address: IP Address of host (optional)
+        :type address: str
+        :param ResID: Resource Identifier
+        :type ResID: str
+        
+        :returns: list
+        """
+        for res_dict in self.properties:
+            pass
+    
         
     def isValidResource(self, res_uuid):
         """

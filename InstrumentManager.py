@@ -164,7 +164,7 @@ class InstrumentManager(rpc.RpcBase):
                 if res_uuid not in self.resources:
                     self.resources[res_uuid] = res_obj
                     
-                    self.updateResource(res_uuid)
+                    self.refreshResources()
 
     def _run(self):
         """
@@ -259,56 +259,41 @@ class InstrumentManager(rpc.RpcBase):
     # Resource Operations
     #===========================================================================
     
-    def getResource(self, res_uuid=None):
+    def getResources(self, res_uuid=None):
         """
-        Get information about a resource. If Resource UUID is not provided, a
+        Get information about all resources. If Resource UUID is provided, a
         dictionary with all resources will be returned, nested by UUID
         
-        :param res_uuid: Unique Resource Identifier (UUID)
+        :param res_uuid: Unique Resource Identifier (UUID) (Optional)
         :type res_uuid: str
         :returns: dict
         """
         if res_uuid is None:
-            ret = {}
-            for res_uuid in self.resources:
-                ret[res_uuid] = self.properties.get(res_uuid, {})
-                
-            return ret
+            return self.properties
         
         else:
             return self.properties.get(res_uuid, {})
     
-    def updateResource(self, res_uuid=None):
+    def refreshResources(self):
         """
-        Refresh the properties dictionary for a given resource. If Resource UUID 
-        is not provided, all resources will be refreshed
+        Refresh the properties dictionary for all resources.
         
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: dict
+        :returns: True if successful, False if an error occured
         """
-        if res_uuid is None:
-            # Recursively get properties
-            ret = {}
+        try:
             for res_uuid, res in self.resources.items():
-                ret[res_uuid] = self.getProperties(res_uuid)
+                self.properties[res_uuid] = res.getProperties()
                 
-            return ret
+                self.properties[res_uuid].setdefault('deviceType', 'Generic')
+                self.properties[res_uuid].setdefault('deviceVendor', 'Generic')
+                self.properties[res_uuid].setdefault('deviceModel', 'Device')
+                self.properties[res_uuid].setdefault('deviceSerial', 'Unknown')
+                self.properties[res_uuid].setdefault('deviceFirmware', 'Unknown')
+                
+            return True
         
-        elif res_uuid in self.resources():
-            res = self.resources.get(res_uuid)
-            
-            # Refresh Resource
-            self.resources[res_uuid] = res.getProperties()
-            
-            self.resources[res_uuid].setdefault('deviceType', 'Generic')
-            self.resources[res_uuid].setdefault('deviceVendor', 'Generic')
-            self.resources[res_uuid].setdefault('deviceModel', 'Device')
-            self.resources[res_uuid].setdefault('deviceSerial', 'Unknown')
-            self.resources[res_uuid].setdefault('deviceFirmware', 'Unknown')
-        
-        else:
-            return {}
+        except:
+            return False
     
     def addResource(self, controller, ResID):
         """
