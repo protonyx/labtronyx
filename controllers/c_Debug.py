@@ -16,7 +16,7 @@ class c_Debug(controllers.c_Base):
             new_res = r_Debug('DEBUG', self)
             self.resources['DEBUG'] = new_res
             
-            self.manager._notify_new_resource(new_res)
+            self.manager._notify_new_resource()
             
         return True
         

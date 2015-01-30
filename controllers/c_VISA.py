@@ -40,6 +40,8 @@ class c_VISA(controllers.c_Base):
                             new_resource = r_VISA(res, self, self.__resource_manager)
                             
                             self.resources[res] = new_resource
+                            
+                            self.manager._notify_new_resource()
                         
                         except:
                             self.logger.exception("Unhandled VISA Exception occurred while creating new resource: %s", res)

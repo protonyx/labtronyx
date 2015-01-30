@@ -36,9 +36,10 @@ class InstrumentControl(object):
     hostnames = {} # Hostname => IP Address [Lookup table]
     
     # Resources
-    resources = {} # { Address -> { Resource UUID -> (Controller, ResourceID) } } 
-    instruments = {} # { Resource UUID -> RpcClient objects }
+    resources = {}  # { Resource UUID -> RpcClient objects }
     properties = {} # { Resource UUID -> Properties (dict) }
+    
+    #instruments = {} # { Resource UUID -> RpcClient objects }
     
     def __init__(self, **kwargs):
         # Get the root path
@@ -478,19 +479,13 @@ class InstrumentControl(object):
         
     def getResources(self, address=None):
         """
-        Get a listing of all cached resources from the given address or from all
-        :class:`InstrumentManager` instances.
-        
-        .. note::
-        
-            `getResources` will not trigger a refresh on the InstrumentManager,
-            so resources returned may not be valid
+        Get a listing of all resources from the InstrumentManager instance at a
+        given address or from all connected InstrumentManager instances.
         
         :param address: IP Address of host (optional)
         :type address: str
         
-        :returns: dict of tuples - { Resource UUID: \ 
-                    (`address`, `controller`, `resourceID`, `VID`, `PID`) }
+        :returns: dict (Resource UUID as key)
         """
         if address is not None:
             address = self._resolveAddress(address)

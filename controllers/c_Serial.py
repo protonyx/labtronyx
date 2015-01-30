@@ -62,6 +62,8 @@ class c_Serial(controllers.c_Base):
                 if resID not in self.resources:
                     new_resource = r_Serial(resID, self)
                     self.resources[resID] = new_resource
+                    
+                    self.manager._notify_new_resource()
 
         except:
             # Exception thrown when there are no resources

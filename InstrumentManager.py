@@ -151,18 +151,20 @@ class InstrumentManager(rpc.RpcBase):
         modulePath = r_path.replace(os.path.sep, '.')
         return modulePath
     
-    def _notify_new_resource(self, res_obj):
+    def _notify_new_resource(self):
         """
         Notify InstrumentManager of the creation of a new resource. Called by
         controllers
         """
-        res_uuid = res_obj.getUUID()
-        
-        if res_uuid not in self.resources:
-            self.logger.info("New Resource: %s", res_uuid)
-            self.resources[res_uuid] = res_obj
+        for cont in self.controllers:
+            for res_obj in cont.getResources():
             
-            self.updateResource(res_uuid)
+                res_uuid = res_obj.getUUID()
+        
+                if res_uuid not in self.resources:
+                    self.resources[res_uuid] = res_obj
+                    
+                    self.updateResource(res_uuid)
 
     def _run(self):
         """
