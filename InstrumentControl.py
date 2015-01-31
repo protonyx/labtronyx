@@ -428,6 +428,9 @@ class InstrumentControl(object):
             remote_resources = man.getResources()
             
             for res_uuid, res_dict in remote_resources.items():
+                res_dict['address'] = address
+                res_dict['hostname'] = self.getHostname(address)
+                
                 self.properties[res_uuid] = res_dict
 
         elif address is None:

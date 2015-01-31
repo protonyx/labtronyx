@@ -278,7 +278,7 @@ class a_Main(object):
         
         self.myTk.mainloop()
     
-    def rebuildTreeview(self, group='hostname', sort='deviceModel', reverseOrder=False):
+    def rebuildTreeview(self, group='hostname', sort='deviceType', reverseOrder=False):
         """
         Possible groupings:
         - None (Flat list)
