@@ -315,7 +315,7 @@ class InstrumentControl(object):
         """
         Connect to a manager instance at the given address and port. If the
         connection is successful, the remote resources are automatically
-        added to the pool of resources using :func:`refreshManager`
+        added to the pool of resources using :func:`refreshResources`
         
         :param address: IP Address or Hostname
         :type address: str
@@ -345,44 +345,11 @@ class InstrumentControl(object):
                 self.managers[address] = testManager
                 
                 # Update the resource cache
-                self.refreshManager(address)
+                self.refreshResources(address)
                 
             return True
         
-    def refreshManager(self, address=None):
-        """
-        Refresh the local resource cache of all connected InstrumentManager
-        instances. If an address is provided, only the specified cache will be
-        refreshed.
-        
-        .. note::
-           Use :func:`addManager` to establish a connection to a manager
-           before calling this function.
-        
-        :param address: IP Address or Hostname
-        :type address: str
-        :returns: True unless there is no existing connection to `address`
-        """
-        if address is not None:
-            address = self._resolveAddress(address)
-        
-        if address in self.managers:
-            man = self.managers.get(address)
-            
-            # Force a resource refresh
-            remote_resources = man.getResources()
-            
-            for res_uuid, res_dict in remote_resources.items():
-                self.properties[res_uuid] = res_dict
 
-        elif address is None:
-            for addr in self.managers:
-                self.refreshManager(addr)
-                 
-        else:
-            return False
-        
-        return True
     
     def removeManager(self, address):
         """
@@ -436,7 +403,64 @@ class InstrumentControl(object):
     #===========================================================================
     # Resource Operations
     #===========================================================================
+        
+    def refreshResources(self, address=None):
+        """
+        Refresh the local resource cache of all connected InstrumentManager
+        instances. If an address is provided, only the specified cache will be
+        refreshed.
+        
+        .. note::
+           Use :func:`addManager` to establish a connection to a manager
+           before calling this function.
+        
+        :param address: IP Address or Hostname
+        :type address: str
+        :returns: True unless there is no existing connection to `address`
+        """
+        if address is not None:
+            address = self._resolveAddress(address)
+        
+        if address in self.managers:
+            man = self.managers.get(address)
+            
+            # Force a resource refresh
+            remote_resources = man.getResources()
+            
+            for res_uuid, res_dict in remote_resources.items():
+                self.properties[res_uuid] = res_dict
 
+        elif address is None:
+            for addr in self.managers:
+                self.refreshResources(addr)
+                 
+        else:
+            return False
+        
+        return True
+  
+    def getResources(self):
+        """
+        Get a listing of all resources from all InstrumentManager instances.
+        
+        :returns: dict (Resource UUID as key)
+        """
+        return self.properties
+        
+    def isValidResource(self, res_uuid):
+        """
+        Check if a resource is known.
+        
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: bool - True if resource was removed, False otherwise
+        """
+        return self.resources.has_key(res_uuid)
+    
+    #===========================================================================
+    # Resource Management
+    #===========================================================================
+    
     def addResource(self, address, controller, ResID, VendorID=None, ProductID=None):
         """
         Create a managed resource within a controller object
@@ -480,45 +504,12 @@ class InstrumentControl(object):
                 man.refresh(controller, False)
                 
                 # Update the local resource cache
-                self.refreshManager(address)
+                self.refreshResources(address)
                 
                 return res
         
         else:
             return False
-  
-    def getResources(self):
-        """
-        Get a listing of all resources from all InstrumentManager instances.
-        
-        :returns: dict (Resource UUID as key)
-        """
-        return self.properties
-        
-    def findResource(self, **kwargs):
-        """
-        Get a list of all resources that match search criteria
-        
-        :param address: IP Address of host (optional)
-        :type address: str
-        :param ResID: Resource Identifier
-        :type ResID: str
-        
-        :returns: list
-        """
-        for res_dict in self.properties:
-            pass
-    
-        
-    def isValidResource(self, res_uuid):
-        """
-        Check if a resource is known.
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: bool - True if resource was removed, False otherwise
-        """
-        return self.resources.has_key(res_uuid)
     
     def removeResource(self, res_uuid):
         """
@@ -562,107 +553,21 @@ class InstrumentControl(object):
         
         else:
             return []
-    
-    def loadModel(self, res_uuid, modelName=None, className=None):
-        """
-        Signal the remote InstrumentManager to load a model for a given
-        resource. The InstrumentManager will attempt to identify a compatible
-        model to load automatically. To force load a particular model, provide
-        a `modelName` and `className`.
-        
-        `modelName` must be an importable module on the remote system. The
-        base folder used to locate the module is the `models` folder.
-        
-        On startup, the InstrumentManager will attempt to load models for all
-        resources automatically. This function only needs to be called to
-        override the default model. :func:`unloadModel` must be called before
-        loading a new model for a resource.
-        
-        .. note::
-        
-            If the import fails on the remote InstrumentManager, an exception 
-            will be logged (on the remote system), but this function will return
-            False with no other indication. 
-            
-        Example::
-        
-            instr.loadModel('360ba14f-19be-11e4-95bf-a0481c94faff', 'Tektronix.Oscilloscope.m_DigitalPhosphor', 'm_DigitalPhosphor')
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :param modelName: Model package (Python module)
-        :type modelName: str
-        :param className: Class Name
-        :type className: str
-        :returns: bool - True if successful, False otherwise
-        """
-        man,_,_,_,_ = self.resources.get(res_uuid, None)
-        
-        man = self.managers.get(man, None)
-        
-        if man is not None:
-            ret = man.loadModel(res_uuid, modelName, className)
-            self.cacheProperties(res_uuid)
-            
-            return ret
-        
-        else:
-            return False
-        
-    def unloadModel(self, res_uuid):
-        """
-        Signal the remote InstrumentManager to unload the currently loaded
-        model for a given resource. This function must be called before 
-        :func:`loadModel`.
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: bool - True if successful, False otherwise
-        """
-        res = self.resources.get(res_uuid, None)
-        
-        man = self.managers.get(res[0], None)
-        
-        if man is not None:
-            ret = man.unloadModel(res_uuid)
-            self.cacheProperties(res_uuid)
-            return ret
-        
-        else:
-            return False
 
     #===========================================================================
     # Instrument Operations
     #
-    # Instruments are RPC Client objects to local/remote instruments
+    # Instruments are RPC Client objects to resources
     #===========================================================================
     
-    def getInstrument(self, res_uuid):
+    def getInstrument(self, res_uuid, **kwargs):
         """
-        Get an Instrument :class:`common.rpc.RpcClient` object that is linked
-        to the remote model.
+        Create a :class:`RpcClient` instance that is linked to a resource on a
+        local or remote machine.
         
         :param res_uuid: Unique Resource Identifier (UUID)
         :type res_uuid: str
-        :returns: :class:`common.rpc.RpcClient` object or None if unable to \
-        connect to Model
-        """
-        ret = self.instruments.get(res_uuid, None)
-        
-        if ret is None:
-            ret = self.createInstrument(res_uuid)
-            
-        return ret
-    
-    def createInstrument(self, res_uuid):
-        """
-        Create a :class:`RpcClient` instance that is linked to a model on a
-        local or remote machine. :func:`createInstrument` only works with
-        resources that have models loaded. 
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: RpcClient object or None if no model is loaded for the resource
+        :returns: RpcClient object
         """
         # Does an instrument already exist?
         instr = self.instruments.get(res_uuid, None)
@@ -695,78 +600,6 @@ class InstrumentControl(object):
             else:
                 # The resource could not be located
                 return None
-    
-    def destroyInstrument(self, res_uuid):
-        """
-        Destroys the local instance of an :class:`RpcClient` object linked to
-        a local or remote model. 
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: bool - True if successful, False otherwise
-        """
-        instr = self.instruments.pop(res_uuid, None)
-        if instr is not None:
-            instr._close()
-            del instr
-            return True
-        
-        return False
-    
-    def cacheProperties(self, res_uuid=None):
-        """
-        Refresh the cached property dictionary for a given resource. If no
-        Resource UUID is provided, all resources properties will be updated.
-        
-        .. note::
-        
-            Properties should be refreshed when loading a new Model for a 
-            resource.
-            
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: dict - updated resource properties
-        """
-        if res_uuid is None:
-            for res_uuid, res in self.resources.items():
-                # These dictionaries can be large, so update one at a time
-                self.cacheProperties(res_uuid)
-                    
-            return self.properties
-        
-        elif res_uuid in self.resources.keys():
-            # Get the manager object
-            address = self.getResource_address(res_uuid)
-            man = self.getManager(address)
-            hostname = man._getHostname()
-            
-            # Get the properties from the manager
-            prop = man.getProperties(res_uuid)
-            
-            # Inject hostname and address
-            prop['address'] = address
-            prop['hostname'] = hostname
-            
-            # Cache the properties
-            self.properties[res_uuid] = prop
-            
-            return prop
-            
-    def getProperties(self, res_uuid=None):
-        """
-        Get the cached property dictionary for a given resource. If no
-        Resource UUID is provided, returns the resources properties for all
-        resources in nested dictionaries by Resource UUID.
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: dict - updated resource properties or None if invalid UUID
-        """
-        if res_uuid in self.properties:
-            return self.properties.get(res_uuid, None)
-        
-        else:
-            return self.properties
     
     def getInstrument_list(self):
         """

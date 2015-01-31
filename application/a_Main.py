@@ -204,11 +204,15 @@ class a_Main(object):
         Tk.Label(self.treeFrame, text='Instruments').pack(side=Tk.TOP)
         self.tree = ttk.Treeview(self.treeFrame, height=20)
         
-        self.tree['columns'] = ('Type', 'Serial')
+        self.tree['columns'] = ('Type', 'Vendor', 'Model', 'Serial')
         self.tree.heading('#0', text='Instrument')
-        self.tree.column('Type', width=150)
+        self.tree.column('Type', width=100)
         self.tree.heading('Type', text='Type')
-        self.tree.column('Serial', width=100)
+        self.tree.column('Vendor', width=80)
+        self.tree.heading('Vendor', text='Vendor')
+        self.tree.column('Model', width=80)
+        self.tree.heading('Model', text='Model')
+        self.tree.column('Serial', width=80)
         self.tree.heading('Serial', text='Serial Number')
         self.tree.pack(fill=Tk.BOTH)
         
@@ -300,8 +304,7 @@ class a_Main(object):
         #img_device = ImageTk.PhotoImage(img_device)
 
         # Get a flat list of resources and sort
-        self.ICF.cacheProperties()
-        resources = self.ICF.getProperties().values()
+        resources = self.ICF.getResources().values()
         resources.sort(key=lambda res: res.get(sort, ''), reverse=reverseOrder)
         
         # Build a list of group values
@@ -327,17 +330,11 @@ class a_Main(object):
         for res in resources:
             lineID = res.get('uuid', None)
             if lineID is not None:
-                # If no driver loaded, use Resource ID
-                if res.get('modelName', None) is None:
-                    lineText = res.get('resourceID', 'Unknown Resource')
-                else:
-                    # TODO: Device nicknames
-                    lineText = res.get('deviceVendor') + ' ' + res.get('deviceModel')
-    
-                
-                self.tree.insert(res.get(group, ''), 'end', lineID, text=lineText) #, image=img_device)
-                self.tree.set(lineID, 'Type', res.get('deviceType', 'Generic'))
-                self.tree.set(lineID, 'Serial', res.get('deviceSerial', 'Unknown'))
+                self.tree.insert(res.get(group, ''), 'end', lineID, text=res.get('resourceID', '')) #, image=img_device)
+                self.tree.set(lineID, 'Type', res.get('deviceType', ''))
+                self.tree.set(lineID, 'Vendor', res.get('deviceVendor', ''))
+                self.tree.set(lineID, 'Model', res.get('deviceModel', ''))
+                self.tree.set(lineID, 'Serial', res.get('deviceSerial', ''))
 
     def loadView(self, uuid, viewModule, viewClass=None):
         try:
@@ -469,7 +466,7 @@ class a_Main(object):
             tkMessageBox.showwarning('Unable to load view', 'No suitable views could be found for this model')
     
     def cb_refreshTree(self, address=None):
-        self.ICF.refreshManager(address)            
+        self.ICF.refreshResources(address)            
         self.rebuildTreeview()
             
     def cb_setLogLevel(self, level):

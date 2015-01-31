@@ -163,6 +163,9 @@ class c_Base(object):
 class r_Base(common.rpc.RpcBase):
     type = "Generic"
     
+    VID = ''
+    PID = ''
+    
     def __init__(self, resID, controller, **kwargs):
         common.rpc.RpcBase.__init__(self)
         
@@ -283,6 +286,23 @@ class r_Base(common.rpc.RpcBase):
           
         If more than one compatible model is found, no model will be loaded
         
+        `modelName` must be an importable module on the remote system. The
+        base folder used to locate the module is the `models` folder.
+        
+        On startup, the resource will attempt to load a valid Model 
+        automatically. This function only needs to be called to
+        override the default model. :func:`unloadModel` must be called before
+        loading a new model for a resource.
+        
+        .. note::
+        
+            If the import fails, an exception will be logged, but this function 
+            will catch the exception and return False with no other indication. 
+            
+        Example::
+        
+            instr.loadModel('Tektronix.Oscilloscope.m_DigitalPhosphor')
+        
         :param modelName: Module name of the desired model
         :type modelName: str
         :returns: True if successful, False otherwise
@@ -291,6 +311,8 @@ class r_Base(common.rpc.RpcBase):
     
     def unloadModel(self):
         """
+        If a Model is currently loaded for the resource, unload the resource.
+        
         :returns: True if successful, False otherwise
         """
         pass

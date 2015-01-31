@@ -156,8 +156,9 @@ class InstrumentManager(rpc.RpcBase):
         Notify InstrumentManager of the creation of a new resource. Called by
         controllers
         """
-        for cont in self.controllers:
-            for res_obj in cont.getResources():
+        for cont in self.controllers.values():
+            cont_res = cont.getResources()
+            for resID, res_obj in cont_res.items():
             
                 res_uuid = res_obj.getUUID()
         
@@ -293,6 +294,7 @@ class InstrumentManager(rpc.RpcBase):
             return True
         
         except:
+            self.logger.exception("Unhandled exception while refreshing resources")
             return False
     
     def addResource(self, controller, ResID):
