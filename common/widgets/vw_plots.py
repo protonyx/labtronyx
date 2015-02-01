@@ -13,9 +13,7 @@ class vw_Plot(vw_Base):
         
     """
     # Data
-    methods = [] # (Model object, Method)
-    lastTime = {}
-    data = []
+    #methods = {} # (Model object, Method) -> 'last', 'data'
     
     def __init__(self, master, **kwargs):
         """
@@ -29,14 +27,20 @@ class vw_Plot(vw_Base):
         :type update_interval: int
         :param start: Enable sampling immediately
         :type start: bool
+        :param title: Plot title
+        :type title: str
         """
         vw_Base.__init__(self, master, 8, 1)
         
         # Plot parameters
         self.max_samples = kwargs.get('sample_depth', 100)
         self.sample_time = kwargs.get('sample_interval', 0.1)
-        self.update_time = kwargs.get('update_interval', 0.25) * 1000
+        self.update_interval = int(kwargs.get('update_interval', 0.25) * 1000)
         self.sampling = kwargs.get('start', False)
+        self.title = kwargs.get('title', 'Generic Plot')
+        
+        self.plots = {}
+        self.nextID = 0
         
         try:
             # Dependent Imports
@@ -52,27 +56,38 @@ class vw_Plot(vw_Base):
             self.time_axis = np.arange(0.0, self.max_samples * self.sample_time, self.sample_time)
             self.data = [0.0] * self.max_samples
             
+            #===================================================================
             # GUI Elements
+            #===================================================================
             # Figure
-            self.fig = matplotlib.figure.Figure(figsize=(5,4))
-            self.subplot_1 = self.fig.add_subplot(111)
-            self.dataset_1 = self.subplot_1.plot(self.time_axis, self.data)
+            self.fig = matplotlib.figure.Figure(figsize=(4,3), facecolor='w')
+            self.subplot_1 = self.fig.add_subplot(1, 1, 1)
             self.subplot_1.grid(True)
+            self.fig.suptitle(self.title)
             self.canvas = FigureCanvasTkAgg(self.fig, master=self)
             self.canvas.show()
-            self.canvas.get_tk_widget().grid(row=0,column=0,columnspan=2)
+            self.canvas.get_tk_widget().grid(row=0, column=0)
     
+            #===================================================================
             # Buttons
+            #===================================================================
+            self.frame_control = Tk.Frame(self)
+            # Start/Stop
             self.txt_btnRun = Tk.StringVar()
             self.txt_btnRun.set('Start')
             self.sampling = False
-            self.btnRun = Tk.Button(self, textvariable=self.txt_btnRun, command=self.cb_run)
-            self.btnRun.grid(row=1,column=0)
+            self.btnRun = Tk.Button(self.frame_control, textvariable=self.txt_btnRun, command=self.cb_run)
+            self.btnRun.pack()
+            # Export
+            # TODO
+            # Options
+            # TODO
+            self.frame_control.grid(row=0, column=1)
             
             # Update plot
-            self.cb_update()
+            self._schedule_update()
             
-        except Exception as e:
+        except ImportError:
             Tk.Label(self, text="Missing Dependencies!").pack()
         
     def addPlot(self, model, method, **kwargs):
@@ -82,50 +97,85 @@ class vw_Plot(vw_Base):
         :param method: Y-Axis data method name
         :type method: str
         """
-        self.methods.append((model, method))
+        ret = {}
+        
+        ret['model'] = model
+        ret['method'] = method
+        ret['dataset'] = self.subplot_1.plot(self.time_axis, self.data)
+        ret['data'] = []
+        ret['time'] = 0
+        
+        self.plots[self.nextID] = ret
+        self.nextID = self.nextID + 1
+        
+        if self.sampling == True:
+            self.startSampling()
+        else:
+            self.stopSampling()
+            
+    def removePlot(self):
+        pass
+        
+    def startSampling(self):
+        for plotID, plot_attr in self.plots.items():
+            model = plot_attr.get('model')
+            method = plot_attr.get('method')
+            
+            model.startCollector(method, self.sample_time, self.max_samples)
+            
+        self.sampling = True
+        self._schedule_update()
+
+    def stopSampling(self):
+        self.sampling = False
+        
+        for plotID, plot_attr in self.plots.items():
+            model = plot_attr.get('model')
+            method = plot_attr.get('method')
+            
+            model.stopCollector(method)
 
     def cb_run(self):
         if self.sampling == False:
-            for model, method in self.methods:
-                model.startCollector(method, self.sample_time, self.max_samples)
-                
+            self.startSampling()
             self.txt_btnRun.set('Stop')
-            self.sampling = True
-        else:
-            for model, method in self.methods:
-                model.stopCollector(method)
             
+            self._schedule_update()
+            
+        else:
+            self.stopSampling()
             self.txt_btnRun.set('Start')
-            self.sampling = False
-        
         
     def cb_update(self):
-        
         if self.sampling:
-            try:
-                new_data = self.model.getCollector('doCos', self.lastTime)
-                 
-                for timestamp, sample in new_data:
-                    self.lastTime = timestamp
-                    self.data.append(sample)
-                 
-                if len(self.data) > self.max_samples:
-                    self.data = self.data[(-1 * self.max_samples):]
+            for plotID, plot_attr in self.plots.items():
+                model = plot_attr.get('model')
+                method = plot_attr.get('method')
+                dataset = plot_attr.get('dataset')
+                data = plot_attr.get('data')
+                last_time = plot_attr.get('time')
                 
-                #self.data = np.sin(2*np.pi*t)
+                new_data = self.model.getCollector(method, last_time)
                 
-                # Update plot data    
-                self.dataset_1[0].set_data(self.time_axis, self.data)
-                
-                # Autoscale axis
-                self.subplot_1.axis([0, self.sample_time*self.max_samples, min(self.data)*1.10, max(self.data)*1.10])
-                
-                self.canvas.draw()
-            
-            except Exception as e:
-                pass
-        
-        self.after(self.update_time, self.cb_update)
+                try:
+                    for timestamp, sample in new_data:
+                        plot_attr['time'] = timestamp
+                        data.append(sample)
+                     
+                    if len(data) > self.max_samples:
+                        data = data[(-1 * self.max_samples):]
+                        
+                    #plot_attr['data'] = data
+                    
+                    dataset.set_data(self.time_axis, self.data)
+                    
+                    # Autoscale axis
+                    self.subplot_1.axis([0, self.sample_time*self.max_samples, min(self.data)*1.10, max(self.data)*1.10])
+                    
+                    self.canvas.draw()
+                    
+                except:
+                    pass
         
 class vw_XYPlot(Tk.Frame):
     pass

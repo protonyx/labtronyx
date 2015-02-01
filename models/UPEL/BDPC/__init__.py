@@ -23,19 +23,20 @@ class m_BDPC_Base(m_Generic):
         'ZVSCurrentD': 8
         }
     
+    # Bit Fields for REG_CONTROL
     options = {
-        'switching': 0,
-        'require_external_enable': 1,
-        'master_mode': 2,
-        'slave_mode': 3,
-        'latch_param_reg': 4,
-        'latch_diagnostic_reg': 5,
-        'open_main_loop': 6,
-        'open_aux_loops': 7,
-        'manual_dead_time': 8,
-        'fixed_gain': 9,
-        'manual_fet_control': 10,
-        'manual_input_voltage': 11
+        0: 'switching',
+        1: 'require_external_enable',
+        2: 'master_mode',
+        3: 'slave_mode',
+        4: 'latch_param_reg',
+        5: 'latch_diagnostic_reg',
+        6: 'open_main_loop',
+        7: 'open_aux_loops',
+        8: 'manual_dead_time',
+        9: 'fixed_gain',
+        10: 'manual_fet_control',
+        11: 'manual_input_voltage'
         }
     
     option_descriptions = {
@@ -53,13 +54,14 @@ class m_BDPC_Base(m_Generic):
         'manual_input_voltage': 'Adj. Input Voltage'
         }
     
+    # Bit fields for REG_STATUS
     status = {
-        'soft_start': 0,
-        'switching': 1,
-        'feedback_control': 2,
-        'ZVS_compensator': 3,
-        'secondary_overvoltage': 4,
-        'primary_overvoltage': 5
+        0: 'soft_start',
+        1: 'switching',
+        2: 'feedback_control',
+        3: 'ZVS_compensator',
+        4: 'secondary_overvoltage',
+        5: 'primary_overvoltage'
         }
     
     status_descriptions = {
@@ -88,8 +90,11 @@ class m_BDPC_Base(m_Generic):
     def setOption(self, **kwargs):
         raise NotImplementedError
                 
-    def getOption(self):
+    def getOption(self, **kwargs):
         raise NotImplementedError
+    
+    def getOptionFields(self):
+        return self.options
     
     def getOptionDescriptions(self):
         return self.option_descriptions
@@ -173,6 +178,9 @@ class m_BDPC_Base(m_Generic):
     def getStatus(self):
 		raise NotImplementedError
 		
+    def getStatusFields(self):
+        return self.status
+    
     def getStatusDescriptions(self):
         return self.status_descriptions
         

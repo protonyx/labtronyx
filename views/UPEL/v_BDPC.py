@@ -1,7 +1,6 @@
 
 import views
 from common.widgets import *
-#import common.widgets as vw
 
 import Tkinter as Tk
 
@@ -53,30 +52,9 @@ class v_BDPC(views.v_Base):
         self.ops_control = vw_state.vw_BinaryFields(self.frame_control,
                                         cb_get=self.methodWrapper(self.model, 'getOption'),
                                         cb_set=self.methodWrapper(self.model, 'setOption'),
-                                        fields=self.methodWrapper(self.model, 'getOptionDescriptions')() )
+                                        fields=self.methodWrapper(self.model, 'getOptionFields')(),
+                                        names=self.methodWrapper(self.model, 'getOptionDescriptions')() )
         self.ops_control.pack()
-        
-
-        # Switching Control
-        #=======================================================================
-        # self.ops_switching = vw_state.vw_Toggle(self.frame_control,
-        #                                cb_func=lambda x: self.methodWrapper(self.model, 'setOption')(enable_switching=x),
-        #                                label="Switching")
-        # self.ops_switching.pack()
-        #=======================================================================
-        #=======================================================================
-        # # Refresh Toggle
-        # self.ops_refresh_toggle = vw_state.vw_Toggle(self.frame_control,
-        #                                     label="Auto Update", 
-        #                                     cb_func=self.cb_refreshToggle)
-        # self.ops_refresh_toggle.pack()
-        # 
-        # # Immediate update
-        # self.ops_update_immed = vw_state.vw_Trigger(self.frame_control,
-        #                                    label="Update Immediately", button_label="Update", 
-        #                                    cb_func=self.update)
-        # self.ops_update_immed.pack()
-        #=======================================================================
         
         self.frame_control.pack()
         
@@ -86,10 +64,12 @@ class v_BDPC(views.v_Base):
         
         self.frame_status = Tk.LabelFrame(self.frame_left, text="Status", padx=5, pady=5)
         
-        self.ops_status = vw_state.vw_BinaryFields(self.frame_control,
+        self.ops_status = vw_state.vw_BinaryFields(self.frame_status,
                                         cb_get=self.methodWrapper(self.model, 'getStatus'),
                                         cb_set=None,
-                                        fields=self.methodWrapper(self.model, 'getStatusDescriptions')() )
+                                        fields=self.methodWrapper(self.model, 'getStatusFields')(),
+                                        names=self.methodWrapper(self.model, 'getStatusDescriptions')(),
+                                        update_interval=1000 )
         self.ops_status.pack()
         
         self.frame_status.pack()
@@ -123,10 +103,54 @@ class v_BDPC(views.v_Base):
         
         self.frame_param.pack()
         
+        self.frame_left.grid(row=0, column=0, rowspan=2)
+        
+        #-----------------------------------------------------------------------
+        
+        self.frame_middle = Tk.Frame(self)
+        #=======================================================================
+        # Sensors
+        #=======================================================================
+        self.sensor_widgets = []
+
+        self.frame_sensors = Tk.LabelFrame(self.frame_middle, text="Sensors", padx=5, pady=5)
+        sensor1 = BDPC_Sensor(self.frame_sensors, self.model, 'PrimaryVoltage',
+                              update_interval=1000)
+        sensor1.pack()
+        self.sensor_widgets.append(sensor1)
+        sensor2 = BDPC_Sensor(self.frame_sensors, self.model, 'SecondaryVoltage',
+                              update_interval=1000)
+        sensor2.pack()
+        self.sensor_widgets.append(sensor2)
+        sensor3 = BDPC_Sensor(self.frame_sensors, self.model, 'PrimaryCurrent',
+                              update_interval=1000)
+        sensor3.pack()
+        self.sensor_widgets.append(sensor3)
+        sensor4 = BDPC_Sensor(self.frame_sensors, self.model, 'SecondaryCurrent',
+                              update_interval=1000)
+        sensor4.pack()
+        self.sensor_widgets.append(sensor4)
+        self.frame_sensors.pack()
+        
+        self.frame_zvs = Tk.LabelFrame(self.frame_middle, text="Zero Voltage Switching (ZVS)", padx=5, pady=5)
+        sensor1 = BDPC_Sensor(self.frame_zvs, self.model, 'ZVSCurrentA')
+        sensor1.pack()
+        self.sensor_widgets.append(sensor1)
+        sensor2 = BDPC_Sensor(self.frame_zvs, self.model, 'ZVSCurrentB')
+        sensor2.pack()
+        self.sensor_widgets.append(sensor2)
+        sensor3 = BDPC_Sensor(self.frame_zvs, self.model, 'ZVSCurrentC')
+        sensor3.pack()
+        self.sensor_widgets.append(sensor3)
+        sensor4 = BDPC_Sensor(self.frame_zvs, self.model, 'ZVSCurrentD')
+        sensor4.pack()
+        self.sensor_widgets.append(sensor4)
+        self.frame_zvs.pack()
+        
         #=======================================================================
         # Diagnostics
         #=======================================================================
-        self.frame_diag = Tk.LabelFrame(self.frame_left, text="Diagnostics", padx=5, pady=5)
+        self.frame_diag = Tk.LabelFrame(self.frame_middle, text="Diagnostics", padx=5, pady=5)
         self.pri_power = vw_entry.vw_GetValue(self.frame_diag, 
                                         label="Input Power", units="W", 
                                         get_cb=self.methodWrapper(self.model, 'getPrimaryPower'))
@@ -137,7 +161,8 @@ class v_BDPC(views.v_Base):
         self.sec_power.pack()
         self.diag_efficiency = vw_entry.vw_GetValue(self.frame_diag,
                                         get_cb=self.methodWrapper(self.model, 'getEfficiency'),
-                                        label="Efficiency", units="%")
+                                        label="Efficiency", units="%",
+                                        update_interval=5000)
         self.diag_efficiency.pack()
         self.diag_convRatio = vw_entry.vw_GetValue(self.frame_diag,
                                         get_cb=self.methodWrapper(self.model, 'getConversionRatioCalc'),
@@ -149,51 +174,20 @@ class v_BDPC(views.v_Base):
         self.diag_pcmd.pack()
         self.frame_diag.pack()
         
-        self.update_elems.append(self.diag_efficiency)
-        self.update_elems.append(self.diag_convRatio)
-        
-        self.frame_left.grid(row=0, column=0, rowspan=2)
-        
-        #=======================================================================
-        # Operation
-        #=======================================================================
-#===============================================================================
-#         self.frame_ops = Tk.LabelFrame(self, text="Operation", padx=5, pady=5)
-#         # Operation State
-#         self.ops_mode = ICP_Operation_Mode(self.frame_ops, self.model)
-#         self.ops_mode.pack()
-#         self.update_elems.append(self.ops_mode)
-# 
-#         self.frame_ops.grid(row=0, column=2)
-#===============================================================================
-        
-        #=======================================================================
-        # Sensors
-        #=======================================================================
-        self.frame_sensors = Tk.LabelFrame(self, text="Sensors", padx=5, pady=5)
-        self.sensor_widgets = []
-        
-        try:
-            sensors = self.model.getSensors()
-            
-            for sname in sensors:
-                temp = BDPC_Sensor(self.frame_sensors, self.model, sname)
-                temp.pack()
-                
-                self.sensor_widgets.append(temp)
-        except:
-            pass
-
-        self.frame_sensors.grid(row=0, column=1, rowspan=2)
+        self.frame_middle.grid(row=0, column=1, rowspan=2)
         
         #=======================================================================
         # Graphs
         #=======================================================================
-        self.graph1 = vw_plots.vw_Plot(self, title="Graph 1")
-        self.graph1.grid(row=0, column=2)
+        self.graph_input = vw_plots.vw_Plot(self, title="Input")
+        self.graph_input.addPlot(model=self.model, method='getInputVoltage')
+        self.graph_input.addPlot(model=self.model, method='getInputCurrent')
+        self.graph_input.grid(row=0, column=2)
         
-        self.graph2 = vw_plots.vw_Plot(self, title="Graph 2")
-        self.graph2.grid(row=1, column=2)
+        self.graph_output = vw_plots.vw_Plot(self, title="Output")
+        self.graph_output.addPlot(model=self.model, method='getOutputVoltage')
+        self.graph_output.addPlot(model=self.model, method='getOutputCurrent')
+        self.graph_output.grid(row=1, column=2)
     
     def update(self):
         """
@@ -233,22 +227,46 @@ class BDPC_Sensor(vw.vw_Base):
     TODO: Add Calibration editor
     """
     
-    def __init__(self, master, model, sensor):
+    def __init__(self, master, model, sensor, **kwargs):
         vw.vw_Base.__init__(self, master, 8, 2)
         
         self.model = model
+        self.sensor = sensor
         
         name = self.model.getSensorDescription(sensor)
         units = self.model.getSensorUnits(sensor)
         
-        self.vw_SensorValue = vw_entry.vw_GetValue(self, label=name, units=units, 
-                                          get_cb=lambda: self.methodWrapper(self.model, 'getSensorValue')(sensor))
+        self.f_top = Tk.Frame(self)
+        self.l_name = Tk.Label(self.f_top, width=25, font=("Purisa", 12), text=name, anchor=Tk.W, justify=Tk.LEFT)
+        self.l_name.pack(side=Tk.LEFT)
+        self.f_top.grid(row=0, column=0, sticky=Tk.N+Tk.E+Tk.W)
+            
+        self.f_bottom = Tk.Frame(self)
+        self.l_units = Tk.Label(self.f_bottom, width=2, font=("Purisa", 12), text=units)
+        self.l_units.pack(side=Tk.RIGHT)
+        self.val = Tk.StringVar()
+        self.val.set("0")
+        self.l_data = Tk.Label(self.f_bottom, width=6, font=("Purisa", 10), textvariable=self.val, relief=Tk.RIDGE)
+        self.l_data.pack(side=Tk.RIGHT)
+        self.l_calibrate = Tk.Button(self.f_bottom, text="Calibrate", font=("Purisa", 10), state=Tk.DISABLED)
+        self.l_calibrate.pack(side=Tk.LEFT)
+        self.f_bottom.grid(row=1, column=0, sticky=Tk.E+Tk.S+Tk.W)
         
+        self.update_interval = kwargs.get('update_interval', None)
+        self._schedule_update()
+
+    def cb_update(self):
+        try:
+            val = self.model.getSensorValue(self.sensor)
+            val = "{:.2f}".format(val)
+            
+            self.val.set(val)
+            
+        except:
+            self.l_data.config(bg="red")
+            
     def get(self):
-        return self.vw_SensorValue.get()
-        
-    def update(self):
-        self.vw_SensorValue.update()
+        return self.val.get()
     
 class BDPC_MainController(Tk.Toplevel):
     """

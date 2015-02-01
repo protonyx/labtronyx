@@ -28,8 +28,9 @@ class vw_GetSetValue(vw_Base):
         self.b_set.pack(side=Tk.RIGHT)
         
         # Get Button
-        self.b_get = Tk.Button(self, text="Get", command=self.cb_get)
-        self.b_get.pack(side=Tk.RIGHT, padx=3)
+        if 'update_interval' not in kwargs:
+            self.b_get = Tk.Button(self, text="Get", command=self.cb_get)
+            self.b_get.pack(side=Tk.RIGHT, padx=3)
         
         # Units
         if 'units' in kwargs:
@@ -43,6 +44,9 @@ class vw_GetSetValue(vw_Base):
         self.txt_data = Tk.Entry(self, width=6, textvariable=self.val)
         self.txt_data.pack(side=Tk.RIGHT)
         
+        self.update_interval = kwargs.get('update_interval', None)
+        self._schedule_update()
+        
     def get(self):
         # Get the value in the entry
         return self.val.get()
@@ -53,8 +57,8 @@ class vw_GetSetValue(vw_Base):
         # Also trigger the callback
         cb_set()
     
-    def update(self):
-        val = self.read_cb()
+    def cb_update(self):
+        val = self.get_cb()
         self.val.set(val)
         
     def cb_get(self):
@@ -87,7 +91,7 @@ class vw_GetValue(vw_Base):
             self.l_name.pack(side=Tk.LEFT)
             
         # Get Button
-        self.b_set = Tk.Button(self, text="Get", command=self.update)
+        self.b_set = Tk.Button(self, text="Get", command=self.cb_update)
         self.b_set.pack(side=Tk.RIGHT, padx=3)
         
         # Units
@@ -102,10 +106,13 @@ class vw_GetValue(vw_Base):
         self.l_data = Tk.Label(self, width=6, font=("Purisa", 10), textvariable=self.val, relief=Tk.RIDGE)
         self.l_data.pack(side=Tk.RIGHT)
         
+        self.update_interval = kwargs.get('update_interval', None)
+        self._schedule_update()
+        
     def get(self):
         return self.val.get()
-        
-    def update(self):
+            
+    def cb_update(self):
         try:
             val = self.get_cb()
             val = "{:.2f}".format(val)

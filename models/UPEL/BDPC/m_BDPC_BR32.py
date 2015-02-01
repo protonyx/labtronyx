@@ -16,12 +16,12 @@ class m_BDPC_BR32(Base_Serial.Base_Serial):
         Base_Serial.Base_Serial._onLoad(self)
         
         # Set the controller into passthrough mode
-        self.instr.write("mode 2\n")
+        #self.instr.write("mode 2\n")
         
     def _onUnload(self):
         # Set the controller into debug mode
-        magic = struct.pack('BB', 0x24, 0x1E)
-        self.instr.write(magic)
+        #magic = struct.pack('BB', 0x24, 0x1E)
+        #self.instr.write(magic)
         
         Base_Serial.Base_Serial._onUnload(self)
         
