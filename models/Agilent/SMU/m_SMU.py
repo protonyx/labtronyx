@@ -4,12 +4,32 @@ import time
 
 class m_SMU(m_Base):
     
-    deviceType = 'Source Measurement Unit'
-
-    # Model Lookup
-    validControllers = ['c_VISA']
-    validVIDs = ['Agilent']
-    validPIDs = ['B2901A', 'B2902A']
+    info = {
+        # Model revision author
+        'author':               'KKENNEDY',
+        # Model version
+        'version':              '1.0',
+        # Revision date of Model version
+        'date':                 '2015-01-31',
+        # Device Manufacturer
+        'deviceVendor':         'Agilent',
+        # List of compatible device models
+        'deviceModel':          ['B2901A', 'B2902A'],
+        # Device type    
+        'deviceType':           'Source Measurement Unit',      
+        
+        # List of compatible resource types
+        'validResourceTypes':   ['VISA'],  
+        
+        #=======================================================================
+        # VISA Attributes        
+        #=======================================================================
+        # Compatible VISA Manufacturers
+        'VISA_compatibleManufacturers': ['AGILENT TECHNOLOGIES',
+                                         'Agilent Technologies'],
+        # Compatible VISA Models
+        'VISA_compatibleModels':        ['B2901A', 'B2902A']
+    }
     
     validSource = {'VOLTAGE': 'VOLT', 
                    'CURRENT': 'CURR'}

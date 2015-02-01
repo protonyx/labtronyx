@@ -3,16 +3,24 @@ from models import m_Base
 
 class m_85XX(m_Base):
     
-    # Model device type
-    deviceType = 'DC Load'
-    
-    # List of valid Controllers that are compatible with this Model
-    validControllers = ['c_Serial']
-    
-    # List of Valid Vendor Identifier (VID) and Product Identifier (PID) values
-    # that are compatible with this Model
-    validVIDs = ['']
-    validPIDs = ['']
+    info = {
+        # Model revision author
+        'author':               'KKENNEDY',
+        # Model version
+        'version':              '1.0',
+        # Revision date of Model version
+        'date':                 '2015-01-31',
+        # Device Manufacturer
+        'deviceVendor':         'BK Precision',
+        # List of compatible device models
+        'deviceModel':          ['8510', '8512', '8514', '8518', '8520', '8522', 
+                                 '8524', '8526'],
+        # Device type    
+        'deviceType':           'DC Electronic Load',      
+        
+        # List of compatible resource types
+        'validResourceTypes':   ['Serial']
+    }
 
     address = 0
     debug = 0  # Set to 1 to see dumps of commands and responses

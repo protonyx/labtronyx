@@ -2,16 +2,31 @@ import models
 
 class m_911X(models.m_Base):
     
-    # Model device type
-    deviceType = 'Source'
-    
-    # List of valid Controllers that are compatible with this Model
-    validControllers = ['c_VISA', 'c_Serial']
-    
-    # List of Valid Vendor Identifier (VID) and Product Identifier (PID) values
-    # that are compatible with this Model
-    validVIDs = ['BK Precision', 'Unknown']
-    validPIDs = ['BK9116']
+    info = {
+        # Model revision author
+        'author':               'KKENNEDY',
+        # Model version
+        'version':              '1.0',
+        # Revision date of Model version
+        'date':                 '2015-01-31',
+        # Device Manufacturer
+        'deviceVendor':         'BK Precision',
+        # List of compatible device models
+        'deviceModel':          ['9115', '9116'],
+        # Device type    
+        'deviceType':           'Power Supply',      
+        
+        # List of compatible resource types
+        'validResourceTypes':   ['VISA'],  
+        
+        #=======================================================================
+        # VISA Attributes        
+        #=======================================================================
+        # Compatible VISA Manufacturers
+        'VISA_compatibleManufacturers': ['BK Precision'],
+        # Compatible VISA Models
+        'VISA_compatibleModels':        ['BK9115', 'BK9116']
+    }
     
     def _onLoad(self):
         self.__identity = None

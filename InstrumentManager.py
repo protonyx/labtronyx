@@ -3,6 +3,7 @@ import os, sys
 import time
 import socket
 import uuid
+import copy
 import importlib, inspect
 import logging, logging.handlers
 
@@ -11,7 +12,7 @@ import common.rpc as rpc
 
 class InstrumentManager(rpc.RpcBase):
     
-    models = {} # Lookup table of available model drivers
+    models = {} # Module name -> Model info
     
     controllers = {} # Controller name -> controller object
     
@@ -70,15 +71,8 @@ class InstrumentManager(rpc.RpcBase):
                                 
                 
     def __loadModels(self):
-        """
-        Scan models folder and build a lookup table for each device model, since this does not
-        instantiate any of the models, it can be done even if devices are open.
-        
-        Models: { Controller -> { VendorID -> { (moduleName, className) -> [ ProductID ] } } }
-        """
-        self.logger.info('Verifying Models...')
         # Clear the model map dictionary
-        self.models = {}
+        self.models.clear()
         
         # Build model map dictionary
         model_dir = os.path.join(self.rootPath, 'models')
@@ -109,6 +103,9 @@ class InstrumentManager(rpc.RpcBase):
                         
                         # Check to make sure the correct class exists
                         testClass = getattr(testModule, className) # Will raise exception if doesn't exist
+                        
+                        model_info = copy.deepcopy(testClass.info)
+                        self.models[modelModule] = model_info
                     
                     except Exception as e:
                         self.logger.exception('Unable to load model %s: %s', modelModule, str(e))
@@ -119,29 +116,6 @@ class InstrumentManager(rpc.RpcBase):
                     #     self.logger.error('Model %s does not have a class %s', modelModule, className)
                     #     continue
                     #===========================================================
-                        
-                    # Verify the model
-                    try:
-                        
-                        validControllers = testClass.validControllers
-                        validVIDs = testClass.validVIDs
-                        validPIDs = testClass.validPIDs
-                        
-                        for cont in validControllers:
-                            if cont not in self.models:
-                                self.models[cont] = {}
-                                
-                            for vid in validVIDs:
-                                if vid not in self.models[cont]:
-                                    self.models[cont][vid] = {}
-                                    
-                                moduleInfo = (modelModule, className)
-                                    
-                                self.models[cont][vid][moduleInfo] = validPIDs
-                                
-                    except Exception as e:
-                        self.logger.error('Unable to load module %s: %s', modelModule, str(e))
-                        continue
                                 
     def __pathToModelName(self, path):
         # Get module name from relative path
@@ -201,11 +175,11 @@ class InstrumentManager(rpc.RpcBase):
             # Build the model dictionary
             self.__loadModels()
             
+            #from pprint import pprint
+            #pprint(self.models)
+            
             # Load controllers
             self.__loadControllers()
-            
-            # Scan devices
-            #self.refresh()
             
             # Start RPC server
             # This operation will timeout after 2 seconds. If that happens,
@@ -352,142 +326,9 @@ class InstrumentManager(rpc.RpcBase):
     #===========================================================================
     # Model Operations
     #===========================================================================
-    
-    def getValidModels(self, res_uuid):
-        """
-        Get a list of models that are considered valid for a given Resource
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :param PID: Product Identifier
-        :type PID: str
-        
-        :returns: list of tuples (ModuleName, ClassName)
-        """
-        # Models: { Controller -> { VendorID -> { modelName -> [ ProductID ] } } }
-        ret = []
-        
-        (controller, resID, VID, PID) = self.resources.get(res_uuid)
-        
-        mod_cont = self.models.get(controller, {})
-        mod_vid = mod_cont.get(VID, {})
-        for moduleInfo, PID_List in mod_vid.items():
-            if PID in PID_List:
-                ret.append(moduleInfo)
-            
-        return ret
                 
-    
-    def loadModel(self, res_uuid, modelName=None, className=None):
-        """
-        Load a model given a resource UUID. A model will be selected
-        automatically. To load a specific model, provide `modelName` 
-        (importable python module) and `className`
-        
-        .. note::
-        
-            If modelName is specified, that model will be loaded without any 
-            kind of compatibility checking. If an exception is thrown during 
-            instantiation, the model will not be loaded.
-            
-        Example::
-        
-            manager.loadModel('360ba14f-19be-11e4-95bf-a0481c94faff', 'Tektronix.Oscilloscope.m_DigitalPhosphor', 'm_DigitalPhosphor')
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :param modelName: Model package (Python module)
-        :type modelName: str
-        :param className: Class Name
-        :type className: str
-        :returns: bool - True if successful, False otherwise
-        """
-        if modelName is None and className is None:
-            # Load the first compatible Model
-            
-            if res_uuid in self.resources.keys():
-                
-                validModels = self.getValidModels(res_uuid)
-                
-                if type(validModels) is list and len(validModels) >= 1:
-                    moduleName, className = validModels[0] 
-                    res = self.loadModel(res_uuid, moduleName, className)
-                    return res
-                
-                else:
-                    self.logger.warning("Cannot load model, no valid model found for %s", res_uuid)
-                    return False
-                
-            else:
-                self.logger.error("Cannot load model, invalid UUID: %s", res_uuid)
-                return False
-                
-        else:
-            # Load specified Model
-            
-            if res_uuid in self.resources.keys():
-                
-                controller, resID, VID, PID = self.resources.get(res_uuid)
-                
-                try:
-                    # Check if the specified model is valid
-                    testModule = importlib.import_module(modelName)
-                    #reload(testModule) # Reload the module in case anything has changed
-                    
-                    if className is None:
-                        # If no class name provided, assume it matches the file
-                        className = modelName.split('.')[-1]
-                    
-                    testClass = getattr(testModule, className)
-                    
-                    # Load the model and store it
-                    cont_obj = self.controllers.get(controller, None)
-                    model_obj = testClass(res_uuid, cont_obj, resID, VID, PID, Logger=self.logger)
-                
-                    model_obj._onLoad()
-                    
-                    # Start the model RPC server
-                    model_obj.rpc_start()
-                    
-                    self.devices[res_uuid] = model_obj
-                    self.logger.debug('Loaded model for %s', res_uuid)
-                    
-                    return True
-        
-                except:
-    
-                    self.logger.exception('Model failed to load for %s', res_uuid)
-                    return False
-                
-            else:
-                return False
-    
-    def unloadModel(self, res_uuid):
-        """
-        Unloads the model for a given resource. 
-                
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: bool - True if successful, False otherwise
-        """
-        dev = self.devices.pop(res_uuid, None)
-        
-        if dev is not None:
-            try:
-                dev.rpc_stop()
-                
-                dev._onUnload()
-            
-            except NotImplementedError:
-                pass
-            
-            self.logger.info('Unloaded model for UUID %s', res_uuid)
-            
-            del dev
-            
-            return True
-        
-        return False
+    def getModels(self):
+        return self.models
     
 if __name__ == "__main__":
     # If InstrumentManager is run in interactive mode, just call run

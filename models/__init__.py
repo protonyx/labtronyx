@@ -15,12 +15,7 @@ import views
 
 class m_Base(object):
     
-    deviceType = 'Generic'
-
-    # Model Lookup
-    validControllers = []
-    validVIDs = []
-    validPIDs = []
+    info = {}
     
     # Collector Attributes
     _collector_thread = None
@@ -28,7 +23,7 @@ class m_Base(object):
     _collectors = {}
     _collector_methods = {}
     
-    def __init__(self, uuid, controller, resID, VID, PID, **kwargs):
+    def __init__(self, uuid, controller, resID, **kwargs):
         
         common_globals = common.ICF_Common()
         self.config = common_globals.getConfig()
@@ -36,8 +31,6 @@ class m_Base(object):
         
         self.uuid = uuid
         self.resID = resID
-        self.VID = VID
-        self.PID = PID
         
         # Controller Object
         self._controller_object = controller
@@ -213,30 +206,15 @@ class m_Base(object):
         :returns: str
         """
         return self.resID
-
-    def getVendorID(self):
-        """
-        Returns the Resource Vendor ID that is used to find compatible Models 
-        
-        :returns: str
-        """
-        return self.VID
-    
-    def getProductID(self):
-        """
-        Returns the Resource Product ID that is used to find compatible Models 
-        
-        :returns: str
-        """
-        return self.PID
     
     def getProperties(self):
-        return { 'modelName': self.getModelName(),
-                 'controllerName': self.getControllerName(),
-                 'deviceType': self.deviceType,
-                 'deviceVendor': 'Generic',
-                 'deviceModel': 'Device',
-                 'deviceSerial': 'Unknown',
-                 'deviceFirmware': 'Unknown'
-                }
+        return { 
+            'modelName':        self.getModelName(),
+            'controllerName':   self.getControllerName(),
+            'deviceType':       self.info.get('deviceType'),
+            'deviceVendor':     self.info.get('deviceVendor'),
+            'deviceModel':      '',
+            'deviceSerial':     'Unknown',
+            'deviceFirmware':   'Unknown'
+        }
         

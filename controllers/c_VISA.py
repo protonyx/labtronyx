@@ -10,34 +10,22 @@ class c_VISA(controllers.c_Base):
     VISA Controller
     
     Wraps PyVISA. Requires a VISA driver to be installed on the system.
-    
-    __Vendors dictionary:
-    -KEY is a Regex Expression to match the *IDN? string returned from the device
-    -VALUE is the vendor of the device that matches the Regex Expression
-    
-    TODO: 
     """
-    
-    __Vendors = [(r'(?:TEKTRONIX),([\w\d.]+),[\w\d.]+,[\w\d.]+', 'Tektronix'),
-                 (r'(?:Agilent Technologies),([\w\d.]+),[\w\d.]+,[\w\d.]+', 'Agilent'),
-                 (r'(?:AGILENT TECHNOLOGIES),([\w\d.]+),[\w\d.]+,[\w\d.]+', 'Agilent'),
-                 (r'(?:BK PRECISION),\s*([\w\d.]+),\s*[\w\d.]+,\s*[\w\d\-.]+', 'BK Precision'),
-                 (r'(?:CHROMA),\s*([\w\d\-.]+),\s*[\w\d.]+,\s*[\w\d.]+', 'Chroma'),
-                 (r'([\w\d\s]+),\s*[\w\d.]+,\s*[\w\d.]+', 'Unknown')]
     
     # Dict: ResID -> r_VISA Object
     resources = {}
             
     def refresh(self):
-        if self.__resource_manager is not None:
+        if self.resource_manager is not None:
             try:
-                res_list = self.__resource_manager.list_resources()
+                res_list = self.resource_manager.list_resources()
                 
                 # Check for new resources
                 for res in res_list:
                     if res not in self.resources.keys():
                         try:
-                            new_resource = r_VISA(res, self, self.__resource_manager)
+                            new_resource = r_VISA(res, self, 
+                                                  models=self.manager.getModels())
                             
                             self.resources[res] = new_resource
                             
@@ -63,7 +51,7 @@ class c_VISA(controllers.c_Base):
         """
         try:
             # Load the VISA Resource Manager
-            self.__resource_manager = visa.ResourceManager()
+            self.resource_manager = visa.ResourceManager()
             
             self.startThread()
             return True
@@ -98,32 +86,47 @@ class r_VISA(controllers.r_Base):
     All VISA complient devices will adhere to the IEEE 488.2 standard
     for responses to the *IDN? query. The expected format is:
     <Manufacturer>,<Model>,<Serial>,<Firmware>
+    
+    BK Precision has a non-standard format for some of their instruments:
+    <Model>,<Firmware>,<Serial>
     """
     
     type = "VISA"
         
-    def __init__(self, resID, controller, resource_manager):
-        controllers.r_Base.__init__(self, resID, controller)
+    def __init__(self, resID, controller, **kwargs):
+        controllers.r_Base.__init__(self, resID, controller, **kwargs)
         
-        self.resource_manager = resource_manager
+        self.resource_manager = visa.ResourceManager()
+        self.model_list = kwargs.get('models')
 
         try:
-            self.logger.info("Identified new VISA Resource: %s", resID)
+            self.logger.info("Created VISA Resource: %s", resID)
             self.instrument = resource_manager.open_resource(resID)
-            self.identity = self.instrument.ask("*IDN?").strip(',')
+            self.identity = self.instrument.query("*IDN?").split(',')
             
-            if type(self.identity) == list and len(self.identity) == 4:
+            if len(self.identity) == 4:
                 self.VID, self.PID, self.serial, self.firmware = self.identity
                 self.logger.info("Vendor: %s", self.VID)
                 self.logger.info("Model:  %s", self.PID)
                 self.logger.info("Serial: %s", self.serial)
                 self.logger.info("F/W:    %s", self.firmware)
+            
+            elif len(self.identity) == 3:
+                # Resource provided a non-standard identify response
+                # Screw you BK Precision for making me do this
+                self.VID = ''
+                self.PID, self.firmware, self.serial = self.identity
+                self.logger.info("Model:  %s", self.PID)
+                self.logger.info("Serial: %s", self.serial)
+                self.logger.info("F/W:    %s", self.firmware)
                 
             else:
-                # Resource provided a non-standard identify response
-                # Screw you BK Precision
-                # TODO: What should we do when a non-standard identify is received?
-                pass
+                self.VID = ''
+                self.PID = ''
+                self.firmware = ''
+                self.serial = ''
+                self.logger.error('Unable to identify VISA device: %s', resID)
+            
             
         except visa.VisaIOError as e:
             if e.abbreviation == "VI_ERROR_RSRC_BUSY":
@@ -162,4 +165,45 @@ class r_VISA(controllers.r_Base):
     
     def query(self, data):
         return self.instrument.query(data)
+    
+    #===========================================================================
+    # Models
+    #===========================================================================
+    
+    def loadModel(self, modelName=None):
+        """
+        Load a Model. VISA supports enumeration and will thus search for a
+        compatible model. A Model name can be specified to load a specific model,
+        even if it may not be compatible with this resource. Reloads model
+        when importing, in case an update has occured. If more than one 
+        compatible model is found, no model will be loaded
+        
+        `modelName` must be an importable module on the remote system. The
+        base folder used to locate the module is the `models` folder.
+        
+        On startup, the resource will attempt to load a valid Model 
+        automatically. This function only needs to be called to
+        override the default model. :func:`unloadModel` must be called before
+        loading a new model for a resource.
+        """
+        if modelName is None:
+            validModels = []
+            
+            # Iterate through all Models to find compatible Models
+            for modelModule, modelInfo in self.model_list.items():
+                try:
+                    if modelInfo.get('validResourceTypes') in ['VISA', 'visa']:
+                        if (self.VID in modelInfo.get('VISA_compatibleManufacturers') and
+                            self.PID in modelInfo.get('VISA_compatibleModels')):
+                            validModels.append(modelModule)
+                            
+                except:
+                    continue
+                
+            # Only auto-load a model if a single model was found
+            if len(validModels) == 1:
+                controllers.r_Base.loadModel(validModels[0])
+                
+        else:
+            return controllers.r_Base.loadModel(modelName)
     

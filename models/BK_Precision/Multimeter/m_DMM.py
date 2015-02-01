@@ -1,8 +1,7 @@
 import models
-
 import time
 
-class m_3441XA(models.m_Base):
+class m_DMM(models.m_Base):
     
     info = {
         # Model revision author
@@ -12,9 +11,9 @@ class m_3441XA(models.m_Base):
         # Revision date of Model version
         'date':                 '2015-01-31',
         # Device Manufacturer
-        'deviceVendor':         'Agilent',
+        'deviceVendor':         'BK Precision',
         # List of compatible device models
-        'deviceModel':          ['34410A', '34411A', 'L4411A'],
+        'deviceModel':          ['2831E', '5491B', '5492BGPIB', '5492B'],
         # Device type    
         'deviceType':           'Multimeter',      
         
@@ -25,23 +24,12 @@ class m_3441XA(models.m_Base):
         # VISA Attributes        
         #=======================================================================
         # Compatible VISA Manufacturers
-        'VISA_compatibleManufacturers': ['AGILENT TECHNOLOGIES',
-                                         'Agilent Technologies'],
+        'VISA_compatibleManufacturers': [''],
         # Compatible VISA Models
-        'VISA_compatibleModels':        ['34410A', '34411A', 'L4411A']
+        'VISA_compatibleModels':        ['2831E  Multimeter', 
+                                         '5491B Digital Multimeter',
+                                         '5492B Digital Multimeter']
     }
-    
-    modes = {
-        'Capacitance': 'CAP',
-        'Continuity': 'CONT',
-        'AC Current': 'CURR:AC',
-        'DC Current': 'CURR:DC',
-        'Diode': 'DIOD',
-        'Frequency': 'FREQ',
-        '4-wire Resistance': 'FRES',
-        'Temperature': 'TEMP',
-        'AC Voltage': 'VOLT:AC',
-        'DC Voltage': 'VOLT:DC'}
     
     def _onLoad(self):
         self._identity = None
@@ -52,7 +40,9 @@ class m_3441XA(models.m_Base):
             self.__instr = self.controller.openResourceObject(self.resID)
             
             resp = self.__instr.ask("*IDN?")
-            self.__identity = resp.strip().split(',')
+            self._identity = resp.strip().split(',')
+
+            self.func = self.getFunction
             
         except:
             self.logger.exception("Internal error while attaching to VISA instrument")
@@ -63,24 +53,38 @@ class m_3441XA(models.m_Base):
     def getProperties(self):
         ret = models.m_Base.getProperties(self)
         
-        ret['deviceVendor'] = 'Agilent'
-        
-        if self.__identity is not None:
-            ret['deviceModel'] = self.__identity[1]
-            ret['deviceSerial'] = self.__identity[2]
-            ret['deviceFirmware'] = self.__identity[3]
+        if self._identity is not None:
+            ret['deviceModel'] = self.__identity[0]
+            ret['deviceSerial'] = self._identity[2]
+            ret['deviceFirmware'] = self._identity[1]
             
         return ret
     
+    def _BK_ask(self, command):
+        resp = str(self.__instr.ask(command))
+        self.logger.debug(resp)
+        
+        # Check that the SCPI header was not retuned
+        ind = resp.find(command)
+        if ind != -1:
+            ind = ind + len(command)
+            resp = resp[ind:]
+            
+        return resp
+    
     def reset(self):
         self.__instr.write("*RST")
+        
+    def getError(self):
+        resp = self._BK_ask(":SYST:ERR?")
+        return resp
 
     def getFunction(self):
-        return self.__instr.ask("CONF?")
+        return self._BK_ask("FUNC?")
 
     def setFunction(self, func):
         self.func = func
-        self.__instr.write("CONF:%s" % self.func)
+        self.__instr.write(":FUNC %s" % self.func)
     
     def setFunction_DC_Voltage(self):
         self.setFunction("VOLT:DC")
@@ -109,23 +113,40 @@ class m_3441XA(models.m_Base):
     def setFunction_Continuity(self):
         self.setFunction("CONT")
 
+    def getRange(self):
+        cmd = self.func + ":RANG?"
+        range_raw = self._BK_ask(cmd)
+        self.logger.debug("Range: %s" % str(range_raw))
+        
+    def setRange_Manual(self):
+        cmd = self.func + ":RANG:AUTO OFF"
+        self.logger.debug(cmd)
+        self.__instr.write(cmd)
+        
+    def setRange_Auto(self):
+        cmd = self.func + ":RANG:AUTO ON"
+        self.logger.debug(cmd)
+        self.__instr.write(cmd)
+
     def setRange(self, new_range):
-        # Set to autorange no matter what is passed
-        self.__instr.write('SENS:VOLT:DC:RANGE:AUTO ON')
-    
+        cmd = self.func + ":RANG " + str(new_range)
+        
+        self.logger.debug(cmd)
+        self.__instr.write(cmd)
+        
     def getMeasurement(self):
         # Attempt three times to get a measurement
         for x in range(3):
             try:
-                # Initiate a measurement
-                self.__instr.write("INIT")
-                time.sleep(0.1)
-                
-                meas_raw = self.__instr.ask("FETC?")
+                meas_raw = self._BK_ask("FETC?")
+                self.logger.debug(meas_raw)
                 measure = float(meas_raw)
+                if measure > 500 or measure is None: # Arbitrary value
+                    continue
                 
                 return measure
             except ValueError:
                 # Try again
                 pass
+        
         

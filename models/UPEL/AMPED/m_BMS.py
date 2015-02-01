@@ -8,16 +8,23 @@ class m_BMS(models.m_Base):
     Model for the AMPED 2.2 BMS Converter
     """
     
-    # Model device type
-    deviceType = 'DC-DC Converter'
-    
-    # List of valid Controllers that are compatible with this Model
-    validControllers = ['c_Serial']
-    
-    # List of Valid Vendor Identifier (VID) and Product Identifier (PID) values
-    # that are compatible with this Model
-    validVIDs = ['']
-    validPIDs = ['']
+    info = {
+        # Model revision author
+        'author':               'KKENNEDY',
+        # Model version
+        'version':              '1.0',
+        # Revision date of Model version
+        'date':                 '2015-01-31',
+        # Device Manufacturer
+        'deviceVendor':         'UPEL',
+        # List of compatible device models
+        'deviceModel':          ['BMS 2.1'],
+        # Device type    
+        'deviceType':           'DC-DC Converter',      
+        
+        # List of compatible resource types
+        'validResourceTypes':   ['Serial']
+    }
     
     commands = {
         'calibrate':    0xAF,

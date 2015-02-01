@@ -163,9 +163,6 @@ class c_Base(object):
 class r_Base(common.rpc.RpcBase):
     type = "Generic"
     
-    VID = ''
-    PID = ''
-    
     def __init__(self, resID, controller, **kwargs):
         common.rpc.RpcBase.__init__(self)
         
@@ -177,6 +174,7 @@ class r_Base(common.rpc.RpcBase):
         
         self.groupTag = kwargs.get('groupTag', '')
         
+        self.model = None
         self.resID = resID
         self.controller = controller
         
@@ -185,10 +183,14 @@ class r_Base(common.rpc.RpcBase):
     def getUUID(self):
         return self.uuid
     
+    def getResID(self):
+        return self.resID
+    
     def getType(self):
         return self.type
     
     def getStatus(self):
+        # TODO: Resource status
         pass
     
     def getPort(self):
@@ -208,8 +210,6 @@ class r_Base(common.rpc.RpcBase):
             'controller': self.controller.getControllerName(),
             'resourceID': self.resID,
             'resourceType': self.type,
-            'VID': self.VID,
-            'PID': self.PID,
             'groupTag': self.groupTag,
             'status': self.getStatus(),
             'port': self.getPort()
@@ -274,40 +274,38 @@ class r_Base(common.rpc.RpcBase):
         """
         pass
     
-    def loadModel(self, modelName=None):
+    def loadModel(self, modelName):
         """
         Load a Model. A Model name can be specified to load a specific model,
         even if it may not be compatible with this resource. Reloads model
         when importing, in case an update has occured.
         
-        Priorities when searching for a compatible model:
-          * Resource Type, VID and PID match
-          * Resource Type matches, VID and PID are empty
-          
-        If more than one compatible model is found, no model will be loaded
-        
-        `modelName` must be an importable module on the remote system. The
-        base folder used to locate the module is the `models` folder.
-        
-        On startup, the resource will attempt to load a valid Model 
-        automatically. This function only needs to be called to
-        override the default model. :func:`unloadModel` must be called before
-        loading a new model for a resource.
-        
-        .. note::
-        
-            If the import fails, an exception will be logged, but this function 
-            will catch the exception and return False with no other indication. 
-            
         Example::
         
             instr.loadModel('Tektronix.Oscilloscope.m_DigitalPhosphor')
         
-        :param modelName: Module name of the desired model
+        :param modelName: Module name of the desired Model
         :type modelName: str
         :returns: True if successful, False otherwise
         """
-        pass
+        try:
+            # Check if the specified model is valid
+            testModule = importlib.import_module(modelName)
+            reload(testModule) # Reload the module in case anything has changed
+            
+            className = modelName.split('.')[-1]
+            testClass = getattr(testModule, className)
+            
+            self.model = testClass(self)
+            self.model._onLoad()
+            self.model.rpc_start()
+            
+            return True
+
+        except:
+
+            self.logger.exception('Failed to load model: ', modelName)
+            return False
     
     def unloadModel(self):
         """
@@ -315,4 +313,18 @@ class r_Base(common.rpc.RpcBase):
         
         :returns: True if successful, False otherwise
         """
-        pass
+        if self.model is not None:
+            try:
+                self.model._onUnload()
+                self.model.rpc_stop()
+                
+            except:
+                self.logger.exception('Exception while unloading model')
+                
+            del self.model
+            self.model = None
+                
+            return True
+        
+        else:
+            return False

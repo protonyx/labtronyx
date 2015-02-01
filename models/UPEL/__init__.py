@@ -23,17 +23,6 @@ class m_Generic(models.m_Base):
     ICP Instrument Object.
     """
     
-    # Model device type
-    deviceType = 'Generic'
-    
-    # List of valid Controllers that are compatible with this Model
-    validControllers = ['c_UPEL']
-    
-    # List of Valid Vendor Identifier (VID) and Product Identifier (PID) values
-    # that are compatible with this Model
-    validVIDs = ['UPEL']
-    validPIDs = ['Generic']
-    
     registers = {}
     
     states = {

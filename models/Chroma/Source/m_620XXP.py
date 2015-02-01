@@ -1,17 +1,40 @@
 from models import m_Base
 
-class m_62024(m_Base):
+class m_620XXP(m_Base):
     
-    # Model device type
-    deviceType = 'Source'
-    
-    # List of valid Controllers that are compatible with this Model
-    validControllers = ['c_VISA']
-    
-    # List of Valid Vendor Identifier (VID) and Product Identifier (PID) values
-    # that are compatible with this Model
-    validVIDs = ['Chroma']
-    validPIDs = ['62024P-600-8']
+    info = {
+        # Model revision author
+        'author':               'KKENNEDY',
+        # Model version
+        'version':              '1.0',
+        # Revision date of Model version
+        'date':                 '2015-01-31',
+        # Device Manufacturer
+        'deviceVendor':         'Chroma',
+        # List of compatible device models
+        'deviceModel':          ['62006P-30-80', '62006P-100-25', '62006P-300-8',
+                                 '62012P-40-120', '62012P-80-60', '62012P-100-50', '62012P-600-8',
+                                 '62024P-40-120', '62024P-80-60', '62024P-100-50', '62024-600-8',
+                                 '62052P-100-100'],
+        # Device type    
+        'deviceType':           'Power Supply',      
+        
+        # List of compatible resource types
+        'validResourceTypes':   ['VISA'],  
+        
+        #=======================================================================
+        # VISA Attributes        
+        #=======================================================================
+        # Compatible VISA Manufacturers
+        'VISA_compatibleManufacturers': ['CHROMA', 'Chroma'],
+        # Compatible VISA Models
+        'VISA_compatibleModels':        ['62006P-30-80', '62006P-100-25', 
+                                         '62006P-300-8', '62012P-40-120', 
+                                         '62012P-80-60', '62012P-100-50', 
+                                         '62012P-600-8', '62024P-40-120', 
+                                         '62024P-80-60', '62024P-100-50', 
+                                         '62024-600-8', '62052P-100-100']
+    }
     
     def _onLoad(self):
         self._identity = None

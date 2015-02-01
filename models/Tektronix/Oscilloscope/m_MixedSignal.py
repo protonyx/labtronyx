@@ -1,8 +1,8 @@
 # Models:
 # MSO 2XXX, 3XXX, 4XXX, 5XXX
-from m_DigitalPhosphor import m_DigitalPhosphor
+from m_Oscilloscope import m_Oscilloscope
 
-class m_MixedSignal(m_DigitalPhosphor):
+class m_MixedSignal(m_Oscilloscope):
         
     validPIDs = [ # MSO2XXX Series
                     
@@ -17,6 +17,6 @@ class m_MixedSignal(m_DigitalPhosphor):
                     ]
 
     def _onLoad(self):
-        m_DigitalPhosphor._onLoad(self)
+        m_Oscilloscope._onLoad(self)
         
         self.logger.debug("Loaded Tektronix Mixed Signal Oscilloscope Model")

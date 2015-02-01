@@ -4,7 +4,23 @@ from . import m_BDPC_Base
 
 class Base_ICP(m_BDPC_Base):
     
-    validVIDs = ['UPEL']
+    info = {
+        # Model revision author
+        'author':               'KKENNEDY',
+        # Model version
+        'version':              '1.0',
+        # Revision date of Model version
+        'date':                 '2015-01-31',
+        # Device Manufacturer
+        'deviceVendor':         'UPEL',
+        # List of compatible device models
+        'deviceModel':          ['BDPC'],
+        # Device type    
+        'deviceType':           'DC-DC Converter',      
+        
+        # List of compatible resource types
+        'validResourceTypes':   ['UPEL']
+    }
     
     registers = {
         'SensorGain': 0x2110,

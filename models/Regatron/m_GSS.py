@@ -3,16 +3,23 @@ from models import m_Base
 
 class m_GSS(m_Base):
     
-    # Model device type
-    deviceType = 'Source'
-    
-    # List of valid Controllers that are compatible with this Model
-    validControllers = ['c_Serial']
-    
-    # List of Valid Vendor Identifier (VID) and Product Identifier (PID) values
-    # that are compatible with this Model
-    validVIDs = ['']
-    validPIDs = ['']
+    info = {
+        # Model revision author
+        'author':               'KKENNEDY',
+        # Model version
+        'version':              '1.0',
+        # Revision date of Model version
+        'date':                 '2015-01-31',
+        # Device Manufacturer
+        'deviceVendor':         'Regatron',
+        # List of compatible device models
+        'deviceModel':          ['GSS'],
+        # Device type    
+        'deviceType':           'Power Supply',      
+        
+        # List of compatible resource types
+        'validResourceTypes':   ['Serial']
+    }
     
     def _onLoad(self):
         self.controller = self.getControllerObject()
