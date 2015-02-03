@@ -535,27 +535,27 @@ class InstrumentControl(object):
             
         return False
     
-    def getValidModels(self, res_uuid):
+    def getValidModels(self, address):
         """
-        Get a list of models that are considered valid for a given Resource
+        Get the list of Models from an InstrumentManager instance
         
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :param PID: Product Identifier
-        :type PID: str
+        :param address: IP Address of manager
+        :type address: str
         
-        :returns: list of tuples (ModuleName, ClassName)
+        :returns: list
         """
-        man,_,_,_,_ = self.resources.get(res_uuid, None)
-        
-        man = self.managers.get(man, None)
-        
-        if man is not None:
-            validModels = man.getValidModels(res_uuid)
-            return validModels
-        
-        else:
-            return []
+        address = self._resolveAddress(address)
+            
+        if address in self.managers:
+            man = self.managers.get(address, None)
+            
+            if man is not None:
+                return man.getModels()
+            
+            else:
+                return []
+            
+        return []
 
     #===========================================================================
     # Instrument Operations
