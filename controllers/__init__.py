@@ -193,6 +193,14 @@ class r_Base(common.rpc.RpcBase):
         # TODO: Resource status
         pass
     
+    def getControllerName(self):
+        """
+        Returns the Resource's Controller class name
+        
+        :returns: str
+        """
+        return self.controller.getControllerName()
+    
     def getPort(self):
         try:
             # Start the RPC server if it isn't already started
@@ -216,7 +224,12 @@ class r_Base(common.rpc.RpcBase):
             }
         
         # Append Model properties if a Model is loaded
-        # TODO
+        if self.model is not None:
+            model_prop = self.model.getProperties()
+            
+            model_prop['modelName'] = self.model.getModelName()
+            
+            res_prop.update(model_prop)
         
         return res_prop
     

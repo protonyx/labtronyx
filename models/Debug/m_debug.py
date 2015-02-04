@@ -24,7 +24,7 @@ class m_debug(models.m_Base):
     }
     
     def _onLoad(self):
-        pass
+        self.instr = self.getResource()
     
     def _onUnload(self):
         pass

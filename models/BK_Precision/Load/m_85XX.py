@@ -37,21 +37,19 @@ class m_85XX(m_Base):
     modes = {"cc":0, "cv":1, "cw":2, "cr":3}
     
     def _onLoad(self):
-        self.controller = self.getControllerObject()
-        self.instr = self.controller.openResourceObject(self.resID)
+        self.instr = self.getResource()
         
         # Configure the COM Port
+        # TODO: Serial Resource need a way to configure serial params
         self.instr.timeout = 0.5
         self.instr.bytesize = 8
         self.instr.parity = 'N'
         self.instr.stopbits = 1
         
-        self.instr.open()
-        
         self.SetRemoteControl()
     
     def _onUnload(self):
-        self.instr.close()
+        pass
         
     def getProperties(self):
         ret = m_Base.getProperties(self)

@@ -154,8 +154,7 @@ class Base_Serial(m_BDPC_Base):
         }
     
     def _onLoad(self):
-        self.controller = self.getControllerObject()
-        self.instr = self.controller.openResourceObject(self.resID)
+        self.instr = self.getResource()
         
         # Configure the COM Port
         self.instr.baudrate = 115200
@@ -164,10 +163,8 @@ class Base_Serial(m_BDPC_Base):
         self.instr.parity = 'E'
         self.instr.stopbits = 1
         
-        self.instr.open()
-        
     def _onUnload(self):
-        self.instr.close()
+        pass
         
     def getProperties(self):
         prop = m_BDPC_Base.getProperties(self)

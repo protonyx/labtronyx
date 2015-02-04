@@ -89,6 +89,14 @@ class r_VISA(controllers.r_Base):
     
     BK Precision has a non-standard format for some of their instruments:
     <Model>,<Firmware>,<Serial>
+    
+    Models derived from a VISA resource do not need to provide values for the
+    following property attributes as they are derived from the identification
+    string:
+        * deviceVendor
+        * deviceModel
+        * deviceSerial
+        * deviceFirmware
     """
     
     type = "VISA"
@@ -101,8 +109,8 @@ class r_VISA(controllers.r_Base):
 
         try:
             self.logger.info("Created VISA Resource: %s", resID)
-            self.instrument = resource_manager.open_resource(resID)
-            self.identity = self.instrument.query("*IDN?").split(',')
+            self.instrument = self.resource_manager.open_resource(resID)
+            self.identity = self.instrument.query("*IDN?").strip().split(',')
             
             if len(self.identity) == 4:
                 self.VID, self.PID, self.serial, self.firmware = self.identity
@@ -126,6 +134,8 @@ class r_VISA(controllers.r_Base):
                 self.firmware = ''
                 self.serial = ''
                 self.logger.error('Unable to identify VISA device: %s', resID)
+            
+            self.loadModel()
             
             
         except visa.VisaIOError as e:
@@ -166,6 +176,20 @@ class r_VISA(controllers.r_Base):
     def query(self, data):
         return self.instrument.query(data)
     
+    def getProperties(self):
+        def_prop = controllers.r_Base.getProperties()
+        
+        VISA_prop = {'deviceVendor':     self.VID,
+                     'deviceModel':      self.PID,
+                     'deviceSerial':     self.serial,
+                     'deviceFirmware':   self.firmware
+                     }
+        
+        def_prop.update(VISA_prop)
+        
+        return def_prop
+                
+    
     #===========================================================================
     # Models
     #===========================================================================
@@ -185,17 +209,21 @@ class r_VISA(controllers.r_Base):
         automatically. This function only needs to be called to
         override the default model. :func:`unloadModel` must be called before
         loading a new model for a resource.
+        
+        :returns: True if successful, False otherwise
         """
         if modelName is None:
+            # Search for a compatible model
             validModels = []
             
             # Iterate through all Models to find compatible Models
             for modelModule, modelInfo in self.model_list.items():
                 try:
-                    if modelInfo.get('validResourceTypes') in ['VISA', 'visa']:
-                        if (self.VID in modelInfo.get('VISA_compatibleManufacturers') and
-                            self.PID in modelInfo.get('VISA_compatibleModels')):
-                            validModels.append(modelModule)
+                    for resType in modelInfo.get('validResourceTypes'):
+                        if resType in ['VISA', 'visa']:
+                            if (self.VID in modelInfo.get('VISA_compatibleManufacturers') and
+                                self.PID in modelInfo.get('VISA_compatibleModels')):
+                                validModels.append(modelModule)
                             
                 except:
                     continue
@@ -203,6 +231,10 @@ class r_VISA(controllers.r_Base):
             # Only auto-load a model if a single model was found
             if len(validModels) == 1:
                 controllers.r_Base.loadModel(validModels[0])
+                
+                return True
+            
+            return False
                 
         else:
             return controllers.r_Base.loadModel(modelName)

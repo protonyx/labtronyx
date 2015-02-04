@@ -25,11 +25,13 @@ class m_Oscilloscope(models.m_Base):
                                 # DPO4XXX Series
                                 
                                 # DPO5XXX Series
-                                "DPO5054", "DPO5054B", "DPO5104", "DPO5104B", "DPO5204", "DPO5204B", "DPO5034", "DPO5034B",
+                                "DPO5054", "DPO5054B", "DPO5104", "DPO5104B", 
+                                "DPO5204", "DPO5204B", "DPO5034", "DPO5034B",
                                 # DPO7XXX Series
                                 "DPO7054C", "DPO7104C", "DPO7254C", "DPO7354C",
                                 # DPO7XXXX Series
-                                "DPO70404C", "DPO70604C", "DPO70804C", "DPO71254C", "DPO71604C", "DPO72004C", 
+                                "DPO70404C", "DPO70604C", "DPO70804C", 
+                                "DPO71254C", "DPO71604C", "DPO72004C", 
                                 "DPO72304DX", "DPO72504DX", "DPO73304DX"],
         # Device type    
         'deviceType':           'Oscilloscope',      
@@ -43,7 +45,15 @@ class m_Oscilloscope(models.m_Base):
         # Compatible VISA Manufacturers
         'VISA_compatibleManufacturers': ['TEKTRONIX', 'Tektronix'],
         # Compatible VISA Models
-        'VISA_compatibleModels':        ['']
+        'VISA_compatibleModels':        [
+                                         "DPO5054", "DPO5054B", "DPO5104", 
+                                         "DPO5104B", "DPO5204", "DPO5204B", 
+                                         "DPO5034", "DPO5034B", "DPO7054C", 
+                                         "DPO7104C", "DPO7254C", "DPO7354C", 
+                                         "DPO70404C", "DPO70604C", "DPO70804C", 
+                                         "DPO71254C", "DPO71604C", "DPO72004C", 
+                                         "DPO72304DX", "DPO72504DX", "DPO73304DX"
+                                         ]
     }
     
     # Device Specific constants
@@ -52,33 +62,14 @@ class m_Oscilloscope(models.m_Base):
     validCursorTypes = ['HBARS', 'VBARS', 'SCREEN', 'WAVEFORM', 'XY']
 
     def _onLoad(self):
-        self.__identity = None
-        self.controller = self.getControllerObject()
-        
-        try:
-            # All Tektronix models use c_VISA
-            self.__instr = self.controller.openResourceObject(self.resID)
-            
-            # Bring VISA Instrument functions into this context
-            self.write = self.__instr.write
-            self.read = self.__instr.read
-            self.read_values = self.__instr.read_values
-            self.read_raw = self.__instr.read_raw
-            self.ask = self.__instr.ask
-            self.ask_for_values = self.__instr.ask_for_values
-            
-            resp = self.ask("*IDN?")
-            self.__identity = resp.strip().split(',')
-            
-        except:
-            self.logger.exception("Internal error while instantiating Tektronix model")
+        self.instr = self.getResource()
         
         # Configure scope
-        self.write('HEADER OFF')
-        resp = str(self.ask('HEADER?')).strip()
+        self.instr.write('HEADER OFF')
+        resp = str(self.instr.query('HEADER?')).strip()
         if resp != '0':
-            time.sleep(2.0)
-            self.write('HEADER OFF')
+            time.sleep(1.0)
+            self.instr.write('HEADER OFF')
             
         self.data = {}
         
@@ -88,31 +79,19 @@ class m_Oscilloscope(models.m_Base):
         except:
             pass
         
-    def getProperties(self):
-        ret = models.m_Base.getProperties(self)
-        ret['deviceVendor'] = 'Tektronix'
-        if self.__identity is not None:
-            ret['deviceModel'] = self.__identity[1]
-            ret['deviceSerial'] = self.__identity[2]
-            ret['deviceFirmware'] = self.__identity[3]
-            
-        return ret
+    def _onUnload(self):
+        pass
         
     def defaultSetup(self):
         """
         Resets the Oscilloscope to the Default Setup
         """
-        self.write("FAC")
+        self.instr.write("FAC")
         
         # TODO: Make this not a static delay
         time.sleep(1.0)
         
-        # Verify headers are off
-        self.write('HEADER OFF')
-        resp = str(self.ask('HEADER?')).strip()
-        if resp != '0':
-            time.sleep(2.0)
-            self.write('HEADER OFF')
+        self._onLoad()
         
     def getEnabledWaveforms(self):
         """
@@ -128,7 +107,7 @@ class m_Oscilloscope(models.m_Base):
         en_ch = []
         
         for ch in m_OscilloscopeBase.validWaveforms:
-            resp = self.ask('SELECT:' + ch + '?')
+            resp = self.instr.query('SELECT:' + ch + '?')
             if int(resp):
                 en_ch.append(ch)
         
@@ -204,52 +183,52 @@ class m_Oscilloscope(models.m_Base):
         
         if 'State' in kwargs:
             if kwargs['State'] == 'SINGLE':
-                self.write("ACQ:STOPAFTER SEQUENCE")
-                self.write("ACQ:STATE 1")
+                self.instr.write("ACQ:STOPAFTER SEQUENCE")
+                self.instr.write("ACQ:STATE 1")
             else:
-                self.write('ACQ:STOPAFTER RUNSTOP')
-                self.write('ACQ:STATE ' + str(kwargs['State']))
+                self.instr.write('ACQ:STOPAFTER RUNSTOP')
+                self.instr.write('ACQ:STATE ' + str(kwargs['State']))
                 
         if 'FastAcq' in kwargs:
-            self.write('FASTACQ:STATE ' + str(kwargs['FastAcq']))
+            self.instr.write('FASTACQ:STATE ' + str(kwargs['FastAcq']))
             
         if 'MagniVu' in kwargs:
-            self.write('ACQ:MAGNIVU ' + str(kwargs['MagniVu']))
+            self.instr.write('ACQ:MAGNIVU ' + str(kwargs['MagniVu']))
         
         if 'Mode' in kwargs:
             
             if kwargs['Mode'] == 'Sample':
-                self.write('ACQ:MODE SAMPLE')
+                self.instr.write('ACQ:MODE SAMPLE')
                 
             elif kwargs['Mode'] == 'PeakDetect':
-                self.write('ACQ:MODE PEAK')
+                self.instr.write('ACQ:MODE PEAK')
                 
             elif kwargs['Mode'] == 'HighResolution':
-                self.write('ACQ:MODE HIRES')
+                self.instr.write('ACQ:MODE HIRES')
                 
             elif kwargs['Mode'] == 'Average':
-                self.write('ACQ:MODE AVERAGE')
+                self.instr.write('ACQ:MODE AVERAGE')
                 if 'Number' in kwargs:
-                    self.write('ACQ:NUMAVG ' + str(kwargs['Number']))
+                    self.instr.write('ACQ:NUMAVG ' + str(kwargs['Number']))
                 
             elif kwargs['Mode'] == 'WaveformDB':
-                self.write('ACQ:MODE WFMDB')
+                self.instr.write('ACQ:MODE WFMDB')
                 
             elif kwargs['Mode'] == 'Envelope':
-                self.write('ACQ:MODE ENV')
+                self.instr.write('ACQ:MODE ENV')
                 if 'Number' in kwargs:
-                    self.write('ACQ:NUMENV ' + str(kwargs['Number']))
+                    self.instr.write('ACQ:NUMENV ' + str(kwargs['Number']))
                 
         if 'RollMode' in kwargs:
-            self.write('HOR:ROLL ' + str(kwargs['RollMode']))
+            self.instr.write('HOR:ROLL ' + str(kwargs['RollMode']))
         
         if 'SamplingMode' in kwargs:
             if kwargs['SamplingMode'] == 'RealTime':
-                self.write('ACQ::SAMPLINGMODE RT')
+                self.instr.write('ACQ::SAMPLINGMODE RT')
             elif kwargs['SamplingMode'] == 'Equivalent':
-                self.write('ACQ::SAMPLINGMODE ET')
+                self.instr.write('ACQ::SAMPLINGMODE ET')
             elif kwargs['SamplingMode'] == 'Interpolate':
-                self.write('ACQ::SAMPLINGMODE IT')
+                self.instr.write('ACQ::SAMPLINGMODE IT')
                 
     def setCursorSetup(self, **kwargs):
         """
@@ -285,51 +264,51 @@ class m_Oscilloscope(models.m_Base):
         """
         if 'Type' in kwargs and kwargs['Type'] in m_OscilloscopeBase.validCursorTypes:
             if 'Display' in kwargs:
-                self.write('CURS:STATE ' + str(kwargs['Display']))
+                self.instr.write('CURS:STATE ' + str(kwargs['Display']))
             if 'Mode' in kwargs:
-                self.write('CURS:MODE ' + str(kwargs['Mode']))
+                self.instr.write('CURS:MODE ' + str(kwargs['Mode']))
             if 'Type' in kwargs:
-                self.write('CURS:FUNC ' + str(kwargs['Type']))
+                self.instr.write('CURS:FUNC ' + str(kwargs['Type']))
             if 'LineStyle' in kwargs:
-                self.write('CURS:LINESTYLE ' + str(kwargs['LineStyle']))
+                self.instr.write('CURS:LINESTYLE ' + str(kwargs['LineStyle']))
             if 'Source1' in kwargs and kwargs['Source1'] in m_OscilloscopeBase.validWaveforms:
-                self.write('CURS:SOURCE1 ' + kwargs['Source1'])
+                self.instr.write('CURS:SOURCE1 ' + kwargs['Source1'])
             if 'Source2' in kwargs and kwargs['Source2'] in m_OscilloscopeBase.validWaveforms:
-                self.write('CURS:SOURCE2 ' + kwargs['Source2'])
+                self.instr.write('CURS:SOURCE2 ' + kwargs['Source2'])
                     
             # Cursor Types
             # Horizontal Bars
             if kwargs['Type'] == 'HBARS':  
                 if 'Pos1' in kwargs:
-                    self.write('CURS:HBARS:POS1 ' + str(float(kwargs['Pos1'])))
+                    self.instr.write('CURS:HBARS:POS1 ' + str(float(kwargs['Pos1'])))
                 if 'Pos2' in kwargs:
-                    self.write('CURS:HBARS:POS2 ' + str(float(kwargs['Pos2'])))   
+                    self.instr.write('CURS:HBARS:POS2 ' + str(float(kwargs['Pos2'])))   
             # Vertical Bars
             elif kwargs['Type'] == 'VBARS':
                 if 'Pos1' in kwargs:
-                    self.write('CURS:VBARS:POS1 ' + str(float(kwargs['Pos1'])))
+                    self.instr.write('CURS:VBARS:POS1 ' + str(float(kwargs['Pos1'])))
                 if 'Pos2' in kwargs:
-                    self.write('CURS:VBARS:POS2 ' + str(float(kwargs['Pos2']))) 
+                    self.instr.write('CURS:VBARS:POS2 ' + str(float(kwargs['Pos2']))) 
             # Screen
             elif kwargs['Type'] == 'SCREEN':
                 if 'X1' in kwargs:
-                    self.write('CURS:SCREEN:XPOSITION1 ' + str(float(kwargs['X1'])))
+                    self.instr.write('CURS:SCREEN:XPOSITION1 ' + str(float(kwargs['X1'])))
                 if 'X2' in kwargs:
-                    self.write('CURS:SCREEN:XPOSITION2 ' + str(float(kwargs['X2']))) 
+                    self.instr.write('CURS:SCREEN:XPOSITION2 ' + str(float(kwargs['X2']))) 
                 if 'Y1' in kwargs:
-                    self.write('CURS:SCREEN:YPOSITION1 ' + str(float(kwargs['Y1'])))
+                    self.instr.write('CURS:SCREEN:YPOSITION1 ' + str(float(kwargs['Y1'])))
                 if 'Y2' in kwargs:
-                    self.write('CURS:SCREEN:YPOSITION2 ' + str(float(kwargs['Y2']))) 
+                    self.instr.write('CURS:SCREEN:YPOSITION2 ' + str(float(kwargs['Y2']))) 
                 if 'Style' in kwargs:
-                    self.write('CURS:SCREEN:STYLE ' + str(float(kwargs['Style'])))
+                    self.instr.write('CURS:SCREEN:STYLE ' + str(float(kwargs['Style'])))
             # Waveform
             elif kwargs['Type'] == 'WAVEFORM':
                 if 'Pos1' in kwargs:
-                    self.write('CURS:WAVE:POS1 ' + str(float(kwargs['Pos1'])))
+                    self.instr.write('CURS:WAVE:POS1 ' + str(float(kwargs['Pos1'])))
                 if 'Pos2' in kwargs:
-                    self.write('CURS:WAVE:POS2 ' + str(float(kwargs['Pos2'])))   
+                    self.instr.write('CURS:WAVE:POS2 ' + str(float(kwargs['Pos2'])))   
                 if 'Style' in kwargs:
-                    self.write('CURS:WAVEFORM:STYLE ' + str(float(kwargs['Style'])))
+                    self.instr.write('CURS:WAVEFORM:STYLE ' + str(float(kwargs['Style'])))
             elif kwargs['Type'] == 'XY':
                 # TODO
                 pass
@@ -357,13 +336,13 @@ class m_Oscilloscope(models.m_Base):
         :type Position: int between 0-100
         """
         if 'Mode' in kwargs:
-            self.write('HOR:MODE ' + kwargs['Mode'])
+            self.instr.write('HOR:MODE ' + kwargs['Mode'])
         if 'SampleRate' in kwargs:
-            self.write('HOR:MODE:SAMPLERATE ' + str(float(kwargs['SampleRate'])))
+            self.instr.write('HOR:MODE:SAMPLERATE ' + str(float(kwargs['SampleRate'])))
         if 'Scale' in kwargs:
-            self.write('HOR:MODE:SCALE ' + str(float(kwargs['Scale'])))
+            self.instr.write('HOR:MODE:SCALE ' + str(float(kwargs['Scale'])))
         if 'Position' in kwargs:
-            self.write('HOR:POS ' + str(float(kwargs['Position'])))
+            self.instr.write('HOR:POS ' + str(float(kwargs['Position'])))
         # TODO: Implement:
         # Units
         # Delay
@@ -400,19 +379,19 @@ class m_Oscilloscope(models.m_Base):
                 ch = kwargs['Waveform']
                 
                 if 'Display' in kwargs:
-                    self.write('SELECT:' + ch + ' ' + kwargs['Display'])
+                    self.instr.write('SELECT:' + ch + ' ' + kwargs['Display'])
                 if 'Label' in kwargs:
-                    self.write(ch + ':LABEL:NAME ' + '"' + kwargs['Label'] + '"')
+                    self.instr.write(ch + ':LABEL:NAME ' + '"' + kwargs['Label'] + '"')
                 if 'Position' in kwargs:
-                    self.write(ch + ':POS ' + str(float(kwargs['Position'])))
+                    self.instr.write(ch + ':POS ' + str(float(kwargs['Position'])))
                 if 'Scale' in kwargs:
-                    self.write(ch + ':SCALE ' + str(float(kwargs['Scale'])))
+                    self.instr.write(ch + ':SCALE ' + str(float(kwargs['Scale'])))
                 if 'Coupling' in kwargs:
-                    self.write(ch + ':COUP ' + str(kwargs['Coupling']))
+                    self.instr.write(ch + ':COUP ' + str(kwargs['Coupling']))
                 if 'Deskew' in kwargs:
-                    self.write(ch + ':DESKEW ' + str(kwargs['Deskew']))
+                    self.instr.write(ch + ':DESKEW ' + str(kwargs['Deskew']))
                 if 'Bandwidth' in kwargs:
-                    self.write(ch + ':BAND ' + str(kwargs['Bandwidth']))
+                    self.instr.write(ch + ':BAND ' + str(kwargs['Bandwidth']))
             
             # Reference Config
             if kwargs['Waveform'][0:3] == 'REF':
@@ -437,11 +416,11 @@ class m_Oscilloscope(models.m_Base):
         output = {}
         
         if 'Channel' in kwargs and kwargs['Channel'] in m_OscilloscopeBase.validWaveforms:
-            output['Type'] = self.ask(kwargs['Channel'] + ':PROBE:ID:TYPE?')
-            output['Serial'] = self.ask(kwargs['Channel'] + ':PROBE:ID:SER?')
-            output['Range'] = self.ask(kwargs['Channel'] + ':PROBE:RANGE?')
-            output['Resistance'] = self.ask(kwargs['Channel'] + ':PROBE:RES?')
-            output['Units'] = self.ask(kwargs['Channel'] + ':PROBE:UNITS?')
+            output['Type'] = self.instr.query(kwargs['Channel'] + ':PROBE:ID:TYPE?')
+            output['Serial'] = self.instr.query(kwargs['Channel'] + ':PROBE:ID:SER?')
+            output['Range'] = self.instr.query(kwargs['Channel'] + ':PROBE:RANGE?')
+            output['Resistance'] = self.instr.query(kwargs['Channel'] + ':PROBE:RES?')
+            output['Units'] = self.instr.query(kwargs['Channel'] + ':PROBE:UNITS?')
             
         return output
             
@@ -465,11 +444,11 @@ class m_Oscilloscope(models.m_Base):
         if 'Type' in kwargs and kwargs['Type'] in m_OscilloscopeBase.validTriggerTypes:
             if kwargs['Type'] == 'EDGE':
                 if 'Source' in kwargs and kwargs['Source'] in m_OscilloscopeBase.validWaveforms:
-                    self.write('TRIG:A:EDGE:SOURCE ' + kwargs['Source'])
+                    self.instr.write('TRIG:A:EDGE:SOURCE ' + kwargs['Source'])
                 if 'Slope' in kwargs:
-                    self.write('TRIG:A:EDGE:SLOPE ' + kwargs['Slope'])
+                    self.instr.write('TRIG:A:EDGE:SLOPE ' + kwargs['Slope'])
                 if 'Level' in kwargs:
-                    self.write('TRIG:A:LEVEL:' + kwargs['Source'] + ' ' + str(kwargs['Level']))
+                    self.instr.write('TRIG:A:LEVEL:' + kwargs['Source'] + ' ' + str(kwargs['Level']))
         
                     
     def setSearchSetup(self, **kwargs):
@@ -503,27 +482,27 @@ class m_Oscilloscope(models.m_Base):
         if 'Search' in kwargs and int(kwargs['Search']) in range(1,8):
             if 'Type' in kwargs and kwargs['Type'] in m_OscilloscopeBase.validTriggerTypes:
                 if 'Enable' in kwargs:
-                    self.write('SEARCH:SEARCH' + str(kwargs['Search']) + ':STATE ' + kwargs['Enable'])
+                    self.instr.write('SEARCH:SEARCH' + str(kwargs['Search']) + ':STATE ' + kwargs['Enable'])
                     # TODO: Is this the right place for this?
-                    self.write("SEARCH:MARKALL ON")
+                    self.instr.write("SEARCH:MARKALL ON")
                 
-                self.write('SEARCH:SEARCH' + str(kwargs['Search']) + ':TRIG:A:TYPE ' + kwargs['Type'])
+                self.instr.write('SEARCH:SEARCH' + str(kwargs['Search']) + ':TRIG:A:TYPE ' + kwargs['Type'])
                 
                 # Trigger Types
                 # Transition
                 if kwargs['Type'] == 'TRANSITION':
                     if 'Source' in kwargs and kwargs['Source'] in m_OscilloscopeBase.validWaveforms:
-                        self.write('SEARCH:SEARCH' + str(kwargs['Search']) + ':TRIG:A:PULSE:SOURCE ' + str(kwargs['Source']))
+                        self.instr.write('SEARCH:SEARCH' + str(kwargs['Search']) + ':TRIG:A:PULSE:SOURCE ' + str(kwargs['Source']))
                     if 'Delta' in kwargs:
-                        self.write('SEARCH:SEARCH' + str(kwargs['Search']) + ':TRIG:A:TRAN:DELTATIME ' + str(kwargs['Delta']))
+                        self.instr.write('SEARCH:SEARCH' + str(kwargs['Search']) + ':TRIG:A:TRAN:DELTATIME ' + str(kwargs['Delta']))
                     if 'HighThreshold' in kwargs:
-                        self.write('SEARCH:SEARCH' + str(kwargs['Search']) + ':TRIG:A:TRAN:THR:HIGH:' + str(kwargs['Source']) + ' ' + str(kwargs['HighThreshold']))
+                        self.instr.write('SEARCH:SEARCH' + str(kwargs['Search']) + ':TRIG:A:TRAN:THR:HIGH:' + str(kwargs['Source']) + ' ' + str(kwargs['HighThreshold']))
                     if 'LowThreshold' in kwargs:
-                        self.write('SEARCH:SEARCH' + str(kwargs['Search']) + ':TRIG:A:TRAN:THR:LOW:' + str(kwargs['Source']) + ' ' + str(kwargs['LowThreshold']))
+                        self.instr.write('SEARCH:SEARCH' + str(kwargs['Search']) + ':TRIG:A:TRAN:THR:LOW:' + str(kwargs['Source']) + ' ' + str(kwargs['LowThreshold']))
                     if 'Slope' in kwargs:
-                        self.write('SEARCH:SEARCH' + str(kwargs['Search']) + ':TRIG:A:TRAN:POL:' + str(kwargs['Source']) + ' ' + str(kwargs['Slope']))
+                        self.instr.write('SEARCH:SEARCH' + str(kwargs['Search']) + ':TRIG:A:TRAN:POL:' + str(kwargs['Source']) + ' ' + str(kwargs['Slope']))
                     if 'Transition' in kwargs:
-                        self.write('SEARCH:SEARCH' + str(kwargs['Search']) + ':TRIG:A:TRAN:WHEN ' + str(kwargs['Transition']))
+                        self.instr.write('SEARCH:SEARCH' + str(kwargs['Search']) + ':TRIG:A:TRAN:WHEN ' + str(kwargs['Transition']))
                 
             else:
                 self.logger.error('Must specify valid Search Type')
@@ -558,11 +537,11 @@ class m_Oscilloscope(models.m_Base):
             if 'Search' in kwargs and int(kwargs['Search']) in range(1,8):
                 self.logger.debug('Looking for matches')
                 
-                matches = int(self.ask('SEARCH:SEARCH' + str(int(kwargs['Search'])) + ':TOTAL?'))
-                total_marks = int(self.ask("MARK:TOTAL?"))
+                matches = int(self.instr.query('SEARCH:SEARCH' + str(int(kwargs['Search'])) + ':TOTAL?'))
+                total_marks = int(self.instr.query("MARK:TOTAL?"))
                 
-                hor_scale = float(self.ask('HOR:MODE:SCALE?'))
-                hor_pos = float(self.ask('HOR:POS?'))
+                hor_scale = float(self.instr.query('HOR:MODE:SCALE?'))
+                hor_pos = float(self.instr.query('HOR:POS?'))
                 
                 all_marks = []
                 search_marks = []
@@ -570,16 +549,16 @@ class m_Oscilloscope(models.m_Base):
                 if matches > 0:
                     self.logger.debug("Expecting %i marks", matches)
                     # Convert the search marks to user marks
-                    self.write('SEARCH:SEARCH' + str(kwargs['Search']))
+                    self.instr.write('SEARCH:SEARCH' + str(kwargs['Search']))
                     
                     # Seek Forward
                     for dir in ['NEXT', 'PREV']:
                         for i in range(1,total_marks+1):
                             if  len(search_marks) < matches:
-                                mark_start = float(str(self.ask('MARK:SELECTED:START?')).strip())
+                                mark_start = float(str(self.instr.query('MARK:SELECTED:START?')).strip())
                                 
                                 if mark_start not in all_marks:
-                                    mark_owner = str(self.ask('MARK:SELECTED:OWNER?')).strip()
+                                    mark_owner = str(self.instr.query('MARK:SELECTED:OWNER?')).strip()
                                     seek_owner = 'SEARCH' + str(kwargs['Search'])
                                     if mark_owner == seek_owner:
                                         # Convert from percentage to time
@@ -591,12 +570,12 @@ class m_Oscilloscope(models.m_Base):
                                 all_marks.append(mark_start)
                                 
                                 self.logger.debug("Mark Seek " + dir)
-                                self.write('MARK ' + dir)
+                                self.instr.write('MARK ' + dir)
                                 
                                 time.sleep(1.0)
                                 
                         # Exit out of zoom mode
-                        self.write("ZOOM:MODE OFF")
+                        self.instr.write("ZOOM:MODE OFF")
                         
                         time.sleep(1.0)
                 else:
@@ -625,7 +604,7 @@ class m_Oscilloscope(models.m_Base):
         
         :returns: bool - True if Busy, False if not Busy
         """
-        if int(self.ask('BUSY?')):
+        if int(self.instr.query('BUSY?')):
             self.logger.debug('Instrument is busy')
             return True
         else:
@@ -679,11 +658,11 @@ class m_Oscilloscope(models.m_Base):
         enabledWaveforms = self.getEnabledWaveforms()
         
         # Get time and trigger data
-        x_scale = float(self.ask("WFMOUTPRE:XINCR?"))
-        hor_scale = float(self.ask("HOR:MODE:SCALE?"))
-        sample_rate = float(self.ask("HOR:MODE:SAMPLERATE?"))
+        x_scale = float(self.instr.query("WFMOUTPRE:XINCR?"))
+        hor_scale = float(self.instr.query("HOR:MODE:SCALE?"))
+        sample_rate = float(self.instr.query("HOR:MODE:SAMPLERATE?"))
         samples = int(sample_rate * hor_scale * 10)
-        trigger_sample = int(self.ask("WFMOUTPRE:PT_OFF?"))
+        trigger_sample = int(self.instr.query("WFMOUTPRE:PT_OFF?"))
         
         self.data['Time'] = numpy.arange(-1 * trigger_sample, samples - trigger_sample) * x_scale
         
@@ -694,23 +673,23 @@ class m_Oscilloscope(models.m_Base):
         self.logger.info("Expecting %i samples", samples)
         
         for ch in enabledWaveforms:
-            self.write("DATA:SOURCE %s" % ch)
-            self.write("DATA:ENC SRP")
-            self.write("DATA:START 1")
-            self.write("DATA:STOP %i" % samples)
+            self.instr.write("DATA:SOURCE %s" % ch)
+            self.instr.write("DATA:ENC SRP")
+            self.instr.write("DATA:START 1")
+            self.instr.write("DATA:STOP %i" % samples)
             
             # Get scale factors for each channel
-            y_scale = float(self.ask("WFMOUTPRE:YMULT?"))
-            y_zero = float(self.ask("WFMOUTPRE:YZERO?"))
-            y_offset = float(self.ask("WFMOUTPRE:YOFF?"))
+            y_scale = float(self.instr.query("WFMOUTPRE:YMULT?"))
+            y_zero = float(self.instr.query("WFMOUTPRE:YZERO?"))
+            y_offset = float(self.instr.query("WFMOUTPRE:YOFF?"))
             
             # Get the number of bytes per data point
-            data_width = int(self.ask("WFMOUTPRE:BYT_NR?"))
+            data_width = int(self.instr.query("WFMOUTPRE:BYT_NR?"))
             
             # Collect and process data
             self.logger.info("Processing Data for %s....", ch)
-            self.write("CURVE?")
-            data_raw = self.read_raw()
+            self.instr.write("CURVE?")
+            data_raw = self.instr.read_raw()
             
             headerlen = 2 + int(data_raw[1])
             header = data_raw[:headerlen]
@@ -824,18 +803,18 @@ class m_Oscilloscope(models.m_Base):
         if 'Filename' in kwargs and 'Format' in kwargs:
             
             temp_filename = kwargs['Filename'] + '.' + kwargs['Format']
-            self.write("EXPORT:FILENAME " + '"' + temp_filename + '"')
-            self.write("EXPORT:FORMAT " + kwargs['Format'])
+            self.instr.write("EXPORT:FILENAME " + '"' + temp_filename + '"')
+            self.instr.write("EXPORT:FORMAT " + kwargs['Format'])
             
             if 'Palette' in kwargs:
-                self.write("EXPORT:PALETTE " + kwargs['Palette'])
+                self.instr.write("EXPORT:PALETTE " + kwargs['Palette'])
                 
-            self.write("EXPORT START")
+            self.instr.write("EXPORT START")
             
             # TODO: Make this not a static delay
             time.sleep(2.0)
             
-            remote_filename = self.ask("EXPORT:FILENAME?")
+            remote_filename = self.instr.query("EXPORT:FILENAME?")
             self.logger.debug('Saved remote screenshot at %s', remote_filename)
             
             return remote_filename
@@ -847,11 +826,11 @@ class m_Oscilloscope(models.m_Base):
         """
         Lock the oscilloscope
         """
-        self.write('LOCK ALL')
+        self.instr.write('LOCK ALL')
         
     def unlock(self):
         """
         Unlock the oscilloscope
         """
-        self.write('UNLOCK ALL')
+        self.instr.write('UNLOCK ALL')
     

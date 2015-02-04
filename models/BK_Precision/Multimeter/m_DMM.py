@@ -32,36 +32,13 @@ class m_DMM(models.m_Base):
     }
     
     def _onLoad(self):
-        self._identity = None
-        self.controller = self.getControllerObject()
-        
-        try:
-            # Use c_VISA
-            self.__instr = self.controller.openResourceObject(self.resID)
-            
-            resp = self.__instr.ask("*IDN?")
-            self._identity = resp.strip().split(',')
-
-            self.func = self.getFunction
-            
-        except:
-            self.logger.exception("Internal error while attaching to VISA instrument")
+        self.instr = self.getResource()
     
     def _onUnload(self):
         pass
     
-    def getProperties(self):
-        ret = models.m_Base.getProperties(self)
-        
-        if self._identity is not None:
-            ret['deviceModel'] = self.__identity[0]
-            ret['deviceSerial'] = self._identity[2]
-            ret['deviceFirmware'] = self._identity[1]
-            
-        return ret
-    
     def _BK_ask(self, command):
-        resp = str(self.__instr.ask(command))
+        resp = str(self.instr.ask(command))
         self.logger.debug(resp)
         
         # Check that the SCPI header was not retuned
@@ -73,7 +50,7 @@ class m_DMM(models.m_Base):
         return resp
     
     def reset(self):
-        self.__instr.write("*RST")
+        self.instr.write("*RST")
         
     def getError(self):
         resp = self._BK_ask(":SYST:ERR?")
@@ -84,7 +61,7 @@ class m_DMM(models.m_Base):
 
     def setFunction(self, func):
         self.func = func
-        self.__instr.write(":FUNC %s" % self.func)
+        self.instr.write(":FUNC %s" % self.func)
     
     def setFunction_DC_Voltage(self):
         self.setFunction("VOLT:DC")
@@ -121,18 +98,18 @@ class m_DMM(models.m_Base):
     def setRange_Manual(self):
         cmd = self.func + ":RANG:AUTO OFF"
         self.logger.debug(cmd)
-        self.__instr.write(cmd)
+        self.instr.write(cmd)
         
     def setRange_Auto(self):
         cmd = self.func + ":RANG:AUTO ON"
         self.logger.debug(cmd)
-        self.__instr.write(cmd)
+        self.instr.write(cmd)
 
     def setRange(self, new_range):
         cmd = self.func + ":RANG " + str(new_range)
         
         self.logger.debug(cmd)
-        self.__instr.write(cmd)
+        self.instr.write(cmd)
         
     def getMeasurement(self):
         # Attempt three times to get a measurement

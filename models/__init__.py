@@ -17,26 +17,19 @@ class m_Base(object):
     
     info = {}
     
-    # Collector Attributes
-    _collector_thread = None
-    _collector_lock = threading.Lock()
-    _collectors = {}
-    _collector_methods = {}
-    
-    def __init__(self, uuid, controller, resID, **kwargs):
+    def __init__(self, resource):
         
         common_globals = common.ICF_Common()
         self.config = common_globals.getConfig()
         self.logger = common_globals.getLogger()
         
-        self.uuid = uuid
-        self.resID = resID
+        self.__resource = resource
         
-        # Controller Object
-        self._controller_object = controller
-        
-        # Check for logger
-        self.logger = kwargs.get('Logger', logging)
+        # Collector Attributes
+        self._collector_thread = None
+        self._collector_lock = threading.Lock()
+        self._collectors = {}
+        self._collector_methods = {}
         
     #===========================================================================
     # Collector Functionality
@@ -174,43 +167,16 @@ class m_Base(object):
         #fqn_split = fqn.split('.')
         #return '.'.join(fqn_split[0:-1])
     
-    def getUUID(self):
+    def getResource(self):
         """
-        Returns the Resource UUID that is provided to the Model
-        
-        :returns: str
-        """
-        return self.uuid
-    
-    def getControllerObject(self):
-        """
-        Returns the Model's Controller object
+        Returns the resource object for interacting with the physical instrument
         
         :returns: object
         """
-        return self._controller_object
-    
-    def getControllerName(self):
-        """
-        Returns the Model's Controller class name
-        
-        :returns: str
-        """
-        return self._controller_object.getControllerName()
-    
-    def getResourceID(self):
-        """
-        Returns the Model Resource ID that identifies the resource to the
-        Controller
-        
-        :returns: str
-        """
-        return self.resID
+        return self.__resource
     
     def getProperties(self):
         return { 
-            'modelName':        self.getModelName(),
-            'controllerName':   self.getControllerName(),
             'deviceType':       self.info.get('deviceType'),
             'deviceVendor':     self.info.get('deviceVendor'),
             'deviceModel':      '',

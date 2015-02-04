@@ -44,43 +44,20 @@ class m_3441XA(models.m_Base):
         'DC Voltage': 'VOLT:DC'}
     
     def _onLoad(self):
-        self._identity = None
-        self.controller = self.getControllerObject()
-        
-        try:
-            # Use c_VISA
-            self.__instr = self.controller.openResourceObject(self.resID)
-            
-            resp = self.__instr.ask("*IDN?")
-            self.__identity = resp.strip().split(',')
-            
-        except:
-            self.logger.exception("Internal error while attaching to VISA instrument")
+        self.instr = self.getResource()
     
     def _onUnload(self):
         pass
     
-    def getProperties(self):
-        ret = models.m_Base.getProperties(self)
-        
-        ret['deviceVendor'] = 'Agilent'
-        
-        if self.__identity is not None:
-            ret['deviceModel'] = self.__identity[1]
-            ret['deviceSerial'] = self.__identity[2]
-            ret['deviceFirmware'] = self.__identity[3]
-            
-        return ret
-    
     def reset(self):
-        self.__instr.write("*RST")
+        self.instr.write("*RST")
 
     def getFunction(self):
-        return self.__instr.ask("CONF?")
+        return self.instr.ask("CONF?")
 
     def setFunction(self, func):
         self.func = func
-        self.__instr.write("CONF:%s" % self.func)
+        self.instr.write("CONF:%s" % self.func)
     
     def setFunction_DC_Voltage(self):
         self.setFunction("VOLT:DC")
@@ -111,17 +88,17 @@ class m_3441XA(models.m_Base):
 
     def setRange(self, new_range):
         # Set to autorange no matter what is passed
-        self.__instr.write('SENS:VOLT:DC:RANGE:AUTO ON')
+        self.instr.write('SENS:VOLT:DC:RANGE:AUTO ON')
     
     def getMeasurement(self):
         # Attempt three times to get a measurement
         for x in range(3):
             try:
                 # Initiate a measurement
-                self.__instr.write("INIT")
+                self.instr.write("INIT")
                 time.sleep(0.1)
                 
-                meas_raw = self.__instr.ask("FETC?")
+                meas_raw = self.instr.ask("FETC?")
                 measure = float(meas_raw)
                 
                 return measure

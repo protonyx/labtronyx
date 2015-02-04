@@ -38,8 +38,7 @@ class m_BMS(models.m_Base):
         }
     
     def _onLoad(self):
-        self.controller = self.getControllerObject()
-        self.instr = self.controller.openResourceObject(self.resID)
+        self.instr = self.getResource()
         
         # Configure the COM Port
         self.instr.baudrate = 1500000
@@ -48,18 +47,16 @@ class m_BMS(models.m_Base):
         self.instr.parity = 'N'
         self.instr.stopbits = 1
         
-        self.instr.open()
-        
         self.status = 0
     
     def _onUnload(self):
-        self.instr.close()
+        pass
     
     def getProperties(self):
         prop = models.m_Base.getProperties(self)
 		
-	prop['deviceVendor'] = 'UPEL'
-	prop['deviceModel'] = 'AMPED BMS'
+    	prop['deviceVendor'] = 'UPEL'
+    	prop['deviceModel'] = 'AMPED BMS'
         
         # Add any additional properties here
         return prop
