@@ -220,13 +220,7 @@ class Rpc_Request(object):
         return out
         
     def call(self, target, *pos_args, **kw_args):
-        # Parse method        
 
-        if hasattr(target, self.method):
-            self.method = getattr(target, self.method)
-        else:
-            return Rpc_Response(id=self.id, error=Rpc_MethodNotFound())
-            
         # Parse params
         self.params_pos = list(pos_args)
         self.params_named = kw_args
@@ -251,7 +245,7 @@ class Rpc_Request(object):
             
         # Invoke method
         try:
-            ret = self.method(*self.params_pos, **self.params_named)
+            ret = target(*self.params_pos, **self.params_named)
             # Build the response with the results
             if self.id != None:
                 # Only send a result of a notification if an error occurred
