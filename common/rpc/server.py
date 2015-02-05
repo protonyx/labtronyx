@@ -7,17 +7,17 @@ from datetime import datetime
 
 from jsonrpc import *
 
-class RpcServer(threading.Thread):
+class RpcServer(object):
     """
     Flexible RPC server that runs in a Python thread. Wraps any Python object
     and allows remote machines to call functions and receive returned data.
     
     :param logger: Logger instance if you wish to override the internal instance
     :type logger: Logging.logger
-    :param target: Target object
-    :type target: object
     :param port: Port to attach socket to
     :type port: int 
+    :param name: Internal name for the RPC server thread
+    :type name: str
     
     .. note::
 
@@ -36,43 +36,28 @@ class RpcServer(threading.Thread):
     # Exclusive access times out after 60 seconds
     EXCLUSIVE_TIMEOUT = 60.0
     
+    _identity = 'JSON-RPC/2.0'
+    
     def __init__(self, **kwargs):
-        threading.Thread.__init__(self)
-        
-        self.alive = threading.Event()
-        self.rpc_lock = threading.Lock()
-        
-        if 'logger' in kwargs:
-            self.logger = kwargs.get('logger')
-        else:
-            self.logger = logging
-        
-        if 'target' in kwargs:
-            self.target = kwargs['target']
-            self.name = 'RPC-Server-' + self.target.__class__.__name__
-        else:
-            raise RuntimeError('RPC Server must be provided a target object')
-
+        self.logger = kwargs.get('logger', logging)
         self.port = kwargs.get('port', 0)
+        self.name = kwargs.get('name', 'RPCServer')
             
         # RPC State Variables
+        self.rpc_objects = []
         self.rpc_connections = []
         self.rpc_exclusive = None
         self.rpc_exclusiveTime = None
         
-        self._identity = 'JSON-RPC/2.0'
+        self.e_alive = threading.Event()
+        self.rpc_lock = threading.Lock()
         
-    def run(self):
-        # Catalog methods
-        self.validMethods = []
-        target_members = inspect.getmembers(self)
+        self.e_alive.set()
+            
+        self.__rpc_thread = threading.Thread(name=self.name, target=self.__thread_run)
+        self.__rpc_thread.start()
         
-        for member in target_members:
-            if inspect.ismethod(member[1]) and member[0][0] != '_':
-                self.validMethods.append(member[0])
-                
-        self.logger.info('Starting RPC Server...')
-                
+    def __thread_run(self):
         # Start socket
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # TODO: Bind on each interface
@@ -82,13 +67,12 @@ class RpcServer(threading.Thread):
         
         self.port = self.socket.getsockname()[1]
         
-        self.logger.debug('[%s] listening on port %i', self.name, self.port)
+        self.logger.debug('[%s] RPC Server started on port %i', self.name, self.port)
         self.logger.debug("[%s] Hostname: %s", self.name, socket.gethostname())
             
         self.rpc_startTime = datetime.now()
-        self.alive.set()
 
-        while self.alive.isSet():
+        while self.e_alive.isSet():
             # Service Socket
             try:
                 ready_to_read,_,_ = select.select([self.socket], [], [], 1.0)
@@ -99,7 +83,7 @@ class RpcServer(threading.Thread):
                     
                     # Spawn a new thread to service the connection
                     connThread = RpcConnection(server=self,
-                                               target=self.target,
+                                               target=self.rpc_objects,
                                                socket=connection,
                                                logger=self.logger)
                         
@@ -115,8 +99,42 @@ class RpcServer(threading.Thread):
                 
         self.socket.close()
         
-        if hasattr(self, 'logger'):
-            self.logger.debug('[%s] RPC Server thread stopped', self.name)
+        self.logger.debug('[%s] RPC Server stopped', self.name)
+            
+    #===========================================================================
+    # Server Management
+    #===========================================================================
+            
+    def getName(self):
+        return self.name
+    
+    def registerObject(self, reg_obj):
+        self.rpc_objects.append(reg_obj)
+    
+    def unregisterObject(self, reg_obj):
+        self.rpc_objects.remove(reg_obj)
+    
+    #===========================================================================
+    # RPC Functions
+    #===========================================================================
+    
+    def rpc_getMethods(self, address=None):
+        """
+        Get a list of valid methods in the target object. Protected methods
+        that begin with an underscore ('_') are not included.
+        
+        :returns: list of strings
+        """
+        # Catalog methods
+        self.validMethods = []
+        for reg_obj in self.rpc_objects:
+            target_members = inspect.getmembers(reg_obj)
+            
+            for member in target_members:
+                if inspect.ismethod(member[1]) and member[0][0] != '_':
+                    self.validMethods.append(member[0])
+                
+        return self.validMethods
             
     def rpc_isRunning(self, address=None):
         """
@@ -124,11 +142,7 @@ class RpcServer(threading.Thread):
         
         :returns: bool - True if running, False if not running
         """
-        if isinstance(self.rpc_thread, RpcServer):
-            return self.rpc_thread.alive.is_set()
-        
-        else:
-            return False
+        return self.e_alive.is_set()
             
     def rpc_stop(self, connection=None):
         """
@@ -139,10 +153,8 @@ class RpcServer(threading.Thread):
             This operation may take a small amount of time for the socket to
             register the stop request.
         """
-        self.alive.clear()
-        
-        for conn in self.rpc_connections:
-            conn.stop()
+        self.e_alive.clear()
+        self.__rpc_thread.join()
 
     def rpc_uptime(self, connection=None):
         """
@@ -189,14 +201,9 @@ class RpcServer(threading.Thread):
         """
         return len(self.rpc_connections)
     
-    def rpc_getMethods(self, address=None):
-        """
-        Get a list of valid methods in the target object. Protected methods
-        that begin with an underscore ('_') are not included.
-        
-        :returns: list of strings
-        """
-        return self.validMethods
+    #===========================================================================
+    # RPC Connection Locking
+    #===========================================================================
     
     def rpc_hasAccess(self, address):
         """
@@ -277,27 +284,21 @@ class RpcConnection(threading.Thread):
     """
     RPC_MAX_PACKET_SIZE = 1048576 # 1MB
     
-    def __init__(self, **kwargs):
+    def __init__(self, server, target, socket, **kwargs):
         threading.Thread.__init__(self)
         
-        self.server = kwargs.get('server')
-        self.target = kwargs.get('target')
-        self.socket = kwargs.get('socket')
-        
-        if 'logger' in kwargs:
-            self.logger = kwargs.get('logger')
-        else:
-            self.logger = logging
+        self.server = server
+        self.target = target
+        self.socket = socket
+        self.logger = kwargs.get('logger', logging)
         
         self.address, _ = self.socket.getnameinfo()
-        
-        
         
         self.lock = self.server.rpc_lock
         #self.name = self.parent.name
         
         # Give the thread a meaningful name
-        self.name = 'RPC-%s-%s' % (self.target.__class__.__name__, self.address)
+        self.name = '%s-%s' % (self.server.getName(), self.address)
         
         # Hardcode JSON RPC for now
         self.rpc_decode = Rpc_decode
@@ -330,46 +331,10 @@ class RpcConnection(threading.Thread):
                     
                     if type(request) == list and len(request) > 0:
                         # Iterate through each request, verify access criteria
+                        
                         for req in request:
-                            self.logger.debug('[%s, %s, %i] RPC Request: %s', self.name, self.address, req.id, req.method)
-                            
-                             # Disallow access to methods that start with an underscore
-                            if req.method == '' or req.method[0] == '_':
-                                # Invalid - Protected Method
-                                result.append(Rpc_Response(id=req.id, error=Rpc_InvalidRequest()))
+                            result.append(self.processRequest(req))
                                 
-                                self.logger.debug('[%s, %s, %i] RPC Request Denied (Protected Method)', self.name, self.address, req.id)
-                                
-                            elif req.method.startswith('rpc'):
-                                # Valid - RPC Server method
-                                try:
-                                    result.append(req.call(self.server, self.address))
-                             
-                                except Exception as e:
-                                    self.logger.exception('[%s, %s, %i] RPC Server Exception: %s', self.name, self.address, req.id, req.method)
-                                        
-                                    result.append(Rpc_Response(id=req.id, error=Rpc_InternalError(message=str(e))))
-                                    
-                            elif self.server.rpc_hasAccess(self.address):
-                                # Valid - Has Access
-                                with self.lock:      
-                                    try:
-                                        result.append(req.call(self.target))
-                                    #except TypeError as e:
-                                        # Parameter issue
-                                        #result.append(Rpc_Response(id=req.id, error=Rpc_InvalidParams(message=str(e))))
-                                        
-                                    except Exception as e:
-                                        self.logger.exception('[%s, %s, %i] RPC Target Exception: %s', self.name, self.address, req.id, req.method)
-                                        
-                                        result.append(Rpc_Response(id=req.id, error=Rpc_InternalError(message=str(e))))
-                                
-                            else:
-                                # Invalid - Access Error
-                                self.logger.debug('[%s, %s, %i] RPC Request Denied (Access Violation)', self.name, self.address, req.id)
-                                
-                                result.append(Rpc_Response(id=req.id, error={'code': -32001, 'message': 'Another connection has exclusive access.'}))
-
                     elif request == None or isinstance(request, Rpc_Error):
                         # An invalid request was parsed, error will be passed through to encode()
                         result = request
@@ -384,16 +349,72 @@ class RpcConnection(threading.Thread):
             
         except socket.error as e:
             # Socket closed poorly from client
-            self.logger.error('[%s, %s] Socket closed with error: %s', self.name, self.address, e.errno)
+            self.logger.error('[%s] Socket closed with error: %s', self.name, e.errno)
 
         except:
             # Log an exception, close the connection
-            self.logger.exception('[%s, %s] Unhandled Exception', self.name, self.address)
+            self.logger.exception('[%s] Unhandled Exception', self.name)
         
         self.socket.close()
         
     def stop(self):
         self.socket.close()
         
-        self.logger.debug('[%s, %s] Connection was forcibly closed', self.name, self.address)
+        self.logger.debug('[%s] Connection was forcibly closed', self.name)
         
+    def processRequest(self, req):
+        self.logger.debug('[%s, %i] RPC Request: %s', self.name, req.id, req.method)
+                            
+        try:
+            if self.server.rpc_hasAccess(self.address):
+                method = self.findMethod(req.method)
+                
+                with self.lock:
+                    return req.call(self.target)
+                    
+            else:
+                self.logger.debug('[%s, %s, %i] RPC Request Denied (Access Violation)', self.name, self.address, req.id)
+                return Rpc_Response(id=req.id, error={'code': -32001, 'message': 'Another connection has exclusive access.'})
+
+            
+        except AttributeError:
+            self.logger.warning('RPC Method Not Found')
+            return Rpc_Response(id=req.id, error=Rpc_InvalidRequest())
+            
+        except Exception as e:
+            self.logger.exception('[%s, %s, %i] RPC Target Exception: %s', self.name, self.address, req.id, req.method)
+            return Rpc_Response(id=req.id, error=Rpc_InternalError(message=str(e)))
+        
+    def findMethod(self, method):
+        """
+        Return a bound method after searching through the server methods and the
+        methods of all registered objects
+        """
+        # Disallow access to methods that start with an underscore
+        if req.method == '' or req.method[0] == '_':
+            # Invalid - Protected Method
+            result.append(Rpc_Response(id=req.id, error=Rpc_InvalidRequest()))
+                                
+            self.logger.warning('RPC Request Denied (Protected Method): %s', method)
+                                
+        elif req.method.startswith('rpc'):
+            # Valid - RPC Server method
+            return self.getMethod(self.server, method)
+                
+        else:
+            # Check registered objects
+            for reg_obj in self.target:
+                try:
+                    return getMethod(reg_obj, method)
+                except AttributeError:
+                    pass
+            
+            # Unable to find method
+            raise AttributeError
+            
+    def getMethod(self, obj, method):
+        test_method = getattr(obj, method)
+        if inspect.ismethod(test_method):
+            return test_method
+        else:
+            raise AttributeError

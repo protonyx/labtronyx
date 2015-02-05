@@ -1,3 +1,6 @@
+import socket
+
+from jsonrpc import *
 
 class RpcClient(object):
     """
