@@ -11,7 +11,7 @@ class c_Base(object):
     # TODO: Controllers will have hooks into the persistence config to "remember" how
     #       a particular device is configured when the program is run in the future.
     
-    resources = {}
+    REFRESH_RATE = 60.0 # Seconds
     
     def __init__(self, manager):
         """
@@ -22,9 +22,18 @@ class c_Base(object):
         self.config = common_globals.getConfig()
         self.logger = common_globals.getLogger()
         
+        self.resources = {}
         self.manager = manager
         
         self.e_alive = threading.Event()
+        self.e_alive.set()
+            
+        self.__controller_thread = threading.Thread(name=self.getControllerName(), target=self.__thread_run)
+        self.__controller_thread.start()
+        
+    def __del__(self):
+        self.e_alive.clear()
+        self.__controller_thread.join()
         
     #===========================================================================
     # Controller Thread
@@ -35,17 +44,11 @@ class c_Base(object):
             
             self.refresh()
             
-            time.sleep(60.0)
+            time.sleep(self.REFRESH_RATE)
             
-    def startThread(self):
-        self.e_alive.set()
-            
-        self.__controller_thread = threading.Thread(name=self.getControllerName(), target=self.__thread_run)
-        self.__controller_thread.start()
-        
-    def stopThread(self):
-        self.e_alive.clear()
-        self.__controller_thread.join()
+    #===========================================================================
+    # Controller Methods
+    #===========================================================================
 
     def getControllerName(self):
         return self.__class__.__name__
@@ -82,11 +85,7 @@ class c_Base(object):
 
     def getResources(self):
         """
-        Get a listing of resources by ID. There is no requirement for how
-        resources are stored internal to the controller, but this function
-        should return a dict with the format::
-        
-            { resourceID: (VID, PID) }
+        Get the dictionary of resources by ID.
         
         :returns: dict
         """
@@ -99,36 +98,14 @@ class c_Base(object):
         """
         raise NotImplementedError
     
-    def openResourceObject(self, resID, **kwargs):
-        """
-        Return an open resource object for a Model to interact with the
-        controller through. Additional parameters may be required, depending
-        on the needs of the controller
-        
-        :param resID: Resource ID
-        :type resID: str
-        :returns: object
-        """
-        raise NotImplementedError
-        
-    def closeResourceObject(self, resID):
-        """
-        Close a resource object and free any associated system resources.
-        
-        :param resID: Resource ID
-        :type resID: str
-        :returns: object
-        """
-        raise NotImplementedError
-    
     #===========================================================================
     # Automatic Controllers
     #===========================================================================
     
     def refresh(self):
         """
-        Refreshes the resource list. If resources are no longer available,
-        they should be removed.
+        Refreshes the resource list. This function is called regularly by the
+        controller thread.
         """
         raise NotImplementedError
     
@@ -298,7 +275,7 @@ class r_Base(common.rpc.RpcBase):
             
             self.model = testClass(self)
             self.model._onLoad()
-            self.model.rpc_start()
+            # TODO: RPC register object
             
             return True
 
@@ -316,7 +293,7 @@ class r_Base(common.rpc.RpcBase):
         if self.model is not None:
             try:
                 self.model._onUnload()
-                self.model.rpc_stop()
+                # TODO: RPC unregister object
                 
             except:
                 self.logger.exception('Exception while unloading model')
