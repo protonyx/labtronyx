@@ -22,15 +22,7 @@ class RpcServer(object):
     .. note::
 
         Method calls to functions that begin with an underscore are considered 
-        protected and will no be invoked
-    
-    .. note::
-    
-        If an RPC call begins with rpc, the function will only be called if the
-        target object extends RpcBase. These functions are considered reserved.
-        If a target object does not extend RpcBase, the RpcServer will not 
-        allow use of these reserved functions, even if they are defined in the
-        target class.
+        protected and will not be invoked
     """
     
     # Exclusive access times out after 60 seconds

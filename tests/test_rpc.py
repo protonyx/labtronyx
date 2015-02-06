@@ -80,3 +80,11 @@ class RPC_Client_Method_Tests(unittest.TestCase):
         self.assertEqual(self.client.test1(), 1)
         self.assertEqual(self.client.test2(), 2)
         
+    def test_method_call_error_protected(self):
+        pass
+    
+    def test_method_call_error_not_found(self):
+        pass
+    
+    
+        

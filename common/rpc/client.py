@@ -84,7 +84,7 @@ class RpcClient(object):
                 self.hostname = self._rpcCall('rpc_getHostname')
                     
             except Exception as e:
-                pass
+                raise
             
         self._setTimeout() # Default
             
