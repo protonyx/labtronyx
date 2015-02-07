@@ -2,8 +2,10 @@ import threading
 import socket
 import select
 import logging
+import errno
 
 from jsonrpc import *
+from errors import *
 
 class RpcClient(object):
     """
@@ -29,64 +31,52 @@ class RpcClient(object):
     RPC_TIMEOUT = 10.0
     RPC_MAX_PACKET_SIZE = 1048576 # 1MB
     
-    def __init__(self, **kwargs):
+    def __init__(self, address, port, **kwargs):
         
-        if 'port' in kwargs:
-            self.port = int(kwargs['port'])
-            if 'address' in kwargs:
-                try:
-                    socket.inet_aton(kwargs['address'])
-                    self.address = kwargs['address']
-                    self.hostname = socket.gethostbyaddr(self.address)[0]
-                except socket.error:
-                    # Assume a hostname was given
-                    self.hostname = kwargs['address']
-                    self.address = socket.gethostbyname(self.hostname)
-            else:
-                # Loopback mode
-                self.address = '127.0.0.1' 
-                self.hostname = socket.gethostname()
-                 
-        else:
-            raise RuntimeError('RpcClient must be provided a port')
+        self.address = self._resolveAddress(address)
+        self.port = port
+        self.logger = kwargs.get('logger', logging)
+        self.timeout = self.RPC_TIMEOUT
+        self.nextID = 1
         
         # Protocol aliases
         self.__rpcDecode__ = Rpc_decode
         self.__rpcEncode__ = Rpc_encode
-        
-        self.nextID = self.__rpcNextID()
-        
-        # Try to open a socket
-        try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._setTimeout(1.0) # Short timeout on first connection
-            self.socket.connect((self.address, self.port))
-            self.socket.setblocking(0)
             
-            self.ready = True
+        # Update the hostname
+        self.hostname = self._rpcCall('rpc_getHostname')
             
-        except socket.error as e:
-            self.socket.close()
-            
-            self.ready = False
-            
-        # Request a list of methods, an error here is acceptable if the remote
-        # host does not inherit RpcBase
-        if self.ready is True:
-            try:
-                self._setTimeout(2.0)
-                self.methods = self._rpcCall('rpc_getMethods')
-                
-                for proc in self.methods:
-                    self._methodAlias(proc)
-                    
-                # Update the hostname
-                self.hostname = self._rpcCall('rpc_getHostname')
-                    
-            except Exception as e:
-                raise
+        self._refresh()
             
         self._setTimeout() # Default
+        
+    def _resolveAddress(self, address):
+        try:
+            socket.inet_aton(address)
+            return address
+            #self.hostname, _ = socket.gethostbyaddr(address)
+        except socket.error:
+            # Assume a hostname was given
+            #self.hostname = address
+            return socket.gethostbyname(address)
+        
+    def _refresh(self):
+        """
+        Get a list of methods from the RPC server and dynamically fill the
+        object
+        """
+        # Request a list of methods
+        try:
+            self._setTimeout(2.0)
+            self.methods = self._rpcCall('rpc_getMethods')
+            
+            for proc in self.methods:
+                self._methodAlias(proc)
+                
+        except Exception as e:
+            raise
+        
+        # TODO: Catch specific exceptions
             
     def _setTimeout(self, new_to=None):
         """
@@ -99,7 +89,7 @@ class RpcClient(object):
             self.timeout = float(new_to)
         else:
             self.timeout = self.RPC_TIMEOUT
-        self.socket.settimeout(self.timeout)
+        
             
     def _getHostname(self):
         return self.hostname
@@ -111,7 +101,7 @@ class RpcClient(object):
         return self.ready
     
     def _close(self):
-        self.socket.close()
+        pass
     
     def _rpcCall(self, remote_method, *args, **kwargs):
         """
@@ -126,35 +116,47 @@ class RpcClient(object):
             - RuntimeError when the remote host sent back a server error
             - Rpc_Timeout when the request times out
         """
-        nextID = self.nextID.next()
-        request = [Rpc_Request(method=remote_method, params=args, kwargs=kwargs, id=nextID)]
-        
-        out_str = self.__rpcEncode__(request)
-        self.socket.send(out_str)
-        
-        # Wait for return data or timeout
-        ready = select.select([self.socket], [], [], self.timeout)
-        if ready[0]:
-            data = self.socket.recv(self.RPC_MAX_PACKET_SIZE)
+        try:
+            # Open a socket
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.connect((self.address, self.port))
+            self.socket.setblocking(0)
+            self.socket.settimeout(self.timeout)
             
-            _, response = self.__rpcDecode__(data)
-            if len(response) == 1 and isinstance(response[0], Rpc_Response):
-                response = response[0]
-                if response.isError():
-                    error = response.getError()
-                    raise error
+            # Encode the RPC Request
+            nextID = int(self.nextID + 1)
+            request = [Rpc_Request(method=remote_method, params=args, kwargs=kwargs, id=nextID)]
+            out_str = self.__rpcEncode__(request)
             
-                else:
-                    return response.result
+            # Send the encoded request
+            self.socket.send(out_str)
+            
+            # Wait for return data or timeout
+            ready_to_read, _, _ = select.select([self.socket], [], [], self.timeout)
+            if self.socket in ready_to_read:
+                data = self.socket.recv(self.RPC_MAX_PACKET_SIZE)
                 
-        else:
-            raise Rpc_Timeout()
+                _, response = self.__rpcDecode__(data)
+                if len(response) == 1 and isinstance(response[0], Rpc_Response):
+                    response = response[0]
+                    if response.isError():
+                        error = response.getError()
+                        raise error
+                
+                    else:
+                        return response.result
+                    
+            else:
+                raise Rpc_Timeout()
+            
+        except socket.error as e:
+            if e.errno == errno.ECONNREFUSED:
+                raise RpcServerNotFound
+            else:
+                raise
         
-    def __rpcNextID(self):
-        nextID = 1
-        while True:
-            yield int(nextID)
-            nextID += 1
+        finally:
+            self.socket.close()
 
     def _methodAlias(self, methodName):
         """
@@ -169,9 +171,3 @@ class RpcClient(object):
     
     def __str__(self):
         return '<RPC Instance of %s:%s>' % (self.address, self.port)
-    
-    def __del__(self):
-        try:
-            self.socket.close()
-        except:
-            pass

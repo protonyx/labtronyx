@@ -2,9 +2,12 @@ import unittest
 
 import logging
 import sys
+
 sys.path.append('..')
-from common.rpc.server import *
-from common.rpc.client import *
+import common.rpc as rpc
+#from common.rpc.errors import *
+#from common.rpc.server import *
+#from common.rpc.client import *
 
 class ObjTest1(object):
     def test1(self):
@@ -13,11 +16,25 @@ class ObjTest1(object):
 class ObjTest2(object):
     def test2(self):
         return 2
-
+    
 class RPC_Server_Tests(unittest.TestCase):
+    def test_server_init(self):
+        self.srv = rpc.RpcServer()
+        
+        self.srv.rpc_stop()
+        
+    def test_server_error_already_running(self):
+        self.srv = rpc.RpcServer(port=6780)
+        
+        self.assertRaises(rpc.RpcServerPortInUse, rpc.RpcServer, port=6780)
+        
+        self.srv.rpc_stop()
+        
+
+class RPC_Server_Object_Tests(unittest.TestCase):
     
     def setUp(self):
-        self.srv = RpcServer()
+        self.srv = rpc.RpcServer(port=6780)
         
     def tearDown(self):
         self.srv.rpc_stop()
@@ -43,30 +60,29 @@ class RPC_Server_Tests(unittest.TestCase):
 class RPC_Client_Connection_Tests(unittest.TestCase):
     
     def setUp(self):
-        self.srv = RpcServer(port=6780)
+        self.srv = rpc.RpcServer(port=6780)
         
     def tearDown(self):
         self.srv.rpc_stop()
     
     def test_connect(self):
-        client = RpcClient(address='localhost', port=6780)
+        client = rpc.RpcClient(address='localhost', port=6780)
         
     def test_connect_error_no_server_running(self):
         """
         Expected Failure: RpcServerNotFound
         """
-        client = RpcClient(address='localhost', port=6781)
-
+        self.assertRaises(rpc.RpcServerNotFound, rpc.RpcClient, address='localhost', port=6781)
         
 class RPC_Client_Method_Tests(unittest.TestCase):
     
     def setUp(self):
-        self.srv = RpcServer(port=6780)
+        self.srv = rpc.RpcServer(port=6780)
         t1 = ObjTest1()
         t2 = ObjTest2()
         self.srv.registerObject(t1)
         self.srv.registerObject(t2)
-        self.client = RpcClient(address='localhost', port=6780)
+        self.client = rpc.RpcClient(address='localhost', port=6780)
         
     def tearDown(self):
         self.srv.rpc_stop()

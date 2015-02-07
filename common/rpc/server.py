@@ -3,9 +3,11 @@ import socket
 import select
 import logging
 import inspect
+import errno
 from datetime import datetime
 
 from jsonrpc import *
+from errors import *
 
 class RpcServer(object):
     """
@@ -44,34 +46,41 @@ class RpcServer(object):
         self.e_alive = threading.Event()
         self.rpc_lock = threading.Lock()
         
+        # Attempt to bind a socket
+        try:
+            srv_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # TODO: Bind on each interface
+            srv_socket.bind(('',self.port))
+            srv_socket.listen(5)
+            srv_socket.setblocking(0)
+            
+        except socket.error as e:
+            if e.errno == errno.EADDRINUSE:
+                # Server is already running
+                raise RpcServerPortInUse
+            else:
+                raise
+        
         self.e_alive.set()
             
-        self.__rpc_thread = threading.Thread(name=self.name, target=self.__thread_run)
+        self.__rpc_thread = threading.Thread(name=self.name, target=self.__thread_run, args=(srv_socket,))
         self.__rpc_thread.start()
         
-    def __thread_run(self):
-        # Start socket
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # TODO: Bind on each interface
-        self.socket.bind(('',self.port))
-        self.socket.listen(5)
-        self.socket.setblocking(0)
-        
-        _, self.port = self.socket.getsockname()
+    def __thread_run(self, srv_socket):
+        _, self.port = srv_socket.getsockname()
         
         self.logger.debug('[%s] RPC Server started on port %i', self.name, self.port)
-        self.logger.debug("[%s] Hostname: %s", self.name, socket.gethostname())
             
         self.rpc_startTime = datetime.now()
 
         while self.e_alive.isSet():
             # Service Socket
             try:
-                ready_to_read,_,_ = select.select([self.socket], [], [], 1.0)
+                ready_to_read,_,_ = select.select([srv_socket], [], [], 1.0)
                 
-                if self.socket in ready_to_read:
+                if srv_socket in ready_to_read:
                     # Spawn a new thread to service the connection
-                    connection, address = self.socket.accept()
+                    connection, address = srv_socket.accept()
                     
                     # Spawn a new thread to service the connection
                     connThread = RpcConnection(server=self,
@@ -88,7 +97,7 @@ class RpcServer(object):
             # Clean up old connections
             # TODO
                 
-        self.socket.close()
+        srv_socket.close()
         
         self.logger.debug('[%s] RPC Server stopped', self.name)
             
@@ -217,8 +226,7 @@ class RpcServer(object):
         
         :returns: str - hostname
         """
-        hostname = socket.gethostname()
-        return hostname
+        return socket.gethostname()
       
     def rpc_getTargetObjectName(self, address=None):
         """
@@ -309,8 +317,6 @@ class RpcConnection(threading.Thread):
 
     :param server: RPC Server object
     :type server: RpcServer
-    :param target: Target object
-    :type target: object
     :param socket: RPC Request Socket
     :type socket: socket.socket 
     :param logger: Logger instance if you wish to override the internal instance
@@ -388,8 +394,6 @@ class RpcConnection(threading.Thread):
             # Log an exception, close the connection
             self.logger.exception('[%s] Unhandled Exception', self.name)
         
-        self.socket.close()
-        
     def stop(self):
         self.socket.close()
         
@@ -418,3 +422,7 @@ class RpcConnection(threading.Thread):
             self.logger.exception('[%s, %s, %i] RPC Target Exception: %s', self.name, self.address, req.id, req.method)
             return Rpc_Response(id=req.id, error=Rpc_InternalError(message=str(e)))
         
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+    
+    srv = RpcServer(port=6780)
