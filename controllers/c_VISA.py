@@ -53,12 +53,10 @@ class c_VISA(controllers.c_Base):
             # Load the VISA Resource Manager
             self.resource_manager = visa.ResourceManager()
             
-            self.startThread()
             return True
         
         except:
             self.logger.exception("Failed to initialize VISA Controller")
-            self.stopThread()
         
             return False
         
@@ -67,9 +65,6 @@ class c_VISA(controllers.c_Base):
         Stops the VISA Controller. Stops the controller thread and frees all
         resources associated with the controller.
         """
-        # Stop Controller Thread
-        self.stopThread()
-        
         # TODO: Free all resources associated with the controller
         
         return True

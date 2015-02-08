@@ -39,12 +39,10 @@ class RpcServer(object):
             
         # RPC State Variables
         self.rpc_objects = []
-        self.rpc_connections = []
-        self.rpc_exclusive = None
-        self.rpc_exclusiveTime = None
         
         self.e_alive = threading.Event()
         self.rpc_lock = threading.Lock()
+        self.rpc_startTime = datetime.now()
         
         # Attempt to bind a socket
         try:
@@ -54,10 +52,14 @@ class RpcServer(object):
             srv_socket.listen(5)
             srv_socket.setblocking(0)
             
+            # Update port if randomly assigned
+            _, self.port = srv_socket.getsockname()
+            
         except socket.error as e:
             if e.errno == errno.EADDRINUSE:
                 # Server is already running
                 raise RpcServerPortInUse
+            
             else:
                 raise
         
@@ -88,8 +90,6 @@ class RpcServer(object):
                                                logger=self.logger)
                         
                     connThread.start()
-                    
-                    self.rpc_connections.append(connThread)
 
             except:
                 self.logger.exception('RPC Server Socket Handler Exception')
@@ -227,14 +227,6 @@ class RpcServer(object):
         :returns: str - hostname
         """
         return socket.gethostname()
-      
-    def rpc_getTargetObjectName(self, address=None):
-        """
-        Get the class name of the target object.
-        
-        :returns: str - Object name
-        """
-        return self.__class__.__name__
         
     def rpc_getConnections(self, address=None):
         """
@@ -244,76 +236,15 @@ class RpcServer(object):
         """
         return len(self.rpc_connections)
     
-    #===========================================================================
-    # RPC Connection Locking
-    #===========================================================================
-    
-    def rpc_hasAccess(self, address):
-        """
-        Check if an address has access to execute RPC.
-        
-        :returns: bool
-        """
-        return self.rpc_exclusive is None or (timedelta(seconds=self.EXCLUSIVE_TIMEOUT) < (datetime.now() - self.rpc_exclusiveTime))
-    
-    def rpc_requestExclusiveAccess(self, address):
-        """
-        Request exclusive access to the target object from the RPC interface. 
-        This acts as a lock on the target object, and no other connections can
-        call functions. 
-        
-        .. note::
-        
-            Exclusive Access locks expire after 60 seconds, and must be renewed
-            by another call to :func:`RpcBase.rpc_requestExclusiveAccess`
-            
-        :returns: bool - True if exclusive lock granted, False if denied
-        """
-        if self.rpc_hasAccess(address):
-            # No other connection has exclusive access, or previous owner did not renew exclusive lock
-            self.rpc_exclusive = address
-            self.rpc_exclusiveTime = datetime.now()
-            
-            self.logger.debug('[%s, %s] Requested exclusive access', self.name, address)
-            
-            return True
-
-        else:
-            return False
-            
-    def rpc_releaseExclusiveAccess(self, address):
-        """
-        Release exclusive access. If a connection does not have exclusive access,
-        this function does nothing.
-        
-        .. note::
-        
-            This function does not have to be called explicitly, the lock
-            will expire automatically after 60 seconds.
-            
-        :returns: bool - True if lock released, False otherwise
-        """
-        if self.rpc_exclusive is address:
-            self.rpc_exclusive = None
-              
-            self.logger.debug('[%s, %s] Released exclusive access', self.name, connection.address)
-              
-            return True
-          
-        else:
-            return False
-    
 class RpcConnection(threading.Thread):
     """
     Receives and processes RPC requests from remote connections (or local ones)
     
-    Before any requests can be processed, the thread must acquire a lock to synchronize access
-    to the shared resource (model object)
+    Before any requests can be processed, the thread must acquire a lock to 
+    synchronize access to RPC Server resources
     
-    Remote users can request exclusive access, but must renew the lock every 60 seconds or other users will be
-    allowed to request access
-    
-    Any method that begins with an underscore is considered protected and will be invalidated by the RPC server
+    Any method that begins with an underscore is considered protected and will 
+    be invalidated by the RPC server
 
     :param server: RPC Server object
     :type server: RpcServer
@@ -321,7 +252,6 @@ class RpcConnection(threading.Thread):
     :type socket: socket.socket 
     :param logger: Logger instance if you wish to override the internal instance
     :type logger: Logging.logger
-    
     """
     RPC_MAX_PACKET_SIZE = 1048576 # 1MB
     
@@ -339,15 +269,9 @@ class RpcConnection(threading.Thread):
         
         # Give the thread a meaningful name
         self.name = '%s-%s' % (self.server.getName(), self.address)
-        
-        # Hardcode JSON RPC for now
-        self.rpc_decode = Rpc_decode
-        self.rpc_encode = Rpc_encode
     
     def run(self):
         
-        self.logger.debug('[%s, %s] Connection established', self.name, self.address)
-
         try:
             ready_to_read,_,_ = select.select([self.socket],[],[], 1.0)
             # TODO: Read until all data is in the buffer
@@ -356,34 +280,43 @@ class RpcConnection(threading.Thread):
                 
                 data = self.socket.recv(self.RPC_MAX_PACKET_SIZE)
                 
-                if type(data) is str and data[0:4] == 'HELO':
-                    self.socket.send(self.server._identity)
-                    
-                elif data:
+                if data:
                     # Process the incoming data as a JSON RPC packet
-                    try:
-                        request, _ = self.rpc_decode(data)
-                    except Rpc_Error as e:
-                        request = e
-                        
-                    result = []
+                    packet = JsonRpcPacket(data)
+                    errors = packet.getErrors()
+                    requests = packet.getRequests()
                     
-                    if type(request) == list and len(request) > 0:
-                        # Iterate through each request, verify access criteria
-                        
-                        for req in request:
-                            result.append(self.processRequest(req))
+                    if len(errors) == 0:
+                        # Only process requests if no errors were found during parsing
+                        for req in requests:
+                            # Process Requests in order
+                            id = req.getID()
+                            try:
+                                result = self.processRequest(req)
                                 
-                    elif request == None or isinstance(request, Rpc_Error):
-                        # An invalid request was parsed, error will be passed through to encode()
-                        result = request
-                    
-                    else:
-                        # Something really terrible must have happened
-                        self.logger.error("RPC Library Error")
+                                # Check if the request was a notification
+                                if id is not None:
+                                    packet.addResponse(id, result)
+                            
+                            # Catch exceptions during method execution
+                            # DO NOT ALLOW ANY EXCEPTIONS TO PASS THIS LEVEL   
+                            except TypeError:
+                                # Raised when arguments mismatch, but also other cases
+                                # Not a perfect solution, but whatever.
+                                packet.addError_InvalidParams(id)
+                                
+                            except RpcMethodNotFound:
+                                packet.addError_MethodNotFound(id)
+                                
+                            except Exception as e:
+                                # Catch-all for everything else
+                                packet.addError_ServerException(id, e.message)
+                                
+                            except:
+                                packet.addError_ServerException(id)
                     
                     # Encode the outputs of the RPC requests
-                    self.socket.send(self.rpc_encode(result))
+                    self.socket.send(packet.export())
                     
             
         except socket.error as e:
@@ -394,35 +327,19 @@ class RpcConnection(threading.Thread):
             # Log an exception, close the connection
             self.logger.exception('[%s] Unhandled Exception', self.name)
         
-    def stop(self):
-        self.socket.close()
-        
-        self.logger.debug('[%s] Connection was forcibly closed', self.name)
-        
     def processRequest(self, req):
-        self.logger.debug('[%s, %i] RPC Request: %s', self.name, req.id, req.method)
+        id = req.getID()
+        method = req.getMethod()
+        self.logger.debug('[%s, %i] RPC Request: %s', self.name, id, method)
                             
         try:
-            if self.server.rpc_hasAccess(self.address):
-                method = self.server.findMethod(req.method)
-                
-                with self.lock:
-                    return req.call(method)
-                    
-            else:
-                self.logger.debug('[%s, %s, %i] RPC Request Denied (Access Violation)', self.name, self.address, req.id)
-                return Rpc_Response(id=req.id, error={'code': -32001, 'message': 'Another connection has exclusive access.'})
-
+            test_method = self.server.findMethod(method)
             
+            with self.lock:
+                return req.call(test_method)
+            
+        # Bubble all exceptions up to the calling function
         except AttributeError:
-            self.logger.warning('RPC Method Not Found')
-            return Rpc_Response(id=req.id, error=Rpc_InvalidRequest())
-            
-        except Exception as e:
-            self.logger.exception('[%s, %s, %i] RPC Target Exception: %s', self.name, self.address, req.id, req.method)
-            return Rpc_Response(id=req.id, error=Rpc_InternalError(message=str(e)))
+            self.logger.error('RPC Method Not Found')
+            raise RpcMethodNotFound()
         
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    
-    srv = RpcServer(port=6780)

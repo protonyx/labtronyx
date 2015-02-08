@@ -50,6 +50,8 @@ class c_UPEL(controllers.c_Base):
     #===========================================================================
     
     def refresh(self):
+        return None
+    
         self.icp_manager.discover(self.config.broadcastIP)
         
         # Give the arbiter time to process responses

@@ -22,6 +22,8 @@ class RpcClient(object):
     
     To manually call a remote method, use the function RpcClient._rpcCall
     
+    TODO: Add batch processing
+    
     :param address: IP Address of remote RpcServer (Defaults to 'localhost')
     :type address: str - IPv4
     :param port: Port of remote RpcServer
@@ -38,10 +40,6 @@ class RpcClient(object):
         self.logger = kwargs.get('logger', logging)
         self.timeout = self.RPC_TIMEOUT
         self.nextID = 1
-        
-        # Protocol aliases
-        self.__rpcDecode__ = Rpc_decode
-        self.__rpcEncode__ = Rpc_encode
             
         # Update the hostname
         self.hostname = self._rpcCall('rpc_getHostname')
@@ -125,10 +123,11 @@ class RpcClient(object):
             
             # Encode the RPC Request
             nextID = int(self.nextID + 1)
-            request = [Rpc_Request(method=remote_method, params=args, kwargs=kwargs, id=nextID)]
-            out_str = self.__rpcEncode__(request)
+            packet = JsonRpcPacket()
+            packet.addRequest(nextID, remote_method, *args, **kwargs)
             
             # Send the encoded request
+            out_str = packet.export()
             self.socket.send(out_str)
             
             # Wait for return data or timeout
@@ -136,22 +135,37 @@ class RpcClient(object):
             if self.socket in ready_to_read:
                 data = self.socket.recv(self.RPC_MAX_PACKET_SIZE)
                 
-                _, response = self.__rpcDecode__(data)
-                if len(response) == 1 and isinstance(response[0], Rpc_Response):
-                    response = response[0]
-                    if response.isError():
-                        error = response.getError()
-                        raise error
+                if data:
+                    packet = JsonRpcPacket(data)
+                    errors = packet.getErrors()
+                    responses = packet.getResponses()
+                    
+                    if len(errors) > 0:
+                        # There is a problem if there are more than one errors,
+                        # so just check the first one
+                        err_obj = JsonRpc_to_RpcErrors.get(type(errors[0]), RpcError)
+                        raise err_obj()
+                    
+                    elif len(responses) == 1:
+                        resp = responses[0]
+                        return resp.getResult()
                 
                     else:
-                        return response.result
+                        raise RpcInvalidPacket()
                     
             else:
-                raise Rpc_Timeout()
+                raise RpcTimeout()
             
         except socket.error as e:
             if e.errno == errno.ECONNREFUSED:
-                raise RpcServerNotFound
+                raise RpcServerNotFound()
+            
+            elif e.errno == errno.ECONNRESET: #10054: # Connection reset
+                raise RpcServerNotFound()
+                
+            elif e.errno == errno.ETIMEDOUT: #10060: # Time out
+                raise RpcServerNotFound()
+            
             else:
                 raise
         

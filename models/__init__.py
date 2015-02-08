@@ -11,8 +11,6 @@ import importlib
 import logging
 import threading
 
-import views
-
 class m_Base(object):
     
     info = {}

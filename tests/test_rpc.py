@@ -17,6 +17,9 @@ class ObjTest2(object):
     def test2(self):
         return 2
     
+    def test_exception(self):
+        raise RuntimeError
+    
 class RPC_Server_Tests(unittest.TestCase):
     def test_server_init(self):
         self.srv = rpc.RpcServer()
@@ -97,10 +100,14 @@ class RPC_Client_Method_Tests(unittest.TestCase):
         self.assertEqual(self.client.test2(), 2)
         
     def test_method_call_error_protected(self):
-        pass
+        with self.assertRaises(rpc.RpcMethodNotFound):
+            self.client._rpcCall('_test3')
     
     def test_method_call_error_not_found(self):
-        pass
-    
-    
+        with self.assertRaises(rpc.RpcMethodNotFound):
+            self.client._rpcCall('test3')
         
+    def test_method_call_error_exception(self):
+        with self.assertRaises(rpc.RpcServerException):
+            self.client.test_exception()
+  

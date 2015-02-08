@@ -10,14 +10,33 @@ import logging, logging.handlers
 import common
 import common.rpc as rpc
 
-class InstrumentManager(rpc.RpcBase):
+class InstrumentManager(object):
     
     models = {} # Module name -> Model info
     
     controllers = {} # Controller name -> controller object
-    
     resources = {} # UUID -> Resource Object
     properties = {} # UUID -> Property Dictionary
+    
+    def __init__(self):
+        common_globals = common.ICF_Common()
+        self.rootPath = common_globals.getRootPath()
+        self.config = common_globals.getConfig()
+        self.logger = common_globals.getLogger()
+        
+        self.logger.info("Instrument Control and Automation Framework")
+        self.logger.info("InstrumentManager, Version: %s", self.config.version)
+        
+        self.rpc_server = rpc.RpcServer(name='InstrumentManager-RPC-Server', 
+                                        port=self.config.managerPort,
+                                        logger=self.logger)
+        self.rpc_server.registerObject(self)
+    
+        # Build the model dictionary
+        self.__loadModels()
+        
+        # Load controllers
+        self.__loadControllers()
     
     def __loadControllers(self):
         """
@@ -62,9 +81,12 @@ class InstrumentManager(rpc.RpcBase):
                                 else:
                                     self.logger.warning('Controller %s failed to initialize', contModule)
                                     testClass.close()
+                                    
+                            except ImportError:
+                                self.logger.exception('Exception during controller import')
                     
                             except AttributeError as e:
-                                self.logger.error('Controller %s does not have a class %s', contModule, className)
+                                self.logger.exception('Controller %s does not have a class %s', contModule, className)
                                 
                             except Exception as e:
                                 self.logger.exception("Unable to load controller %s: %s", contModule, str(e))
@@ -141,68 +163,25 @@ class InstrumentManager(rpc.RpcBase):
                     
                     self.refreshResources()
 
-    def _run(self):
-        """
-        Main InstrumentManager logic. Blocks until stopped.
-        """
-        common_globals = common.ICF_Common()
-        self.rootPath = common_globals.getRootPath()
-        self.config = common_globals.getConfig()
-        self.logger = common_globals.getLogger()
-        
-        # Check command line arguments
-        #=======================================================================
-        # try:
-        #     opts, args = getopt.getopt(sys.argv[1:], "d")
-        #     for opt, arg in opts:
-        #         if opt == "-d":
-        #             self.logger.info("Starting in Debug mode")
-        #             global _debug
-        #             _debug = 1
-        # except:
-        #     pass
-        #=======================================================================
-        
-        # Make sure another manager is not running
-        if not self.rpc_test(port=self.config.managerPort):
-            
-            # Configure RPC Identity
-            self._setHELOResponse('InstrumentManager/%s' % self.config.version)
-            
-            self.logger.info("Instrument Manager Started")
-            self.logger.info("Version: %s", self.config.version)
-            
-            # Build the model dictionary
-            self.__loadModels()
-            
-            #from pprint import pprint
-            #pprint(self.models)
-            
-            # Load controllers
-            self.__loadControllers()
-            
-            # Start RPC server
-            # This operation will timeout after 2 seconds. If that happens,
-            # this process should exit
-            self.logger.info("Starting RPC Server...")
-            self.rpc_start(port=self.config.managerPort)
-            
-            # Main thread will now close
-            # TODO: Should the main thread be doing something?
-            
     def stop(self):
         """
         Stop the InstrumentManager instance. Attempts to shutdown and free
         all resources.
         """
-        for dev in self.devices.values():
-            if hasattr(dev, 'rpc_stop'):
-                dev.rpc_stop()
+        for res in self.resources:
+            try:
+                res.close()
+            except:
+                pass
                 
-        for cont in self.controllers.values():
-            cont.close()
+        for cont in self.controllers:
+            try:
+                cont.close()
+            except:
+                pass
                 
-        self.rpc_stop()
+        # Stop the InstrumentManager RPC Server
+        self.rpc_server.rpc_stop()
             
     def getVersion(self):
         """
@@ -225,9 +204,11 @@ class InstrumentManager(rpc.RpcBase):
         return self.controllers.keys()
     
     def enableController(self, controller):
+        # TODO: Implement this
         pass
     
     def disableController(self, controller):
+        # TODO: Implement this
         pass
         
     #===========================================================================
@@ -333,4 +314,3 @@ class InstrumentManager(rpc.RpcBase):
 if __name__ == "__main__":
     # If InstrumentManager is run in interactive mode, just call run
     man = InstrumentManager()
-    man._run()

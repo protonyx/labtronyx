@@ -1,10 +1,9 @@
 import uuid
 import time
+import threading
 
 import common
-import common.rpc
-
-import threading
+import common.rpc as rpc
 
 class c_Base(object):
 
@@ -137,11 +136,10 @@ class c_Base(object):
         """
         raise NotImplementedError
 
-class r_Base(common.rpc.RpcBase):
+class r_Base(object):
     type = "Generic"
     
     def __init__(self, resID, controller, **kwargs):
-        common.rpc.RpcBase.__init__(self)
         
         common_globals = common.ICF_Common()
         self.config = common_globals.getConfig()
@@ -155,7 +153,10 @@ class r_Base(common.rpc.RpcBase):
         self.resID = resID
         self.controller = controller
         
-        self.rpc_start()
+        # Start RPC Server
+        self.rpc_server = rpc.RpcServer(name='%s-%s' % (controller.getControllerName(), resID),
+                                        logger=self.logger)
+        self.rpc_server.registerObject(self)
         
     def getUUID(self):
         return self.uuid
@@ -179,15 +180,9 @@ class r_Base(common.rpc.RpcBase):
         return self.controller.getControllerName()
     
     def getPort(self):
-        try:
-            # Start the RPC server if it isn't already started
-            if not self.rpc_isRunning():
-                self.rpc_start()    
-            
-            return self.rpc_getPort()
-        
-        except:
-            pass
+        # Start the RPC server if it isn't already started
+        if self.rpc_server.rpc_isRunning():
+            return self.rpc_server.rpc_getPort()
     
     def getProperties(self):
         res_prop = {
@@ -288,7 +283,9 @@ class r_Base(common.rpc.RpcBase):
             
             self.model = testClass(self)
             self.model._onLoad()
-            # TODO: RPC register object
+            
+            # RPC register object
+            self.rpc_server.registerObject(self.model)
             
             return True
 
@@ -306,7 +303,9 @@ class r_Base(common.rpc.RpcBase):
         if self.model is not None:
             try:
                 self.model._onUnload()
-                # TODO: RPC unregister object
+                # RPC unregister object
+                
+                self.rpc_server.unregisterObject(self)
                 
             except:
                 self.logger.exception('Exception while unloading model')

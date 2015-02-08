@@ -266,12 +266,7 @@ class InstrumentControl(object):
                 testSocket.settimeout(1.0)
                 testSocket.connect((address, self.config.managerPort))
                 #testSocket.setblocking(0)
-                testSocket.send('HELO')
                 
-                banner = testSocket.recv(255)
-                
-                if 'InstrumentManager' in banner:
-                    testSocket.close()
                 return True
             
             except socket.error as e:

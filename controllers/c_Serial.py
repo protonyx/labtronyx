@@ -15,20 +15,9 @@ class c_Serial(controllers.c_Base):
     auto_load = False
 
     def open(self):
-        try:
-            self.startThread()
-            
-            return True
-        
-        except:
-            self.logger.exception("Failed to initialize Serial Controller")
-            self.stopThread()
-        
-            return False
+        return True
     
     def close(self):
-        self.stopThread()
-        
         for resID, res in self.resources.items():
             try:
                 if res.isOpen():
