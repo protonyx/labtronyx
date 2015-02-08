@@ -195,6 +195,9 @@ class JsonRpcPacket(object):
                                              method=method,
                                              params=args,
                                              kwargs=kwargs))
+        
+    def clearRequests(self):
+        self.requests = []
     
     def getRequests(self):
         return self.requests
@@ -202,6 +205,9 @@ class JsonRpcPacket(object):
     def addResponse(self, id, result):
         self.responses.append(JsonRpc_Response(id=id,
                                                result=result))
+        
+    def clearResponses(self):
+        self.responses = []
     
     def getResponses(self):
         return self.responses

@@ -13,18 +13,21 @@ class c_Debug(controllers.c_Base):
     
     def open(self):
         if "-d" in sys.argv[1:]:
-            new_res = r_Debug('DEBUG', self)
-            self.resources['DEBUG'] = new_res
-            
-            self.manager._notify_new_resource()
-            
-        return True
+            return True
+        
+        else:
+            return False
         
     def close(self):
         return True
     
     def refresh(self):
-        return True
+        if "-d" in sys.argv[1:]:
+            if 'DEBUG' not in self.resources:
+                new_res = r_Debug('DEBUG', self)
+                self.resources['DEBUG'] = new_res
+                
+                self.manager._notify_new_resource()
         
     def getResources(self):
         return self.resources

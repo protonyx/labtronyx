@@ -27,16 +27,20 @@ class InstrumentManager(object):
         self.logger.info("Instrument Control and Automation Framework")
         self.logger.info("InstrumentManager, Version: %s", self.config.version)
         
-        self.rpc_server = rpc.RpcServer(name='InstrumentManager-RPC-Server', 
-                                        port=self.config.managerPort,
-                                        logger=self.logger)
-        self.rpc_server.registerObject(self)
-    
-        # Build the model dictionary
-        self.__loadModels()
+        try:
+            self.rpc_server = rpc.RpcServer(name='InstrumentManager-RPC-Server', 
+                                            port=self.config.managerPort,
+                                            logger=self.logger)
+            self.rpc_server.registerObject(self)
         
-        # Load controllers
-        self.__loadControllers()
+            # Build the model dictionary
+            self.__loadModels()
+            
+            # Load controllers
+            self.__loadControllers()
+            
+        except rpc.RpcServerPortInUse:
+            self.logger.error("RPC Port in use, shutting down...")
     
     def __loadControllers(self):
         """
@@ -280,29 +284,6 @@ class InstrumentManager(object):
                 return False
         
         return False
-    
-    def destroyResource(self, controller, res_uuid):
-        """
-        Manually destroy a resource within a controller
-        
-        .. note::
-        
-            This will return False if manually destroying resources is not supported.
-            To check if the controller supports manual resource management,
-            use :func:`InstrumentManager.canEditResources`
-        
-        :param controller: Controller name
-        :type controller: str
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: bool - True if successful, False otherwise
-        """
-        if controller in self.controllers:
-            try:
-                return controller.destroyResource(res_uuid)
-            
-            except NotImplementedError:
-                return False
 
     #===========================================================================
     # Model Operations

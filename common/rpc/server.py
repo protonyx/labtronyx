@@ -207,7 +207,7 @@ class RpcServer(object):
         :returns: int - uptime in seconds
         """
         if hasattr(self, 'rpc_startTime'):
-            delta = self.rpc_startTime - datetime.now()
+            delta = datetime.now() - self.rpc_startTime 
             return delta.total_seconds()
         else:
             return 0
@@ -282,9 +282,11 @@ class RpcConnection(threading.Thread):
                 
                 if data:
                     # Process the incoming data as a JSON RPC packet
-                    packet = JsonRpcPacket(data)
-                    errors = packet.getErrors()
-                    requests = packet.getRequests()
+                    in_packet = JsonRpcPacket(data)
+                    errors = in_packet.getErrors()
+                    requests = in_packet.getRequests()
+                    
+                    out_packet = JsonRpcPacket()
                     
                     if len(errors) == 0:
                         # Only process requests if no errors were found during parsing
@@ -296,29 +298,27 @@ class RpcConnection(threading.Thread):
                                 
                                 # Check if the request was a notification
                                 if id is not None:
-                                    packet.addResponse(id, result)
+                                    out_packet.addResponse(id, result)
                             
                             # Catch exceptions during method execution
                             # DO NOT ALLOW ANY EXCEPTIONS TO PASS THIS LEVEL   
                             except TypeError:
                                 # Raised when arguments mismatch, but also other cases
                                 # Not a perfect solution, but whatever.
-                                packet.addError_InvalidParams(id)
+                                out_packet.addError_InvalidParams(id)
                                 
                             except RpcMethodNotFound:
-                                packet.addError_MethodNotFound(id)
+                                out_packet.addError_MethodNotFound(id)
                                 
                             except Exception as e:
                                 # Catch-all for everything else
-                                packet.addError_ServerException(id, e.message)
-                                
-                            except:
-                                packet.addError_ServerException(id)
+                                out_packet.addError_ServerException(id, e.message)
+                                self.logger.exception("RPC Server Exception")
                     
                     # Encode the outputs of the RPC requests
-                    self.socket.send(packet.export())
+                    out_str = out_packet.export()
+                    self.socket.send(out_str)
                     
-            
         except socket.error as e:
             # Socket closed poorly from client
             self.logger.error('[%s] Socket closed with error: %s', self.name, e.errno)

@@ -28,7 +28,7 @@ class InstrumentControl(object):
     
     .. note::
         InstrumentManager must be running on the local or remote machine that you
-        are trying to connect to. :func:`InstrumentControl.startWaitManager` can be
+        are trying to connect to. :func:`InstrumentControl.startManager` can be
         used to spawn a new process of InstrumentManager.
         
     """
@@ -82,29 +82,21 @@ class InstrumentControl(object):
                 lh_console.setLevel(self.config.logLevel_console)
                 self.logger.addHandler(lh_console)
                 
-        # Attempt to start the local manager
-        if not self.managerRunning('localhost') :
-            self.startWaitManager()
+        # Attempt to connect to the local manager
+        if not self.addManager('localhost'):
+            self.startManager()
+            time.sleep(2.0)
             
-            # Attempt to connect to the local manager
-            self.addManager('localhost')
-            
-        else:
-            # Attempt to connect to the local manager
-            self.addManager('localhost')
-            
-            # Check the local Manager version
-            localMan = self.getManager('localhost')
-            localVer = localMan.getVersion()
-            
-            if localVer != self.config.version:
-                # Version doesn't match, restart with new code from this release
-                localMan.stop()
-                
-                time.sleep(2.0)
-                
-                self.startWaitManager()
-            
+        # Check the local Manager version
+        localMan = self.getManager('localhost')
+        localVer = localMan.getVersion()
+        
+        if localVer != self.config.version:
+            # Version doesn't match, restart with new code from this release
+            localMan.stop()
+            time.sleep(1.0)
+            self.startManager()
+            time.sleep(2.0)
             
         
     
@@ -135,21 +127,6 @@ class InstrumentControl(object):
             finally:
                 return host
     
-    def isConnectedHost(self, hostname):
-        """
-        Check if a given host is connected
-        
-        :param hostname: IP Address or Hostname
-        :type hostname: str
-        :returns: True if connected, False otherwise
-        """
-        address = self._resolveAddress(hostname)
-        
-        if address in self.hostnames.values():
-            return True
-        else:
-            return False
-    
     def getHostname(self, address):
         """
         Get the Hostname for the given address
@@ -161,6 +138,14 @@ class InstrumentControl(object):
         if address in self.managers.keys():
             man = self.managers.get(address)
             return man._getHostname() # RpcClient function
+        
+    def getConnectedAddresses(self):
+        """
+        Get a list of connected addresses
+        
+        :returns: list of connected addresses
+        """
+        return self.hostnames.values()
     
     def getConnectedHosts(self):
         """
@@ -169,20 +154,6 @@ class InstrumentControl(object):
         :returns: List of connected hostnames
         """
         return self.hostnames.keys()
-    
-    def getControllers(self, address):
-        """
-        Get a list of controllers from a given InstrumentManager instance.
-        
-        :param address: IP Address
-        :type address: str - IPv4
-        :returns: dict
-        """
-        address = self._resolveAddress(address)
-        
-        if address in self.managers.keys():
-            man = self.managers.get(address)
-            return man.getControllers()
     
     #===========================================================================
     # Local Manager Operations
@@ -214,68 +185,6 @@ class InstrumentControl(object):
             
         except Exception as e:
             raise
-            
-    def startWaitManager(self, timeout=10.0):
-        """
-        Start a local instance of :class:`InstrumentManager` using 
-        :func:`subprocess.Popen`. This function will block until the manager is
-        fully initialized. 
-        
-        See :func:`startManager` for more.
-        
-        :param timeout: Maximum number of seconds to wait before timeout occurs  
-        :type timeout: float
-        :returns: Nothing
-        """
-        local = self._resolveAddress('localhost')
-        
-        self.startManager()
-        
-        tryTime = 0.0
-        waitTime = 2.0
-        
-        while not self.managerRunning(local):
-            tryTime += waitTime
-            time.sleep(waitTime)
-            if tryTime >= timeout:
-                break
-            
-        self.addManager(local)
-        
-    def managerRunning(self, address, port=None):
-        """
-        Check if an :class:`InstrumentManager` instance is running. Attempts to
-        open a socket to the provided address and port.
-        
-        :param address: IP Address or Hostname
-        :type address: str
-        :param port: Port
-        :type port: int
-        :returns: True if running, False if not running
-        """
-        address = self._resolveAddress(address)
-        
-        man = self.getManager(address)
-        if man is not None:
-            # Manager already connected
-            return True
-        else:
-            # Try to connect to one
-            try:
-                testSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                testSocket.settimeout(1.0)
-                testSocket.connect((address, self.config.managerPort))
-                #testSocket.setblocking(0)
-                
-                return True
-            
-            except socket.error as e:
-                pass
-            
-            finally:
-                testSocket.close()
-                
-            return False
     
     def stopManager(self, address, port=None):
         """
@@ -326,25 +235,24 @@ class InstrumentControl(object):
             # Attempt a connection
             try:
                 testManager = RpcClient(address=address, port=seekPort)
-                if not testManager._ready():
-                    return False
                 
                 ver = testManager.getVersion()
-                self.logger.info('Connected to InstrumentManager @ %s, version %s', address, ver)
+                host = testManager._getHostname()
                 
-            except:
-                return False
-            
-            else:
-                self.hostnames[testManager.hostname] = address 
+                self.hostnames[host] = address 
                 self.managers[address] = testManager
+                
+                self.logger.info('Connected to InstrumentManager @ %s, version %s', address, ver)
                 
                 # Update the resource cache
                 self.refreshResources(address)
                 
-            return True
+                return True
+                
+            except:
+                pass
         
-
+        return False
     
     def removeManager(self, address):
         """
@@ -357,18 +265,16 @@ class InstrumentControl(object):
         """
         address = self._resolveAddress(address)
         
-        if self.managers.has_key(address):
+        if address in self.managers.keys():
             # Remove all resources from that host
             cached_resources = self.resources.pop(address, {})
             
-            for uuid, res in cached_resources.items():
-                self.destroyInstrument(uuid)
-                    
+            for uuid, res in self.properties.items():
                 self.properties.pop(uuid, None)
+                self.resources.pop(uuid, None)
                 
             # Remove host
-            rpc_client = self.managers.pop(address, None)
-            del rpc_client
+            self.managers.pop(address, None)
             
             return True
         
@@ -394,6 +300,24 @@ class InstrumentControl(object):
         address = self._resolveAddress(address)
             
         return self.managers.get(address, None)
+    
+    #===========================================================================
+    # Controller Operations
+    #===========================================================================
+    
+    def getControllers(self, address):
+        """
+        Get a list of controllers from a given InstrumentManager instance.
+        
+        :param address: IP Address
+        :type address: str - IPv4
+        :returns: dict
+        """
+        address = self._resolveAddress(address)
+        
+        if address in self.managers.keys():
+            man = self.managers.get(address)
+            return man.getControllers()
 
     #===========================================================================
     # Resource Operations
@@ -427,6 +351,16 @@ class InstrumentControl(object):
                 res_dict['hostname'] = self.getHostname(address)
                 
                 self.properties[res_uuid] = res_dict
+                
+                # Create an RPC Client if one does not already exist
+                try:
+                    port = res_dict.get('port')
+                    testInstrument = RpcClient(address=address, port=port)
+                    self.resources[res_uuid] = testInstrument
+                except:
+                    self.logger.exception("Exception while creating RPC link for resource")
+                    
+                # TODO: Purge RPC Clients that are no longer valid?
 
         elif address is None:
             for addr in self.managers:
@@ -444,16 +378,6 @@ class InstrumentControl(object):
         :returns: dict (Resource UUID as key)
         """
         return self.properties
-        
-    def isValidResource(self, res_uuid):
-        """
-        Check if a resource is known.
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: bool - True if resource was removed, False otherwise
-        """
-        return self.resources.has_key(res_uuid)
     
     #===========================================================================
     # Resource Management
@@ -494,41 +418,19 @@ class InstrumentControl(object):
         if address in self.managers:
             man = self.managers.get(address)
             
-            # Does manager support manually adding resources?
-            if man.canEditResources(controller):
-                res = man.addResource(controller, ResID, VendorID, ProductID)
-                
-                # Force the manager to update the resource list
-                man.refresh(controller, False)
-                
-                # Update the local resource cache
-                self.refreshResources(address)
-                
-                return res
+            res = man.addResource(controller, ResID)
+            
+            # Update the local resource cache
+            self.refreshResources(address)
+            
+            return res
         
         else:
             return False
     
-    def removeResource(self, res_uuid):
-        """
-        Remove a managed resource from a remote controller.
-        
-        Unlike :func:`addResource`, this function will find the IP Address and
-        controller given `res_uuid`. If the resource cannot be found in the
-        cache, this function will return False. 
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: bool - True if resource was removed, False otherwise
-        """
-        if self.resources.has_key(res_uuid):
-            # Instrument may not exist, but just in case
-            self.destroyInstrument(res_uuid)
-            
-            if self.resources.pop(res_uuid, None) is not None:
-                return True
-            
-        return False
+    #===========================================================================
+    # Models
+    #===========================================================================
     
     def getValidModels(self, address):
         """
@@ -568,36 +470,15 @@ class InstrumentControl(object):
         :returns: RpcClient object
         """
         # Does an instrument already exist?
-        instr = self.instruments.get(res_uuid, None)
+        instr = self.resources.get(res_uuid, None)
         
         if instr is not None:
             return instr
         
         else:
-            # Is it a valid res_uuid?
-            if res_uuid not in self.resources.keys():
-                return False
-                
-            # Update the property cache
-            self.cacheProperties(res_uuid)
-            prop = self.getProperties(res_uuid)
-            address = prop.get('address')
-            port = prop.get('port', None)
-                    
-            if port is not None:
-                try:
-                    testInstrument = RpcClient(address=address, port=port)
-                    if testInstrument._ready():
-                        self.instruments[res_uuid] = testInstrument
-                        
-                        return testInstrument
-                    
-                except:
-                    pass
-                
-            else:
-                # The resource could not be located
-                return None
+            # Update the property cache to force a reconnection attempt
+            self.refreshResources()
+            return self.resources.get(res_uuid, None)
     
     def getInstrument_list(self):
         """
@@ -612,12 +493,7 @@ class InstrumentControl(object):
         
         :returns: list of :class:`RpcClient` objects
         """
-        for address, man in self.managers.items():
-            devices = man.getModels()
-            for res_uuid in devices:
-                self.createInstrument(res_uuid)
-                
-        return self.instruments.values()
+        return self.resources.values()
     
     def getInstrument_serial(self, serial_number):
         """
@@ -632,7 +508,7 @@ class InstrumentControl(object):
         """
         for res_uuid, prop_dict in self.getProperties().items():
             if prop_dict.get('deviceSerial', None) == serial_number:
-                return self.createInstrument(res_uuid)
+                return self.getInstrument(res_uuid)
         
         return None
     
@@ -651,7 +527,7 @@ class InstrumentControl(object):
         
         for res_uuid, prop_dict in self.getProperties().items():
             if prop_dict.get('deviceModel', None) == model_number:
-                ret.append(self.createInstrument(res_uuid))
+                ret.append(self.getInstrument(res_uuid))
                 
         return ret
     
@@ -670,7 +546,7 @@ class InstrumentControl(object):
         
         for res_uuid, prop_dict in self.getProperties().items():
             if prop_dict.get('deviceType', None) == d_type:
-                ret.append(self.createInstrument(res_uuid))
+                ret.append(self.getInstrument(res_uuid))
                 
         return ret
     
@@ -689,7 +565,7 @@ class InstrumentControl(object):
         
         for res_uuid, prop_dict in self.getProperties().items():
             if prop_dict.get('modelName', None) == d_driver:
-                ret.append(self.createInstrument(res_uuid))
+                ret.append(self.getInstrument(res_uuid))
                 
         return ret
     
