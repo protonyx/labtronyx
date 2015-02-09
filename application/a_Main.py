@@ -48,9 +48,6 @@ class a_Main(object):
         # Instantiate an InstrumentControl object
         self.ICF = InstrumentControl(Logger=self.logger)
         
-        # Attempt to start a local InstrumentManager
-        self.ICF.startWaitManager()
-        
         # Instantiate root Tk object
         self.myTk = Tk.Tk()
             
@@ -145,7 +142,7 @@ class a_Main(object):
         master = self.myTk
         #ttk.Style().theme_use('vista')
         #master = Tk.Toplevel(self.myTk)
-        master.wm_title("Instrument Control")
+        master.wm_title("Instrument Control and Automation")
         master.minsize(500, 500)
         master.geometry("800x600")
         
@@ -360,14 +357,15 @@ class a_Main(object):
         except:
             self.logger.exception("Failed to load view: %s", viewModule)
             
-    def loadModel(self, uuid, modelModule=None, modelClass=None):
+    def loadModel(self, uuid, modelModule=None):
         """
         Wrapper for Instrument Control loadModel function.
         
         Used by the Driver Load window.
         """
+        dev = self.ICF.getInstrument(uuid)
         
-        if not self.ICF.loadModel(uuid, modelModule, modelClass):
+        if not dev.loadModel(uuid, modelModule):
             tkMessageBox.showwarning('Unable to load driver', 'An error occured while loading the driver')
 
     #===========================================================================
@@ -414,18 +412,18 @@ class a_Main(object):
         w_addResource.grab_set()
             
     def cb_loadDriver(self, uuid):
-        validModels = self.ICF.getValidModels(uuid)
-        
-        validModels = [x[0] for x in validModels]
+        validModels = self.ICF.getModels(uuid).values()
         
         # Spawn a window to select the driver to load
         from include.a_managerHelpers import a_LoadDriver
         
         # Create the child window
-        w_DriverSelector = a_LoadDriver(self.myTk, validModels, lambda modelModule: self.loadModel(uuid, modelModule, None))
+        w_DriverSelector = a_LoadDriver(self.myTk, validModels, lambda modelModule: self.loadModel(uuid, modelModule))
             
     def cb_unloadDriver(self, uuid):
-        self.ICF.unloadModel(uuid)
+        dev = self.ICF.getInstrument(uuid)
+        
+        dev.unloadModel()
         #addr = self.ICF.getAddressFromUUID(uuid)
         #self.ICF.refresh
         self.cb_refreshTree()
@@ -444,7 +442,7 @@ class a_Main(object):
                 pass
             
         # Load view selector
-        props = self.ICF.getProperties(uuid)
+        props = self.ICF.getResources.get(uuid)
         lookup_val = props.get('modelName', None)
         
         validViews = self._getValidViews(lookup_val)
@@ -489,6 +487,8 @@ class a_Main(object):
         # Create a context menu
         menu = Tk.Menu(self.myTk)
         
+        resources = self.ICF.getResources()
+        
         # Populate menu based on context
         if self.ICF.isConnectedHost(elem):
             # Context is Hostname
@@ -501,13 +501,13 @@ class a_Main(object):
             menu.add_command(label='Refresh', command=lambda: self.cb_refreshTree(elem))
             menu.add_command(label='Disconnect', command=lambda: self.cb_managerDisconnect(elem))
             
-        elif self.ICF.isValidResource(elem):
+        elif elem in resources.keys():
             # Context is Resource, elem is the UUID
             
             # Context menu:
             # -Load Driver/Unload Driver
             # -Control Instrument (Launch View/GUI)
-            res_props = self.ICF.getProperties(elem)
+            res_props = resources.get(elem)
             
             if res_props.get('modelName', None) == None:
                 menu.add_command(label='Load Driver', command=lambda: self.cb_loadDriver(elem))
