@@ -399,6 +399,10 @@ class a_Main(object):
         self.ICF.removeManager(address)
         self.cb_refreshTree()
         
+    def cb_managerShutdown(self, address):
+        self.ICF.stopManager(address)
+        self.cb_refreshTree()
+        
     def cb_addResource(self, address):
         from include.a_managerHelpers import a_AddResource
             
@@ -412,7 +416,9 @@ class a_Main(object):
         w_addResource.grab_set()
             
     def cb_loadDriver(self, uuid):
-        validModels = self.ICF.getModels(uuid).values()
+        res = self.ICF.getResources().get(uuid)
+        address = res.get('address')
+        validModels = self.ICF.getModels(address)
         
         # Spawn a window to select the driver to load
         from include.a_managerHelpers import a_LoadDriver
@@ -488,9 +494,10 @@ class a_Main(object):
         menu = Tk.Menu(self.myTk)
         
         resources = self.ICF.getResources()
+        hosts = self.ICF.getConnectedHosts()
         
         # Populate menu based on context
-        if self.ICF.isConnectedHost(elem):
+        if elem in hosts:
             # Context is Hostname
             
             # Context menu:
@@ -500,6 +507,7 @@ class a_Main(object):
             menu.add_command(label='Add Resource', command=lambda: self.cb_addResource(elem))
             menu.add_command(label='Refresh', command=lambda: self.cb_refreshTree(elem))
             menu.add_command(label='Disconnect', command=lambda: self.cb_managerDisconnect(elem))
+            menu.add_command(label='Shutdown', command=lambda: self.cb_managerShutdown(elem))
             
         elif elem in resources.keys():
             # Context is Resource, elem is the UUID

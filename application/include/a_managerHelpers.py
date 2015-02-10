@@ -112,6 +112,8 @@ class a_ViewSelector(Tk.Toplevel):
         
 class a_LoadDriver(Tk.Toplevel):
     
+    instructions = "A driver could not automatically be loaded for this instrument, please provide the vendor and model to load the proper driver."
+    
     def __init__(self, master, models, cb_func):
         Tk.Toplevel.__init__(self, master, padx=2, pady=2)
         
@@ -121,10 +123,33 @@ class a_LoadDriver(Tk.Toplevel):
         self.model.set(models[0])
         
         self.wm_title('Load a Driver...')
-        Tk.Label(self, text='Select a driver to load:').grid(row=0, column=0, columnspan=2)
-        self.lst_model = Tk.OptionMenu(self, self.model, *models).grid(row=1, column=0, columnspan=2)
-        Tk.Button(self, text='Cancel', command=lambda: self.cb_Cancel()).grid(row=2, column=0)
-        Tk.Button(self, text='Load', command=lambda: self.cb_Load()).grid(row=2, column=1)
+        self.lbl_instructions = Tk.Label(self, text=self.instructions,
+                                         width=50,
+                                         wraplength=350)
+        self.lbl_instructions.grid(row=0, column=0, columnspan=2)
+
+        self.var_vendors = Tk.StringVar()
+        self.lst_vendor = Tk.Listbox(self, listvariable=self.var_vendors,
+                                     )
+        self.lst_vendor.grid(row=1, column=0, sticky=Tk.N+Tk.E+Tk.S+Tk.W,
+                             padx=5, pady=5)
+
+        self.var_models = Tk.StringVar()
+        self.lst_model = Tk.Listbox(self, listvariable=self.var_models,
+                                    )
+        self.lst_model.grid(row=1, column=1, sticky=Tk.N+Tk.E+Tk.S+Tk.W,
+                            padx=5, pady=5)
+
+        self.frame_buttons = Tk.Frame(self)
+        self.btn_cancel = Tk.Button(self.frame_buttons, text='Cancel',
+                                    command=lambda: self.cb_Cancel()
+                                    )
+        self.btn_cancel.grid(row=0, column=0)
+        self.btn_ok = Tk.Button(self.frame_buttons, text='Load',
+                                command=lambda: self.cb_Load()
+                                )
+        self.btn_ok.grid(row=0, column=1)
+        self.frame_buttons.grid(row=2, column=0, columnspan=2)
         
         # Make this dialog modal
         self.focus_set()

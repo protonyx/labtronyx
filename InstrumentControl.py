@@ -432,7 +432,7 @@ class InstrumentControl(object):
     # Models
     #===========================================================================
     
-    def getValidModels(self, address):
+    def getModels(self, address):
         """
         Get the list of Models from an InstrumentManager instance
         
