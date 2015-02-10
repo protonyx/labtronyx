@@ -47,7 +47,6 @@ class RpcServer(object):
         # Attempt to bind a socket
         try:
             srv_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # TODO: Bind on each interface
             srv_socket.bind(('',self.port))
             srv_socket.listen(5)
             srv_socket.setblocking(0)

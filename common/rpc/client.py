@@ -64,17 +64,11 @@ class RpcClient(object):
         object
         """
         # Request a list of methods
-        try:
-            self._setTimeout(2.0)
-            self.methods = self._rpcCall('rpc_getMethods')
-            
-            for proc in self.methods:
-                self._methodAlias(proc)
-                
-        except Exception as e:
-            raise
+        self._setTimeout(2.0)
+        self.methods = self._rpcCall('rpc_getMethods')
         
-        # TODO: Catch specific exceptions
+        for proc in self.methods:
+            self._methodAlias(proc)
             
     def _setTimeout(self, new_to=None):
         """
