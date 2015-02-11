@@ -1,6 +1,7 @@
 import uuid
 import time
 import threading
+import importlib
 
 import common
 import common.rpc as rpc
@@ -251,13 +252,8 @@ class r_Base(object):
     # Models
     #===========================================================================
     
-    def getModels(self):
-        """
-        Get a list of models that are compatible with this resource
-        
-        :returns: list
-        """
-        pass
+    def hasModel(self):
+        return self.model is not None
     
     def loadModel(self, modelName):
         """
@@ -291,7 +287,7 @@ class r_Base(object):
 
         except:
 
-            self.logger.exception('Failed to load model: ', modelName)
+            self.logger.exception('Failed to load model: %s', modelName)
             return False
     
     def unloadModel(self):

@@ -13,9 +13,9 @@ class m_debug(models.m_Base):
         # Revision date of Model version
         'date':                 '2015-01-31',
         # Device Manufacturer
-        'deviceVendor':         '',
+        'deviceVendor':         'Debug',
         # List of compatible device models
-        'deviceModel':          [''],
+        'deviceModel':          ['Debug'],
         # Device type    
         'deviceType':           'Debug',      
         

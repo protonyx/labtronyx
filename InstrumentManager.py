@@ -244,11 +244,11 @@ class InstrumentManager(object):
             for res_uuid, res in self.resources.items():
                 self.properties[res_uuid] = res.getProperties()
                 
-                self.properties[res_uuid].setdefault('deviceType', 'Generic')
-                self.properties[res_uuid].setdefault('deviceVendor', 'Generic')
-                self.properties[res_uuid].setdefault('deviceModel', 'Device')
-                self.properties[res_uuid].setdefault('deviceSerial', 'Unknown')
-                self.properties[res_uuid].setdefault('deviceFirmware', 'Unknown')
+                self.properties[res_uuid].setdefault('deviceType', '')
+                self.properties[res_uuid].setdefault('deviceVendor', '')
+                self.properties[res_uuid].setdefault('deviceModel', '')
+                self.properties[res_uuid].setdefault('deviceSerial', '')
+                self.properties[res_uuid].setdefault('deviceFirmware', '')
                 
             return True
         

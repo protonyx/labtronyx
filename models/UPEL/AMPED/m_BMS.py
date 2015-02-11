@@ -18,7 +18,7 @@ class m_BMS(models.m_Base):
         # Device Manufacturer
         'deviceVendor':         'UPEL',
         # List of compatible device models
-        'deviceModel':          ['BMS 2.1'],
+        'deviceModel':          ['AMPED BMS 2.1'],
         # Device type    
         'deviceType':           'DC-DC Converter',      
         
@@ -54,9 +54,8 @@ class m_BMS(models.m_Base):
     
     def getProperties(self):
         prop = models.m_Base.getProperties(self)
-		
-    	prop['deviceVendor'] = 'UPEL'
-    	prop['deviceModel'] = 'AMPED BMS'
+        
+    	prop['deviceModel'] = self.info.get('deviceModel')[0]
         
         # Add any additional properties here
         return prop

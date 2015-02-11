@@ -14,6 +14,8 @@ class c_VISA(controllers.c_Base):
     
     # Dict: ResID -> r_VISA Object
     resources = {}
+    
+    resource_manager = None
             
     def refresh(self):
         if self.resource_manager is not None:
@@ -134,6 +136,11 @@ class r_VISA(controllers.r_Base):
             
             
         except visa.VisaIOError as e:
+            self.VID = ''
+            self.PID = ''
+            self.firmware = ''
+            self.serial = ''
+            
             if e.abbreviation == "VI_ERROR_RSRC_BUSY":
                 self.locked = True
                 self.logger.info("Unable to Identify, resource is busy")
@@ -172,7 +179,7 @@ class r_VISA(controllers.r_Base):
         return self.instrument.query(data)
     
     def getProperties(self):
-        def_prop = controllers.r_Base.getProperties()
+        def_prop = controllers.r_Base.getProperties(self)
         
         VISA_prop = {'deviceVendor':     self.VID,
                      'deviceModel':      self.PID,
@@ -232,5 +239,5 @@ class r_VISA(controllers.r_Base):
             return False
                 
         else:
-            return controllers.r_Base.loadModel(modelName)
+            return controllers.r_Base.loadModel(self, modelName)
     

@@ -12,6 +12,24 @@ class m_BDPC_BR32(Base_Serial.Base_Serial):
     
     """
     
+    info = {
+        # Model revision author
+        'author':               'KKENNEDY',
+        # Model version
+        'version':              '1.0',
+        # Revision date of Model version
+        'date':                 '2015-01-31',
+        # Device Manufacturer
+        'deviceVendor':         'UPEL',
+        # List of compatible device models
+        'deviceModel':          ['BDPC 32kW'],
+        # Device type    
+        'deviceType':           'DC-DC Converter',      
+        
+        # List of compatible resource types
+        'validResourceTypes':   ['Serial']
+    }
+    
     def _onLoad(self):
         Base_Serial.Base_Serial._onLoad(self)
         

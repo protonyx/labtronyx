@@ -6,24 +6,6 @@ from . import m_BDPC_Base
 
 class Base_Serial(m_BDPC_Base):
     
-    info = {
-        # Model revision author
-        'author':               'KKENNEDY',
-        # Model version
-        'version':              '1.0',
-        # Revision date of Model version
-        'date':                 '2015-01-31',
-        # Device Manufacturer
-        'deviceVendor':         'UPEL',
-        # List of compatible device models
-        'deviceModel':          ['BDPC 1kW', 'BDPC 32kW'],
-        # Device type    
-        'deviceType':           'DC-DC Converter',      
-        
-        # List of compatible resource types
-        'validResourceTypes':   ['Serial']
-    }
-    
     pkt_struct = struct.Struct("BBBBBBBB")
     
     registers = {

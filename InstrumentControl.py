@@ -85,18 +85,21 @@ class InstrumentControl(object):
         # Attempt to connect to the local manager
         if not self.addManager('localhost'):
             self.startManager()
-            time.sleep(2.0)
+            time.sleep(3.0)
             
         # Check the local Manager version
         localMan = self.getManager('localhost')
-        localVer = localMan.getVersion()
         
-        if localVer != self.config.version:
-            # Version doesn't match, restart with new code from this release
-            localMan.stop()
-            time.sleep(1.0)
-            self.startManager()
-            time.sleep(2.0)
+        try:
+            localVer = localMan.getVersion()
+            if localVer != self.config.version:
+                # Version doesn't match, restart with new code from this release
+                localMan.stop()
+                time.sleep(1.0)
+                self.startManager()
+                time.sleep(2.0)
+        except:
+            pass
             
         
     
@@ -337,39 +340,33 @@ class InstrumentControl(object):
         :type address: str
         :returns: True unless there is no existing connection to `address`
         """
-        if address is not None:
-            address = self._resolveAddress(address)
-        
-        if address in self.managers:
-            man = self.managers.get(address)
-            
-            # Force a resource refresh
-            remote_resources = man.getResources()
-            
-            for res_uuid, res_dict in remote_resources.items():
-                res_dict['address'] = address
-                res_dict['hostname'] = self.getHostname(address)
-                
-                self.properties[res_uuid] = res_dict
-                
-                # Create an RPC Client if one does not already exist
-                try:
-                    port = res_dict.get('port')
-                    testInstrument = RpcClient(address=address, port=port)
-                    self.resources[res_uuid] = testInstrument
-                except:
-                    self.logger.exception("Exception while creating RPC link for resource")
-                    
-                # TODO: Purge RPC Clients that are no longer valid?
-
-        elif address is None:
+        if address is None:
             for addr in self.managers:
                 self.refreshResources(addr)
-                 
+                
+            return True
+                
         else:
-            return False
-        
-        return True
+            try:
+                man = self.getManager(address)
+                
+                # Force a resource refresh
+                man.refreshResources()
+                remote_resources = man.getResources()
+                
+                for res_uuid, res_dict in remote_resources.items():
+                    res_dict['address'] = address
+                    res_dict['hostname'] = self.getHostname(address)
+                    
+                    self.properties[res_uuid] = res_dict
+                        
+                    # TODO: Purge RPC Clients that are no longer valid?
+    
+                return True
+            
+            except:
+                self.logger.exception("Exception during refreshResource")
+                return False
   
     def getResources(self):
         """
@@ -467,18 +464,26 @@ class InstrumentControl(object):
         
         :param res_uuid: Unique Resource Identifier (UUID)
         :type res_uuid: str
-        :returns: RpcClient object
+        :returns: RpcClient object or None if UUID does not match a valid resource
         """
         # Does an instrument already exist?
-        instr = self.resources.get(res_uuid, None)
+        instr = self.resources.get(res_uuid)
         
         if instr is not None:
             return instr
         
         else:
-            # Update the property cache to force a reconnection attempt
-            self.refreshResources()
-            return self.resources.get(res_uuid, None)
+            # Create an RPC Client if one does not already exist
+            try:
+                res_dict = self.getResources().get(res_uuid)
+                address = res_dict.get('address')
+                port = res_dict.get('port')
+                testInstrument = RpcClient(address=address, port=port)
+                self.resources[res_uuid] = testInstrument
+            except:
+                self.logger.exception("Exception while creating RPC link for resource")
+                
+            return self.resources.get(res_uuid)
     
     def getInstrument_list(self):
         """

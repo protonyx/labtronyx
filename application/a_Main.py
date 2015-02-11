@@ -26,10 +26,6 @@ class a_Main(object):
 
     openViews = {}
     
-    # Tree Organization
-    treeGroup = 'hostname'
-    treeSort = 'deviceModel'
-    
     def __init__(self):
         # Get root directory
         # Get the root path
@@ -127,13 +123,13 @@ class a_Main(object):
         Rebuilds all GUI elements and positions
         
         Pane Layout:
-        +-----------+-----------------------+
-        |           |                       |
-        |   tree    |                       |
-        |   frame   |     controlFrame      |
-        |           |                       |
-        |           |                       |
-        +-----------+-----------------------+
+        +-----------------------------------+
+        |                                   |
+        |                                   |
+        |           tree frame              |
+        |                                   |
+        |                                   |
+        +-----------------------------------+
         |                                   |
         |             logFrame              |
         |                                   |
@@ -177,7 +173,7 @@ class a_Main(object):
         #=======================================================================
         # Status Bar
         #=======================================================================
-        self.statusbar = self.Statusbar(master)
+        self.statusbar = Statusbar(master)
         self.statusbar.pack(side=Tk.BOTTOM, fill=Tk.X)
         
         # Horizontal Pane
@@ -187,39 +183,29 @@ class a_Main(object):
         # Horizontal Pane - Top
         #=======================================================================
         # Vertical Pane
-        self.VPane = Tk.PanedWindow(self.HPane, orient=Tk.HORIZONTAL, height=400, width=400, sashpad=5, sashwidth=8)
-        self.HPane.add(self.VPane)
+        #=======================================================================
+        # self.VPane = Tk.PanedWindow(self.HPane, orient=Tk.HORIZONTAL, height=400, width=400, sashpad=5, sashwidth=8)
+        # self.HPane.add(self.VPane)
+        #=======================================================================
         
         #=======================================================================
         #     Vertical Pane - Left
         #     Treeview Frame
         #     Min size: 400px
         #=======================================================================
-        self.treeFrame = Tk.Frame(self.VPane) #, highlightcolor='green', highlightthickness=2)
-        self.VPane.add(self.treeFrame, width=800, minsize=400)
-        
-        Tk.Label(self.treeFrame, text='Instruments').pack(side=Tk.TOP)
-        self.tree = ttk.Treeview(self.treeFrame, height=20)
-        
-        self.tree['columns'] = ('Type', 'Vendor', 'Model', 'Serial')
-        self.tree.heading('#0', text='Instrument')
-        self.tree.column('Type', width=100)
-        self.tree.heading('Type', text='Type')
-        self.tree.column('Vendor', width=80)
-        self.tree.heading('Vendor', text='Vendor')
-        self.tree.column('Model', width=80)
-        self.tree.heading('Model', text='Model')
-        self.tree.column('Serial', width=80)
-        self.tree.heading('Serial', text='Serial Number')
-        self.tree.pack(fill=Tk.BOTH)
+        self.treeFrame = ResourceTree(self.HPane) #, highlightcolor='green', highlightthickness=2)
+        #self.VPane.add(self.treeFrame, width=800, minsize=400)
+        self.HPane.add(self.treeFrame, width=600, minsize=400)
         
         #=======================================================================
         #     Vertical Pane - Right
         #     Controls Frame
         #     Min size: None
         #=======================================================================
-        self.controlFrame = Tk.Frame(self.VPane)
-        self.VPane.add(self.controlFrame)
+        #=======================================================================
+        # self.controlFrame = Tk.Frame(self.VPane)
+        # self.VPane.add(self.controlFrame)
+        #=======================================================================
         
         # TODO: Add some controls here
         # Notebook?: http://www.tkdocs.com/tutorial/complex.html
@@ -240,29 +226,12 @@ class a_Main(object):
         """
         Creates all of the GUI element bindings
         """
-        self.myTk.wm_protocol("WM_DELETE_WINDOW", lambda: self.cb_exitWindow())
+        self.myTk.wm_protocol("WM_DELETE_WINDOW", self.cb_exitWindow)
         
         # Console
         h_textHandler = TextHandler(self.logConsole)
         h_textHandler.setFormatter(self.logFormatter)
         self.logger.addHandler(h_textHandler)
-        
-        # Bind Right Click
-        if sys.platform.startswith('darwin'):
-            # OS X
-            self.tree.bind('<Button-2>', self.e_TreeRightClick)
-        else:
-            # Windows, Linux
-            self.tree.bind('<Button-3>', self.e_TreeRightClick)
-            
-        # Bind Double Click
-        self.tree.bind('<Double-Button-1>', self.e_TreeDoubleClick)
-        
-    def resize(self):
-        """
-        Resize the frames when the window size changes
-        """
-        pass
         
     def run(self):
 
@@ -274,64 +243,6 @@ class a_Main(object):
         self.logger.info('Application start')
         
         self.myTk.mainloop()
-    
-    def rebuildTreeview(self, group='hostname', sort='deviceType', reverseOrder=False):
-        """
-        Possible groupings:
-        - None (Flat list)
-        - Hostname (default)
-        - Controller
-        - deviceType
-        - deviceVendor
-        - deviceModel
-        
-        Sorting can be done on any valid key
-        """
-        validGroups = ['hostname', 'controller', 'deviceType', 'deviceVendor', 'deviceModel']
-        
-        # Clear the treeview
-        treenodes = self.tree.get_children()
-        for n in treenodes:
-            self.tree.delete(n)
-            
-        # Import Image Assets
-        #img_host = Image.open('assets/computer.png')
-        #img_host = ImageTk.PhotoImage(img_host)
-        #img_device = Image.open('assets/drive.png')
-        #img_device = ImageTk.PhotoImage(img_device)
-
-        # Get a flat list of resources and sort
-        resources = self.ICF.getResources().values()
-        resources.sort(key=lambda res: res.get(sort, ''), reverse=reverseOrder)
-        
-        # Build a list of group values
-        if group is 'hostname':
-            # Fixes a bug where hosts were not added if no resources were present
-            for gval in self.ICF.getConnectedHosts():
-                self.tree.insert('', 'end', gval, text=gval, open=True) #, image=img_host)
-                
-        elif group is not None and group in validGroups:
-            group_vals = []
-            for res in resources:
-                gv = res.get(group, None)
-                if gv is not None and gv not in group_vals:
-                    group_vals.append(gv)
-            
-            group_vals.sort()
-            
-            # Create group tree nodes
-            for gval in group_vals:
-                self.tree.insert('', 'end', gval, text=gval)
-            
-        # Populate child nodes
-        for res in resources:
-            lineID = res.get('uuid', None)
-            if lineID is not None:
-                self.tree.insert(res.get(group, ''), 'end', lineID, text=res.get('resourceID', '')) #, image=img_device)
-                self.tree.set(lineID, 'Type', res.get('deviceType', ''))
-                self.tree.set(lineID, 'Vendor', res.get('deviceVendor', ''))
-                self.tree.set(lineID, 'Model', res.get('deviceModel', ''))
-                self.tree.set(lineID, 'Serial', res.get('deviceSerial', ''))
 
     def loadView(self, uuid, viewModule, viewClass=None):
         try:
@@ -356,17 +267,6 @@ class a_Main(object):
             
         except:
             self.logger.exception("Failed to load view: %s", viewModule)
-            
-    def loadModel(self, uuid, modelModule=None):
-        """
-        Wrapper for Instrument Control loadModel function.
-        
-        Used by the Driver Load window.
-        """
-        dev = self.ICF.getInstrument(uuid)
-        
-        if not dev.loadModel(uuid, modelModule):
-            tkMessageBox.showwarning('Unable to load driver', 'An error occured while loading the driver')
 
     #===========================================================================
     # Callback Functions
@@ -415,24 +315,7 @@ class a_Main(object):
         w_addResource.focus_set()
         w_addResource.grab_set()
             
-    def cb_loadDriver(self, uuid):
-        res = self.ICF.getResources().get(uuid)
-        address = res.get('address')
-        validModels = self.ICF.getModels(address)
-        
-        # Spawn a window to select the driver to load
-        from include.a_managerHelpers import a_LoadDriver
-        
-        # Create the child window
-        w_DriverSelector = a_LoadDriver(self.myTk, validModels, lambda modelModule: self.loadModel(uuid, modelModule))
-            
-    def cb_unloadDriver(self, uuid):
-        dev = self.ICF.getInstrument(uuid)
-        
-        dev.unloadModel()
-        #addr = self.ICF.getAddressFromUUID(uuid)
-        #self.ICF.refresh
-        self.cb_refreshTree()
+
         
     def cb_loadView(self, uuid):
         if uuid in self.openViews.keys():
@@ -469,9 +352,7 @@ class a_Main(object):
         else:
             tkMessageBox.showwarning('Unable to load view', 'No suitable views could be found for this model')
     
-    def cb_refreshTree(self, address=None):
-        self.ICF.refreshResources(address)            
-        self.rebuildTreeview()
+
             
     def cb_setLogLevel(self, level):
         #numeric_level = getattr(logging, loglevel.upper(), None)
@@ -487,6 +368,165 @@ class a_Main(object):
     # 
     #===========================================================================
 
+class Statusbar(Tk.Frame):
+    """
+    TODO:
+    - Add sections
+    """
+    def __init__(self, master, sections=1):
+        Tk.Frame.__init__(self, master)
+        
+        if sections < 1:
+            sections = 1
+                
+        self.sections = [None]*sections
+        for i in range(0, sections):
+            self.sections[i] = Tk.Label(self, bd=1, relief=Tk.SUNKEN, anchor=Tk.W)
+            self.sections[i].pack(fill=Tk.X)
+            
+    def add_section(self):
+        pass
+
+    def set(self, section, format, *args):
+        self.label.config(text=format % args)
+        self.label.update_idletasks()
+
+    def clear(self, section):
+        self.label.config(text="")
+        self.label.update_idletasks()
+        
+class Toolbar(Tk.Frame):
+    def __init__(self, master, **kwargs):
+        Tk.Frame.__init__(self, master)
+            
+class ResourceTree(Tk.Frame):
+    
+    validGroups = ['hostname', 'deviceType']
+    
+    # Tree Organization
+    treeGroup = 'hostname'
+    treeSort = 'deviceModel'
+    
+    def __init__(self, master, ICF):
+        Tk.Frame.__init__(self, master)
+        
+        self.ICF = ICF
+        
+        Tk.Label(self, text='Instruments').pack(side=Tk.TOP)
+        self.tree = ttk.Treeview(self, height=20)
+        
+        self.tree['columns'] = ('Type', 'Vendor', 'Model', 'Serial')
+        self.tree.heading('#0', text='Instrument')
+        self.tree.column('Vendor', width=80)
+        self.tree.heading('Vendor', text='Vendor')
+        self.tree.column('Model', width=80)
+        self.tree.heading('Model', text='Model')
+        self.tree.column('Type', width=100)
+        self.tree.heading('Type', text='Type')
+        self.tree.column('Serial', width=80)
+        self.tree.heading('Serial', text='Serial Number')
+        self.tree.pack(fill=Tk.BOTH)
+        
+        self.nodes = []
+        self.resources = {}
+        
+        self.changeGrouping()
+        
+        # Bind Right Click
+        if sys.platform.startswith('darwin'):
+            # OS X
+            self.tree.bind('<Button-2>', self.e_TreeRightClick)
+        else:
+            # Windows, Linux
+            self.tree.bind('<Button-3>', self.e_TreeRightClick)
+            
+        # Bind Double Click
+        self.tree.bind('<Double-Button-1>', self.e_TreeDoubleClick)
+    
+    def changeGrouping(self, group='hostname'):
+        # Clear the treeview
+        self._clear()
+        
+        # Build a list of group values
+        if group is 'hostname':
+            # Fixes a bug where hosts were not added if no resources were present
+            for gval in self.ICF.getConnectedHosts():
+                self.tree.insert('', 'end', gval, text=gval, open=True) #, image=img_host)
+                
+        elif group in self.validGroups:
+            group_vals = []
+            for res in resources:
+                gv = res.get(group, None)
+                if gv is not None and gv not in group_vals:
+                    group_vals.append(gv)
+            
+            group_vals.sort()
+            
+            # Create group tree nodes
+            for gval in group_vals:
+                self.tree.insert('', 'end', gval, text=gval)
+                
+        self.refresh()
+    
+    def refresh(self, sort='deviceType', reverseOrder=False):
+        """
+        Sorting can be done on any valid key
+        """
+        # TODO: Get tree view images working
+        # Import Image Assets
+        #img_host = Image.open('assets/computer.png')
+        #img_host = ImageTk.PhotoImage(img_host)
+        #img_device = Image.open('assets/drive.png')
+        #img_device = ImageTk.PhotoImage(img_device)
+        self._refreshResources()
+
+        # Get a flat list of resources and sort
+        resources = self.ICF.getResources().values()
+        resources.sort(key=lambda res: res.get(sort, ''), reverse=reverseOrder)
+        
+        # Populate child nodes
+        for res in resources:
+            lineID = res.get('uuid', None)
+            if lineID is not None and lineID not in self.nodes:
+                self.tree.insert(res.get(group, ''), 'end', lineID, text=res.get('resourceID', '')) #, image=img_device)
+                self.nodes.append(lineID)
+            
+            self.tree.set(lineID, 'Vendor', res.get('deviceVendor', ''))
+            self.tree.set(lineID, 'Model', res.get('deviceModel', ''))
+            self.tree.set(lineID, 'Type', res.get('deviceType', ''))
+            self.tree.set(lineID, 'Serial', res.get('deviceSerial', ''))
+    
+    def _refreshResources(self):
+        self.ICF.refreshResources()
+        
+        self.resources = self.ICF.getResources()
+    
+    def _clear(self):
+        treenodes = self.tree.get_children()
+        for n in treenodes:
+            self.tree.delete(n)
+            
+        self.nodes = []
+            
+    def cb_refreshTree(self, address=None):
+        self.ICF.refreshResources(address)            
+        self.rebuildTreeview()
+        
+    def cb_loadDriver(self, uuid):
+        # Spawn a window to select the driver to load
+        from include.a_managerHelpers import a_LoadDriver
+        
+        # Create the child window
+        w_DriverSelector = a_LoadDriver(self.myTk, self.ICF, uuid)
+            
+    def cb_unloadDriver(self, uuid):
+        dev = self.ICF.getInstrument(uuid)
+        
+        dev.unloadModel()
+        #addr = self.ICF.getAddressFromUUID(uuid)
+        #self.ICF.refresh
+        self.cb_refreshTree()
+    
     def e_TreeRightClick(self, event):
         elem = self.tree.identify_row(event.y)
 
@@ -533,42 +573,6 @@ class a_Main(object):
 
     def e_TreeDoubleClick(self, event):
         pass
-        
-    #===========================================================================
-    # Internal Class Definitions
-    #===========================================================================        
-        
-    class Statusbar(Tk.Frame):
-        """
-        TODO:
-        - Add sections
-        """
-        def __init__(self, master, sections=1):
-            Tk.Frame.__init__(self, master)
-            
-            if sections < 1:
-                sections = 1
-                    
-            self.sections = [None]*sections
-            for i in range(0, sections):
-                self.sections[i] = Tk.Label(self, bd=1, relief=Tk.SUNKEN, anchor=Tk.W)
-                self.sections[i].pack(fill=Tk.X)
-                
-        def add_section(self):
-            pass
-    
-        def set(self, section, format, *args):
-            self.label.config(text=format % args)
-            self.label.update_idletasks()
-    
-        def clear(self, section):
-            self.label.config(text="")
-            self.label.update_idletasks()
-            
-    class Toolbar(Tk.Frame):
-        def __init__(self, master, **kwargs):
-            Tk.Frame.__init__(self, master)
-
         
 class TextHandler(logging.Handler):
     """ 

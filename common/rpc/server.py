@@ -301,13 +301,14 @@ class RpcConnection(threading.Thread):
                             
                             # Catch exceptions during method execution
                             # DO NOT ALLOW ANY EXCEPTIONS TO PASS THIS LEVEL   
+                            except RpcMethodNotFound:
+                                out_packet.addError_MethodNotFound(id)
+                                
                             except TypeError:
                                 # Raised when arguments mismatch, but also other cases
                                 # Not a perfect solution, but whatever.
                                 out_packet.addError_InvalidParams(id)
-                                
-                            except RpcMethodNotFound:
-                                out_packet.addError_MethodNotFound(id)
+                                self.logger.exception("RPC Server Type Error")
                                 
                             except Exception as e:
                                 # Catch-all for everything else
@@ -320,7 +321,10 @@ class RpcConnection(threading.Thread):
                     
         except socket.error as e:
             # Socket closed poorly from client
-            self.logger.error('[%s] Socket closed with error: %s', self.name, e.errno)
+            if e.errno == errno.ECONNABORTED:
+                self.logger.error('[%s] Client socket closed before data could be sent', self.name)
+            else:
+                self.logger.error('[%s] Socket closed with error: %s', self.name, e.errno)
 
         except:
             # Log an exception, close the connection
