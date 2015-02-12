@@ -1,4 +1,4 @@
-import views
+import application.views as views
 
 import Tkinter as Tk
 import matplotlib
@@ -9,10 +9,20 @@ from matplotlib.figure import Figure
 
 class v_Oscilloscope(views.v_Base):
     
-    validModels = ['models.Tektronix.Oscilloscope.m_OscilloscopeBase', 
-                   'models.Tektronix.Oscilloscope.m_DigitalPhosphor',
-                   'models.Tektronix.Oscilloscope.m_MixedDomain',
-                   'models.Tektronix.Oscilloscope.m_MixedSignal']
+    info = {
+        # View revision author
+        'author':               'KKENNEDY',
+        # View version
+        'version':              '1.0',
+        # Revision date of View version
+        'date':                 '2015-02-11',    
+        
+        # List of compatible models
+        'validModels':          ['models.Tektronix.Oscilloscope.m_OscilloscopeBase', 
+                                 'models.Tektronix.Oscilloscope.m_DigitalPhosphor',
+                                 'models.Tektronix.Oscilloscope.m_MixedDomain',
+                                 'models.Tektronix.Oscilloscope.m_MixedSignal']
+    }
     
     def _plot(self):
         if self.model.data != {}:

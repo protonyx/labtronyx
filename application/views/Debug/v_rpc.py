@@ -1,4 +1,5 @@
-import views
+import application.views as views
+
 import common
 #from common.jsonrpc import *
 from common.rpc import *
@@ -7,7 +8,19 @@ import Tkinter as Tk
 
 class v_rpc(views.v_Base):
     
-    validModels = [] # Valid for all models
+    info = {
+        # View revision author
+        'author':               'KKENNEDY',
+        # View version
+        'version':              '1.0',
+        # Revision date of View version
+        'date':                 '2015-02-11',  
+        # Description
+        'description':          'RPC test view',  
+            
+        # List of compatible Models
+        'validModels':          ['']
+    }
         
     def run(self):
         self.wm_title("RPC Test")

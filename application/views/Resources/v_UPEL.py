@@ -1,13 +1,23 @@
 
-import views
+import application.views as views
 
 import Tkinter as Tk
 
 class v_UPEL(views.v_Base):
     
-    validModels = ['models.UPEL.BDPC.m_BDPC_BR2',
-                   'models.UPEL.BDPC.m_BDPC_BR32',
-                   'models.UPEL.BDPC.m_BDPC']
+    info = {
+        # View revision author
+        'author':               'KKENNEDY',
+        # View version
+        'version':              '1.0',
+        # Revision date of View version
+        'date':                 '2015-02-11',  
+        # Description
+        'description':          'Generic view for UPEL ICP Resources',  
+            
+        # List of compatible resource types
+        'validResourceTypes':   ['UPEL']
+    }
     
     def run(self):
         self.wm_title("UPEL ICP Test")

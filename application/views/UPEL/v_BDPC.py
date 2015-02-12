@@ -1,9 +1,10 @@
+import application.views as views
 
-import views
-from common.widgets import *
+from application.widgets import *
 
 import Tkinter as Tk
 
+# ICP Widgets
 from . import *
 
 class v_BDPC(views.v_Base):
@@ -31,9 +32,19 @@ class v_BDPC(views.v_Base):
         * Conversion Ratio
     """
     
-    validModels = ['models.UPEL.BDPC.m_BDPC_BR2',
-                   'models.UPEL.BDPC.m_BDPC_BR32',
-                   'models.UPEL.BDPC.m_BDPC']
+    info = {
+        # View revision author
+        'author':               'KKENNEDY',
+        # View version
+        'version':              '1.0',
+        # Revision date of View version
+        'date':                 '2015-02-11',    
+        
+        # List of compatible models
+        'validModels':          ['models.UPEL.BDPC.m_BDPC_BR2',
+                                 'models.UPEL.BDPC.m_BDPC_BR32',
+                                 'models.UPEL.BDPC.m_BDPC']
+    }
     
     def run(self):
         # TODO: Make this work
