@@ -229,6 +229,7 @@ class a_LoadDriver(Tk.Toplevel):
                         tkMessageBox.showwarning('Unable to load driver', 'An error occured while loading the driver')
                         
                     self.ICF.refreshResources()
+                    self.ICF.refreshInstrument(self.uuid)
             
                     # Close this window
                     self.destroy()

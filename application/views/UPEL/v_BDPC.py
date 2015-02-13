@@ -43,7 +43,7 @@ class v_BDPC(views.v_Base):
         # List of compatible models
         'validModels':          ['models.UPEL.BDPC.m_BDPC_BR2',
                                  'models.UPEL.BDPC.m_BDPC_BR32',
-                                 'models.UPEL.BDPC.m_BDPC']
+                                 'models.UPEL.BDPC.m_BDPC_SRC6']
     }
     
     def run(self):
@@ -53,6 +53,8 @@ class v_BDPC(views.v_Base):
         # List of GUI elements to update
         self.update_elems = []
         self.wm_title("BDPC")
+        
+        self.model = self.getResource()
          
         self.frame_left = Tk.Frame(self)
         #=======================================================================

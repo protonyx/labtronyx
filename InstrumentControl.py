@@ -457,6 +457,10 @@ class InstrumentControl(object):
     # Instruments are RPC Client objects to resources
     #===========================================================================
     
+    def refreshInstrument(self, res_uuid):
+        dev = self.getInstrument(res_uuid)
+        dev._refresh()
+    
     def getInstrument(self, res_uuid, **kwargs):
         """
         Create a :class:`RpcClient` instance that is linked to a resource on a
@@ -582,6 +586,7 @@ if __name__ == "__main__":
         #sys.path.append("..")
         from application.a_Main import a_Main
         main_gui = a_Main()
+        main_gui.mainloop()
          
     except Exception as e:
         print "Unable to load main application"

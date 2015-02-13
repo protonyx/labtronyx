@@ -14,7 +14,7 @@ import tkMessageBox
 sys.path.append("..")
 from InstrumentControl import InstrumentControl
 
-class a_Main(object):
+class a_Main(Tk.Tk):
     """
     Main application for 
     TODO:
@@ -27,7 +27,9 @@ class a_Main(object):
     views = {}      # Module name -> View info
     openViews = {}
     
-    def __init__(self):
+    def __init__(self, master=None):
+        Tk.Tk.__init__(self, master)
+        
         # Get root directory
         # Get the root path
         can_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir) # Resolves symbolic links
@@ -44,9 +46,8 @@ class a_Main(object):
         
         # Instantiate an InstrumentControl object
         self.ICF = InstrumentControl(Logger=self.logger)
+        self.ICF.addManager('localhost')
         
-        # Instantiate root Tk object
-        self.myTk = Tk.Tk()
             
         # GUI Startup
         self.rebuild()
@@ -57,7 +58,7 @@ class a_Main(object):
         
         # TODO: Persistent Settings
         
-        self.run()
+        self.logger.info('Application start')
     
     def __pathToModuleName(self, path):
         # Get module name from relative path
@@ -126,19 +127,17 @@ class a_Main(object):
         |                                   |
         +-----------------------------------+
         """
-        master = self.myTk
         #ttk.Style().theme_use('vista')
-        #master = Tk.Toplevel(self.myTk)
-        master.wm_title("Instrument Control and Automation")
-        master.minsize(500, 500)
-        master.geometry("800x600")
+        self.wm_title("Instrument Control and Automation")
+        self.minsize(500, 500)
+        self.geometry("800x600")
         
         #=======================================================================
         # Menubar
         #=======================================================================
-        master.option_add('*tearOff', Tk.FALSE)
-        self.menubar = Tk.Menu(master) 
-        master['menu'] = self.menubar
+        self.option_add('*tearOff', Tk.FALSE)
+        self.menubar = Tk.Menu(self) 
+        self['menu'] = self.menubar
         # File
         self.m_File = Tk.Menu(self.menubar)
         self.menubar.add_cascade(menu=self.m_File, label='File')
@@ -164,11 +163,11 @@ class a_Main(object):
         #=======================================================================
         # Status Bar
         #=======================================================================
-        self.statusbar = Statusbar(master)
+        self.statusbar = Statusbar(self)
         self.statusbar.pack(side=Tk.BOTTOM, fill=Tk.X)
         
         # Horizontal Pane
-        self.HPane = Tk.PanedWindow(master, orient=Tk.VERTICAL, height=400, sashpad=5, sashwidth=8)
+        self.HPane = Tk.PanedWindow(self, orient=Tk.VERTICAL, height=400, sashpad=5, sashwidth=8)
         self.HPane.pack(fill=Tk.BOTH, expand=Tk.YES, padx=5, pady=5)
         #=======================================================================
         # Horizontal Pane - Top
@@ -217,7 +216,7 @@ class a_Main(object):
         """
         Creates all of the GUI element bindings
         """
-        self.myTk.wm_protocol("WM_DELETE_WINDOW", self.cb_exitWindow)
+        self.wm_protocol("WM_DELETE_WINDOW", self.cb_exitWindow)
         
         # Bind Right Click
         if sys.platform.startswith('darwin'):
@@ -234,43 +233,6 @@ class a_Main(object):
         h_textHandler = TextHandler(self.logConsole)
         h_textHandler.setFormatter(self.logFormatter)
         self.logger.addHandler(h_textHandler)
-        
-    def run(self):
-
-        # Try to connect to the local manager
-        self.ICF.addManager('localhost')
-        
-        self.logger.info('Application start')
-        
-        self.myTk.mainloop()
-
-    def loadView(self, uuid, viewModule):
-        """
-        Load a specified view for a given resource
-        """
-        try:
-            # Check if the specified model is valid
-            testModule = importlib.import_module(viewModule)
-            reload(testModule) # Reload the module in case anything has changed
-            
-            className = viewModule.split('.')[-1]
-            viewClass = getattr(testModule, className)
-            
-            instrument = self.ICF.getInstrument(uuid)
-            
-            if instrument is not None:
-                viewWindow = viewClass(self.myTk, instrument)
-                
-                # Store the object in open views
-                self.openViews[uuid] = viewWindow
-                
-                viewWindow.run()
-                
-            else:
-                tkMessageBox.showwarning('Unable to load view', 'Unable to get a handle for the resource')
-            
-        except:
-            self.logger.exception("Failed to load view: %s", viewModule)
 
     #===========================================================================
     # Callback Functions
@@ -281,18 +243,22 @@ class a_Main(object):
     def cb_exitWindow(self):
         try:
             if tkMessageBox.askokcancel("Quit", "Do you really wish to quit?"):
-                self.myTk.destroy()
+                self.destroy()
         
         except:
-            self.myTk.destroy()
+            self.destroy()
+            
+    def cb_setLogLevel(self, level):
+        #numeric_level = getattr(logging, loglevel.upper(), None)
+        self.logger.setLevel(level)
+        self.logger.log(level, 'Log Level Changed')
             
     def cb_managerConnect(self):
         # Spawn a window to get address and port
         from include.a_managerHelpers import a_ConnectToHost
         
         # Create the child window
-        w_connectToHost = a_ConnectToHost(self.myTk, lambda address, port: self.cb_addManager(address, port))
-        
+        w_connectToHost = a_ConnectToHost(self, lambda address, port: self.cb_addManager(address, port))
         
     def cb_addManager(self, address, port=None):
         # Attempt a connection to the manager
@@ -313,7 +279,7 @@ class a_Main(object):
         controllers = self.ICF.getControllers(address)
             
         # Create the child window
-        w_addResource = a_AddResource(self.myTk, self, controllers, lambda controller, resID: self.ICF.addResource(address, controller, resID))
+        w_addResource = a_AddResource(self, self, controllers, lambda controller, resID: self.ICF.addResource(address, controller, resID))
         
         # Make the child modal
         w_addResource.focus_set()
@@ -321,6 +287,80 @@ class a_Main(object):
             
     def cb_refreshTree(self, address=None):
         self.treeFrame.refresh()
+        
+    def cb_loadView(self, uuid, viewModule=None):
+        if viewModule is not None:
+            try:
+                # Check if the specified model is valid
+                testModule = importlib.import_module(viewModule)
+                reload(testModule) # Reload the module in case anything has changed
+                
+                className = viewModule.split('.')[-1]
+                viewClass = getattr(testModule, className)
+                
+                instrument = self.ICF.getInstrument(uuid)
+                
+                if instrument is not None:
+                    viewWindow = viewClass(self, instrument)
+                    
+                    # Store the object in open views
+                    self.openViews[uuid] = viewWindow
+                    
+                    viewWindow.run()
+                    
+                else:
+                    tkMessageBox.showwarning('Unable to load view', 'Unable to get a handle for the resource')
+                
+            except:
+                self.logger.exception("Failed to load view: %s", viewModule)
+                
+        else:
+            # Check if a view is already open
+            if uuid in self.openViews.keys():
+                try:
+                    # Do nothing? Bring window into focus?
+                    view_window = self.openViews.get(uuid)
+                    
+                    view_window.lift()
+                
+                    return None
+                except:
+                    # On exception, load the view selector
+                    pass
+                
+            # Find compatible views
+            instrument = self.ICF.getInstrument(uuid)
+            properties = instrument.getProperties()
+            
+            modelName = properties.get('modelName')
+            validViews = []
+            
+            if modelName is not None:
+                # Find a view with a compatible model
+                for viewModule, viewInfo in self.views.items():
+                    if modelName in viewInfo.get('validModels', []):
+                        validViews.append(viewModule)
+            else:
+                # Find a generic view for this resource type
+                resType = properties.get('resourceType')
+                for viewModule, viewInfo in self.views.items():
+                    if resType in viewInfo.get('validResourceTypes', []):
+                        validViews.append(viewModule)
+                
+            # Load the view
+            if len(validViews) > 1:
+                # Load view selector if more than one found
+                from include.a_managerHelpers import a_ViewSelector
+                
+                # Create the child window
+                w_ViewSelector = a_ViewSelector(self, validViews, lambda viewModule: self.loadView(uuid, viewModule))
+    
+            elif len(validViews) == 1 and validViews[0] is not None:
+                # Load the view
+                self.cb_loadView(uuid, validViews[0])
+                
+            else:
+                tkMessageBox.showwarning('Unable to load view', 'No suitable views could be found for this model')
         
     def cb_loadDriver(self, uuid):
         # Spawn a window to select the driver to load
@@ -335,62 +375,14 @@ class a_Main(object):
         dev = self.ICF.getInstrument(uuid)
         
         dev.unloadModel()
+        
+        self.ICF.refreshInstrument(uuid)
         #addr = self.ICF.getAddressFromUUID(uuid)
         #self.ICF.refresh
         self.treeFrame.refresh()
         
-    def cb_loadView(self, uuid):
-        # Check if a view is already open
-        if uuid in self.openViews.keys():
-            try:
-                # Do nothing? Bring window into focus?
-                view_window = self.openViews.get(uuid)
-                
-                view_window.lift()
-            
-                return None
-            except:
-                # On exception, load the view selector
-                pass
-            
-        # Find compatible views
-        instrument = self.ICF.getInstrument(uuid)
-        properties = instrument.getProperties()
-        
-        modelName = properties.get('modelName')
-        validViews = []
-        
-        if modelName is not None:
-            # Find a view with a compatible model
-            for viewModule, viewInfo in self.views.items():
-                if modelName in viewInfo.get('validModels', []):
-                    validViews.append(viewModule)
-        else:
-            # Find a generic view for this resource type
-            resType = properties.get('resourceType')
-            for viewModule, viewInfo in self.views.items():
-                if resType in viewInfo.get('validResourceTypes', []):
-                    validViews.append(viewModule)
-            
-        # Load the view
-        if len(validViews) > 1:
-            # Load view selector if more than one found
-            from include.a_managerHelpers import a_ViewSelector
-            
-            # Create the child window
-            w_ViewSelector = a_ViewSelector(self.myTk, validViews, lambda viewModule: self.loadView(uuid, viewModule))
-
-        elif len(validViews) == 1:
-            # Load the view
-            self.loadView(uuid, validViews[0])
-            
-        else:
-            tkMessageBox.showwarning('Unable to load view', 'No suitable views could be found for this model')
-            
-    def cb_setLogLevel(self, level):
-        #numeric_level = getattr(logging, loglevel.upper(), None)
-        self.logger.setLevel(level)
-        self.logger.log(level, 'Log Level Changed')
+    def cb_res_properties(self, uuid):
+        pass
 
     #===========================================================================
     # Event Handlers
@@ -405,7 +397,7 @@ class a_Main(object):
         elem = self.treeFrame.identify_row(event.y)
 
         # Create a context menu
-        menu = Tk.Menu(self.myTk)
+        menu = Tk.Menu(self)
         
         resources = self.ICF.getResources()
         hosts = self.ICF.getConnectedHosts()
@@ -431,13 +423,14 @@ class a_Main(object):
             # -Control Instrument (Launch View/GUI)
             res_props = resources.get(elem)
             
+            menu.add_command(label='Control Device', command=lambda: self.cb_loadView(elem))
+            
             if res_props.get('modelName', None) == None:
                 menu.add_command(label='Load Driver', command=lambda: self.cb_loadDriver(elem))
             else:
-                menu.add_command(label='Control Device', command=lambda: self.cb_loadView(elem))
                 menu.add_command(label='Unload Driver', command=lambda: self.cb_unloadDriver(elem))
             
-            #menu.add_command(label='Properties...', command=lambda: tkMessageBox.showinfo('Instrument Properties', elem))
+            menu.add_command(label='Properties...', command=lambda: self.cb_res_properties(elem))
         
         else:
             # Something else maybe empty space?
@@ -490,7 +483,6 @@ class ResourceTree(Tk.Frame):
     def __init__(self, master, ICF):
         Tk.Frame.__init__(self, master)
         
-        #self.master = master
         self.ICF = ICF
         
         Tk.Label(self, text='Instruments').pack(side=Tk.TOP)
@@ -611,6 +603,7 @@ if __name__ == "__main__":
     # Load Application GUI
     try:
         main_gui = a_Main()
+        main_gui.mainloop()
          
     except Exception as e:
         print "Unable to load main application"

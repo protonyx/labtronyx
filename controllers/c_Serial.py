@@ -116,6 +116,29 @@ class r_Serial(controllers.r_Base):
         
     def unlock(self):
         pass
+    
+    #===========================================================================
+    # Serial Configuration
+    #===========================================================================
+    
+    def configure(self, **kwargs):
+        if 'baudrate' in kwargs:
+            self.instrument.setBaudrate(kwargs.get('baudrate'))
+            
+        if 'timeout' in kwargs:
+            self.instrument.setTimeout(kwargs.get('timeout'))
+            
+        if 'bytesize' in kwargs:
+            self.instrument.setByteSize(kwargs.get('bytesize'))
+            
+        if 'parity' in kwargs:
+            self.instrument.setParity(kwargs.get('parity'))
+            
+        if 'stopbits' in kwargs:
+            self.instrument.setStopbits(kwargs.get('stopbits'))
+            
+    def getConfiguration(self):
+        return self.instrument.getSettingsDict()
         
     #===========================================================================
     # Data Transmission
@@ -126,6 +149,9 @@ class r_Serial(controllers.r_Base):
     
     def read(self, size=1):
         return self.instrument.read(size)
+    
+    def inWaiting(self):
+        return self.instrument.inWaiting()
     
     def query(self, data):
         return self.instrument.query(data)

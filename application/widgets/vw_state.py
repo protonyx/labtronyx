@@ -164,14 +164,17 @@ class vw_BinaryFields(vw_Base):
             self.state = 0
             
         def cb_update(self, val):
-            val_field = val.get(self.field_tag, 0)
-            
+            try:
+                val_field = val.get(self.field_tag, 0)
+            except AttributeError:
+                val_field = 0
+                
             self.state = val_field
             
             if val_field:
                 self.field_state.set('1')
             else:
                 self.field_state.set('0')
-                
-            # Field Status
+                    
+            
             

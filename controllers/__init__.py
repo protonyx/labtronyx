@@ -301,7 +301,7 @@ class r_Base(object):
                 self.model._onUnload()
                 # RPC unregister object
                 
-                self.rpc_server.unregisterObject(self)
+                self.rpc_server.unregisterObject(self.model)
                 
             except:
                 self.logger.exception('Exception while unloading model')

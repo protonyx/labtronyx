@@ -139,11 +139,11 @@ class Base_Serial(m_BDPC_Base):
         self.instr = self.getResource()
         
         # Configure the COM Port
-        self.instr.baudrate = 115200
-        self.instr.timeout = 0.5
-        self.instr.bytesize = 8
-        self.instr.parity = 'E'
-        self.instr.stopbits = 1
+        self.instr.configure(baudrate=115200,
+                             timeout=0.5,
+                             bytesize=8,
+                             parity='E',
+                             stopbits=1)
         
     def _onUnload(self):
         pass

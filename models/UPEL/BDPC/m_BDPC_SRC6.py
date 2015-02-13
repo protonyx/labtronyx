@@ -24,7 +24,7 @@ class m_BDPC_SRC6(Base_Serial.Base_Serial):
     }
     
     def getProperties(self):
-        prop = Base_ICP.Base_ICP.getProperties(self)
+        prop = Base_Serial.Base_Serial.getProperties(self)
         
         prop['deviceVendor'] = 'UPEL'
         prop['deviceModel'] = 'BDPC Dual 2kW'

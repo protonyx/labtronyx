@@ -41,11 +41,11 @@ class m_BMS(models.m_Base):
         self.instr = self.getResource()
         
         # Configure the COM Port
-        self.instr.baudrate = 1500000
-        self.instr.timeout = 0.5
-        self.instr.bytesize = 8
-        self.instr.parity = 'N'
-        self.instr.stopbits = 1
+        self.instr.configure(baudrate=1500000,
+                             timeout=0.5,
+                             bytesize=8,
+                             parity='N',
+                             stopbits=1)
         
         self.status = 0
     
