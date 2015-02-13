@@ -107,30 +107,9 @@ class r_VISA(controllers.r_Base):
         try:
             self.logger.info("Created VISA Resource: %s", resID)
             self.instrument = self.resource_manager.open_resource(resID)
-            self.identity = self.instrument.query("*IDN?").strip().split(',')
             
-            if len(self.identity) == 4:
-                self.VID, self.PID, self.serial, self.firmware = self.identity
-                self.logger.info("Vendor: %s", self.VID)
-                self.logger.info("Model:  %s", self.PID)
-                self.logger.info("Serial: %s", self.serial)
-                self.logger.info("F/W:    %s", self.firmware)
-            
-            elif len(self.identity) == 3:
-                # Resource provided a non-standard identify response
-                # Screw you BK Precision for making me do this
-                self.VID = ''
-                self.PID, self.firmware, self.serial = self.identity
-                self.logger.info("Model:  %s", self.PID)
-                self.logger.info("Serial: %s", self.serial)
-                self.logger.info("F/W:    %s", self.firmware)
-                
-            else:
-                self.VID = ''
-                self.PID = ''
-                self.firmware = ''
-                self.serial = ''
-                self.logger.error('Unable to identify VISA device: %s', resID)
+            self.identify()
+            self.status = 'READY'
             
             self.loadModel()
             
@@ -152,6 +131,36 @@ class r_VISA(controllers.r_Base):
     #===========================================================================
     # Resource State
     #===========================================================================
+    
+    def identify(self):
+        self.open()
+        
+        self.identity = self.instrument.query("*IDN?").strip().split(',')
+            
+        if len(self.identity) == 4:
+            self.VID, self.PID, self.serial, self.firmware = self.identity
+            self.logger.info("Vendor: %s", self.VID)
+            self.logger.info("Model:  %s", self.PID)
+            self.logger.info("Serial: %s", self.serial)
+            self.logger.info("F/W:    %s", self.firmware)
+        
+        elif len(self.identity) == 3:
+            # Resource provided a non-standard identify response
+            # Screw you BK Precision for making me do this
+            self.VID = ''
+            self.PID, self.firmware, self.serial = self.identity
+            self.logger.info("Model:  %s", self.PID)
+            self.logger.info("Serial: %s", self.serial)
+            self.logger.info("F/W:    %s", self.firmware)
+            
+        else:
+            self.VID = ''
+            self.PID = ''
+            self.firmware = ''
+            self.serial = ''
+            self.logger.error('Unable to identify VISA device: %s', resID)
+            
+        self.close()
         
     def open(self):
         self.instrument.open()

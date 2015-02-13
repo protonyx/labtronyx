@@ -147,6 +147,7 @@ class r_Base(object):
         self.logger = common_globals.getLogger()
         
         self.uuid = str(uuid.uuid4())
+        self.status = 'INIT'
         
         self.groupTag = kwargs.get('groupTag', '')
         
@@ -169,8 +170,7 @@ class r_Base(object):
         return self.type
     
     def getStatus(self):
-        # TODO: Resource status
-        pass
+        return self.status
     
     def getControllerName(self):
         """
