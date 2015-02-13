@@ -141,7 +141,7 @@ class RpcServer(object):
                     pass
             
             # Unable to find method
-            raise AttributeError
+            raise RpcMethodNotFound()
             
     def _getMethod(self, obj, method):
         test_method = getattr(obj, method)
@@ -342,7 +342,7 @@ class RpcConnection(threading.Thread):
                 return req.call(test_method)
             
         # Bubble all exceptions up to the calling function
-        except AttributeError:
+        except RpcMethodNotFound:
             self.logger.error('RPC Method Not Found')
-            raise RpcMethodNotFound()
+            raise
         

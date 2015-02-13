@@ -15,11 +15,6 @@ class RpcClient(object):
     RpcBase, RpcClient can dynamically create method aliases. In this way, a
     RpcClient object can "become" an instance of an object on a remote host.
     
-    .. note::
-        If the remote RPC server does not extend RpcBase, then it will be 
-        impossible to create aliases for remote functions. An alias method can 
-        be created manually using RpcClient._methodAlias()
-    
     To manually call a remote method, use the function RpcClient._rpcCall
     
     TODO: Add batch processing
@@ -40,6 +35,8 @@ class RpcClient(object):
         self.logger = kwargs.get('logger', logging)
         self.timeout = self.RPC_TIMEOUT
         self.nextID = 1
+        
+        self.methods = []
             
         # Update the hostname
         self.hostname = self._rpcCall('rpc_getHostname')
@@ -63,12 +60,32 @@ class RpcClient(object):
         Get a list of methods from the RPC server and dynamically fill the
         object
         """
+        # Clear out old aliases
+        for proc in self.methods:
+            self._removeAlias(proc)
+            
         # Request a list of methods
         self._setTimeout(2.0)
         self.methods = self._rpcCall('rpc_getMethods')
         
         for proc in self.methods:
-            self._methodAlias(proc)
+            self._addAlias(proc)
+            
+    def _addAlias(self, methodName):
+        """
+        Dynamically create a method internal to the RpcClient object that will
+        invoke an RPC method call when called.
+        
+        :param methodName: Name of method
+        :type methodName: str
+        """
+        dynFunc = lambda *args, **kwargs: self._rpcCall(methodName, *args, **kwargs)
+        setattr(self, methodName, dynFunc)
+        
+    def _removeAlias(self, methodName):
+        
+        if hasattr(self, methodName):
+            delattr(self, methodName)
             
     def _setTimeout(self, new_to=None):
         """
@@ -122,33 +139,40 @@ class RpcClient(object):
             
             # Send the encoded request
             out_str = packet.export()
-            self.socket.send(out_str)
             
-            # Wait for return data or timeout
-            ready_to_read, _, _ = select.select([self.socket], [], [], self.timeout)
-            if self.socket in ready_to_read:
-                data = self.socket.recv(self.RPC_MAX_PACKET_SIZE)
-                
-                if data:
-                    packet = JsonRpcPacket(data)
-                    errors = packet.getErrors()
-                    responses = packet.getResponses()
+            # Allow for up to three retries
+            for attempt in range(3):
+                try:
+                    self.socket.send(out_str)
                     
-                    if len(errors) > 0:
-                        # There is a problem if there are more than one errors,
-                        # so just check the first one
-                        err_obj = JsonRpc_to_RpcErrors.get(type(errors[0]), RpcError)
-                        raise err_obj()
-                    
-                    elif len(responses) == 1:
-                        resp = responses[0]
-                        return resp.getResult()
-                
-                    else:
-                        raise RpcInvalidPacket()
-                    
-            else:
-                raise RpcTimeout()
+                    # Wait for return data or timeout
+                    ready_to_read, _, _ = select.select([self.socket], [], [], self.timeout)
+                    if self.socket in ready_to_read:
+                        data = self.socket.recv(self.RPC_MAX_PACKET_SIZE)
+                        
+                        if data:
+                            packet = JsonRpcPacket(data)
+                            errors = packet.getErrors()
+                            responses = packet.getResponses()
+                            
+                            if len(errors) > 0:
+                                # There is a problem if there are more than one errors,
+                                # so just check the first one
+                                err_obj = JsonRpc_to_RpcErrors.get(type(errors[0]), RpcError)
+                                raise err_obj()
+                            
+                            elif len(responses) == 1:
+                                resp = responses[0]
+                                return resp.getResult()
+                        
+                            else:
+                                raise RpcInvalidPacket()
+                            
+                except RpcInvalidPacket:
+                    print data # DEBUG
+                    self.logger.exception("Invalid RPC Packet")
+                        
+            raise RpcTimeout()
             
         except socket.error as e:
             if e.errno == errno.ECONNREFUSED:
@@ -165,17 +189,6 @@ class RpcClient(object):
         
         finally:
             self.socket.close()
-
-    def _methodAlias(self, methodName):
-        """
-        Dynamically create a method internal to the RpcClient object that will
-        invoke an RPC method call when called.
-        
-        :param methodName: Name of method
-        :type methodName: str
-        """
-        dynFunc = lambda *args, **kwargs: self._rpcCall(methodName, *args, **kwargs)
-        setattr(self, methodName, dynFunc)
     
     def __str__(self):
         return '<RPC Instance of %s:%s>' % (self.address, self.port)
