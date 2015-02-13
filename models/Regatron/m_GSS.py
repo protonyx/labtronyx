@@ -3,20 +3,26 @@ from models import m_Base
 
 class m_GSS(m_Base):
     
-    # Model device type
-    deviceType = 'Source'
-    
-    # List of valid Controllers that are compatible with this Model
-    validControllers = ['c_Serial']
-    
-    # List of Valid Vendor Identifier (VID) and Product Identifier (PID) values
-    # that are compatible with this Model
-    validVIDs = ['']
-    validPIDs = ['']
+    info = {
+        # Model revision author
+        'author':               'KKENNEDY',
+        # Model version
+        'version':              '1.0',
+        # Revision date of Model version
+        'date':                 '2015-01-31',
+        # Device Manufacturer
+        'deviceVendor':         'Regatron',
+        # List of compatible device models
+        'deviceModel':          ['GSS'],
+        # Device type    
+        'deviceType':           'Power Supply',      
+        
+        # List of compatible resource types
+        'validResourceTypes':   ['Serial']
+    }
     
     def _onLoad(self):
-        self.controller = self.getControllerObject()
-        self.instr = self.controller.openResourceObject(self.resID)
+        self.instr = self.getResource()
         
         # Configure the COM Port
         self.instr.baudrate = 38400
@@ -24,11 +30,9 @@ class m_GSS(m_Base):
         self.instr.bytesize = 8
         self.instr.parity = 'N'
         self.instr.stopbits = 1
-        
-        self.instr.open()
     
     def _onUnload(self):
-        self.instr.close()
+        pass
     
     def getProperties(self):
         ret = m_Base.getProperties(self)

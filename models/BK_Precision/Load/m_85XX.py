@@ -3,16 +3,24 @@ from models import m_Base
 
 class m_85XX(m_Base):
     
-    # Model device type
-    deviceType = 'DC Load'
-    
-    # List of valid Controllers that are compatible with this Model
-    validControllers = ['c_Serial']
-    
-    # List of Valid Vendor Identifier (VID) and Product Identifier (PID) values
-    # that are compatible with this Model
-    validVIDs = ['']
-    validPIDs = ['']
+    info = {
+        # Model revision author
+        'author':               'KKENNEDY',
+        # Model version
+        'version':              '1.0',
+        # Revision date of Model version
+        'date':                 '2015-01-31',
+        # Device Manufacturer
+        'deviceVendor':         'BK Precision',
+        # List of compatible device models
+        'deviceModel':          ['8510', '8512', '8514', '8518', '8520', '8522', 
+                                 '8524', '8526'],
+        # Device type    
+        'deviceType':           'DC Electronic Load',      
+        
+        # List of compatible resource types
+        'validResourceTypes':   ['Serial']
+    }
 
     address = 0
     debug = 0  # Set to 1 to see dumps of commands and responses
@@ -29,21 +37,19 @@ class m_85XX(m_Base):
     modes = {"cc":0, "cv":1, "cw":2, "cr":3}
     
     def _onLoad(self):
-        self.controller = self.getControllerObject()
-        self.instr = self.controller.openResourceObject(self.resID)
+        self.instr = self.getResource()
         
         # Configure the COM Port
+        # TODO: Serial Resource need a way to configure serial params
         self.instr.timeout = 0.5
         self.instr.bytesize = 8
         self.instr.parity = 'N'
         self.instr.stopbits = 1
         
-        self.instr.open()
-        
         self.SetRemoteControl()
     
     def _onUnload(self):
-        self.instr.close()
+        pass
         
     def getProperties(self):
         ret = m_Base.getProperties(self)

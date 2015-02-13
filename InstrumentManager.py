@@ -3,71 +3,44 @@ import os, sys
 import time
 import socket
 import uuid
+import copy
 import importlib, inspect
 import logging, logging.handlers
 
+import common
 import common.rpc as rpc
 
-class InstrumentManager(rpc.RpcBase):
+class InstrumentManager(object):
     
-    models = {} # Lookup table of available model drivers
+    models = {} # Module name -> Model info
     
     controllers = {} # Controller name -> controller object
-    resources = {} # UUID -> (Controller, ResID, VID, PID)
-    devices = {} # UUID -> model object
+    resources = {} # UUID -> Resource Object
+    properties = {} # UUID -> Property Dictionary
+    
+    def __init__(self):
+        common_globals = common.ICF_Common()
+        self.rootPath = common_globals.getRootPath()
+        self.config = common_globals.getConfig()
+        self.logger = common_globals.getLogger()
         
-    def __loadConfig(self, configFile):
-        # Get the root path
-        can_path = os.path.dirname(os.path.realpath(__file__)) # Resolves symbolic links
-        
-        self.rootPath = os.path.abspath(can_path)
-        self.configPath = os.path.join(self.rootPath, 'config')
-        self.configFile = os.path.join(self.configPath, '%s.py' % configFile)
+        self.logger.info("Instrument Control and Automation Framework")
+        self.logger.info("InstrumentManager, Version: %s", self.config.version)
         
         try:
-            import imp
-            cFile = imp.load_source('config', self.configFile)
-            self.config = cFile.Config()
-            
-        except Exception as e:
-            print("FATAL ERROR: Unable to import config file")
-            sys.exit()
+            self.rpc_server = rpc.RpcServer(name='InstrumentManager-RPC-Server', 
+                                            port=self.config.managerPort,
+                                            logger=self.logger)
+            self.rpc_server.registerObject(self)
         
-    def __configureLogger(self):
-        self.logger = logging.getLogger(__name__)
-        formatter = logging.Formatter(self.config.logFormat)
-                
-         # Configure logging level
-        self.logger.setLevel(self.config.logLevel_console)
+            # Build the model dictionary
+            self.__loadModels()
             
-        # Logging Handler configuration, only done once
-        if self.logger.handlers == []:
-            # Console Log Handler
-            lh_console = logging.StreamHandler(sys.stdout)
-            lh_console.setFormatter(formatter)
-            lh_console.setLevel(self.config.logLevel_console)
-            self.logger.addHandler(lh_console)
+            # Load controllers
+            self.__loadControllers()
             
-            # File Log Handler
-            if self.config.logToFile:
-                if not os.path.exists(self.config.logPath):
-                    os.makedirs(self.config.logPath)
-                
-                self.logFilename = os.path.normpath(os.path.join(self.config.logPath, 'InstrControl_Manager.log'))
-                #===============================================================
-                # if self.config.logFilename == None:
-                #     self.logFilename = os.path.normpath(os.path.join(self.config.logPath, 'InstrControl_Manager.log'))
-                # else:
-                #     self.logFilename = os.path.normpath(os.path.join(self.config.logPath, self.config.logFilename))
-                #===============================================================
-                try:
-                    fh = logging.handlers.RotatingFileHandler(self.logFilename, backupCount=self.config.logBackups)
-                    fh.setLevel(self.config.logLevel_file)
-                    fh.setFormatter(formatter)
-                    self.logger.addHandler(fh)  
-                    fh.doRollover()
-                except Exception as e:
-                    self.logger.error("Unable to open log file for writing: %s", str(e))
+        except rpc.RpcServerPortInUse:
+            self.logger.error("RPC Port in use, shutting down...")
     
     def __loadControllers(self):
         """
@@ -104,7 +77,7 @@ class InstrumentManager(rpc.RpcBase):
                                 testModule = importlib.import_module(contModule)
                                 
                                 # Instantiate the controller with a link to the model dictionary
-                                testClass = getattr(testModule, className)(logger=self.logger)
+                                testClass = getattr(testModule, className)(self)
                                 
                                 if testClass.open() == True:
                                     self.controllers[className] = testClass
@@ -112,31 +85,20 @@ class InstrumentManager(rpc.RpcBase):
                                 else:
                                     self.logger.warning('Controller %s failed to initialize', contModule)
                                     testClass.close()
-                            
+                                    
                             except ImportError:
-                                self.logger.error('Unable to import controller %s', contModule)
-                                
-                            except KeyError:
-                                # No models loaded have support for that controller
-                                self.logger.warning('No models have been loaded with support for controller %s', contModule)
-                                
-                            except AttributeError:
-                                self.logger.error('Controller %s does not have a class %s', contModule, className)
+                                self.logger.exception('Exception during controller import')
+                    
+                            except AttributeError as e:
+                                self.logger.exception('Controller %s does not have a class %s', contModule, className)
                                 
                             except Exception as e:
                                 self.logger.exception("Unable to load controller %s: %s", contModule, str(e))
                                 
                 
     def __loadModels(self):
-        """
-        Scan models folder and build a lookup table for each device model, since this does not
-        instantiate any of the models, it can be done even if devices are open.
-        
-        Models: { Controller -> { VendorID -> { (moduleName, className) -> [ ProductID ] } } }
-        """
-        self.logger.info('Loading Models...')
         # Clear the model map dictionary
-        self.models = {} 
+        self.models.clear()
         
         # Build model map dictionary
         model_dir = os.path.join(self.rootPath, 'models')
@@ -167,6 +129,9 @@ class InstrumentManager(rpc.RpcBase):
                         
                         # Check to make sure the correct class exists
                         testClass = getattr(testModule, className) # Will raise exception if doesn't exist
+                        
+                        model_info = copy.deepcopy(testClass.info)
+                        self.models[modelModule] = model_info
                     
                     except Exception as e:
                         self.logger.exception('Unable to load model %s: %s', modelModule, str(e))
@@ -177,29 +142,6 @@ class InstrumentManager(rpc.RpcBase):
                     #     self.logger.error('Model %s does not have a class %s', modelModule, className)
                     #     continue
                     #===========================================================
-                        
-                    # Verify the model
-                    try:
-                        
-                        validControllers = testClass.validControllers
-                        validVIDs = testClass.validVIDs
-                        validPIDs = testClass.validPIDs
-                        
-                        for cont in validControllers:
-                            if cont not in self.models:
-                                self.models[cont] = {}
-                                
-                            for vid in validVIDs:
-                                if vid not in self.models[cont]:
-                                    self.models[cont][vid] = {}
-                                    
-                                moduleInfo = (modelModule, className)
-                                    
-                                self.models[cont][vid][moduleInfo] = validPIDs
-                                
-                    except Exception as e:
-                        self.logger.error('Unable to load module %s: %s', modelModule, str(e))
-                        continue
                                 
     def __pathToModelName(self, path):
         # Get module name from relative path
@@ -208,57 +150,42 @@ class InstrumentManager(rpc.RpcBase):
         
         modulePath = r_path.replace(os.path.sep, '.')
         return modulePath
-
-    def _run(self):
+    
+    def _notify_new_resource(self):
         """
-        Main InstrumentManager logic. Blocks until stopped.
+        Notify InstrumentManager of the creation of a new resource. Called by
+        controllers
         """
-        # Load the config file
-        self.__loadConfig('default')
+        for cont in self.controllers.values():
+            cont_res = cont.getResources()
+            for resID, res_obj in cont_res.items():
+            
+                res_uuid = res_obj.getUUID()
         
-        # Make sure another manager is not running
-        if not self.rpc_test(port=self.config.managerPort):
-            
-            # Configure RPC Identity
-            self._setHELOResponse('InstrumentManager/%s' % self.config.version)
+                if res_uuid not in self.resources:
+                    self.resources[res_uuid] = res_obj
+                    
+                    self.refreshResources()
 
-            # Configure Logger
-            self.__configureLogger()
-            
-            self.logger.info("Instrument Manager Started")
-            self.logger.info("Version: %s", self.config.version)
-            
-            # Build the model dictionary
-            self.__loadModels()
-            
-            # Load controllers
-            self.__loadControllers()
-            
-            # Scan devices
-            self.refresh()
-            
-            # Start RPC server
-            # This operation will timeout after 2 seconds. If that happens,
-            # this process should exit
-            self.logger.info("Starting RPC Server...")
-            self.rpc_start(port=self.config.managerPort)
-            
-            # Main thread will now close
-            # TODO: Should the main thread be doing something?
-            
     def stop(self):
         """
         Stop the InstrumentManager instance. Attempts to shutdown and free
         all resources.
         """
-        for dev in self.devices.values():
-            if hasattr(dev, 'rpc_stop'):
-                dev.rpc_stop()
+        for res in self.resources:
+            try:
+                res.close()
+            except:
+                pass
                 
-        for cont in self.controllers.values():
-            cont.close()
+        for cont in self.controllers:
+            try:
+                cont.close()
+            except:
+                pass
                 
-        self.rpc_stop()
+        # Stop the InstrumentManager RPC Server
+        self.rpc_server.rpc_stop()
             
     def getVersion(self):
         """
@@ -268,62 +195,8 @@ class InstrumentManager(rpc.RpcBase):
         """
         return self.config.version
         
-    def getProperties(self, res_uuid=None):
-        """
-        Get the properties dictionary for a given resource. If Resource UUID is
-        not provided, a nested dictionary will be returned, with each property
-        dictionary nested by Resource UUID.
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: dict
-        """
-        if res_uuid is None:
-            # Recursively get properties
-            ret = {}
-            for res_uuid, res in self.resources.items():
-                ret[res_uuid] = self.getProperties(res_uuid)
-                
-            return ret
-                
-        elif res_uuid in self.resources.keys():
-            # Get Resource
-            (controller, resID, VID, PID) = self.resources.get(res_uuid)
-            
-            # Default properties
-            prop = {}
-            
-            if res_uuid in self.devices.keys():
-                # Get Model object
-                dev = self.devices.get(res_uuid)
-                
-                # Call Model's getProperties
-                prop = dev.getProperties()
-                
-                # Inject Model identity information
-                prop['modelName'] = dev.getModelName()
-                prop['port'] = dev.rpc_getPort()
-            
-            # Inject resource information
-            prop['uuid'] = res_uuid
-            prop['controller'] = controller
-            prop['resourceID'] = resID
-            prop['vendorID'] = VID
-            prop['productID'] = PID
-            
-            prop.setdefault('deviceType', 'Generic')
-            prop.setdefault('deviceVendor', 'Generic')
-            prop.setdefault('deviceModel', 'Device')
-            prop.setdefault('deviceSerial', 'Unknown')
-            prop.setdefault('deviceFirmware', 'Unknown')
-            
-            return prop
-        
-        else:
-            return None
-        
     #===========================================================================
-    # Mass Controller Operations
+    # Controller Operations
     #===========================================================================
     
     def getControllers(self):
@@ -334,178 +207,58 @@ class InstrumentManager(rpc.RpcBase):
         """
         return self.controllers.keys()
     
-    def getResources(self, controller=None):
-        """
-        Get all resources for a given or all controllers.
-        
-        :param controller: Controller to filter (optional)
-        :type controller: str
-        :returns: dict - { UUID: (`controller`, `ResID`, `VendorID`, ProductID`) }
-        """
-        if controller is not None:
-            ret = {}
-            
-            if controller  in self.controllers:
-
-                for res_uuid, res in self.resources.items():
-                    if res[0] is controller:
-                        ret[res_uuid] = res
-                        
-            return ret
-        
-        else:
-            return self.resources
+    def enableController(self, controller):
+        # TODO: Implement this
+        pass
     
-    def getModels(self):
-        """
-        Get a listing of all Models loaded
-        
-        :returns: tuple - (`ModelName`, `Port`)
-        """
-        ret = {}
-        
-        for res_uuid, dev in self.devices.items():
-            ret[res_uuid] = (dev.getModelName(), dev.rpc_getPort())
-            
-        return ret
-    
-    def getModelName(self, res_uuid):
-        """
-        Get the class name for the model loaded for a given resource
-
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: str or None if no model loaded
-        """
-        dev = self.devices.get(res_uuid, None)
-        
-        if dev is not None:
-            return dev.getModelName()
-            
-        else:
-            return None
-    
-    def getModelPort(self, res_uuid):
-        """
-        Get the RPC Port for the model loaded for a given resource
-
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: int or None if no model loaded
-        """
-        dev = self.devices.get(res_uuid, None)
-        
-        if dev is not None:
-            
-            try:
-                # Start the RPC server if it isn't already started
-                if not dev.rpc_isRunning():
-                    dev.rpc_start()    
-                
-                return dev.rpc_getPort()
-            
-            except:
-                pass
-
-        return None
-    
-    def refresh(self, controller=None, invoke_refresh=True):
-        """
-        Refresh all resources for a given controller. If `controller` is None, 
-        all controllers will be refreshed
-        
-        :param controller: Controller to refresh
-        :type controller: str
-        :param invoke_refresh: Call Controller refresh()
-        :type invoke_refresh: bool
-        :returns: None
-        """
-        if len(self.controllers) == 0:
-            self.logger.error("No controllers are initialized")
-            
-        elif controller is None:
-            self.logger.info("Refreshing resources...")
-            
-            for c_name in self.controllers:
-                self.refresh(c_name, invoke_refresh)
-                
-            self.logger.info("Refresh finished")
-            
-        elif controller in self.controllers.keys():
-                self.logger.debug('Refreshing %s', controller)
-                c_obj = self.controllers.get(controller)
-                
-                try:
-                    # Signal the controller to refresh resources
-                    if invoke_refresh:
-                        c_obj.refresh()
-                    
-                    # Get updated list of resources
-                    new_res = c_obj.getResources() # { ResID -> (VID, PID) }
-                    
-                    # Create new resources
-                    for resID, res_tup in new_res.items():
-                        int_res_id = (controller, resID) + res_tup
-                        
-                        if int_res_id not in self.resources.values():
-                            new_uuid = str(uuid.uuid4())
-                            self.logger.debug('Res: %s Assigned UUID: %s', resID, new_uuid)
-                            
-                            self.resources[new_uuid] = int_res_id
-                            
-                            # Attempt to auto-load a Model
-                            try:
-                                if c_obj.auto_load:
-                                    self.loadModel(new__uuid) 
-                            except:
-                                self.loadModel(new_uuid)
-                                
-                    
-                    # Purge unavailable resources
-                    for res_uuid, res_tup in self.resources.items():
-                        res_cont, resID, _, _ = res_tup
-                        
-                        if res_cont is controller and resID not in new_res.keys():
-                            self.unloadModel(res_uuid)
-                            self.resources.pop(res_uuid)
-                            
-                except AttributeError:
-                    # Controller returned something invalid
-                    pass
-                    
-                except NotImplementedError:
-                    pass
-                
-                except:
-                    self.logger.exception("Exception during controller refresh")
+    def disableController(self, controller):
+        # TODO: Implement this
+        pass
         
     #===========================================================================
-    # Individual Controller Operations
-    #
-    # API Interfaces
+    # Resource Operations
     #===========================================================================
     
-    def canEditResources(self, controller):
+    def getResources(self, res_uuid=None):
         """
-        Check if a controller supports manually adding or removing resources.
+        Get information about all resources. If Resource UUID is provided, a
+        dictionary with all resources will be returned, nested by UUID
         
-        :param controller: Controller name
-        :type controller: str
-        :returns: bool - True if supported, False otherwise
+        :param res_uuid: Unique Resource Identifier (UUID) (Optional)
+        :type res_uuid: str
+        :returns: dict
         """
-        if controller in self.controllers:
-            try:
-                cont_obj = self.controllers.get(controller)
-                return cont_obj.canEditResources()
-            
-            except NotImplementedError:
-                return False
+        if res_uuid is None:
+            return self.properties
+        
+        else:
+            return self.properties.get(res_uuid, {})
     
-    def addResource(self, controller, ResID, VID=None, PID=None):
+    def refreshResources(self):
         """
-        Manually add a resource to a controller. VID and PID must be provided
-        in order to correctly identify an appropriate model to load for the
-        new resource.
+        Refresh the properties dictionary for all resources.
+        
+        :returns: True if successful, False if an error occured
+        """
+        try:
+            for res_uuid, res in self.resources.items():
+                self.properties[res_uuid] = res.getProperties()
+                
+                self.properties[res_uuid].setdefault('deviceType', '')
+                self.properties[res_uuid].setdefault('deviceVendor', '')
+                self.properties[res_uuid].setdefault('deviceModel', '')
+                self.properties[res_uuid].setdefault('deviceSerial', '')
+                self.properties[res_uuid].setdefault('deviceFirmware', '')
+                
+            return True
+        
+        except:
+            self.logger.exception("Unhandled exception while refreshing resources")
+            return False
+    
+    def addResource(self, controller, ResID):
+        """
+        Manually add a resource to a controller. Not supported by all controllers
         
         .. note::
         
@@ -517,187 +270,28 @@ class InstrumentManager(rpc.RpcBase):
         :type controller: str
         :param ResID: Resource Identifier
         :type ResID: str
-        :param VID: Vendor Identifier
-        :type VID: str
-        :param PID: Product Identifier
-        :type PID: str
         :returns: bool - True if successful, False otherwise
         """
         if controller in self.controllers:
             try:
                 cont_obj = self.controllers.get(controller)
-                return cont_obj.addResource(ResID, VID, PID)
+                return cont_obj.addResource(ResID)
             
             except NotImplementedError:
                 return False
             
             except AttributeError:
                 return False
-    
-    def destroyResource(self, controller, res_uuid):
-        """
-        Manually destroy a resource within a controller
         
-        .. note::
-        
-            This will return False if manually destroying resources is not supported.
-            To check if the controller supports manual resource management,
-            use :func:`InstrumentManager.canEditResources`
-        
-        :param controller: Controller name
-        :type controller: str
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: bool - True if successful, False otherwise
-        """
-        if controller in self.controllers:
-            try:
-                return controller.destroyResource(res_uuid)
-            
-            except NotImplementedError:
-                return False
+        return False
 
     #===========================================================================
     # Model Operations
     #===========================================================================
-    
-    def getValidModels(self, res_uuid):
-        """
-        Get a list of models that are considered valid for a given Resource
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :param PID: Product Identifier
-        :type PID: str
-        
-        :returns: list of tuples (ModuleName, ClassName)
-        """
-        # Models: { Controller -> { VendorID -> { modelName -> [ ProductID ] } } }
-        ret = []
-        
-        (controller, resID, VID, PID) = self.resources.get(res_uuid)
-        
-        mod_cont = self.models.get(controller, {})
-        mod_vid = mod_cont.get(VID, {})
-        for moduleInfo, PID_List in mod_vid.items():
-            if PID in PID_List:
-                ret.append(moduleInfo)
-            
-        return ret
                 
-    
-    def loadModel(self, res_uuid, modelName=None, className=None):
-        """
-        Load a model given a resource UUID. A model will be selected
-        automatically. To load a specific model, provide `modelName` 
-        (importable python module) and `className`
-        
-        .. note::
-        
-            If modelName is specified, that model will be loaded without any 
-            kind of compatibility checking. If an exception is thrown during 
-            instantiation, the model will not be loaded.
-            
-        Example::
-        
-            manager.loadModel('360ba14f-19be-11e4-95bf-a0481c94faff', 'Tektronix.Oscilloscope.m_DigitalPhosphor', 'm_DigitalPhosphor')
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :param modelName: Model package (Python module)
-        :type modelName: str
-        :param className: Class Name
-        :type className: str
-        :returns: bool - True if successful, False otherwise
-        """
-        if modelName is None and className is None:
-            # Load the first compatible Model
-            
-            if res_uuid in self.resources.keys():
-                
-                validModels = self.getValidModels(res_uuid)
-                
-                if type(validModels) is list and len(validModels) >= 1:
-                    moduleName, className = validModels[0] 
-                    res = self.loadModel(res_uuid, moduleName, className)
-                    return res
-                
-                else:
-                    self.logger.warning("Cannot load model, no valid model found for %s", res_uuid)
-                    return False
-                
-            else:
-                self.logger.error("Cannot load model, invalid UUID: %s", res_uuid)
-                return False
-                
-        else:
-            # Load specified Model
-            
-            if res_uuid in self.resources.keys():
-                
-                controller, resID, VID, PID = self.resources.get(res_uuid)
-                
-                try:
-                    # Check if the specified model is valid
-                    testModule = importlib.import_module(modelName)
-                    #reload(testModule) # Reload the module in case anything has changed
-                    
-                    if className is None:
-                        # If no class name provided, assume it matches the file
-                        className = modelName.split('.')[-1]
-                    
-                    testClass = getattr(testModule, className)
-                    
-                    # Load the model and store it
-                    cont_obj = self.controllers.get(controller, None)
-                    model_obj = testClass(res_uuid, cont_obj, resID, VID, PID, Logger=self.logger)
-                
-                    model_obj._onLoad()
-                    
-                    # Start the model RPC server
-                    model_obj.rpc_start()
-                    
-                    self.devices[res_uuid] = model_obj
-                    self.logger.debug('Loaded model for %s', res_uuid)
-                    
-                    return True
-        
-                except:
-    
-                    self.logger.exception('Model failed to load for %s', res_uuid)
-                    return False
-                
-            else:
-                return False
-    
-    def unloadModel(self, res_uuid):
-        """
-        Unloads the model for a given resource. 
-                
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: bool - True if successful, False otherwise
-        """
-        dev = self.devices.pop(res_uuid, None)
-        
-        if dev is not None:
-            try:
-                dev.rpc_stop()
-                
-                dev._onUnload()
-            
-            except NotImplementedError:
-                pass
-            
-            self.logger.info('Unloaded model for UUID %s', res_uuid)
-            
-            del dev
-            
-            return True
-        
-        return False
+    def getModels(self):
+        return self.models
     
 if __name__ == "__main__":
     # If InstrumentManager is run in interactive mode, just call run
     man = InstrumentManager()
-    man._run()

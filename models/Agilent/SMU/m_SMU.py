@@ -4,12 +4,32 @@ import time
 
 class m_SMU(m_Base):
     
-    deviceType = 'Source Measurement Unit'
-
-    # Model Lookup
-    validControllers = ['c_VISA']
-    validVIDs = ['Agilent']
-    validPIDs = ['B2901A', 'B2902A']
+    info = {
+        # Model revision author
+        'author':               'KKENNEDY',
+        # Model version
+        'version':              '1.0',
+        # Revision date of Model version
+        'date':                 '2015-01-31',
+        # Device Manufacturer
+        'deviceVendor':         'Agilent',
+        # List of compatible device models
+        'deviceModel':          ['B2901A', 'B2902A'],
+        # Device type    
+        'deviceType':           'Source Measurement Unit',      
+        
+        # List of compatible resource types
+        'validResourceTypes':   ['VISA'],  
+        
+        #=======================================================================
+        # VISA Attributes        
+        #=======================================================================
+        # Compatible VISA Manufacturers
+        'VISA_compatibleManufacturers': ['AGILENT TECHNOLOGIES',
+                                         'Agilent Technologies'],
+        # Compatible VISA Models
+        'VISA_compatibleModels':        ['B2901A', 'B2902A']
+    }
     
     validSource = {'VOLTAGE': 'VOLT', 
                    'CURRENT': 'CURR'}
@@ -20,43 +40,16 @@ class m_SMU(m_Base):
                     'EXT11', 'EXT12', 'EXT13', 'EXT14']
 
     def _onLoad(self):
-        self.__identity = None
-        self.controller = self.getControllerObject()
+        self.instr = self.getResource()
         
-        try:
-            # Use c_VISA
-            self.__instr = self.controller.openResourceObject(self.resID)
-            
-            # Bring VISA Instrument functions into this context
-            self.write = self.__instr.write
-            self.read = self.__instr.read
-            self.read_values = self.__instr.read_values
-            self.read_raw = self.__instr.read_raw
-            self.ask = self.__instr.ask
-            self.ask_for_values = self.__instr.ask_for_values
-            
-            resp = self.ask("*IDN?")
-            self.__identity = resp.strip().split(',')
-            
-        except:
-            self.logger.exception("Internal error while attaching to VISA instrument")
-    
-    def getProperties(self):
-        ret = m_Base.getProperties(self)
-        ret['deviceVendor'] = 'Agilent'
-        
-        if self.__identity is not None:
-            ret['deviceModel'] = self.__identity[1]
-            ret['deviceSerial'] = self.__identity[2]
-            ret['deviceFirmware'] = self.__identity[3]
-            
-        return ret
+    def _onUnload(self):
+        pass
         
     def defaultSetup(self):
         """
         Reset the SMU to factory default settings
         """
-        self.write("*RST")
+        self.instr.write("*RST")
         
     def setSourceSweep(self, source, start, stop, points):
         """
@@ -73,22 +66,22 @@ class m_SMU(m_Base):
         """
         if source in self.validSource.keys():
             source_f = self.validSource.get(source)
-            self.write(':SOUR:FUNC:MODE %s' % source_f)
-            self.write(':SOUR:%s:MODE SWE' % source_f)
+            self.instr.write(':SOUR:FUNC:MODE %s' % source_f)
+            self.instr.write(':SOUR:%s:MODE SWE' % source_f)
 
-            self.write(':SOUR:%s:START %f' % (source_f, float(start)))
-            self.write(':SOUR:%s:STOP %f' % (source_f, float(stop)))
+            self.instr.write(':SOUR:%s:START %f' % (source_f, float(start)))
+            self.instr.write(':SOUR:%s:STOP %f' % (source_f, float(stop)))
             
             # Hard-coded number of points
             # It appears the length of the sweep is determined by the number
             # of points
-            self.write(':SOUR:SWE:POIN %i' % int(points))
-            self.write(':TRIG:COUN %i' % int(points))
+            self.instr.write(':SOUR:SWE:POIN %i' % int(points))
+            self.instr.write(':TRIG:COUN %i' % int(points))
                         
             if float(stop) > float(start):
-                self.write(':SOUR:SWE:DIR UP')
+                self.instr.write(':SOUR:SWE:DIR UP')
             else:
-                self.write(':SOUR:SWE:DIR DOWN')
+                self.instr.write(':SOUR:SWE:DIR DOWN')
         
     def setSourceFixed(self, source, base, peak):
         """
@@ -103,10 +96,10 @@ class m_SMU(m_Base):
         """
         if source in self.validSource.keys():
             source_f = self.validSource.get(source)
-            self.write(':SOUR:FUNC:MODE %s' % source_f)
+            self.instr.write(':SOUR:FUNC:MODE %s' % source_f)
             
-            self.write(':SOUR:%s %f' % (source_f, float(base)))
-            self.write(':SOUR:%s:TRIG %f' % (source_f, float(peak)))
+            self.instr.write(':SOUR:%s %f' % (source_f, float(base)))
+            self.instr.write(':SOUR:%s:TRIG %f' % (source_f, float(peak)))
             
     def setSourceProgram(self):
         pass
@@ -123,15 +116,15 @@ class m_SMU(m_Base):
         :type delay: float
         """
         if pulseEnable:
-            self.write(':SOUR:FUNC:SHAP PULS')
+            self.instr.write(':SOUR:FUNC:SHAP PULS')
             
-            self.write(':SOUR:PULS:WIDT %f' % float(pulseWidth))
+            self.instr.write(':SOUR:PULS:WIDT %f' % float(pulseWidth))
                 
             if delay > 0.0:
-                self.write(':SOUR:PULS:DEL %f' % float(delay))
+                self.instr.write(':SOUR:PULS:DEL %f' % float(delay))
                 
         else:
-            self.write(':SOUR:FUNC:SHAP DC')
+            self.instr.write(':SOUR:FUNC:SHAP DC')
                 
     def setTriggerSetup(self, triggerSource, number, interval, delay=0):
         """
@@ -149,16 +142,16 @@ class m_SMU(m_Base):
         :type delay: float 
         """
         if triggerSource in self.validTrigger:
-            self.write(':TRIG:SOUR %s' % triggerSource)
-            self.write(':TRIG:COUN %i' % number)
+            self.instr.write(':TRIG:SOUR %s' % triggerSource)
+            self.instr.write(':TRIG:COUN %i' % number)
             
             if triggerSource == 'TIMER':
-                self.write(':TRIG:TIME %f' % float(interval))
+                self.instr.write(':TRIG:TIME %f' % float(interval))
             
             if delay > 0.0:
-                self.write(':TRIG:DEL %f' % float(delay))
+                self.instr.write(':TRIG:DEL %f' % float(delay))
             else:
-                self.write(':TRIG:DEL 0')
+                self.instr.write(':TRIG:DEL 0')
     
     def setMeasurementSetup(self, **kwargs):
         """
@@ -178,20 +171,20 @@ class m_SMU(m_Base):
         :param limit: Current limit
         :type limit: float
         """
-        self.write(':SENS:CURR:PROT %f' % float(limit))
+        self.instr.write(':SENS:CURR:PROT %f' % float(limit))
     
     def powerOn(self):
-        self.write(':OUTP ON')
+        self.instr.write(':OUTP ON')
         
     def powerOff(self):
-        self.write(':OUTP OFF')
+        self.instr.write(':OUTP OFF')
         
     def powerOffZero(self):
-        self.write(':OUTP:OFF:MODE ZERO')
+        self.instr.write(':OUTP:OFF:MODE ZERO')
         self.powerOff()
         
     def powerOffFloat(self):
-        self.write(':OUTP:OFF:MODE HIZ')
+        self.instr.write(':OUTP:OFF:MODE HIZ')
         self.powerOff()
         
     def startProgram(self, channel=1):
@@ -202,10 +195,10 @@ class m_SMU(m_Base):
         :type channel: int
         """
         if channel == 1:
-            self.write(':INIT (@1)')
+            self.instr.write(':INIT (@1)')
             
         elif channel == 2:
-            self.write(':INIT (@2)')
+            self.instr.write(':INIT (@2)')
             
     def getMeasurement(self, **kwargs):
         """
@@ -251,7 +244,7 @@ class m_SMU(m_Base):
         
         self.setTriggerSetup('TIMER', points, interval, delay)
         
-        self.write(":SOUR:FUNC:TRIG:CONT ON") # OUTPUT AFTER SWEEP - END VAL
+        self.instr.write(":SOUR:FUNC:TRIG:CONT ON") # OUTPUT AFTER SWEEP - END VAL
         self.startProgram(1)
 
     

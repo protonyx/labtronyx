@@ -4,8 +4,6 @@ from . import m_BDPC_Base
 
 class Base_ICP(m_BDPC_Base):
     
-    validVIDs = ['UPEL']
-    
     registers = {
         'SensorGain': 0x2110,
         'SensorOffset': 0x2111,

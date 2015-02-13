@@ -11,37 +11,23 @@ import importlib
 import logging
 import threading
 
-import views
-
-class m_Base(common.rpc.RpcBase, common.IC_Common):
+class m_Base(object):
     
-    deviceType = 'Generic'
-
-    # Model Lookup
-    validControllers = []
-    validVIDs = []
-    validPIDs = []
+    info = {}
     
-    # Collector Attributes
-    _collector_thread = None
-    _collector_lock = threading.Lock()
-    _collectors = {}
-    _collector_methods = {}
-    
-    def __init__(self, uuid, controller, resID, VID, PID, **kwargs):
-        common.rpc.RpcBase.__init__(self)
-        common.IC_Common.__init__(self, **kwargs)
+    def __init__(self, resource):
         
-        self.uuid = uuid
-        self.resID = resID
-        self.VID = VID
-        self.PID = PID
+        common_globals = common.ICF_Common()
+        self.config = common_globals.getConfig()
+        self.logger = common_globals.getLogger()
         
-        # Controller Object
-        self._controller_object = controller
+        self.__resource = resource
         
-        # Check for logger
-        self.logger = kwargs.get('Logger', logging)
+        # Collector Attributes
+        self._collector_thread = None
+        self._collector_lock = threading.Lock()
+        self._collectors = {}
+        self._collector_methods = {}
         
     #===========================================================================
     # Collector Functionality
@@ -179,62 +165,20 @@ class m_Base(common.rpc.RpcBase, common.IC_Common):
         #fqn_split = fqn.split('.')
         #return '.'.join(fqn_split[0:-1])
     
-    def getUUID(self):
+    def getResource(self):
         """
-        Returns the Resource UUID that is provided to the Model
-        
-        :returns: str
-        """
-        return self.uuid
-    
-    def getControllerObject(self):
-        """
-        Returns the Model's Controller object
+        Returns the resource object for interacting with the physical instrument
         
         :returns: object
         """
-        return self._controller_object
-    
-    def getControllerName(self):
-        """
-        Returns the Model's Controller class name
-        
-        :returns: str
-        """
-        return self._controller_object.getControllerName()
-    
-    def getResourceID(self):
-        """
-        Returns the Model Resource ID that identifies the resource to the
-        Controller
-        
-        :returns: str
-        """
-        return self.resID
-
-    def getVendorID(self):
-        """
-        Returns the Resource Vendor ID that is used to find compatible Models 
-        
-        :returns: str
-        """
-        return self.VID
-    
-    def getProductID(self):
-        """
-        Returns the Resource Product ID that is used to find compatible Models 
-        
-        :returns: str
-        """
-        return self.PID
+        return self.__resource
     
     def getProperties(self):
-        return { 'modelName': self.getModelName(),
-                 'controllerName': self.getControllerName(),
-                 'deviceType': self.deviceType,
-                 'deviceVendor': 'Generic',
-                 'deviceModel': 'Device',
-                 'deviceSerial': 'Unknown',
-                 'deviceFirmware': 'Unknown'
-                }
+        return { 
+            'deviceType':       self.info.get('deviceType'),
+            'deviceVendor':     self.info.get('deviceVendor'),
+            'deviceModel':      '',
+            'deviceSerial':     'Unknown',
+            'deviceFirmware':   'Unknown'
+        }
         

@@ -12,7 +12,8 @@ class c_UPEL(controllers.c_Base):
     resourceObjects = {}
 
     def open(self):
-        
+        return False
+    
         # Start the arbiter thread
         self.icp_manager = UPEL_ICP(logger=self.logger)
         self.icp_manager.start()
@@ -49,6 +50,8 @@ class c_UPEL(controllers.c_Base):
     #===========================================================================
     
     def refresh(self):
+        return None
+    
         self.icp_manager.discover(self.config.broadcastIP)
         
         # Give the arbiter time to process responses

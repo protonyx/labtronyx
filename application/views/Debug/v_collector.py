@@ -1,4 +1,5 @@
-import views
+import application.views as views
+
 import common
 #from common.jsonrpc import *
 from common.rpc import *
@@ -15,7 +16,19 @@ from matplotlib.backend_bases import key_press_handler
 
 class v_collector(views.v_Base):
     
-    validModels = ['models.Test.m_test'] 
+    info = {
+        # View revision author
+        'author':               'KKENNEDY',
+        # View version
+        'version':              '1.0',
+        # Revision date of View version
+        'date':                 '2015-02-11',  
+        # Description
+        'description':          'Collector test view',  
+            
+        # List of compatible Models
+        'validModels':          ['models.Test.m_test']
+    }
     
     lastTime = 0.0
     data = []

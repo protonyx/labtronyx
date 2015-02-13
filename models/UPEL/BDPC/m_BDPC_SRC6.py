@@ -1,6 +1,6 @@
 from . import *
 
-class m_BDPC_BR2(Base_ICP.Base_ICP):
+class m_BDPC_SRC6(Base_Serial.Base_Serial):
     """
     
     """
@@ -15,16 +15,16 @@ class m_BDPC_BR2(Base_ICP.Base_ICP):
         # Device Manufacturer
         'deviceVendor':         'UPEL',
         # List of compatible device models
-        'deviceModel':          ['BDPC 2kW Dual-SRC6'],
+        'deviceModel':          ['BDPC 1kW SRC6'],
         # Device type    
         'deviceType':           'DC-DC Converter',      
         
         # List of compatible resource types
-        'validResourceTypes':   ['UPEL']
+        'validResourceTypes':   ['Serial']
     }
     
     def getProperties(self):
-        prop = Base_ICP.Base_ICP.getProperties(self)
+        prop = Base_Serial.Base_Serial.getProperties(self)
         
         prop['deviceVendor'] = 'UPEL'
         prop['deviceModel'] = 'BDPC Dual 2kW'

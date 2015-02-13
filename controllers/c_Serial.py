@@ -1,39 +1,31 @@
 import importlib
 import sys
 
-from . import c_Base
+import serial
+import serial.tools.list_ports
+# list(serial.tools.list_ports.comports())
 
-class c_Serial(c_Base):
+import controllers
+
+class c_Serial(controllers.c_Base):
     
     # Dict: ResID -> (VID, PID)
     resources = {}
     
-    # Dict: ResID -> Serial Object
-    resourceObjects = {}
-    
     auto_load = False
 
     def open(self):
-        try:
-            # Dependency: pySerial
-            importlib.import_module('serial')
-            return True
-            
-        except ImportError:
-            self.logger.error("PySerial Dependency Missing")
-            
-        except:
-            self.logger.exception("Failed to initialize Serial Controller")
-        
-        return False
+        return True
     
     def close(self):
-        for dev in self.resourceObjects:
+        for resID, res in self.resources.items():
             try:
-                if dev.isOpen():
-                    dev.close()
+                if res.isOpen():
+                    res.close()
             except:
                 pass
+            
+        return True
     
     def getResources(self):
         return self.resources
@@ -47,54 +39,121 @@ class c_Serial(c_Base):
     
     def refresh(self):
         """
-        Lists serial ports
-    
-        :raises EnvironmentError: On unsupported or unknown platforms
-        :returns: A list of available serial ports
+        Scans system for new resources and creates resource objects for them.
         """
-        import serial
-        
-        if sys.platform.startswith('win'):
-            ports = ['COM' + str(i + 1) for i in range(256)]
-    
-        elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
-            # this is to exclude your current terminal "/dev/tty"
-            ports = glob.glob('/dev/tty[A-Za-z]*')
-    
-        elif sys.platform.startswith('darwin'):
-            ports = glob.glob('/dev/tty.*')
-    
-        else:
-            raise EnvironmentError('Unsupported platform')
-    
-        result = []
-        for port in ports:
-            try:
-                s = serial.Serial(port)
-                s.close()
-                self.resources[port] = ('', '')
-                self.logger.debug('Found Serial Device %s', port)
-            except (OSError, serial.SerialException):
-                pass
+        try:
+            res_list = list(serial.tools.list_ports.comports()) 
+            
+            # Check for new resources
+            for res in res_list:
+                resID, _, _ = res
+                    
+                if resID not in self.resources:
+                    new_resource = r_Serial(resID, self)
+                    self.resources[resID] = new_resource
+                    
+                    self.manager._notify_new_resource()
 
-    def openResourceObject(self, resID, **kwargs):
-        import serial
+        except:
+            # Exception thrown when there are no resources
+            self.logger.exception("Unhandled Exception occurred while creating new Serial resource: %s", resID)
+            
+    #===========================================================================
+    #     if sys.platform.startswith('win'):
+    #         ports = ['COM' + str(i + 1) for i in range(256)]
+    # 
+    #     elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+    #         # this is to exclude your current terminal "/dev/tty"
+    #         ports = glob.glob('/dev/tty[A-Za-z]*')
+    # 
+    #     elif sys.platform.startswith('darwin'):
+    #         ports = glob.glob('/dev/tty.*')
+    # 
+    #     else:
+    #         raise EnvironmentError('Unsupported platform')
+    # 
+    #     result = []
+    #     for port in ports:
+    #         try:
+    #             s = serial.Serial(port)
+    #             s.close()
+    #             self.resources[port] = ('', '')
+    #             self.logger.debug('Found Serial Device %s', port)
+    #         except (OSError, serial.SerialException):
+    #             pass
+    #===========================================================================
+
+
         
-        resource = self.resourceObjects.get(resID, None)
-        if resource is not None:
-            return resource
-        else:
-            resource = serial.Serial()
-            resource.port = resID
-            self.resourceObjects[resID] = resource
-            return resource
+class r_Serial(controllers.r_Base):
+    type = "Serial"
         
-    def closeResourceObject(self, resID):
-        resource = self.resourceObjects.get(resID, None)
+    def __init__(self, resID, controller):
+        controllers.r_Base.__init__(self, resID, controller)
         
-        if resource is not None:
-            resource.close()
-            del self.resourceObjects[resID]
+        try:
+            self.instrument = serial.Serial(resID)
+            
+            self.logger.info("Identified new Serial resource: %s", resID)
+            
+        except serial.SerialException:
+            pass
+        except:
+            pass
         
-                
+    #===========================================================================
+    # Resource State
+    #===========================================================================
+        
+    def open(self):
+        self.instrument.open()
+    
+    def close(self):
+        self.instrument.close()
+        
+    def lock(self):
+        pass
+        
+    def unlock(self):
+        pass
+    
+    #===========================================================================
+    # Serial Configuration
+    #===========================================================================
+    
+    def configure(self, **kwargs):
+        if 'baudrate' in kwargs:
+            self.instrument.setBaudrate(kwargs.get('baudrate'))
+            
+        if 'timeout' in kwargs:
+            self.instrument.setTimeout(kwargs.get('timeout'))
+            
+        if 'bytesize' in kwargs:
+            self.instrument.setByteSize(kwargs.get('bytesize'))
+            
+        if 'parity' in kwargs:
+            self.instrument.setParity(kwargs.get('parity'))
+            
+        if 'stopbits' in kwargs:
+            self.instrument.setStopbits(kwargs.get('stopbits'))
+            
+    def getConfiguration(self):
+        return self.instrument.getSettingsDict()
+        
+    #===========================================================================
+    # Data Transmission
+    #===========================================================================
+    
+    def write(self, data):
+        return self.instrument.write(data)
+    
+    def read(self, size=1):
+        return self.instrument.read(size)
+    
+    def inWaiting(self):
+        return self.instrument.inWaiting()
+    
+    def query(self, data):
+        return self.instrument.query(data)
+    
         

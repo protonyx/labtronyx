@@ -1,11 +1,54 @@
-import common
+import uuid
+import time
+import threading
+import importlib
 
-class c_Base(common.IC_Common):
+import common
+import common.rpc as rpc
+
+class c_Base(object):
 
     # TODO: Controllers will have hooks into the persistence config to "remember" how
     #       a particular device is configured when the program is run in the future.
     
-    resources = {}
+    REFRESH_RATE = 60.0 # Seconds
+    
+    def __init__(self, manager):
+        """
+        :param manager: Reference to the InstrumentManager instance
+        :type manager: InstrumentManager object
+        """
+        common_globals = common.ICF_Common()
+        self.config = common_globals.getConfig()
+        self.logger = common_globals.getLogger()
+        
+        self.resources = {}
+        self.manager = manager
+        
+        self.e_alive = threading.Event()
+        self.e_alive.set()
+            
+        self.__controller_thread = threading.Thread(name=self.getControllerName(), target=self.__thread_run)
+        self.__controller_thread.start()
+        
+    def __del__(self):
+        self.e_alive.clear()
+        self.__controller_thread.join()
+        
+    #===========================================================================
+    # Controller Thread
+    #===========================================================================
+    
+    def __thread_run(self):
+        while(self.e_alive.isSet()):
+            
+            self.refresh()
+            
+            time.sleep(self.REFRESH_RATE)
+            
+    #===========================================================================
+    # Controller Methods
+    #===========================================================================
 
     def getControllerName(self):
         return self.__class__.__name__
@@ -42,11 +85,7 @@ class c_Base(common.IC_Common):
 
     def getResources(self):
         """
-        Get a listing of resources by ID. There is no requirement for how
-        resources are stored internal to the controller, but this function
-        should return a dict with the format::
-        
-            { resourceID: (VID, PID) }
+        Get the dictionary of resources by ID.
         
         :returns: dict
         """
@@ -59,36 +98,14 @@ class c_Base(common.IC_Common):
         """
         raise NotImplementedError
     
-    def openResourceObject(self, resID, **kwargs):
-        """
-        Return an open resource object for a Model to interact with the
-        controller through. Additional parameters may be required, depending
-        on the needs of the controller
-        
-        :param resID: Resource ID
-        :type resID: str
-        :returns: object
-        """
-        raise NotImplementedError
-        
-    def closeResourceObject(self, resID):
-        """
-        Close a resource object and free any associated system resources.
-        
-        :param resID: Resource ID
-        :type resID: str
-        :returns: object
-        """
-        raise NotImplementedError
-    
     #===========================================================================
     # Automatic Controllers
     #===========================================================================
     
     def refresh(self):
         """
-        Refreshes the resource list. If resources are no longer available,
-        they should be removed.
+        Refreshes the resource list. This function is called regularly by the
+        controller thread.
         """
         raise NotImplementedError
     
@@ -120,15 +137,179 @@ class c_Base(common.IC_Common):
         """
         raise NotImplementedError
 
-class c_ResourceObjectBase(object):
-    def open(self):
+class r_Base(object):
+    type = "Generic"
+    
+    def __init__(self, resID, controller, **kwargs):
+        
+        common_globals = common.ICF_Common()
+        self.config = common_globals.getConfig()
+        self.logger = common_globals.getLogger()
+        
+        self.uuid = str(uuid.uuid4())
+        
+        self.groupTag = kwargs.get('groupTag', '')
+        
+        self.model = None
+        self.resID = resID
+        self.controller = controller
+        
+        # Start RPC Server
+        self.rpc_server = rpc.RpcServer(name='%s-%s' % (controller.getControllerName(), resID),
+                                        logger=self.logger)
+        self.rpc_server.registerObject(self)
+        
+    def getUUID(self):
+        return self.uuid
+    
+    def getResID(self):
+        return self.resID
+    
+    def getType(self):
+        return self.type
+    
+    def getStatus(self):
+        # TODO: Resource status
         pass
+    
+    def getControllerName(self):
+        """
+        Returns the Resource's Controller class name
+        
+        :returns: str
+        """
+        return self.controller.getControllerName()
+    
+    def getPort(self):
+        # Start the RPC server if it isn't already started
+        if self.rpc_server.rpc_isRunning():
+            return self.rpc_server.rpc_getPort()
+    
+    def getProperties(self):
+        res_prop = {
+            'uuid': self.uuid,
+            'controller': self.controller.getControllerName(),
+            'resourceID': self.resID,
+            'resourceType': self.type,
+            'groupTag': self.groupTag,
+            'status': self.getStatus(),
+            'port': self.getPort()
+            }
+        
+        # Append Model properties if a Model is loaded
+        if self.model is not None:
+            model_prop = self.model.getProperties()
+            
+            model_prop['modelName'] = self.model.getModelName()
+            
+            res_prop.update(model_prop)
+        
+        return res_prop
+    
+    #===========================================================================
+    # Resource State
+    #===========================================================================
+    
+    def isOpen(self):
+        raise NotImplementedError
+        
+    def open(self):
+        """
+        Open the resource
+        
+        :returns: True if open was successful, False otherwise
+        """
+        raise NotImplementedError
     
     def close(self):
-        pass
+        """
+        Close the resource
+        
+        :returns: True if close was successful, False otherwise
+        """
+        raise NotImplementedError
+    
+    def lock(self):
+        raise NotImplementedError
+    
+    def unlock(self):
+        raise NotImplementedError
+    
+    #===========================================================================
+    # Data Transmission
+    #===========================================================================
     
     def write(self, data):
-        pass
+        raise NotImplementedError
     
     def read(self):
-        pass
+        raise NotImplementedError
+    
+    def query(self):
+        raise NotImplementedError
+    
+    #===========================================================================
+    # Models
+    #===========================================================================
+    
+    def hasModel(self):
+        return self.model is not None
+    
+    def loadModel(self, modelName):
+        """
+        Load a Model. A Model name can be specified to load a specific model,
+        even if it may not be compatible with this resource. Reloads model
+        when importing, in case an update has occured.
+        
+        Example::
+        
+            instr.loadModel('Tektronix.Oscilloscope.m_DigitalPhosphor')
+        
+        :param modelName: Module name of the desired Model
+        :type modelName: str
+        :returns: True if successful, False otherwise
+        """
+        try:
+            # Check if the specified model is valid
+            testModule = importlib.import_module(modelName)
+            reload(testModule) # Reload the module in case anything has changed
+            
+            className = modelName.split('.')[-1]
+            testClass = getattr(testModule, className)
+            
+            self.model = testClass(self)
+            self.model._onLoad()
+            
+            # RPC register object
+            self.rpc_server.registerObject(self.model)
+            
+            return True
+
+        except:
+
+            self.logger.exception('Failed to load model: %s', modelName)
+            return False
+    
+    def unloadModel(self):
+        """
+        If a Model is currently loaded for the resource, unload the resource.
+        
+        :returns: True if successful, False otherwise
+        """
+        if self.model is not None:
+            try:
+                self.model._onUnload()
+                # RPC unregister object
+                
+                self.rpc_server.unregisterObject(self.model)
+                
+            except:
+                self.logger.exception('Exception while unloading model')
+                
+            del self.model
+            self.model = None
+                
+            return True
+        
+        else:
+            return False

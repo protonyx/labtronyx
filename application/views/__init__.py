@@ -5,13 +5,16 @@ from common.rpc import RpcClient
 
 class v_Base(Tk.Toplevel):
     
-    validVIDs = []
-    validPIDs = []
-    
-    def __init__(self, master, model):
+    def __init__(self, master, resource):
         Tk.Toplevel.__init__(self, master, padx=5, pady=5)
         
-        self.model = model
+        self.__resource = resource
+        
+        # TODO: Remove this, deprecated
+        self.model = resource
+        
+    def getResource(self):
+        return self.__resource
             
     def run(self):
         raise NotImplementedError

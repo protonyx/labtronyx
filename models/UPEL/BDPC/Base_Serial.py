@@ -6,14 +6,6 @@ from . import m_BDPC_Base
 
 class Base_Serial(m_BDPC_Base):
     
-    # List of valid Controllers that are compatible with this Model
-    validControllers = ['c_Serial', 'c_Dummy']
-    
-    # List of Valid Vendor Identifier (VID) and Product Identifier (PID) values
-    # that are compatible with this Model
-    validVIDs = ['']
-    validPIDs = ['']
-    
     pkt_struct = struct.Struct("BBBBBBBB")
     
     registers = {
@@ -144,20 +136,17 @@ class Base_Serial(m_BDPC_Base):
         }
     
     def _onLoad(self):
-        self.controller = self.getControllerObject()
-        self.instr = self.controller.openResourceObject(self.resID)
+        self.instr = self.getResource()
         
         # Configure the COM Port
-        self.instr.baudrate = 115200
-        self.instr.timeout = 0.5
-        self.instr.bytesize = 8
-        self.instr.parity = 'E'
-        self.instr.stopbits = 1
-        
-        self.instr.open()
+        self.instr.configure(baudrate=115200,
+                             timeout=0.5,
+                             bytesize=8,
+                             parity='E',
+                             stopbits=1)
         
     def _onUnload(self):
-        self.instr.close()
+        pass
         
     def getProperties(self):
         prop = m_BDPC_Base.getProperties(self)

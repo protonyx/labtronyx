@@ -8,16 +8,23 @@ class m_BMS(models.m_Base):
     Model for the AMPED 2.2 BMS Converter
     """
     
-    # Model device type
-    deviceType = 'DC-DC Converter'
-    
-    # List of valid Controllers that are compatible with this Model
-    validControllers = ['c_Serial']
-    
-    # List of Valid Vendor Identifier (VID) and Product Identifier (PID) values
-    # that are compatible with this Model
-    validVIDs = ['']
-    validPIDs = ['']
+    info = {
+        # Model revision author
+        'author':               'KKENNEDY',
+        # Model version
+        'version':              '1.0',
+        # Revision date of Model version
+        'date':                 '2015-01-31',
+        # Device Manufacturer
+        'deviceVendor':         'UPEL',
+        # List of compatible device models
+        'deviceModel':          ['AMPED BMS 2.1'],
+        # Device type    
+        'deviceType':           'DC-DC Converter',      
+        
+        # List of compatible resource types
+        'validResourceTypes':   ['Serial']
+    }
     
     commands = {
         'calibrate':    0xAF,
@@ -31,28 +38,24 @@ class m_BMS(models.m_Base):
         }
     
     def _onLoad(self):
-        self.controller = self.getControllerObject()
-        self.instr = self.controller.openResourceObject(self.resID)
+        self.instr = self.getResource()
         
         # Configure the COM Port
-        self.instr.baudrate = 1500000
-        self.instr.timeout = 0.5
-        self.instr.bytesize = 8
-        self.instr.parity = 'N'
-        self.instr.stopbits = 1
-        
-        self.instr.open()
+        self.instr.configure(baudrate=1500000,
+                             timeout=0.5,
+                             bytesize=8,
+                             parity='N',
+                             stopbits=1)
         
         self.status = 0
     
     def _onUnload(self):
-        self.instr.close()
+        pass
     
     def getProperties(self):
         prop = models.m_Base.getProperties(self)
-		
-	prop['deviceVendor'] = 'UPEL'
-	prop['deviceModel'] = 'AMPED BMS'
+        
+    	prop['deviceModel'] = self.info.get('deviceModel')[0]
         
         # Add any additional properties here
         return prop

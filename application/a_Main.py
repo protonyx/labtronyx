@@ -2,6 +2,7 @@ import sys
 import os
 import logging
 import importlib
+import copy
 
 import Tkinter as Tk
 import ttk
@@ -13,7 +14,7 @@ import tkMessageBox
 sys.path.append("..")
 from InstrumentControl import InstrumentControl
 
-class a_Main(object):
+class a_Main(Tk.Tk):
     """
     Main application for 
     TODO:
@@ -23,14 +24,12 @@ class a_Main(object):
     - Persistant settings
     - Nanny thread to periodically check if connected hosts and resources are still active
     """
-
+    views = {}      # Module name -> View info
     openViews = {}
     
-    # Tree Organization
-    treeGroup = 'hostname'
-    treeSort = 'deviceModel'
-    
-    def __init__(self):
+    def __init__(self, master=None):
+        Tk.Tk.__init__(self, master)
+        
         # Get root directory
         # Get the root path
         can_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir) # Resolves symbolic links
@@ -47,12 +46,8 @@ class a_Main(object):
         
         # Instantiate an InstrumentControl object
         self.ICF = InstrumentControl(Logger=self.logger)
+        self.ICF.addManager('localhost')
         
-        # Attempt to start a local InstrumentManager
-        self.ICF.startWaitManager()
-        
-        # Instantiate root Tk object
-        self.myTk = Tk.Tk()
             
         # GUI Startup
         self.rebuild()
@@ -63,7 +58,7 @@ class a_Main(object):
         
         # TODO: Persistent Settings
         
-        self.run()
+        self.logger.info('Application start')
     
     def __pathToModuleName(self, path):
         # Get module name from relative path
@@ -75,10 +70,10 @@ class a_Main(object):
         
     def __loadViews(self):
         # Clear the view dictionary
-        self.views = {} 
+        self.views.clear()
         
         # Build view dictionary
-        view_dir = os.path.join(self.rootPath, 'views')
+        view_dir = os.path.join(self.rootPath, 'application', 'views')
         allviews = os.walk(view_dir)
         for dir in allviews:
             # Verify valid directory
@@ -106,55 +101,43 @@ class a_Main(object):
                         # Check to make sure the correct class exists
                         testClass = getattr(testModule, className) # Will raise exception if doesn't exist
                         
-                        validModels = testClass.validModels
-                        
-                        self.views[viewModule] = (className, validModels)
+                        view_info = copy.deepcopy(testClass.info)
+                        self.views[viewModule] = view_info
                     
                     except Exception as e:
                         self.logger.error('Unable to load module %s: %s', viewModule, str(e))
                         continue
     
-    def _getValidViews(self, model):   
-        validViews = []
-        
-        for viewModule, viewInfo in self.views.items():
-            viewClass, validModels = viewInfo
-        
-            if model in validModels or len(validModels) == 0:
-                validViews.append((viewModule, viewClass))
-                
-        return validViews
+
     
     def rebuild(self):
         """
         Rebuilds all GUI elements and positions
         
         Pane Layout:
-        +-----------+-----------------------+
-        |           |                       |
-        |   tree    |                       |
-        |   frame   |     controlFrame      |
-        |           |                       |
-        |           |                       |
-        +-----------+-----------------------+
+        +-----------------------------------+
+        |                                   |
+        |                                   |
+        |           tree frame              |
+        |                                   |
+        |                                   |
+        +-----------------------------------+
         |                                   |
         |             logFrame              |
         |                                   |
         +-----------------------------------+
         """
-        master = self.myTk
         #ttk.Style().theme_use('vista')
-        #master = Tk.Toplevel(self.myTk)
-        master.wm_title("Instrument Control")
-        master.minsize(500, 500)
-        master.geometry("800x600")
+        self.wm_title("Instrument Control and Automation")
+        self.minsize(500, 500)
+        self.geometry("800x600")
         
         #=======================================================================
         # Menubar
         #=======================================================================
-        master.option_add('*tearOff', Tk.FALSE)
-        self.menubar = Tk.Menu(master) 
-        master['menu'] = self.menubar
+        self.option_add('*tearOff', Tk.FALSE)
+        self.menubar = Tk.Menu(self) 
+        self['menu'] = self.menubar
         # File
         self.m_File = Tk.Menu(self.menubar)
         self.menubar.add_cascade(menu=self.m_File, label='File')
@@ -180,45 +163,39 @@ class a_Main(object):
         #=======================================================================
         # Status Bar
         #=======================================================================
-        self.statusbar = self.Statusbar(master)
+        self.statusbar = Statusbar(self)
         self.statusbar.pack(side=Tk.BOTTOM, fill=Tk.X)
         
         # Horizontal Pane
-        self.HPane = Tk.PanedWindow(master, orient=Tk.VERTICAL, height=400, sashpad=5, sashwidth=8)
-        self.HPane.pack(fill=Tk.BOTH, expand=Tk.YES)
+        self.HPane = Tk.PanedWindow(self, orient=Tk.VERTICAL, height=400, sashpad=5, sashwidth=8)
+        self.HPane.pack(fill=Tk.BOTH, expand=Tk.YES, padx=5, pady=5)
         #=======================================================================
         # Horizontal Pane - Top
         #=======================================================================
         # Vertical Pane
-        self.VPane = Tk.PanedWindow(self.HPane, orient=Tk.HORIZONTAL, height=400, width=400, sashpad=5, sashwidth=8)
-        self.HPane.add(self.VPane)
+        #=======================================================================
+        # self.VPane = Tk.PanedWindow(self.HPane, orient=Tk.HORIZONTAL, height=400, width=400, sashpad=5, sashwidth=8)
+        # self.HPane.add(self.VPane)
+        #=======================================================================
         
         #=======================================================================
         #     Vertical Pane - Left
         #     Treeview Frame
         #     Min size: 400px
         #=======================================================================
-        self.treeFrame = Tk.Frame(self.VPane) #, highlightcolor='green', highlightthickness=2)
-        self.VPane.add(self.treeFrame, width=800, minsize=400)
-        
-        Tk.Label(self.treeFrame, text='Instruments').pack(side=Tk.TOP)
-        self.tree = ttk.Treeview(self.treeFrame, height=20)
-        
-        self.tree['columns'] = ('Type', 'Serial')
-        self.tree.heading('#0', text='Instrument')
-        self.tree.column('Type', width=150)
-        self.tree.heading('Type', text='Type')
-        self.tree.column('Serial', width=100)
-        self.tree.heading('Serial', text='Serial Number')
-        self.tree.pack(fill=Tk.BOTH)
+        self.treeFrame = ResourceTree(self.HPane, self.ICF) #, highlightcolor='green', highlightthickness=2)
+        #self.VPane.add(self.treeFrame, width=800, minsize=400)
+        self.HPane.add(self.treeFrame, width=600, minsize=400)
         
         #=======================================================================
         #     Vertical Pane - Right
         #     Controls Frame
         #     Min size: None
         #=======================================================================
-        self.controlFrame = Tk.Frame(self.VPane)
-        self.VPane.add(self.controlFrame)
+        #=======================================================================
+        # self.controlFrame = Tk.Frame(self.VPane)
+        # self.VPane.add(self.controlFrame)
+        #=======================================================================
         
         # TODO: Add some controls here
         # Notebook?: http://www.tkdocs.com/tutorial/complex.html
@@ -239,139 +216,23 @@ class a_Main(object):
         """
         Creates all of the GUI element bindings
         """
-        self.myTk.wm_protocol("WM_DELETE_WINDOW", lambda: self.cb_exitWindow())
+        self.wm_protocol("WM_DELETE_WINDOW", self.cb_exitWindow)
+        
+        # Bind Right Click
+        if sys.platform.startswith('darwin'):
+            # OS X
+            self.treeFrame.bind('<Button-2>', self.e_TreeRightClick)
+        else:
+            # Windows, Linux
+            self.treeFrame.bind('<Button-3>', self.e_TreeRightClick)
+            
+        # Bind Double Click
+        self.treeFrame.bind('<Double-Button-1>', self.e_TreeDoubleClick)
         
         # Console
         h_textHandler = TextHandler(self.logConsole)
         h_textHandler.setFormatter(self.logFormatter)
         self.logger.addHandler(h_textHandler)
-        
-        # Bind Right Click
-        if sys.platform.startswith('darwin'):
-            # OS X
-            self.tree.bind('<Button-2>', self.e_TreeRightClick)
-        else:
-            # Windows, Linux
-            self.tree.bind('<Button-3>', self.e_TreeRightClick)
-            
-        # Bind Double Click
-        self.tree.bind('<Double-Button-1>', self.e_TreeDoubleClick)
-        
-    def resize(self):
-        """
-        Resize the frames when the window size changes
-        """
-        pass
-        
-    def run(self):
-
-        # Try to connect to the local manager
-        self.ICF.addManager('localhost')
-        
-        self.rebuildTreeview()
-        
-        self.logger.info('Application start')
-        
-        self.myTk.mainloop()
-    
-    def rebuildTreeview(self, group='hostname', sort='deviceModel', reverseOrder=False):
-        """
-        Possible groupings:
-        - None (Flat list)
-        - Hostname (default)
-        - Controller
-        - deviceType
-        - deviceVendor
-        - deviceModel
-        
-        Sorting can be done on any valid key
-        """
-        validGroups = ['hostname', 'controller', 'deviceType', 'deviceVendor', 'deviceModel']
-        
-        # Clear the treeview
-        treenodes = self.tree.get_children()
-        for n in treenodes:
-            self.tree.delete(n)
-            
-        # Import Image Assets
-        #img_host = Image.open('assets/computer.png')
-        #img_host = ImageTk.PhotoImage(img_host)
-        #img_device = Image.open('assets/drive.png')
-        #img_device = ImageTk.PhotoImage(img_device)
-
-        # Get a flat list of resources and sort
-        self.ICF.cacheProperties()
-        resources = self.ICF.getProperties().values()
-        resources.sort(key=lambda res: res.get(sort, ''), reverse=reverseOrder)
-        
-        # Build a list of group values
-        if group is 'hostname':
-            # Fixes a bug where hosts were not added if no resources were present
-            for gval in self.ICF.getConnectedHosts():
-                self.tree.insert('', 'end', gval, text=gval, open=True) #, image=img_host)
-                
-        elif group is not None and group in validGroups:
-            group_vals = []
-            for res in resources:
-                gv = res.get(group, None)
-                if gv is not None and gv not in group_vals:
-                    group_vals.append(gv)
-            
-            group_vals.sort()
-            
-            # Create group tree nodes
-            for gval in group_vals:
-                self.tree.insert('', 'end', gval, text=gval)
-            
-        # Populate child nodes
-        for res in resources:
-            lineID = res.get('uuid', None)
-            if lineID is not None:
-                # If no driver loaded, use Resource ID
-                if res.get('modelName', None) is None:
-                    lineText = res.get('resourceID', 'Unknown Resource')
-                else:
-                    # TODO: Device nicknames
-                    lineText = res.get('deviceVendor') + ' ' + res.get('deviceModel')
-    
-                
-                self.tree.insert(res.get(group, ''), 'end', lineID, text=lineText) #, image=img_device)
-                self.tree.set(lineID, 'Type', res.get('deviceType', 'Generic'))
-                self.tree.set(lineID, 'Serial', res.get('deviceSerial', 'Unknown'))
-
-    def loadView(self, uuid, viewModule, viewClass=None):
-        try:
-            if viewClass is None:
-                viewClass = self.views.get(viewModule)[0]
-            
-            viewModule = importlib.import_module(viewModule)
-            viewClass = getattr(viewModule, viewClass)
-            
-            instrument = self.ICF.getInstrument(uuid)
-            
-            if instrument is not None:
-                viewWindow = viewClass(self.myTk, instrument)
-                
-                # Store the object in open views
-                self.openViews[uuid] = viewWindow
-                
-                viewWindow.run()
-                
-            else:
-                tkMessageBox.showwarning('Unable to load view', 'No Model is loaded for this device')
-            
-        except:
-            self.logger.exception("Failed to load view: %s", viewModule)
-            
-    def loadModel(self, uuid, modelModule=None, modelClass=None):
-        """
-        Wrapper for Instrument Control loadModel function.
-        
-        Used by the Driver Load window.
-        """
-        
-        if not self.ICF.loadModel(uuid, modelModule, modelClass):
-            tkMessageBox.showwarning('Unable to load driver', 'An error occured while loading the driver')
 
     #===========================================================================
     # Callback Functions
@@ -382,18 +243,22 @@ class a_Main(object):
     def cb_exitWindow(self):
         try:
             if tkMessageBox.askokcancel("Quit", "Do you really wish to quit?"):
-                self.myTk.destroy()
+                self.destroy()
         
         except:
-            self.myTk.destroy()
+            self.destroy()
+            
+    def cb_setLogLevel(self, level):
+        #numeric_level = getattr(logging, loglevel.upper(), None)
+        self.logger.setLevel(level)
+        self.logger.log(level, 'Log Level Changed')
             
     def cb_managerConnect(self):
         # Spawn a window to get address and port
         from include.a_managerHelpers import a_ConnectToHost
         
         # Create the child window
-        w_connectToHost = a_ConnectToHost(self.myTk, lambda address, port: self.cb_addManager(address, port))
-        
+        w_connectToHost = a_ConnectToHost(self, lambda address, port: self.cb_addManager(address, port))
         
     def cb_addManager(self, address, port=None):
         # Attempt a connection to the manager
@@ -404,78 +269,120 @@ class a_Main(object):
         self.ICF.removeManager(address)
         self.cb_refreshTree()
         
+    def cb_managerShutdown(self, address):
+        self.ICF.stopManager(address)
+        self.cb_refreshTree()
+        
     def cb_addResource(self, address):
         from include.a_managerHelpers import a_AddResource
             
         controllers = self.ICF.getControllers(address)
             
         # Create the child window
-        w_addResource = a_AddResource(self.myTk, self, controllers, lambda controller, resID: self.ICF.addResource(address, controller, resID))
+        w_addResource = a_AddResource(self, self, controllers, lambda controller, resID: self.ICF.addResource(address, controller, resID))
         
         # Make the child modal
         w_addResource.focus_set()
         w_addResource.grab_set()
             
+    def cb_refreshTree(self, address=None):
+        self.treeFrame.refresh()
+        
+    def cb_loadView(self, uuid, viewModule=None):
+        if viewModule is not None:
+            try:
+                # Check if the specified model is valid
+                testModule = importlib.import_module(viewModule)
+                reload(testModule) # Reload the module in case anything has changed
+                
+                className = viewModule.split('.')[-1]
+                viewClass = getattr(testModule, className)
+                
+                instrument = self.ICF.getInstrument(uuid)
+                
+                if instrument is not None:
+                    viewWindow = viewClass(self, instrument)
+                    
+                    # Store the object in open views
+                    self.openViews[uuid] = viewWindow
+                    
+                    viewWindow.run()
+                    
+                else:
+                    tkMessageBox.showwarning('Unable to load view', 'Unable to get a handle for the resource')
+                
+            except:
+                self.logger.exception("Failed to load view: %s", viewModule)
+                
+        else:
+            # Check if a view is already open
+            if uuid in self.openViews.keys():
+                try:
+                    # Do nothing? Bring window into focus?
+                    view_window = self.openViews.get(uuid)
+                    
+                    view_window.lift()
+                
+                    return None
+                except:
+                    # On exception, load the view selector
+                    pass
+                
+            # Find compatible views
+            instrument = self.ICF.getInstrument(uuid)
+            properties = instrument.getProperties()
+            
+            modelName = properties.get('modelName')
+            validViews = []
+            
+            if modelName is not None:
+                # Find a view with a compatible model
+                for viewModule, viewInfo in self.views.items():
+                    if modelName in viewInfo.get('validModels', []):
+                        validViews.append(viewModule)
+            else:
+                # Find a generic view for this resource type
+                resType = properties.get('resourceType')
+                for viewModule, viewInfo in self.views.items():
+                    if resType in viewInfo.get('validResourceTypes', []):
+                        validViews.append(viewModule)
+                
+            # Load the view
+            if len(validViews) > 1:
+                # Load view selector if more than one found
+                from include.a_managerHelpers import a_ViewSelector
+                
+                # Create the child window
+                w_ViewSelector = a_ViewSelector(self, validViews, lambda viewModule: self.loadView(uuid, viewModule))
+    
+            elif len(validViews) == 1 and validViews[0] is not None:
+                # Load the view
+                self.cb_loadView(uuid, validViews[0])
+                
+            else:
+                tkMessageBox.showwarning('Unable to load view', 'No suitable views could be found for this model')
+        
     def cb_loadDriver(self, uuid):
-        validModels = self.ICF.getValidModels(uuid)
-        
-        validModels = [x[0] for x in validModels]
-        
         # Spawn a window to select the driver to load
         from include.a_managerHelpers import a_LoadDriver
         
         # Create the child window
-        w_DriverSelector = a_LoadDriver(self.myTk, validModels, lambda modelModule: self.loadModel(uuid, modelModule, None))
+        w_DriverSelector = a_LoadDriver(self, self.ICF, uuid)
+        
+        self.treeFrame.refresh()
             
     def cb_unloadDriver(self, uuid):
-        self.ICF.unloadModel(uuid)
+        dev = self.ICF.getInstrument(uuid)
+        
+        dev.unloadModel()
+        
+        self.ICF.refreshInstrument(uuid)
         #addr = self.ICF.getAddressFromUUID(uuid)
         #self.ICF.refresh
-        self.cb_refreshTree()
+        self.treeFrame.refresh()
         
-    def cb_loadView(self, uuid):
-        if uuid in self.openViews.keys():
-            try:
-                # Do nothing? Bring window into focus?
-                view_window = self.openViews.get(uuid)
-                
-                view_window.lift()
-            
-                return None
-            except:
-                # On exception, load the view selector
-                pass
-            
-        # Load view selector
-        props = self.ICF.getProperties(uuid)
-        lookup_val = props.get('modelName', None)
-        
-        validViews = self._getValidViews(lookup_val)
-        
-        if len(validViews) > 1:
-            # Spawn a window to select the view to load
-            from include.a_managerHelpers import a_ViewSelector
-            
-            # Create the child window
-            viewList = [x[0] for x in validViews]
-            w_ViewSelector = a_ViewSelector(self.myTk, viewList, lambda viewModule: self.loadView(uuid, viewModule, None))
-            
-        elif len(validViews) == 1:
-            viewModule, viewClass = validViews[0]
-            
-            self.loadView(uuid, viewModule, viewClass)
-                
-        else:
-            tkMessageBox.showwarning('Unable to load view', 'No suitable views could be found for this model')
-    
-    def cb_refreshTree(self, address=None):
-        self.ICF.refreshManager(address)            
-        self.rebuildTreeview()
-            
-    def cb_setLogLevel(self, level):
-        #numeric_level = getattr(logging, loglevel.upper(), None)
-        self.logger.setLevel(level)
-        self.logger.log(level, 'Log Level Changed')
+    def cb_res_properties(self, uuid):
+        pass
 
     #===========================================================================
     # Event Handlers
@@ -485,15 +392,18 @@ class a_Main(object):
     # - accept a parameter 'event'
     # 
     #===========================================================================
-
+    
     def e_TreeRightClick(self, event):
-        elem = self.tree.identify_row(event.y)
+        elem = self.treeFrame.identify_row(event.y)
 
         # Create a context menu
-        menu = Tk.Menu(self.myTk)
+        menu = Tk.Menu(self)
+        
+        resources = self.ICF.getResources()
+        hosts = self.ICF.getConnectedHosts()
         
         # Populate menu based on context
-        if self.ICF.isConnectedHost(elem):
+        if elem in hosts:
             # Context is Hostname
             
             # Context menu:
@@ -503,22 +413,24 @@ class a_Main(object):
             menu.add_command(label='Add Resource', command=lambda: self.cb_addResource(elem))
             menu.add_command(label='Refresh', command=lambda: self.cb_refreshTree(elem))
             menu.add_command(label='Disconnect', command=lambda: self.cb_managerDisconnect(elem))
+            menu.add_command(label='Shutdown', command=lambda: self.cb_managerShutdown(elem))
             
-        elif self.ICF.isValidResource(elem):
+        elif elem in resources.keys():
             # Context is Resource, elem is the UUID
             
             # Context menu:
             # -Load Driver/Unload Driver
             # -Control Instrument (Launch View/GUI)
-            res_props = self.ICF.getProperties(elem)
+            res_props = resources.get(elem)
+            
+            menu.add_command(label='Control Device', command=lambda: self.cb_loadView(elem))
             
             if res_props.get('modelName', None) == None:
                 menu.add_command(label='Load Driver', command=lambda: self.cb_loadDriver(elem))
             else:
-                menu.add_command(label='Control Device', command=lambda: self.cb_loadView(elem))
                 menu.add_command(label='Unload Driver', command=lambda: self.cb_unloadDriver(elem))
             
-            #menu.add_command(label='Properties...', command=lambda: tkMessageBox.showinfo('Instrument Properties', elem))
+            menu.add_command(label='Properties...', command=lambda: self.cb_res_properties(elem))
         
         else:
             # Something else maybe empty space?
@@ -528,42 +440,146 @@ class a_Main(object):
 
     def e_TreeDoubleClick(self, event):
         pass
-        
-    #===========================================================================
-    # Internal Class Definitions
-    #===========================================================================        
-        
-    class Statusbar(Tk.Frame):
-        """
-        TODO:
-        - Add sections
-        """
-        def __init__(self, master, sections=1):
-            Tk.Frame.__init__(self, master)
-            
-            if sections < 1:
-                sections = 1
-                    
-            self.sections = [None]*sections
-            for i in range(0, sections):
-                self.sections[i] = Tk.Label(self, bd=1, relief=Tk.SUNKEN, anchor=Tk.W)
-                self.sections[i].pack(fill=Tk.X)
-                
-        def add_section(self):
-            pass
-    
-        def set(self, section, format, *args):
-            self.label.config(text=format % args)
-            self.label.update_idletasks()
-    
-        def clear(self, section):
-            self.label.config(text="")
-            self.label.update_idletasks()
-            
-    class Toolbar(Tk.Frame):
-        def __init__(self, master, **kwargs):
-            Tk.Frame.__init__(self, master)
 
+class Statusbar(Tk.Frame):
+    """
+    TODO:
+    - Add sections
+    """
+    def __init__(self, master, sections=1):
+        Tk.Frame.__init__(self, master)
+        
+        if sections < 1:
+            sections = 1
+                
+        self.sections = [None]*sections
+        for i in range(0, sections):
+            self.sections[i] = Tk.Label(self, bd=1, relief=Tk.SUNKEN, anchor=Tk.W)
+            self.sections[i].pack(fill=Tk.X)
+            
+    def add_section(self):
+        pass
+
+    def set(self, section, format, *args):
+        self.label.config(text=format % args)
+        self.label.update_idletasks()
+
+    def clear(self, section):
+        self.label.config(text="")
+        self.label.update_idletasks()
+        
+class Toolbar(Tk.Frame):
+    def __init__(self, master, **kwargs):
+        Tk.Frame.__init__(self, master)
+            
+class ResourceTree(Tk.Frame):
+    
+    validGroups = ['hostname', 'deviceType']
+    
+    # Tree Organization
+    treeGroup = 'hostname'
+    treeSort = 'deviceModel'
+    
+    def __init__(self, master, ICF):
+        Tk.Frame.__init__(self, master)
+        
+        self.ICF = ICF
+        
+        Tk.Label(self, text='Instruments').pack(side=Tk.TOP)
+        self.tree = ttk.Treeview(self, height=20)
+        
+        self.tree['columns'] = ('Type', 'Vendor', 'Model', 'Serial')
+        self.tree.heading('#0', text='Instrument')
+        self.tree.column('Vendor', width=80)
+        self.tree.heading('Vendor', text='Vendor')
+        self.tree.column('Model', width=80)
+        self.tree.heading('Model', text='Model')
+        self.tree.column('Type', width=100)
+        self.tree.heading('Type', text='Type')
+        self.tree.column('Serial', width=80)
+        self.tree.heading('Serial', text='Serial Number')
+        self.tree.pack(fill=Tk.BOTH)
+        
+        self.nodes = []
+        self.resources = {}
+        
+        self.changeGrouping()
+        
+    def bind(self, sequence=None, func=None, add=None):
+        return self.tree.bind(sequence, func, add)
+    
+    def identify_row(self, y):
+        return self.tree.identify_row(y)
+    
+    def changeGrouping(self, group='hostname'):
+        # Clear the treeview
+        self._clear()
+        self.treeGroup = group
+        
+        # Build a list of group values
+        if self.treeGroup is 'hostname':
+            # Fixes a bug where hosts were not added if no resources were present
+            for gval in self.ICF.getConnectedHosts():
+                self.tree.insert('', Tk.END, gval, text=gval, open=True) #, image=img_host)
+                
+        elif self.treeGroup in self.validGroups:
+            group_vals = []
+            for res in resources:
+                gv = res.get(self.treeGroup, None)
+                if gv is not None and gv not in group_vals:
+                    group_vals.append(gv)
+            
+            group_vals.sort()
+            
+            # Create group tree nodes
+            for gval in group_vals:
+                # TODO: Add images to treeview
+                self.tree.insert('', Tk.END, gval, text=gval, open=True)
+                
+        self.refresh()
+    
+    def refresh(self, sort='deviceType', reverseOrder=False):
+        """
+        Sorting can be done on any valid key
+        """
+        # TODO: Get tree view images working
+        # Import Image Assets
+        #img_host = Image.open('assets/computer.png')
+        #img_host = ImageTk.PhotoImage(img_host)
+        #img_device = Image.open('assets/drive.png')
+        #img_device = ImageTk.PhotoImage(img_device)
+        self._refreshResources()
+
+        # Get a flat list of resources and sort
+        resources = self.resources.values()
+        resources.sort(key=lambda res: res.get(sort, ''), reverse=reverseOrder)
+        
+        # Populate child nodes
+        for res in resources:
+            lineID = res.get('uuid')
+            group = res.get(self.treeGroup)
+            text = res.get('resourceID', '')
+            
+            if lineID is not None and lineID not in self.nodes:
+                self.tree.insert(group, Tk.END, lineID, text=text) #, image=img_device)
+                self.nodes.append(lineID)
+            
+            self.tree.set(lineID, 'Vendor', res.get('deviceVendor', ''))
+            self.tree.set(lineID, 'Model', res.get('deviceModel', ''))
+            self.tree.set(lineID, 'Type', res.get('deviceType', ''))
+            self.tree.set(lineID, 'Serial', res.get('deviceSerial', ''))
+    
+    def _refreshResources(self):
+        self.ICF.refreshResources()
+        
+        self.resources = self.ICF.getResources()
+    
+    def _clear(self):
+        treenodes = self.tree.get_children()
+        for n in treenodes:
+            self.tree.delete(n)
+            
+        self.nodes = []
         
 class TextHandler(logging.Handler):
     """ 
@@ -587,6 +603,7 @@ if __name__ == "__main__":
     # Load Application GUI
     try:
         main_gui = a_Main()
+        main_gui.mainloop()
          
     except Exception as e:
         print "Unable to load main application"
