@@ -252,7 +252,7 @@ class RpcConnection(threading.Thread):
     :param logger: Logger instance if you wish to override the internal instance
     :type logger: Logging.logger
     """
-    RPC_MAX_PACKET_SIZE = 1048576 # 1MB
+    RPC_MAX_PACKET_SIZE = 4096
     
     def __init__(self, server, socket, **kwargs):
         threading.Thread.__init__(self)
@@ -278,6 +278,18 @@ class RpcConnection(threading.Thread):
             if self.socket in ready_to_read:
                 
                 data = self.socket.recv(self.RPC_MAX_PACKET_SIZE)
+                seg = None
+                # Receive the full packet
+                try:
+                    while seg != "":
+                        seg = self.socket.recv(self.RPC_MAX_PACKET_SIZE)
+                        data += seg
+                except socket.error as e:
+                    if e.errno == errno.EWOULDBLOCK:
+                        # No more data to process
+                        pass
+                    else:
+                        pass
                 
                 if data:
                     # Process the incoming data as a JSON RPC packet
