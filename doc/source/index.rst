@@ -1,7 +1,5 @@
 .. InstrumentControl documentation master file, created by
    sphinx-quickstart on Sat Jul 26 10:59:33 2014.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
 
 Lab Instrument Control and Automation Framework
 ===============================================
@@ -30,45 +28,31 @@ Learn how to use the graphical interface portion of InstrumentControl.
 .. toctree::
    :maxdepth: 2
    
-   intro
-   using_application
-   tests
-   
-Supported Devices and Interfaces
-================================
-
-.. toctree::
-   :maxdepth: 2
-   
+   user_guide/intro
+   user_guide/using_application
    supported_instruments
    supported_interfaces
-   
-Programmer Guide
-================
-
-In-depth guide to the scripting capabilities of InstrumentControl. Assumes an
-intermediate understanding of programming in Python.
-
-.. toctree::
-   :maxdepth: 2
-
    using_script
-   resources
-   models
-   tests
-   api
-   common
    
 Developer Guide
 ===============
 
 Guide to the inner workings of the InstrumentControl framework. Learn how to
-create Models, Controllers, Views and Tests.
+create and work with:
+	* Drivers
+	* Interfaces
+	* Resources
+	* Scripts
 
 .. toctree::
    :maxdepth: 3
    
-   dev/dev_index  
+   developers/dev_index  
+   resources
+   models
+   tests
+   api
+   common
 
 Indices and tables
 ==================
