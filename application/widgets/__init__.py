@@ -21,7 +21,10 @@ class vw_Base(Tk.Frame):
         if self.update_interval is not None:
             self.after(self.update_interval, self.e_update)
         else:
-            self.after(100, self.cb_update)
+            try:
+                self.after(100, self.cb_update)
+            except:
+                pass
             
     def e_update(self):
         """

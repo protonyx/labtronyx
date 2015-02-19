@@ -106,7 +106,8 @@ class r_VISA(controllers.r_Base):
 
         try:
             self.logger.info("Created VISA Resource: %s", resID)
-            self.instrument = self.resource_manager.open_resource(resID)
+            self.instrument = self.resource_manager.open_resource(resID,
+                                                                  open_timeout=0.5)
             
             self.identify()
             self.status = 'READY'

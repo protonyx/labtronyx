@@ -103,7 +103,11 @@ class JsonRpc_Request(object):
     def call(self, target):
         # Invoke target method with stored arguments
         # Don't attempt to catch exceptions here, let them bubble up
-        return target(*self.params, **self.kwargs)
+        if type(self.params) == dict and len(self.kwargs) == 0:
+            # Only keyword parameters
+            return target(**self.params)
+        else:
+            return target(*self.params, **self.kwargs)
         
 #===============================================================================
 # Response Type
