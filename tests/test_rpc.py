@@ -2,6 +2,7 @@ import unittest
 
 import logging
 import sys
+import time
 
 sys.path.append('..')
 import common.rpc as rpc
@@ -63,7 +64,20 @@ class RPC_Server_Object_Tests(unittest.TestCase):
 class RPC_Client_Connection_Tests(unittest.TestCase):
     
     def setUp(self):
-        self.srv = rpc.RpcServer(port=6780)
+        logging.basicConfig(level=logging.DEBUG)
+        
+        try:
+            self.srv = rpc.RpcServer(port=6780)
+            
+        except rpc.RpcServerPortInUse:
+            #client = rpc.RpcClient(address='localhost', port=6780)
+            #client.rpc_stop()
+            #del client
+            
+            #self.srv = rpc.RpcServer(port=6780)
+            pass
+            
+        time.sleep(1.0)
         
     def tearDown(self):
         self.srv.rpc_stop()
@@ -76,6 +90,19 @@ class RPC_Client_Connection_Tests(unittest.TestCase):
         Expected Failure: RpcServerNotFound
         """
         self.assertRaises(rpc.RpcServerNotFound, rpc.RpcClient, address='localhost', port=6781)
+        
+    def test_connect_error_server_stopped(self):
+        """
+        Expected Failure: RpcServerUnresponsive
+        """
+        raise NotImplementedError
+        
+    def test_connect_error_server_restarted(self):
+        """
+        Stop and start the server while a connection is active and verify
+        that it recovers
+        """
+        raise NotImplementedError
         
 class RPC_Client_Method_Tests(unittest.TestCase):
     
@@ -110,4 +137,7 @@ class RPC_Client_Method_Tests(unittest.TestCase):
     def test_method_call_error_exception(self):
         with self.assertRaises(rpc.RpcServerException):
             self.client.test_exception()
+            
+    def test_notification(self):
+        raise NotImplementedError
   

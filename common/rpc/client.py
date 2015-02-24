@@ -186,10 +186,10 @@ class RpcClient(object):
         # Send the encoded request
         out_str = packet.export()
         
-        # Allow for up to three retries
-        for attempt in range(3):
+        # Retry if there is an error
+        for attempt in range(2):
             try:
-                self_send(out_str)
+                self._send(out_str)
                 
                 # Wait for return data or timeout
                 data = self._recv()
@@ -211,6 +211,10 @@ class RpcClient(object):
                 
                     else:
                         raise RpcInvalidPacket()
+                    
+                else:
+                    # Timeout
+                    raise RpcTimeout()
                     
             except socket.error as e:
                 raise
