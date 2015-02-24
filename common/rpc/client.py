@@ -15,6 +15,10 @@ class RpcClient(object):
     RpcBase, RpcClient can dynamically create method aliases. In this way, a
     RpcClient object can "become" an instance of an object on a remote host.
     
+    Establishes a TCP connection to the server through which all requests are
+    send and responses are received. This is a blocking operation, so only one
+    request can be sent at a time (currently). 
+    
     To manually call a remote method, use the function RpcClient._rpcCall
     
     TODO: Add batch processing
@@ -37,6 +41,8 @@ class RpcClient(object):
         self.nextID = 1
         
         self.methods = []
+        
+        self._connect()
             
         # Update the hostname
         self.hostname = self._rpcCall('rpc_getHostname')
@@ -44,6 +50,8 @@ class RpcClient(object):
         self._refresh()
             
         self._setTimeout() # Default
+        
+
         
     def _resolveAddress(self, address):
         try:
@@ -54,6 +62,51 @@ class RpcClient(object):
             # Assume a hostname was given
             #self.hostname = address
             return socket.gethostbyname(address)
+        
+    def _connect(self):
+        # Open a TCP socket
+        try:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.connect((self.address, self.port))
+            self.socket.setblocking(0)
+            self.socket.settimeout(self.timeout)
+        
+        except socket.error as e:
+            if e.errno == errno.ECONNREFUSED:
+                raise RpcServerNotFound()
+            
+            elif e.errno == errno.ECONNRESET: #10054: # Connection reset
+                raise RpcServerNotFound()
+                
+            elif e.errno == errno.ETIMEDOUT: #10060: # Time out
+                raise RpcServerNotFound()
+            
+            else:
+                raise
+            
+        except:
+            self.socket = None
+            raise
+        
+    def _disconnect(self):
+        if self.socket is not None:
+            self.socket.close()
+            self.socket = None
+    
+    def _send(self, data_out):
+        try:
+            self.socket.send(data_out)
+            
+        except socket.error as e:
+            raise
+    
+    def _recv(self):
+        ready_to_read, _, _ = select.select([self.socket], [], [], self.timeout)
+        
+        if self.socket in ready_to_read:
+            data = self.socket.recv(self.RPC_MAX_PACKET_SIZE)
+            
+            return data
         
     def _refresh(self):
         """
@@ -125,70 +178,48 @@ class RpcClient(object):
             - RuntimeError when the remote host sent back a server error
             - Rpc_Timeout when the request times out
         """
-        try:
-            # Open a socket
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.connect((self.address, self.port))
-            self.socket.setblocking(0)
-            self.socket.settimeout(self.timeout)
-            
-            # Encode the RPC Request
-            nextID = int(self.nextID + 1)
-            packet = JsonRpcPacket()
-            packet.addRequest(nextID, remote_method, *args, **kwargs)
-            
-            # Send the encoded request
-            out_str = packet.export()
-            
-            # Allow for up to three retries
-            for attempt in range(3):
-                try:
-                    self.socket.send(out_str)
-                    
-                    # Wait for return data or timeout
-                    ready_to_read, _, _ = select.select([self.socket], [], [], self.timeout)
-                    if self.socket in ready_to_read:
-                        data = self.socket.recv(self.RPC_MAX_PACKET_SIZE)
-                        
-                        if data:
-                            packet = JsonRpcPacket(data)
-                            errors = packet.getErrors()
-                            responses = packet.getResponses()
-                            
-                            if len(errors) > 0:
-                                # There is a problem if there are more than one errors,
-                                # so just check the first one
-                                err_obj = JsonRpc_to_RpcErrors.get(type(errors[0]), RpcError)
-                                raise err_obj()
-                            
-                            elif len(responses) == 1:
-                                resp = responses[0]
-                                return resp.getResult()
-                        
-                            else:
-                                raise RpcInvalidPacket()
-                            
-                except RpcInvalidPacket:
-                    print data # DEBUG
-                    self.logger.exception("Invalid RPC Packet")
-                        
-            raise RpcTimeout()
-            
-        except socket.error as e:
-            if e.errno == errno.ECONNREFUSED:
-                raise RpcServerNotFound()
-            
-            elif e.errno == errno.ECONNRESET: #10054: # Connection reset
-                raise RpcServerNotFound()
-                
-            elif e.errno == errno.ETIMEDOUT: #10060: # Time out
-                raise RpcServerNotFound()
-            
-            else:
-                raise
+        # Encode the RPC Request
+        nextID = int(self.nextID + 1)
+        packet = JsonRpcPacket()
+        packet.addRequest(nextID, remote_method, *args, **kwargs)
         
-        finally:
-            self.socket.close()
+        # Send the encoded request
+        out_str = packet.export()
+        
+        # Allow for up to three retries
+        for attempt in range(3):
+            try:
+                self_send(out_str)
+                
+                # Wait for return data or timeout
+                data = self._recv()
+                
+                if data:
+                    packet = JsonRpcPacket(data)
+                    errors = packet.getErrors()
+                    responses = packet.getResponses()
+                    
+                    if len(errors) > 0:
+                        # There is a problem if there are more than one errors,
+                        # so just check the first one
+                        err_obj = JsonRpc_to_RpcErrors.get(type(errors[0]), RpcError)
+                        raise err_obj()
+                    
+                    elif len(responses) == 1:
+                        resp = responses[0]
+                        return resp.getResult()
+                
+                    else:
+                        raise RpcInvalidPacket()
+                    
+            except socket.error as e:
+                raise
+                        
+            except RpcInvalidPacket:
+                print data # DEBUG
+                self.logger.exception("Invalid RPC Packet")
+                    
+        raise RpcTimeout()
     
     def __str__(self):
         return '<RPC Instance of %s:%s>' % (self.address, self.port)

@@ -46,13 +46,19 @@ class RpcServer(object):
         
         # Attempt to bind a socket
         try:
-            srv_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            srv_socket.bind(('',self.port))
-            srv_socket.listen(5)
-            srv_socket.setblocking(0)
+            # TCP Socket
+            srv_socket_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            srv_socket_tcp.bind(('', self.port))
+            srv_socket_tcp.listen(5)
+            srv_socket_tcp.setblocking(0)
             
             # Update port if randomly assigned
-            _, self.port = srv_socket.getsockname()
+            _, self.port = srv_socket_tcp.getsockname()
+            
+            # UDP Socket
+            srv_socket_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            srv_socket_udp.bind(('', self.port))
+            srv_socket_udp.setblocking(0)
             
         except socket.error as e:
             if e.errno == errno.EADDRINUSE:
@@ -64,11 +70,11 @@ class RpcServer(object):
         
         self.e_alive.set()
             
-        self.__rpc_thread = threading.Thread(name=self.name, target=self.__thread_run, args=(srv_socket,))
+        self.__rpc_thread = threading.Thread(name=self.name, target=self.__thread_run, args=(srv_socket_tcp, srv_socket_udp))
         self.__rpc_thread.start()
         
-    def __thread_run(self, srv_socket):
-        _, self.port = srv_socket.getsockname()
+    def __thread_run(self, srv_socket_tcp, srv_socket_udp):
+        _, self.port = srv_socket_tcp.getsockname()
         
         self.logger.debug('[%s] RPC Server started on port %i', self.name, self.port)
             
@@ -77,9 +83,9 @@ class RpcServer(object):
         while self.e_alive.isSet():
             # Service Socket
             try:
-                ready_to_read,_,_ = select.select([srv_socket], [], [], 1.0)
+                ready_to_read,_,_ = select.select([srv_socket_tcp, srv_socket_udp], [], [], 1.0)
                 
-                if srv_socket in ready_to_read:
+                for srv_socket in ready_to_read:
                     # Spawn a new thread to service the connection
                     connection, address = srv_socket.accept()
                     
