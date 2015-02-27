@@ -1,4 +1,5 @@
 import threading
+import Queue
 import socket
 import select
 import logging
@@ -40,6 +41,8 @@ class RpcServer(object):
             
         # RPC State Variables
         self.rpc_objects = []
+        
+        self.connections = []
         
         self.rpc_lock = threading.Lock()
         self.rpc_startTime = datetime.now()
@@ -90,6 +93,19 @@ class RpcServer(object):
     
     def unregisterObject(self, reg_obj):
         self.rpc_objects.remove(reg_obj)
+        
+    #===========================================================================
+    # Connection Management and Notifications
+    #===========================================================================
+    
+    def notifyClients(self):
+        pass
+    
+    def _registerConnection(self, connection):
+        self.connections.append(connection)
+        
+    def _unregisterConnection(self, connection):
+        self.connections.remove(connection)
         
     #===========================================================================
     # Methods
@@ -227,8 +243,6 @@ class RpcServerThread(threading.Thread):
         # Give the thread a meaningful name
         self.name = name
         
-        self.connections = []
-        
     def run(self):
         self.e_alive.set()
         
@@ -249,13 +263,9 @@ class RpcServerThread(threading.Thread):
                                                logger=self.logger)
                         
                     connThread.start()
-                    self.connections.append(connThread)
 
             except:
                 self.logger.exception('RPC Server Socket Handler Exception')
-                
-            # Clean up old connections
-            # TODO
                 
         self.srv_socket.close()
         
@@ -301,12 +311,14 @@ class RpcConnection(threading.Thread):
         self.lock = self.server.rpc_lock
         
         self.e_alive = threading.Event()
+        self.notification_queue = Queue.Queue()
         
         # Give the thread a meaningful name
         self.name = '%s-%s' % (self.server.getName(), self.address)
     
     def run(self):
         self.e_alive.set()
+        self.server._registerConnection(self)
 
         self.logger.debug("New RPC Connection: %s", self.address)
         
@@ -385,6 +397,24 @@ class RpcConnection(threading.Thread):
                 # Log an exception, close the connection
                 self.logger.exception('[%s] Unhandled Exception', self.name)
                 break
+            
+            # Handle Notifications
+            if self.notification_queue.not_empty():
+                try:
+                    packet = JsonRpcPacket()
+                    
+                    while (self.notification_queue.not_empty()):
+                        item = self.notification_queue.get()
+                        
+                        packet.addRequest(None, 'handle_event', item)
+                        
+                    out_str = packet.export()
+                    self.conn_socket.send(out_str)
+                    
+                except:
+                    pass
+            
+        self.server._unregisterConnection(self)
             
     def join(self, timeout=None):
         self.e_alive.clear()

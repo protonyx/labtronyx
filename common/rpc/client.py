@@ -179,7 +179,8 @@ class RpcClient(object):
             - Rpc_Timeout when the request times out
         """
         # Encode the RPC Request
-        nextID = int(self.nextID + 1)
+        nextID = int(self.nextID)
+        self.nextID += 1
         packet = JsonRpcPacket()
         packet.addRequest(nextID, remote_method, *args, **kwargs)
         
