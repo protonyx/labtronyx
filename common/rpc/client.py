@@ -92,6 +92,42 @@ class RpcClient(object):
         if self.socket is not None:
             self.socket.close()
             self.socket = None
+            
+    def _enableNotifications(self):
+        """
+        Open a UDP port and send a notification registration request to the
+        server.
+        
+        :returns: True if successful, False otherwise
+        """
+        try:
+            self.note_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.note_socket.bind(('', 0))
+            
+            address, port = self.note_socket.getsockname()
+            
+            self._rpcCall('rpc_register', address, port)
+            return True
+        
+        except:
+            self.logger.exception("Exception while enabling notifications")
+            return False
+        
+    def _disableNotifications(self):
+        try:
+            address, _ = self.note_socket.getsockname()
+            self.note_socket.close()
+            
+            self._rpcCall('rpc_unregister', address)
+            
+            del self.note_socket
+        except:
+            pass
+        
+        return True
+    
+    def _checkNotifications(self):
+        pass
     
     def _send(self, data_out):
         try:

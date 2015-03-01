@@ -42,7 +42,10 @@ class RpcServer(object):
         # RPC State Variables
         self.rpc_objects = []
         
+        # Sockets
         self.connections = []
+        # Registered Clients
+        self.connections_reg = {}
         
         self.rpc_lock = threading.Lock()
         self.rpc_startTime = datetime.now()
@@ -98,14 +101,21 @@ class RpcServer(object):
     # Connection Management and Notifications
     #===========================================================================
     
-    def notifyClients(self):
-        pass
+    def notifyClients(self, event, *args, **kwargs):
+        for address, port in self.connections_reg.items():
+            pass
     
     def _registerConnection(self, connection):
         self.connections.append(connection)
         
     def _unregisterConnection(self, connection):
         self.connections.remove(connection)
+        
+    def rpc_register(self, address, port):
+        self.connections_reg[address] = port
+    
+    def rpc_unregister(self, address):
+        self.connections_reg.pop(address)
         
     #===========================================================================
     # Methods
@@ -148,7 +158,7 @@ class RpcServer(object):
     # RPC Functions
     #===========================================================================
     
-    def rpc_getMethods(self, address=None):
+    def rpc_getMethods(self):
         """
         Get a list of valid methods in the registered objects. Protected methods
         that begin with an underscore ('_') are not included.
@@ -173,7 +183,7 @@ class RpcServer(object):
                 
         return self.validMethods
             
-    def rpc_isRunning(self, address=None):
+    def rpc_isRunning(self):
         """
         Check if there is an RpcServer thread running
         
@@ -181,7 +191,7 @@ class RpcServer(object):
         """
         return self.__rpc_thread.is_alive()
             
-    def rpc_stop(self, connection=None):
+    def rpc_stop(self):
         """
         Close the server srv_socket and stop the RpcServer thread
         
@@ -192,7 +202,7 @@ class RpcServer(object):
         """
         self.__rpc_thread.join()
 
-    def rpc_uptime(self, connection=None):
+    def rpc_uptime(self):
         """
         Get the uptime of the RpcServer
         
@@ -204,7 +214,7 @@ class RpcServer(object):
         else:
             return 0
         
-    def rpc_getPort(self, address=None):
+    def rpc_getPort(self):
         """
         Get the bound port of a running RpcServer thread.
         
@@ -212,7 +222,7 @@ class RpcServer(object):
         """
         return self.port
         
-    def rpc_getHostname(self, address=None):
+    def rpc_getHostname(self):
         """
         Get the hostname of the RpcServer host.
         
@@ -220,7 +230,7 @@ class RpcServer(object):
         """
         return socket.gethostname()
         
-    def rpc_getConnections(self, address=None):
+    def rpc_getConnections(self):
         """
         Get the number of connections to the RPC server
         

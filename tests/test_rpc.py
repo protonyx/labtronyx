@@ -139,5 +139,17 @@ class RPC_Client_Method_Tests(unittest.TestCase):
             self.client.test_exception()
             
     def test_notification(self):
-        raise NotImplementedError
+        testVar = False
+        
+        def NOTIFICATION_TEST():
+            testVar = True
+            
+        self.client._enableNotifications()
+        self.client._registerCallback('NOTIFICATION_TEST', NOTIFICATION_TEST)
+        
+        self.srv.notifyClients('NOTIFICATION_TEST')
+        
+        self.client._checkNotifications()
+        
+        self.assertTrue(testVar)
   
