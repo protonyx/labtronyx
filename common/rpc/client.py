@@ -41,6 +41,7 @@ class RpcClient(object):
         self.nextID = 1
         
         self.methods = []
+        self._callbacks = {}
         
         self._connect()
             
@@ -103,8 +104,12 @@ class RpcClient(object):
         try:
             self.note_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.note_socket.bind(('', 0))
+            self.note_socket.setblocking(0)
             
-            address, port = self.note_socket.getsockname()
+            # Get the IP Address of the socket bound to the server
+            address, _ = self.socket.getsockname()
+            # Get the port of the UDP socket
+            _, port = self.note_socket.getsockname()
             
             self._rpcCall('rpc_register', address, port)
             return True
@@ -115,7 +120,7 @@ class RpcClient(object):
         
     def _disableNotifications(self):
         try:
-            address, _ = self.note_socket.getsockname()
+            address, _ = self.socket.getsockname()
             self.note_socket.close()
             
             self._rpcCall('rpc_unregister', address)
@@ -126,8 +131,29 @@ class RpcClient(object):
         
         return True
     
+    def _registerCallback(self, event, method):
+        self._callbacks[event] = method
+    
     def _checkNotifications(self):
-        pass
+        try:
+            while True:
+                data = self.note_socket.recv(self.RPC_MAX_PACKET_SIZE)
+                
+                # Decode the RPC request
+                in_packet = JsonRpcPacket(data)
+                
+                requests = in_packet.getRequests()
+                for req in requests:
+                    method = req.getMethod()
+                    method = self._callbacks.get(method, None)
+                    
+                    if method is not None:
+                        # Return from notification is discarded
+                        req.call(method)
+                    
+                
+        except socket.error:
+            pass
     
     def _send(self, data_out):
         try:

@@ -43,7 +43,8 @@ class RpcServer(object):
         self.rpc_objects = []
         
         # Sockets
-        self.connections = []
+        self._connections = []
+        
         # Registered Clients
         self.connections_reg = {}
         
@@ -103,13 +104,16 @@ class RpcServer(object):
     
     def notifyClients(self, event, *args, **kwargs):
         for address, port in self.connections_reg.items():
-            pass
-    
-    def _registerConnection(self, connection):
-        self.connections.append(connection)
-        
-    def _unregisterConnection(self, connection):
-        self.connections.remove(connection)
+            packet = JsonRpcPacket()
+            packet.addRequest(None, event, *args, **kwargs)
+            out_str = packet.export()
+            
+            try:
+                note_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                note_socket.sendto(out_str, (address, port))
+                
+            except socket.error:
+                self.logger.exception("Error during notification")
         
     def rpc_register(self, address, port):
         self.connections_reg[address] = port
@@ -236,7 +240,7 @@ class RpcServer(object):
         
         :returns: int
         """
-        return len(self.rpc_connections)
+        return len(self._connections)
     
 class RpcServerThread(threading.Thread):
     
@@ -282,9 +286,8 @@ class RpcServerThread(threading.Thread):
         self.logger.debug('[%s] RPC Server stopped', self.name)
         
     def join(self, timeout=None):
-        for conn in self.connections:
-            if conn.is_active():
-                conn.join()
+        for conn in self.server._connections:
+            conn.join()
             
         self.e_alive.clear()
         
@@ -328,7 +331,7 @@ class RpcConnection(threading.Thread):
     
     def run(self):
         self.e_alive.set()
-        self.server._registerConnection(self)
+        self.server._connections.append(self)
 
         self.logger.debug("New RPC Connection: %s", self.address)
         
@@ -408,23 +411,7 @@ class RpcConnection(threading.Thread):
                 self.logger.exception('[%s] Unhandled Exception', self.name)
                 break
             
-            # Handle Notifications
-            if self.notification_queue.not_empty():
-                try:
-                    packet = JsonRpcPacket()
-                    
-                    while (self.notification_queue.not_empty()):
-                        item = self.notification_queue.get()
-                        
-                        packet.addRequest(None, 'handle_event', item)
-                        
-                    out_str = packet.export()
-                    self.conn_socket.send(out_str)
-                    
-                except:
-                    pass
-            
-        self.server._unregisterConnection(self)
+        self.server._connections.remove(self)
             
     def join(self, timeout=None):
         self.e_alive.clear()

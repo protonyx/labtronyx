@@ -139,17 +139,16 @@ class RPC_Client_Method_Tests(unittest.TestCase):
             self.client.test_exception()
             
     def test_notification(self):
-        testVar = False
+        import threading
+        testVar = threading.Event()
+        testVar.clear()
         
-        def NOTIFICATION_TEST():
-            testVar = True
-            
         self.client._enableNotifications()
-        self.client._registerCallback('NOTIFICATION_TEST', NOTIFICATION_TEST)
+        self.client._registerCallback('NOTIFICATION_TEST', lambda: testVar.set())
         
         self.srv.notifyClients('NOTIFICATION_TEST')
         
         self.client._checkNotifications()
         
-        self.assertTrue(testVar)
+        self.assertTrue(testVar.is_set())
   
