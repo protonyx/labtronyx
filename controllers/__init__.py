@@ -146,14 +146,13 @@ class r_Base(object):
         self.config = common_globals.getConfig()
         self.logger = common_globals.getLogger()
         
-        self.uuid = str(uuid.uuid4())
-        self.status = 'INIT'
-        
-        self.groupTag = kwargs.get('groupTag', '')
+        self.__uuid = str(uuid.uuid4())
+        self.__resID = resID
+        self.__controller = controller
+        self.__groupTag = kwargs.get('groupTag', '')
+        self.__status = 'INIT'
         
         self.model = None
-        self.resID = resID
-        self.controller = controller
         
         # Start RPC Server
         self.rpc_server = rpc.RpcServer(name='%s-%s' % (controller.getControllerName(), resID),
@@ -161,16 +160,24 @@ class r_Base(object):
         self.rpc_server.registerObject(self)
         
     def getUUID(self):
-        return self.uuid
+        return self.__uuid
     
     def getResID(self):
-        return self.resID
+        return self.__resID
     
-    def getType(self):
+    def getGroupTag(self):
+        return self.__groupTag
+    
+    def getResourceType(self):
         return self.type
     
-    def getStatus(self):
-        return self.status
+    def getResourceStatus(self):
+        return self.__status
+    
+    def setResourceStatus(self, new_status):
+        self.__status = new_status
+        
+        self.rpc_server.notifyClients('event_status_change')
     
     def getControllerName(self):
         """
@@ -178,7 +185,7 @@ class r_Base(object):
         
         :returns: str
         """
-        return self.controller.getControllerName()
+        return self.__controller.getControllerName()
     
     def getPort(self):
         # Start the RPC server if it isn't already started
@@ -187,11 +194,11 @@ class r_Base(object):
     
     def getProperties(self):
         res_prop = {
-            'uuid': self.uuid,
-            'controller': self.controller.getControllerName(),
-            'resourceID': self.resID,
-            'resourceType': self.type,
-            'groupTag': self.groupTag,
+            'uuid': self.getUUID(),
+            'controller': self.getControllerName(),
+            'resourceID': self.getResID(),
+            'resourceType': self.getResourceType(),
+            'groupTag': self.getGroupTag(),
             'status': self.getStatus(),
             'port': self.getPort()
             }
@@ -282,6 +289,7 @@ class r_Base(object):
             
             # RPC register object
             self.rpc_server.registerObject(self.model)
+            self.rpc_server.notifyClients('event_model_loaded')
             
             return True
 
@@ -302,6 +310,7 @@ class r_Base(object):
                 # RPC unregister object
                 
                 self.rpc_server.unregisterObject(self.model)
+                self.rpc_server.notifyClients('event_model_unloaded')
                 
             except:
                 self.logger.exception('Exception while unloading model')
