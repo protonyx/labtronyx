@@ -50,8 +50,6 @@ class v_BDPC(views.v_Base):
         # TODO: Make this work
         # self.model = self.getModelObject()
         
-        # List of GUI elements to update
-        self.update_elems = []
         self.wm_title("BDPC")
         
         self.model = self.getResource()
@@ -60,13 +58,15 @@ class v_BDPC(views.v_Base):
         #=======================================================================
         # Control
         #=======================================================================
-        self.frame_control = Tk.LabelFrame(self.frame_left, text="Control", padx=5, pady=5)
+        self.frame_control = Tk.LabelFrame(self.frame_left, 
+                                           text="Control", 
+                                           padx=5, pady=5)
         
         self.ops_control = vw_state.vw_BinaryFields(self.frame_control,
-                                        cb_get=self.methodWrapper(self.model, 'getOption'),
-                                        cb_set=self.methodWrapper(self.model, 'setOption'),
-                                        fields=self.methodWrapper(self.model, 'getOptionFields')(),
-                                        names=self.methodWrapper(self.model, 'getOptionDescriptions')() )
+                            cb_get=self.methodWrapper(self.model, 'getOption'),
+                            cb_set=self.methodWrapper(self.model, 'setOption'),
+                            fields=self.methodWrapper(self.model, 'getOptionFields')(),
+                            names=self.methodWrapper(self.model, 'getOptionDescriptions')() )
         self.ops_control.pack()
         
         self.frame_control.pack()
@@ -128,19 +128,19 @@ class v_BDPC(views.v_Base):
 
         self.frame_sensors = Tk.LabelFrame(self.frame_middle, text="Sensors", padx=5, pady=5)
         sensor1 = BDPC_Sensor(self.frame_sensors, self.model, 'PrimaryVoltage',
-                              update_interval=1000)
+                              )#update_interval=1000)
         sensor1.pack()
         self.sensor_widgets.append(sensor1)
         sensor2 = BDPC_Sensor(self.frame_sensors, self.model, 'SecondaryVoltage',
-                              update_interval=1000)
+                              )#update_interval=1000)
         sensor2.pack()
         self.sensor_widgets.append(sensor2)
         sensor3 = BDPC_Sensor(self.frame_sensors, self.model, 'PrimaryCurrent',
-                              update_interval=1000)
+                              )#update_interval=1000)
         sensor3.pack()
         self.sensor_widgets.append(sensor3)
         sensor4 = BDPC_Sensor(self.frame_sensors, self.model, 'SecondaryCurrent',
-                              update_interval=1000)
+                              )#update_interval=1000)
         sensor4.pack()
         self.sensor_widgets.append(sensor4)
         self.frame_sensors.pack()
@@ -175,7 +175,7 @@ class v_BDPC(views.v_Base):
         self.diag_efficiency = vw_entry.vw_GetValue(self.frame_diag,
                                         get_cb=self.methodWrapper(self.model, 'getEfficiency'),
                                         label="Efficiency", units="%",
-                                        update_interval=5000)
+                                        )#update_interval=5000)
         self.diag_efficiency.pack()
         self.diag_convRatio = vw_entry.vw_GetValue(self.frame_diag,
                                         get_cb=self.methodWrapper(self.model, 'getConversionRatioCalc'),
@@ -201,19 +201,6 @@ class v_BDPC(views.v_Base):
         self.graph_output.addPlot(model=self.model, method='getOutputVoltage')
         self.graph_output.addPlot(model=self.model, method='getOutputCurrent')
         self.graph_output.grid(row=1, column=2)
-    
-    def update(self):
-        """
-        Update all elements in the window. Makes a call to the Model
-        update function to quickly queue all operations
-        """
-        self.model.update()
-        
-        for elem in self.update_elems:
-            try:
-                elem.update()
-            except:
-                pass
         
     def cb_refreshToggle(self):
         pass

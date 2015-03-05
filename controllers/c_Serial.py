@@ -52,7 +52,7 @@ class c_Serial(controllers.c_Base):
                     new_resource = r_Serial(resID, self)
                     self.resources[resID] = new_resource
                     
-                    self.manager._notify_new_resource()
+                    self.manager._cb_new_resource()
 
         except:
             # Exception thrown when there are no resources

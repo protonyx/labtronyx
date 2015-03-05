@@ -151,7 +151,7 @@ class InstrumentManager(object):
         modulePath = r_path.replace(os.path.sep, '.')
         return modulePath
     
-    def _notify_new_resource(self):
+    def _cb_new_resource(self):
         """
         Notify InstrumentManager of the creation of a new resource. Called by
         controllers
@@ -166,6 +166,8 @@ class InstrumentManager(object):
                     self.resources[res_uuid] = res_obj
                     
                     self.refreshResources()
+                    
+        self.rpc_server.notifyClients('event_new_resource')
 
     def stop(self):
         """

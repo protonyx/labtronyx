@@ -1,4 +1,5 @@
 import threading
+import Queue
 import socket
 import select
 import logging
@@ -16,7 +17,7 @@ class RpcServer(object):
     
     :param logger: Logger instance if you wish to override the internal instance
     :type logger: Logging.logger
-    :param port: Port to attach socket to
+    :param port: Port to attach srv_socket to
     :type port: int 
     :param name: Internal name for the RPC server thread
     :type name: str
@@ -31,6 +32,7 @@ class RpcServer(object):
     EXCLUSIVE_TIMEOUT = 60.0
     
     _identity = 'JSON-RPC/2.0'
+    type = "TCP"
     
     def __init__(self, **kwargs):
         self.logger = kwargs.get('logger', logging)
@@ -40,19 +42,33 @@ class RpcServer(object):
         # RPC State Variables
         self.rpc_objects = []
         
-        self.e_alive = threading.Event()
+        # Sockets
+        self._connections = []
+        
+        # Registered Clients
+        self.connections_reg = {}
+        
         self.rpc_lock = threading.Lock()
         self.rpc_startTime = datetime.now()
         
-        # Attempt to bind a socket
+        # Attempt to bind sockets
         try:
-            srv_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            srv_socket.bind(('',self.port))
-            srv_socket.listen(5)
-            srv_socket.setblocking(0)
+            if self.type == "TCP":
+                # TCP Socket
+                self.srv_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.srv_socket.bind(('', self.port))
+                self.srv_socket.listen(5)
+                self.srv_socket.setblocking(0)
+            elif self.type == "UDP":
+                # UDP Socket
+                self.srv_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                self.srv_socket.bind(('', self.port))
+                self.srv_socket.setblocking(0)
+            else:
+                raise RuntimeError
             
             # Update port if randomly assigned
-            _, self.port = srv_socket.getsockname()
+            _, self.port = self.srv_socket.getsockname()
             
         except socket.error as e:
             if e.errno == errno.EADDRINUSE:
@@ -61,44 +77,13 @@ class RpcServer(object):
             
             else:
                 raise
-        
-        self.e_alive.set()
-            
-        self.__rpc_thread = threading.Thread(name=self.name, target=self.__thread_run, args=(srv_socket,))
+           
+        self.__rpc_thread = RpcServerThread(name=self.name, 
+                                            server=self,
+                                            srv_socket=self.srv_socket,
+                                            port=self.port,
+                                            logger=self.logger)
         self.__rpc_thread.start()
-        
-    def __thread_run(self, srv_socket):
-        _, self.port = srv_socket.getsockname()
-        
-        self.logger.debug('[%s] RPC Server started on port %i', self.name, self.port)
-            
-        self.rpc_startTime = datetime.now()
-
-        while self.e_alive.isSet():
-            # Service Socket
-            try:
-                ready_to_read,_,_ = select.select([srv_socket], [], [], 1.0)
-                
-                if srv_socket in ready_to_read:
-                    # Spawn a new thread to service the connection
-                    connection, address = srv_socket.accept()
-                    
-                    # Spawn a new thread to service the connection
-                    connThread = RpcConnection(server=self,
-                                               socket=connection,
-                                               logger=self.logger)
-                        
-                    connThread.start()
-
-            except:
-                self.logger.exception('RPC Server Socket Handler Exception')
-                
-            # Clean up old connections
-            # TODO
-                
-        srv_socket.close()
-        
-        self.logger.debug('[%s] RPC Server stopped', self.name)
             
     #===========================================================================
     # Server Management
@@ -114,6 +99,29 @@ class RpcServer(object):
         self.rpc_objects.remove(reg_obj)
         
     #===========================================================================
+    # Connection Management and Notifications
+    #===========================================================================
+    
+    def notifyClients(self, event, *args, **kwargs):
+        for address, port in self.connections_reg.items():
+            packet = JsonRpcPacket()
+            packet.addRequest(None, event, *args, **kwargs)
+            out_str = packet.export()
+            
+            try:
+                note_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                note_socket.sendto(out_str, (address, port))
+                
+            except socket.error:
+                self.logger.exception("Error during notification")
+        
+    def rpc_register(self, address, port):
+        self.connections_reg[address] = port
+    
+    def rpc_unregister(self, address):
+        self.connections_reg.pop(address)
+        
+    #===========================================================================
     # Methods
     #===========================================================================
     
@@ -126,7 +134,7 @@ class RpcServer(object):
         if method == '' or method.startswith('_'):
             # Invalid - Protected Method
             self.logger.warning('RPC Request Denied (Protected Method): %s', method)
-            raise AttributeError
+            raise RpcMethodNotFound()
                                 
         elif method.startswith('rpc'):
             # Valid - RPC Server method
@@ -154,7 +162,7 @@ class RpcServer(object):
     # RPC Functions
     #===========================================================================
     
-    def rpc_getMethods(self, address=None):
+    def rpc_getMethods(self):
         """
         Get a list of valid methods in the registered objects. Protected methods
         that begin with an underscore ('_') are not included.
@@ -179,27 +187,26 @@ class RpcServer(object):
                 
         return self.validMethods
             
-    def rpc_isRunning(self, address=None):
+    def rpc_isRunning(self):
         """
         Check if there is an RpcServer thread running
         
         :returns: bool - True if running, False if not running
         """
-        return self.e_alive.is_set()
+        return self.__rpc_thread.is_alive()
             
-    def rpc_stop(self, connection=None):
+    def rpc_stop(self):
         """
-        Close the server socket and stop the RpcServer thread
+        Close the server srv_socket and stop the RpcServer thread
         
         .. note::
         
-            This operation may take a small amount of time for the socket to
+            This operation may take a small amount of time for the srv_socket to
             register the stop request.
         """
-        self.e_alive.clear()
         self.__rpc_thread.join()
 
-    def rpc_uptime(self, connection=None):
+    def rpc_uptime(self):
         """
         Get the uptime of the RpcServer
         
@@ -211,7 +218,7 @@ class RpcServer(object):
         else:
             return 0
         
-    def rpc_getPort(self, address=None):
+    def rpc_getPort(self):
         """
         Get the bound port of a running RpcServer thread.
         
@@ -219,7 +226,7 @@ class RpcServer(object):
         """
         return self.port
         
-    def rpc_getHostname(self, address=None):
+    def rpc_getHostname(self):
         """
         Get the hostname of the RpcServer host.
         
@@ -227,13 +234,64 @@ class RpcServer(object):
         """
         return socket.gethostname()
         
-    def rpc_getConnections(self, address=None):
+    def rpc_getConnections(self):
         """
         Get the number of connections to the RPC server
         
         :returns: int
         """
-        return len(self.rpc_connections)
+        return len(self._connections)
+    
+class RpcServerThread(threading.Thread):
+    
+    def __init__(self, name, server, srv_socket, **kwargs):
+        threading.Thread.__init__(self)
+        
+        self.server = server
+        self.srv_socket = srv_socket
+        self.port = kwargs.get('port', 0)
+        self.logger = kwargs.get('logger', logging)
+        
+        self.e_alive = threading.Event()
+        
+        # Give the thread a meaningful name
+        self.name = name
+        
+    def run(self):
+        self.e_alive.set()
+        
+        self.logger.debug('[%s] RPC Server started on port %i', self.name, self.port)
+        
+        while self.e_alive.isSet():
+            # Service Socket
+            try:
+                ready_to_read,_,_ = select.select([self.srv_socket], [], [], 0.1)
+                
+                for srv_socket in ready_to_read:
+                    # Spawn a new thread to service the connection
+                    connection, address = srv_socket.accept()
+                    
+                    # Spawn a new thread to service the connection
+                    connThread = RpcConnection(server=self.server,
+                                               conn_socket=connection,
+                                               logger=self.logger)
+                        
+                    connThread.start()
+
+            except:
+                self.logger.exception('RPC Server Socket Handler Exception')
+                
+        self.srv_socket.close()
+        
+        self.logger.debug('[%s] RPC Server stopped', self.name)
+        
+    def join(self, timeout=None):
+        for conn in self.server._connections:
+            conn.join()
+            
+        self.e_alive.clear()
+        
+        threading.Thread.join(self, timeout=timeout)
     
 class RpcConnection(threading.Thread):
     """
@@ -247,100 +305,118 @@ class RpcConnection(threading.Thread):
 
     :param server: RPC Server object
     :type server: RpcServer
-    :param socket: RPC Request Socket
-    :type socket: socket.socket 
+    :param srv_socket: RPC Request Socket
+    :type srv_socket: srv_socket.srv_socket 
     :param logger: Logger instance if you wish to override the internal instance
     :type logger: Logging.logger
     """
     RPC_MAX_PACKET_SIZE = 4096
     
-    def __init__(self, server, socket, **kwargs):
+    def __init__(self, server, conn_socket, **kwargs):
         threading.Thread.__init__(self)
         
         self.server = server
-        self.socket = socket
+        self.conn_socket = conn_socket
         self.logger = kwargs.get('logger', logging)
         
-        self.address, _ = self.socket.getsockname()
+        self.address, _ = self.conn_socket.getsockname()
         
         self.lock = self.server.rpc_lock
-        #self.name = self.parent.name
+        
+        self.e_alive = threading.Event()
+        self.notification_queue = Queue.Queue()
         
         # Give the thread a meaningful name
         self.name = '%s-%s' % (self.server.getName(), self.address)
     
     def run(self):
-        
-        try:
-            ready_to_read,_,_ = select.select([self.socket],[],[], 1.0)
-            # TODO: Read until all data is in the buffer
-            
-            if self.socket in ready_to_read:
-                
-                data = self.socket.recv(self.RPC_MAX_PACKET_SIZE)
-                seg = None
-                # Receive the full packet
-                try:
-                    while seg != "":
-                        seg = self.socket.recv(self.RPC_MAX_PACKET_SIZE)
-                        data += seg
-                except socket.error as e:
-                    if e.errno == errno.EWOULDBLOCK:
-                        # No more data to process
-                        pass
-                    else:
-                        pass
-                
-                if data:
-                    # Process the incoming data as a JSON RPC packet
-                    in_packet = JsonRpcPacket(data)
-                    errors = in_packet.getErrors()
-                    requests = in_packet.getRequests()
-                    
-                    out_packet = JsonRpcPacket()
-                    
-                    if len(errors) == 0:
-                        # Only process requests if no errors were found during parsing
-                        for req in requests:
-                            # Process Requests in order
-                            id = req.getID()
-                            try:
-                                result = self.processRequest(req)
-                                
-                                # Check if the request was a notification
-                                if id is not None:
-                                    out_packet.addResponse(id, result)
-                            
-                            # Catch exceptions during method execution
-                            # DO NOT ALLOW ANY EXCEPTIONS TO PASS THIS LEVEL   
-                            except RpcMethodNotFound:
-                                out_packet.addError_MethodNotFound(id)
-                                
-                            except TypeError:
-                                # Raised when arguments mismatch, but also other cases
-                                # Not a perfect solution, but whatever.
-                                out_packet.addError_InvalidParams(id)
-                                self.logger.exception("RPC Server Type Error")
-                                
-                            except Exception as e:
-                                # Catch-all for everything else
-                                out_packet.addError_ServerException(id, e.message)
-                                self.logger.exception("RPC Server Exception")
-                    
-                    # Encode the outputs of the RPC requests
-                    out_str = out_packet.export()
-                    self.socket.send(out_str)
-                    
-        except socket.error as e:
-            # Socket closed poorly from client
-            if e.errno == errno.ECONNABORTED:
-                self.logger.error('[%s] Client socket closed before data could be sent', self.name)
-            else:
-                self.logger.error('[%s] Socket closed with error: %s', self.name, e.errno)
+        self.e_alive.set()
+        self.server._connections.append(self)
 
-        except:
-            # Log an exception, close the connection
-            self.logger.exception('[%s] Unhandled Exception', self.name)
+        self.logger.debug("New RPC Connection: %s", self.address)
+        
+        while(self.e_alive.isSet()):
+            # Maintain the connection as long as it is open
+            try:
+                ready_to_read,_,_ = select.select([self.conn_socket],[],[], 0.1)
+                # TODO: Read until all data is in the buffer
+                
+                if self.conn_socket in ready_to_read:
+                    
+                    data = self.conn_socket.recv(self.RPC_MAX_PACKET_SIZE)
+                    seg = None
+                    # Receive the full packet
+                    try:
+                        while seg != "":
+                            seg = self.conn_socket.recv(self.RPC_MAX_PACKET_SIZE)
+                            data += seg
+                    except socket.error as e:
+                        if e.errno == errno.EWOULDBLOCK:
+                            # No more data to process
+                            pass
+                        else:
+                            pass
+                    
+                    if data:
+                        # Process the incoming data as a JSON RPC packet
+                        in_packet = JsonRpcPacket(data)
+                        errors = in_packet.getErrors()
+                        requests = in_packet.getRequests()
+                        
+                        out_packet = JsonRpcPacket()
+                        
+                        if len(errors) == 0:
+                            # Only process requests if no errors were found during parsing
+                            for req in requests:
+                                # Process Requests in order
+                                id = req.getID()
+                                try:
+                                    result = self.processRequest(req)
+                                    
+                                    # Check if the request was a notification
+                                    if id is not None:
+                                        out_packet.addResponse(id, result)
+                                
+                                # Catch exceptions during method execution
+                                # DO NOT ALLOW ANY EXCEPTIONS TO PASS THIS LEVEL   
+                                except RpcMethodNotFound:
+                                    out_packet.addError_MethodNotFound(id)
+                                    
+                                except TypeError:
+                                    # Raised when arguments mismatch, but also other cases
+                                    # Not a perfect solution, but whatever.
+                                    out_packet.addError_InvalidParams(id)
+                                    self.logger.exception("RPC Server Type Error")
+                                    
+                                except Exception as e:
+                                    # Catch-all for everything else
+                                    out_packet.addError_ServerException(id, e.message)
+                                    self.logger.exception("RPC Server Exception")
+                        
+                        # Encode the outputs of the RPC requests
+                        out_str = out_packet.export()
+                        self.conn_socket.send(out_str)
+                        
+            except socket.error as e:
+                # Socket closed poorly from client
+                if e.errno == errno.ECONNABORTED:
+                    self.logger.error('[%s] Client socket closed before data could be sent', self.name)
+                    break
+                else:
+                    self.logger.error('[%s] Socket closed with error: %s', self.name, e.errno)
+                    break
+    
+            except:
+                # Log an exception, close the connection
+                self.logger.exception('[%s] Unhandled Exception', self.name)
+                break
+            
+        self.server._connections.remove(self)
+            
+    def join(self, timeout=None):
+        self.e_alive.clear()
+        
+        threading.Thread.join(self, timeout=timeout)
         
     def processRequest(self, req):
         id = req.getID()
