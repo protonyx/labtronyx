@@ -28,11 +28,7 @@ Learn how to use the graphical interface portion of InstrumentControl.
 .. toctree::
    :maxdepth: 2
    
-   user_guide/intro
-   user_guide/using_application
-   supported_instruments
-   supported_interfaces
-   using_script
+   user_guide/index
    
 Developer Guide
 ===============
@@ -45,14 +41,9 @@ create and work with:
 	* Scripts
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
    
-   developers/dev_index  
-   resources
-   models
-   tests
-   api
-   common
+   developers/index
 
 Indices and tables
 ==================

@@ -1,10 +1,22 @@
-InstrumentControl can be started in two modes: script mode and interactive mode. There is no functional difference between
-the two modes, but interactive mode will start everything automatically and load the main GUI.
+Lab Instrumentation Framework (Animus)
+======================================
 
-Script Mode
-===========
-When InstrumentControl is instantiated, an InstrumentManager object is created and all controllers and models are loaded.
-The manager object can be accessed by calling the getManager()
+The Animus project is a framework for controlling laboratory instruments. It
+provides an easy-to-use interface to a wide variety of instruments. It also 
+facilitates automation scripts with a robust and well-documented API. Lastly,
+it is flexible and extensible as to interface with any kind of instrument.
 
-Interactive Mode
-================
+Documentation
+-------------
+
+For full documentation including installation instructions, see 'doc'.
+
+Authors
+-------
+
+Kevin Kennedy (protonyx)
+
+Changelog
+---------
+
+Still in early development
