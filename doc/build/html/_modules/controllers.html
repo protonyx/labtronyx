@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>controllers &mdash; Lab Instrument Control and Automation Framework 1.0 documentation</title>
+    <title>controllers &mdash; Animus - Lab Instrumentation Framework dev documentation</title>
     
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.0',
+        VERSION:     'dev',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,17 +23,17 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="../index.html" />
+    <link rel="top" title="Animus - Lab Instrumentation Framework dev documentation" href="../index.html" />
     <link rel="up" title="Module code" href="index.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li><a href="../index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Animus - Lab Instrumentation Framework dev documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -41,23 +41,66 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <h1>Source code for controllers</h1><div class="highlight"><pre>
-<span class="kn">import</span> <span class="nn">common</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">importlib</span>
 
-<div class="viewcode-block" id="c_Base"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base">[docs]</a><span class="k">class</span> <span class="nc">c_Base</span><span class="p">(</span><span class="n">common</span><span class="o">.</span><span class="n">IC_Common</span><span class="p">):</span>
+<span class="kn">import</span> <span class="nn">common</span>
+<span class="kn">import</span> <span class="nn">common.rpc</span> <span class="kn">as</span> <span class="nn">rpc</span>
+
+<div class="viewcode-block" id="c_Base"><a class="viewcode-back" href="../developers/dev_controller.html#controllers.c_Base">[docs]</a><span class="k">class</span> <span class="nc">c_Base</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="c"># TODO: Controllers will have hooks into the persistence config to &quot;remember&quot; how</span>
     <span class="c">#       a particular device is configured when the program is run in the future.</span>
     
-    <span class="n">resources</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">REFRESH_RATE</span> <span class="o">=</span> <span class="mf">60.0</span> <span class="c"># Seconds</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">manager</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param manager: Reference to the InstrumentManager instance</span>
+<span class="sd">        :type manager: InstrumentManager object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">common_globals</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">ICF_Common</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">common_globals</span><span class="o">.</span><span class="n">getConfig</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">common_globals</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">resources</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">manager</span> <span class="o">=</span> <span class="n">manager</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">e_alive</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">e_alive</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">__controller_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getControllerName</span><span class="p">(),</span> <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__thread_run</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__controller_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">e_alive</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__controller_thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+        
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Controller Thread</span>
+    <span class="c">#===========================================================================</span>
+    
+    <span class="k">def</span> <span class="nf">__thread_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">while</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">e_alive</span><span class="o">.</span><span class="n">isSet</span><span class="p">()):</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+            
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">REFRESH_RATE</span><span class="p">)</span>
+            
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Controller Methods</span>
+    <span class="c">#===========================================================================</span>
 
     <span class="k">def</span> <span class="nf">getControllerName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
 
     <span class="c"># Inheriting classes must implement these functions:</span>
-<div class="viewcode-block" id="c_Base.open"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="c_Base.open"><a class="viewcode-back" href="../developers/dev_controller.html#controllers.c_Base.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Controller Initialization</span>
 <span class="sd">        </span>
@@ -74,7 +117,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
     </div>
-<div class="viewcode-block" id="c_Base.close"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="c_Base.close"><a class="viewcode-back" href="../developers/dev_controller.html#controllers.c_Base.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Controller clean-up</span>
 <span class="sd">        </span>
@@ -86,19 +129,15 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </div>
-<div class="viewcode-block" id="c_Base.getResources"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base.getResources">[docs]</a>    <span class="k">def</span> <span class="nf">getResources</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="c_Base.getResources"><a class="viewcode-back" href="../developers/dev_controller.html#controllers.c_Base.getResources">[docs]</a>    <span class="k">def</span> <span class="nf">getResources</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get a listing of resources by ID. There is no requirement for how</span>
-<span class="sd">        resources are stored internal to the controller, but this function</span>
-<span class="sd">        should return a dict with the format::</span>
-<span class="sd">        </span>
-<span class="sd">            { resourceID: (VID, PID) }</span>
+<span class="sd">        Get the dictionary of resources by ID.</span>
 <span class="sd">        </span>
 <span class="sd">        :returns: dict</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
     </div>
-<div class="viewcode-block" id="c_Base.canEditResources"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base.canEditResources">[docs]</a>    <span class="k">def</span> <span class="nf">canEditResources</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="c_Base.canEditResources"><a class="viewcode-back" href="../developers/dev_controller.html#controllers.c_Base.canEditResources">[docs]</a>    <span class="k">def</span> <span class="nf">canEditResources</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Query the controller to find out if that controller supports manually</span>
 <span class="sd">        adding and destroying resources. </span>
@@ -109,10 +148,10 @@
     <span class="c"># Automatic Controllers</span>
     <span class="c">#===========================================================================</span>
     </div>
-<div class="viewcode-block" id="c_Base.refresh"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="c_Base.refresh"><a class="viewcode-back" href="../developers/dev_controller.html#controllers.c_Base.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Refreshes the resource list. If resources are no longer available,</span>
-<span class="sd">        they should be removed.</span>
+<span class="sd">        Refreshes the resource list. This function is called regularly by the</span>
+<span class="sd">        controller thread.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
     
@@ -120,7 +159,7 @@
     <span class="c"># Manual Controllers</span>
     <span class="c">#===========================================================================</span>
     </div>
-<div class="viewcode-block" id="c_Base.addResource"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base.addResource">[docs]</a>    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ResID</span><span class="p">,</span> <span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">):</span>
+<div class="viewcode-block" id="c_Base.addResource"><a class="viewcode-back" href="../developers/dev_controller.html#controllers.c_Base.addResource">[docs]</a>    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ResID</span><span class="p">,</span> <span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Manually add a resource to the controller</span>
 <span class="sd">        </span>
@@ -134,7 +173,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
     </div>
-<div class="viewcode-block" id="c_Base.destroyResource"><a class="viewcode-back" href="../dev/dev_controller.html#controllers.c_Base.destroyResource">[docs]</a>    <span class="k">def</span> <span class="nf">destroyResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ResID</span><span class="p">):</span>
+<div class="viewcode-block" id="c_Base.destroyResource"><a class="viewcode-back" href="../developers/dev_controller.html#controllers.c_Base.destroyResource">[docs]</a>    <span class="k">def</span> <span class="nf">destroyResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ResID</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove a manually added resource</span>
 <span class="sd">        </span>
@@ -142,15 +181,201 @@
 <span class="sd">        :type ResID: str</span>
 <span class="sd">        :returns: bool - True if successful, False otherwise</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div></div>
+<span class="k">class</span> <span class="nc">r_Base</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="nb">type</span> <span class="o">=</span> <span class="s">&quot;Generic&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resID</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        
+        <span class="n">common_globals</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">ICF_Common</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">common_globals</span><span class="o">.</span><span class="n">getConfig</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">common_globals</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">__uuid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__resID</span> <span class="o">=</span> <span class="n">resID</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__controller</span> <span class="o">=</span> <span class="n">controller</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__groupTag</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;groupTag&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__status</span> <span class="o">=</span> <span class="s">&#39;INIT&#39;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="c"># Start RPC Server</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rpc_server</span> <span class="o">=</span> <span class="n">rpc</span><span class="o">.</span><span class="n">RpcServer</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">controller</span><span class="o">.</span><span class="n">getControllerName</span><span class="p">(),</span> <span class="n">resID</span><span class="p">),</span>
+                                        <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rpc_server</span><span class="o">.</span><span class="n">registerObject</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">getUUID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__uuid</span>
+    
+    <span class="k">def</span> <span class="nf">getResID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__resID</span>
+    
+    <span class="k">def</span> <span class="nf">getGroupTag</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__groupTag</span>
+    
+    <span class="k">def</span> <span class="nf">getResourceType</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span>
+    
+    <span class="k">def</span> <span class="nf">getResourceStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__status</span>
+    
+    <span class="k">def</span> <span class="nf">setResourceStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_status</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__status</span> <span class="o">=</span> <span class="n">new_status</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">rpc_server</span><span class="o">.</span><span class="n">notifyClients</span><span class="p">(</span><span class="s">&#39;event_status_change&#39;</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">getControllerName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the Resource&#39;s Controller class name</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__controller</span><span class="o">.</span><span class="n">getControllerName</span><span class="p">()</span>
+    
+    <span class="k">def</span> <span class="nf">getPort</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># Start the RPC server if it isn&#39;t already started</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rpc_server</span><span class="o">.</span><span class="n">rpc_isRunning</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rpc_server</span><span class="o">.</span><span class="n">rpc_getPort</span><span class="p">()</span>
+    
+    <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">res_prop</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&#39;uuid&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">getUUID</span><span class="p">(),</span>
+            <span class="s">&#39;controller&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">getControllerName</span><span class="p">(),</span>
+            <span class="s">&#39;resourceID&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">getResID</span><span class="p">(),</span>
+            <span class="s">&#39;resourceType&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">getResourceType</span><span class="p">(),</span>
+            <span class="s">&#39;groupTag&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">getGroupTag</span><span class="p">(),</span>
+            <span class="s">&#39;status&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">getStatus</span><span class="p">(),</span>
+            <span class="s">&#39;port&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">getPort</span><span class="p">()</span>
+            <span class="p">}</span>
+        
+        <span class="c"># Append Model properties if a Model is loaded</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">model_prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">getProperties</span><span class="p">()</span>
+            
+            <span class="n">model_prop</span><span class="p">[</span><span class="s">&#39;modelName&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">getModelName</span><span class="p">()</span>
+            
+            <span class="n">res_prop</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">model_prop</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">res_prop</span>
+    
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Resource State</span>
+    <span class="c">#===========================================================================</span>
+    
+    <span class="k">def</span> <span class="nf">isOpen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        
+    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Open the resource</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: True if open was successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Close the resource</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: True if close was successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    
+    <span class="k">def</span> <span class="nf">lock</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    
+    <span class="k">def</span> <span class="nf">unlock</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Data Transmission</span>
+    <span class="c">#===========================================================================</span>
+    
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    
+    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    
+    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Models</span>
+    <span class="c">#===========================================================================</span>
+    
+    <span class="k">def</span> <span class="nf">hasModel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+    
+    <span class="k">def</span> <span class="nf">loadModel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modelName</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load a Model. A Model name can be specified to load a specific model,</span>
+<span class="sd">        even if it may not be compatible with this resource. Reloads model</span>
+<span class="sd">        when importing, in case an update has occured.</span>
+<span class="sd">        </span>
+<span class="sd">        Example::</span>
+<span class="sd">        </span>
+<span class="sd">            instr.loadModel(&#39;Tektronix.Oscilloscope.m_DigitalPhosphor&#39;)</span>
+<span class="sd">        </span>
+<span class="sd">        :param modelName: Module name of the desired Model</span>
+<span class="sd">        :type modelName: str</span>
+<span class="sd">        :returns: True if successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c"># Check if the specified model is valid</span>
+            <span class="n">testModule</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">modelName</span><span class="p">)</span>
+            <span class="nb">reload</span><span class="p">(</span><span class="n">testModule</span><span class="p">)</span> <span class="c"># Reload the module in case anything has changed</span>
+            
+            <span class="n">className</span> <span class="o">=</span> <span class="n">modelName</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">testClass</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">testModule</span><span class="p">,</span> <span class="n">className</span><span class="p">)</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">testClass</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">_onLoad</span><span class="p">()</span>
+            
+            <span class="c"># RPC register object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rpc_server</span><span class="o">.</span><span class="n">registerObject</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rpc_server</span><span class="o">.</span><span class="n">notifyClients</span><span class="p">(</span><span class="s">&#39;event_model_loaded&#39;</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="bp">True</span>
+
+        <span class="k">except</span><span class="p">:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s">&#39;Failed to load model: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">modelName</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    
+    <span class="k">def</span> <span class="nf">unloadModel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If a Model is currently loaded for the resource, unload the resource.</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: True if successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">_onUnload</span><span class="p">()</span>
+                <span class="c"># RPC unregister object</span>
+                
+                <span class="bp">self</span><span class="o">.</span><span class="n">rpc_server</span><span class="o">.</span><span class="n">unregisterObject</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rpc_server</span><span class="o">.</span><span class="n">notifyClients</span><span class="p">(</span><span class="s">&#39;event_model_unloaded&#39;</span><span class="p">)</span>
+                
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s">&#39;Exception while unloading model&#39;</span><span class="p">)</span>
+                
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="bp">None</span>
+                
+            <span class="k">return</span> <span class="bp">True</span>
+        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
 </pre></div>
 
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -167,19 +392,19 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
              >index</a></li>
-        <li><a href="../index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Animus - Lab Instrumentation Framework dev documentation</a> &raquo;</li>
           <li><a href="index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2014, KKENNEDY.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015, Kevin Kennedy (Protonyx).
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3b1.
     </div>
   </body>
 </html>

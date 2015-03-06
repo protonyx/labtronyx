@@ -1,35 +1,72 @@
-Supported Instruments (Models)
-==============================
+Supported Instruments
+=====================
 
 This section of the documentation lists all of the supported devices for which
 models exist. The models are organized by vendor and device type. 
-
-All Models
-----------
-
-.. toctree::
-   :maxdepth: 2
-   
-   models/Tektronix.Oscilloscope.m_OscilloscopeBase
-   models/Tektronix.Oscilloscope.m_DigitalPhosphor
-   models/Agilent.m_SMU
    
 Agilent
 -------
 
-Source-Measurement Units
-^^^^^^^^^^^^^^^^^^^^^^^^
+Function Generator
+^^^^^^^^^^^^^^^^^^
 
-:doc:`B2901A </models/Agilent.m_SMU>`
-:doc:`B2902A </models/Agilent.m_SMU>`
+* 33521A
+
+Multimeter
+^^^^^^^^^^
+
+* 34411A
+
+Source-Measurement Unit (SMU)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* B2901A
+* B2902A
+
 
 BK Precision
 ------------
 
-DC Loads
-^^^^^^^^
+DC Load
+^^^^^^^
 
-:doc:`8510 </models/BK_Precision.Load.m_85XX>`
+* 8502
+* 8510
+* 8512
+
+DC Source
+^^^^^^^^^
+
+* 9116
+* XLN30052
+
+Function Generator
+^^^^^^^^^^^^^^^^^^
+
+* 4063
+
+Multimeter
+^^^^^^^^^^
+
+* 2831E
+* 5492B
+
+Chroma
+------
+
+Source
+^^^^^^
+
+* 61602 AC Source
+* 62024P-600-8 DC Source
+
+TDI Power
+---------
+
+Load
+^^^^
+
+* XBL-600-100-2000
 
 Tektronix
 ---------

@@ -1,8 +1,5 @@
-.. InstrumentControl documentation master file, created by
-   sphinx-quickstart on Sat Jul 26 10:59:33 2014.
-
-Lab Instrument Control and Automation Framework
-===============================================
+Contents
+========
 
 The InstrumentControl project is a comprehensive solution for lab instrument 
 control and automation. With an easy-to-use and fully documented API, 
@@ -23,8 +20,6 @@ project.
 User Guide
 ==========
 
-Learn how to use the graphical interface portion of InstrumentControl. 
-
 .. toctree::
    :maxdepth: 2
    
@@ -32,13 +27,6 @@ Learn how to use the graphical interface portion of InstrumentControl.
    
 Developer Guide
 ===============
-
-Guide to the inner workings of the InstrumentControl framework. Learn how to
-create and work with:
-	* Drivers
-	* Interfaces
-	* Resources
-	* Scripts
 
 .. toctree::
    :maxdepth: 2

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>models &mdash; Lab Instrument Control and Automation Framework 1.0 documentation</title>
+    <title>models &mdash; Animus - Lab Instrumentation Framework dev documentation</title>
     
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.0',
+        VERSION:     'dev',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,17 +23,17 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Lab Instrument Control and Automation Framework 1.0 documentation" href="../index.html" />
+    <link rel="top" title="Animus - Lab Instrumentation Framework dev documentation" href="../index.html" />
     <link rel="up" title="Module code" href="index.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li><a href="../index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Animus - Lab Instrumentation Framework dev documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -41,112 +41,142 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <h1>Source code for models</h1><div class="highlight"><pre>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Test</span>
+<span class="sd">Model Base Class</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">common</span>
 <span class="kn">import</span> <span class="nn">common.rpc</span>
 
+<span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">importlib</span>
 <span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">threading</span>
 
-<span class="kn">import</span> <span class="nn">views</span>
-
-<div class="viewcode-block" id="m_Base"><a class="viewcode-back" href="../models.html#models.m_Base">[docs]</a><span class="k">class</span> <span class="nc">m_Base</span><span class="p">(</span><span class="n">common</span><span class="o">.</span><span class="n">rpc</span><span class="o">.</span><span class="n">RpcBase</span><span class="p">,</span> <span class="n">common</span><span class="o">.</span><span class="n">IC_Common</span><span class="p">):</span>
+<div class="viewcode-block" id="m_Base"><a class="viewcode-back" href="../developers/models.html#models.m_Base">[docs]</a><span class="k">class</span> <span class="nc">m_Base</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     
-    <span class="n">deviceType</span> <span class="o">=</span> <span class="s">&#39;Generic&#39;</span>
-    <span class="n">view</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="p">{}</span>
     
-    <span class="c"># Model Lookup</span>
-    <span class="n">validControllers</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">validVIDs</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">validPIDs</span> <span class="o">=</span> <span class="p">[]</span>
-    
-    <span class="n">_collector_thread</span> <span class="o">=</span> <span class="bp">None</span>
-    <span class="n">_collector_methods</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">_collector_last_sample</span> <span class="o">=</span> <span class="p">{}</span>
-    
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">resID</span><span class="p">,</span> <span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">common</span><span class="o">.</span><span class="n">rpc</span><span class="o">.</span><span class="n">RpcBase</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="n">common</span><span class="o">.</span><span class="n">IC_Common</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="n">uuid</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span> <span class="o">=</span> <span class="n">controller</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">resID</span> <span class="o">=</span> <span class="n">resID</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">VID</span> <span class="o">=</span> <span class="n">VID</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">PID</span> <span class="o">=</span> <span class="n">PID</span>
+        <span class="n">common_globals</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">ICF_Common</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">common_globals</span><span class="o">.</span><span class="n">getConfig</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">common_globals</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
         
-        <span class="c"># Check for logger</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Logger&#39;</span><span class="p">,</span> <span class="n">logging</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__resource</span> <span class="o">=</span> <span class="n">resource</span>
+        
+        <span class="c"># Collector Attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_collector_thread</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_collector_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_collectors</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_collector_methods</span> <span class="o">=</span> <span class="p">{}</span>
         
     <span class="c">#===========================================================================</span>
     <span class="c"># Collector Functionality</span>
     <span class="c">#===========================================================================</span>
     
-    <span class="k">def</span> <span class="nf">__collector_thread</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__collector_thread</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lock_obj</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Asynchronous thread that automatically polls methods that are marked</span>
 <span class="sd">        for collection</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">threading</span><span class="o">.</span><span class="n">current_thread</span><span class="p">()</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span><span class="s">&#39;collector_</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
         <span class="n">next_sample</span> <span class="o">=</span> <span class="p">{}</span>
         
-        <span class="k">while</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">acc_config</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">reg</span><span class="p">,</span> <span class="n">acc_config</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">acc_config</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">while</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_collector_methods</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">wait_next</span> <span class="o">=</span> <span class="mf">1.0</span>
+            
+            <span class="k">for</span> <span class="n">method</span><span class="p">,</span> <span class="n">collector_config</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collector_methods</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">interval</span><span class="p">,</span> <span class="n">depth</span> <span class="o">=</span> <span class="n">collector_config</span>
+                
                 <span class="c"># Check if it is time to get a new sample</span>
-                <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">next_sample</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">):</span>
-                    <span class="n">address</span><span class="p">,</span> <span class="n">subindex</span> <span class="o">=</span> <span class="n">reg</span>
-                    <span class="n">_</span><span class="p">,</span> <span class="n">sample_time</span><span class="p">,</span> <span class="n">data_type</span> <span class="o">=</span> <span class="n">acc_config</span>
+                <span class="n">sample_time</span> <span class="o">=</span> <span class="n">next_sample</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">sample_time</span><span class="p">:</span>
                     
-                    <span class="c"># Queue a register read, the ICP thread will handle the data when it comes back</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">register_read_queue</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+                        <span class="n">method_b</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">)</span>
+                        <span class="n">ret</span> <span class="o">=</span> <span class="n">method_b</span><span class="p">()</span>
+                        
+                        <span class="k">with</span> <span class="n">lock_obj</span><span class="p">:</span>
+                            <span class="n">coll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collectors</span><span class="p">[</span><span class="n">method</span><span class="p">]</span>
+                            <span class="n">coll</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">sample_time</span><span class="p">,</span> <span class="n">ret</span><span class="p">))</span>
+                            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coll</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">depth</span><span class="p">:</span>
+                                <span class="n">coll</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                        
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">stopCollector</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Collector error: invalid method </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">method</span><span class="p">)</span>
                     
                     <span class="c"># Increment the next sample time</span>
-                    <span class="n">next_sample</span><span class="p">[</span><span class="n">reg</span><span class="p">]</span> <span class="o">=</span> <span class="n">next_sample</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">sample_time</span>
-                    
-            <span class="c"># TODO: Calculate the time to the next sample and sleep until then</span>
+                    <span class="n">next_sample</span><span class="p">[</span><span class="n">method</span><span class="p">]</span> <span class="o">=</span> <span class="n">next_sample</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">interval</span>
         
         <span class="c"># Clear reference to this thread before exiting</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_collector_thread</span> <span class="o">=</span> <span class="bp">None</span>
         
-<div class="viewcode-block" id="m_Base.startCollector"><a class="viewcode-back" href="../models.html#models.m_Base.startCollector">[docs]</a>    <span class="k">def</span> <span class="nf">startCollector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">depth</span><span class="p">):</span>
+<div class="viewcode-block" id="m_Base.startCollector"><a class="viewcode-back" href="../developers/models.html#models.m_Base.startCollector">[docs]</a>    <span class="k">def</span> <span class="nf">startCollector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">depth</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Starts a Collector thread to retrieve data at a regular interval.</span>
 <span class="sd">        </span>
 <span class="sd">        :param method: Name of the Model method to invoke</span>
 <span class="sd">        :type method: str</span>
-<span class="sd">        :param interval: Interval in milliseconds between method invokations</span>
-<span class="sd">        :type interval: int</span>
+<span class="sd">        :param interval: Interval in seconds between method invokations</span>
+<span class="sd">        :type interval: float</span>
 <span class="sd">        :param depth: Number of samples to keep</span>
 <span class="sd">        :type depth: int</span>
 <span class="sd">        :returns: Boolean, True if successful, False otherwise.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">reg_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">acc_config</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">depth</span><span class="p">,</span> <span class="n">sample_time</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
-        
-        <span class="c"># Create a new accumulator object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">accumulators</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">UPEL_ICP_Accumulator</span><span class="p">(</span><span class="n">depth</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_collector_methods</span><span class="p">[</span><span class="n">method</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="n">depth</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_collectors</span><span class="p">[</span><span class="n">method</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         
         <span class="c"># Start the accumulator thread</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">acc_thread</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">acc_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__accumulator_thread</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">acc_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collector_thread</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_collector_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__collector_thread</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_collector_lock</span><span class="p">,))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_collector_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
     </div>
     <span class="k">def</span> <span class="nf">stopCollector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
-        <span class="k">pass</span>
-    
-    
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_collector_methods</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_collectors</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        
+    <span class="k">def</span> <span class="nf">getCollector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all data from a collector after a certain timestamp</span>
+<span class="sd">        </span>
+<span class="sd">        :param method: Name of collector-attached method</span>
+<span class="sd">        :type method: str</span>
+<span class="sd">        :param time: Lower bound of time for returned samples</span>
+<span class="sd">        :type time: float</span>
+<span class="sd">        :return: list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collector_methods</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">coll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collectors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+                
+                <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">coll</span><span class="p">):</span>
+                    <span class="n">timestamp</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">entry</span>
+                    
+                    <span class="k">if</span> <span class="n">timestamp</span> <span class="o">&gt;</span> <span class="n">time</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">coll</span><span class="p">[</span><span class="n">index</span><span class="p">:]</span> <span class="c"># Return a slice of the list after the list entry</span>
+                        
+                <span class="k">return</span> <span class="p">[]</span>
+            
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s">&quot;Exception while retrieving collector data&quot;</span><span class="p">)</span>
+        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
             
     <span class="c">#===========================================================================</span>
     <span class="c"># Virtual Functions</span>
     <span class="c">#===========================================================================</span>
         
-<div class="viewcode-block" id="m_Base._onLoad"><a class="viewcode-back" href="../dev/dev_model.html#models.m_Base._onLoad">[docs]</a>    <span class="k">def</span> <span class="nf">_onLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="m_Base._onLoad"><a class="viewcode-back" href="../developers/dev_model.html#models.m_Base._onLoad">[docs]</a>    <span class="k">def</span> <span class="nf">_onLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Called shortly after a Model is instantiated. Since Models can be run</span>
 <span class="sd">        in a new thread, all member attributes in __init__ must be pickleable.</span>
@@ -154,7 +184,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
     </div>
-<div class="viewcode-block" id="m_Base._onUnload"><a class="viewcode-back" href="../dev/dev_model.html#models.m_Base._onUnload">[docs]</a>    <span class="k">def</span> <span class="nf">_onUnload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="m_Base._onUnload"><a class="viewcode-back" href="../developers/dev_model.html#models.m_Base._onUnload">[docs]</a>    <span class="k">def</span> <span class="nf">_onUnload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Called when a Model is unloaded by the InstrumentManager. After this</span>
 <span class="sd">        function is called, all reference will be nulled, and the object will</span>
@@ -173,65 +203,39 @@
 <span class="sd">        </span>
 <span class="sd">        :returns: str</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
-    
-    <span class="k">def</span> <span class="nf">getUUID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the Resource UUID that is provided to the Model</span>
-<span class="sd">        </span>
-<span class="sd">        :returns: str</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">uuid</span>
-    
-    <span class="k">def</span> <span class="nf">getControllerName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the Model&#39;s Controller class name</span>
-<span class="sd">        </span>
-<span class="sd">        :returns: str</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">getControllerName</span><span class="p">()</span>
-    
-    <span class="k">def</span> <span class="nf">getResourceID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the Model Resource ID that identifies the resource to the</span>
-<span class="sd">        Controller</span>
-<span class="sd">        </span>
-<span class="sd">        :returns: str</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resID</span>
+        <span class="n">fqn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__module__</span>
 
-    <span class="k">def</span> <span class="nf">getVendorID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the Resource Vendor ID that is used to find compatible Models </span>
-<span class="sd">        </span>
-<span class="sd">        :returns: str</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">VID</span>
+        <span class="k">return</span> <span class="n">fqn</span>
     
-    <span class="k">def</span> <span class="nf">getProductID</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># Truncate class name from module</span>
+        <span class="c">#fqn_split = fqn.split(&#39;.&#39;)</span>
+        <span class="c">#return &#39;.&#39;.join(fqn_split[0:-1])</span>
+    
+    <span class="k">def</span> <span class="nf">getResource</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the Resource Product ID that is used to find compatible Models </span>
+<span class="sd">        Returns the resource object for interacting with the physical instrument</span>
 <span class="sd">        </span>
-<span class="sd">        :returns: str</span>
+<span class="sd">        :returns: object</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">PID</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__resource</span>
     
     <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">{</span> <span class="s">&#39;deviceType&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">deviceType</span><span class="p">,</span>
-                 <span class="s">&#39;deviceVendor&#39;</span><span class="p">:</span> <span class="s">&#39;Generic&#39;</span><span class="p">,</span>
-                 <span class="s">&#39;deviceModel&#39;</span><span class="p">:</span> <span class="s">&#39;Device&#39;</span><span class="p">,</span>
-                 <span class="s">&#39;deviceSerial&#39;</span><span class="p">:</span> <span class="s">&#39;Unknown&#39;</span><span class="p">,</span>
-                 <span class="s">&#39;deviceFirmware&#39;</span><span class="p">:</span> <span class="s">&#39;Unknown&#39;</span>
-                <span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span> 
+            <span class="s">&#39;deviceType&#39;</span><span class="p">:</span>       <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;deviceType&#39;</span><span class="p">),</span>
+            <span class="s">&#39;deviceVendor&#39;</span><span class="p">:</span>     <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;deviceVendor&#39;</span><span class="p">),</span>
+            <span class="s">&#39;deviceModel&#39;</span><span class="p">:</span>      <span class="s">&#39;&#39;</span><span class="p">,</span>
+            <span class="s">&#39;deviceSerial&#39;</span><span class="p">:</span>     <span class="s">&#39;Unknown&#39;</span><span class="p">,</span>
+            <span class="s">&#39;deviceFirmware&#39;</span><span class="p">:</span>   <span class="s">&#39;Unknown&#39;</span>
+        <span class="p">}</span>
         </div>
 </pre></div>
 
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -248,19 +252,19 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
              >index</a></li>
-        <li><a href="../index.html">Lab Instrument Control and Automation Framework 1.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Animus - Lab Instrumentation Framework dev documentation</a> &raquo;</li>
           <li><a href="index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2014, KKENNEDY.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015, Kevin Kennedy (Protonyx).
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3b1.
     </div>
   </body>
 </html>
