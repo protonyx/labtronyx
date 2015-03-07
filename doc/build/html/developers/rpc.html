@@ -1,0 +1,224 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Remote Procedure Call (RPC) Library &mdash; Animus - Lab Instrumentation Framework dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     'dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Animus - Lab Instrumentation Framework dev documentation" href="../index.html" />
+    <link rel="up" title="Common Library" href="common.html" />
+    <link rel="prev" title="Common Library" href="common.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="common.html" title="Common Library"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Animus - Lab Instrumentation Framework dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Developer Guide</a> &raquo;</li>
+          <li><a href="common.html" accesskey="U">Common Library</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="remote-procedure-call-rpc-library">
+<h1>Remote Procedure Call (RPC) Library<a class="headerlink" href="#remote-procedure-call-rpc-library" title="Permalink to this headline">¶</a></h1>
+<p>The RPC Library leverages JSON-RPC 2.0 and the <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#module-socket" title="(in Python v2.7)"><code class="xref py py-mod docutils literal"><span class="pre">socket</span></code></a> library to allow
+function calls using TCP/IP Packets. This library is used heavily in
+InstrumentControl and InstrumentManager.</p>
+<div class="section" id="rpcbase">
+<h2>RpcBase<a class="headerlink" href="#rpcbase" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="rpcclient">
+<h2>RpcClient<a class="headerlink" href="#rpcclient" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="common.rpc.RpcClient">
+<em class="property">class </em><code class="descclassname">common.rpc.</code><code class="descname">RpcClient</code><span class="sig-paren">(</span><em>address</em>, <em>port</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/common/rpc/client.html#RpcClient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#common.rpc.RpcClient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flexible RPC client that connects to an RpcServer instance either on a local
+host or remote host. Abstracts a remote object using the magic of Python.
+By utilizing functions from the remote RpcServer and object that extends
+RpcBase, RpcClient can dynamically create method aliases. In this way, a
+RpcClient object can &#8220;become&#8221; an instance of an object on a remote host.</p>
+<p>Establishes a TCP connection to the server through which all requests are
+send and responses are received. This is a blocking operation, so only one
+request can be sent at a time (currently).</p>
+<p>To manually call a remote method, use the function RpcClient._rpcCall</p>
+<p>TODO: Add batch processing</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>address</strong> (<em>str - IPv4</em>) &#8211; IP Address of remote RpcServer (Defaults to &#8216;localhost&#8217;)</li>
+<li><strong>port</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Port of remote RpcServer</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="common.rpc.RpcClient._addAlias">
+<code class="descname">_addAlias</code><span class="sig-paren">(</span><em>methodName</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/common/rpc/client.html#RpcClient._addAlias"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#common.rpc.RpcClient._addAlias" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dynamically create a method internal to the RpcClient object that will
+invoke an RPC method call when called.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>methodName</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Name of method</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="common.rpc.RpcClient._enableNotifications">
+<code class="descname">_enableNotifications</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/common/rpc/client.html#RpcClient._enableNotifications"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#common.rpc.RpcClient._enableNotifications" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open a UDP port and send a notification registration request to the
+server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if successful, False otherwise</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="common.rpc.RpcClient._refresh">
+<code class="descname">_refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/common/rpc/client.html#RpcClient._refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#common.rpc.RpcClient._refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of methods from the RPC server and dynamically fill the
+object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="common.rpc.RpcClient._rpcCall">
+<code class="descname">_rpcCall</code><span class="sig-paren">(</span><em>remote_method</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/common/rpc/client.html#RpcClient._rpcCall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#common.rpc.RpcClient._rpcCall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls a function on the remote host with both positional and keyword
+arguments</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd><ul class="first last simple">
+<li>Whatever the remote function returns</li>
+</ul>
+</dd>
+<dt>Exceptions:</dt>
+<dd><ul class="first last simple">
+<li>AttributeError when method not found (same as if a local call)</li>
+<li>RuntimeError when the remote host sent back a server error</li>
+<li>Rpc_Timeout when the request times out</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="common.rpc.RpcClient._setTimeout">
+<code class="descname">_setTimeout</code><span class="sig-paren">(</span><em>new_to=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/common/rpc/client.html#RpcClient._setTimeout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#common.rpc.RpcClient._setTimeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the Timeout limit for an RPC Method call</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>new_to</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; New Timeout time in seconds</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Remote Procedure Call (RPC) Library</a><ul>
+<li><a class="reference internal" href="#rpcbase">RpcBase</a></li>
+<li><a class="reference internal" href="#rpcclient">RpcClient</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="common.html"
+                        title="previous chapter">Common Library</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/developers/rpc.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="common.html" title="Common Library"
+             >previous</a> |</li>
+        <li><a href="../index.html">Animus - Lab Instrumentation Framework dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Developer Guide</a> &raquo;</li>
+          <li><a href="common.html" >Common Library</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015, Kevin Kennedy (Protonyx).
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3b1.
+    </div>
+  </body>
+</html>

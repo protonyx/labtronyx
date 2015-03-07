@@ -1,0 +1,293 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>InstrumentManager &mdash; Animus - Lab Instrumentation Framework dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     'dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Animus - Lab Instrumentation Framework dev documentation" href="../index.html" />
+    <link rel="up" title="Developer Guide" href="index.html" />
+    <link rel="next" title="Controllers" href="dev_controller.html" />
+    <link rel="prev" title="Style Guidelines" href="style.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="dev_controller.html" title="Controllers"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="style.html" title="Style Guidelines"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Animus - Lab Instrumentation Framework dev documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Developer Guide</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="instrumentmanager">
+<h1>InstrumentManager<a class="headerlink" href="#instrumentmanager" title="Permalink to this headline">¶</a></h1>
+<p>InstrumentManager is a self-contained class to interface with test instruments
+on the local system.</p>
+<p>Only one instance of InstrumentManager can be running at a time. This is because
+each InstrumentManager is attached to a fixed port to facilitate communication
+between different hosts easily. Also, InstrumentManagers tend to lock system
+resources, so only one should be running at a time.</p>
+<p>If an attempt is made to start a second InstrumentManager instance, the
+initialization sequence will find that the socket is in use and will exit right
+away.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">All interactions with InstrumentManager instances are handled by the
+InstrumentControl API. This documentation is mostly for reference and to
+aid development of instrument drivers.</p>
+</div>
+<div class="section" id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h2>
+<p>The InstrumentManager class uses a slightly modified <a class="reference external" href="http://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller">Model-View-Controller</a>
+design paradigm, which separates the low-level system calls from the instrument
+drivers. By using this design approach, core program functionality is isolated
+into smaller chunks in order to keep errors from propagating throughout the
+entire program. If an exception is raised in a Controller or Model, it can be
+caught easily before the entire framework is destabilized.</p>
+<p>On startup, the InstrumentManager will scan the program directory for valid
+controllers. For each controller that is found, a scan will be initiated and the
+found resources indexed. Once all resources are indexed, InstrumentManager
+attempts to load models for each of them based on the Vendor and Product
+identifier returned from the controller.</p>
+</div>
+<div class="section" id="resources">
+<h2>Resources<a class="headerlink" href="#resources" title="Permalink to this headline">¶</a></h2>
+<p>The core function of the InstrumentManager is to manage resources that are
+connected to that system. In general, a resource represents an instrument that
+is connected to the local machine and is known to the operating system.</p>
+<p>Internally, resources are stored using three pieces of information that make
+them uniquely identifiable and can be used to establish communication with the
+physical device:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Universally Unique IDentifier (str)</li>
+<li><cite>Controller</cite> name (str)</li>
+<li>Resource Identifier (str)</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="properties">
+<h2>Properties<a class="headerlink" href="#properties" title="Permalink to this headline">¶</a></h2>
+<p>Properties are auxiliary information about a physical device. The keys and data
+contained in the properties are dependent on the device and Model, but the
+following keys will exist for all resources.</p>
+<blockquote>
+<div><ul class="simple">
+<li>&#8216;uuid&#8217;: Unique Resource Identifier</li>
+<li>&#8216;controller&#8217;: The module name for the controller</li>
+<li>&#8216;resourceID&#8217;: Resource ID specific for the controller</li>
+<li>&#8216;vendorID&#8217;: Vendor ID used to find compatible Models</li>
+<li>&#8216;productID&#8217;: Product ID used to find compatible Models</li>
+</ul>
+</div></blockquote>
+<p>Models can provide additional properties that more fully describe the instrument.
+See the <a class="reference internal" href="dev_model.html"><em>Model API Documentation</em></a> for more details.</p>
+</div>
+<div class="section" id="internal-api">
+<h2>Internal API<a class="headerlink" href="#internal-api" title="Permalink to this headline">¶</a></h2>
+<p>Like models, an InstrumentManager can also be connected to with a
+<code class="xref py py-class docutils literal"><span class="pre">RpcClient</span></code> instance. The following functions are listed only for
+reference, as the InstrumentControl API should be used to manage all
+communication with each InstrumentManager.</p>
+<dl class="class">
+<dt id="InstrumentManager.InstrumentManager">
+<em class="property">class </em><code class="descclassname">InstrumentManager.</code><code class="descname">InstrumentManager</code><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="InstrumentManager.InstrumentManager.addResource">
+<code class="descname">addResource</code><span class="sig-paren">(</span><em>controller</em>, <em>ResID</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.addResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.addResource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manually add a resource to a controller. Not supported by all controllers</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This will return False if manually adding resources is not supported.
+To check if the controller supports manual resource management,
+use <code class="xref py py-func docutils literal"><span class="pre">InstrumentManager.canEditResources()</span></code></p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>controller</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Controller name</li>
+<li><strong>ResID</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Resource Identifier</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">bool - True if successful, False otherwise</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getControllers">
+<code class="descname">getControllers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getControllers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getControllers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of controllers known to InstrumentManager</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getResources">
+<code class="descname">getResources</code><span class="sig-paren">(</span><em>res_uuid=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getResources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get information about all resources. If Resource UUID is provided, a
+dictionary with all resources will be returned, nested by UUID</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>res_uuid</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Unique Resource Identifier (UUID) (Optional)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.getVersion">
+<code class="descname">getVersion</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.getVersion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.getVersion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the InstrumentManager version</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.refreshResources">
+<code class="descname">refreshResources</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.refreshResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.refreshResources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the properties dictionary for all resources.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if successful, False if an error occured</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="InstrumentManager.InstrumentManager.stop">
+<code class="descname">stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/InstrumentManager.html#InstrumentManager.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#InstrumentManager.InstrumentManager.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop the InstrumentManager instance. Attempts to shutdown and free
+all resources.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">InstrumentManager</a><ul>
+<li><a class="reference internal" href="#architecture">Architecture</a></li>
+<li><a class="reference internal" href="#resources">Resources</a></li>
+<li><a class="reference internal" href="#properties">Properties</a></li>
+<li><a class="reference internal" href="#internal-api">Internal API</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="style.html"
+                        title="previous chapter">Style Guidelines</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="dev_controller.html"
+                        title="next chapter">Controllers</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/developers/dev_manager.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="dev_controller.html" title="Controllers"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="style.html" title="Style Guidelines"
+             >previous</a> |</li>
+        <li><a href="../index.html">Animus - Lab Instrumentation Framework dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Developer Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015, Kevin Kennedy (Protonyx).
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3b1.
+    </div>
+  </body>
+</html>
