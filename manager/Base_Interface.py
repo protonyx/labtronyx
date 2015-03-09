@@ -2,6 +2,7 @@ import uuid
 import time
 import threading
 import importlib
+import sys
 
 sys.path.append("..")
 import common
@@ -141,7 +142,7 @@ class Base_Interface(object):
         """
         raise NotImplementedError
 
-class r_Base(object):
+class Base_Resource(object):
     type = "Generic"
     
     def __init__(self, resID, controller, **kwargs):

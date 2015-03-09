@@ -37,14 +37,20 @@ class InstrumentManager(object):
                                             port=self.config.managerPort,
                                             logger=self.logger)
             self.rpc_server.registerObject(self)
+            
+            # Load Interfaces
+            self.interfaces = controllers.getAllInterfaces()
+            
+            for interf in self.interfaces.keys():
+                self.logger.debug("Found Interface: %s", interf)
         
-            # Build the model dictionary
-            #self.__loadModels()
+            # Load Drivers
             self.drivers = models.getAllDrivers()
             
-            # Load controllers
-            #self.__loadControllers()
-            self.interfaces = controllers.getAllInterfaces()
+            for driver in self.drivers.keys():
+                self.logger.debug("Found Driver: %s", driver)
+            
+            
             
         except rpc.RpcServerPortInUse:
             self.logger.error("RPC Port in use, shutting down...")

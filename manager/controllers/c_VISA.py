@@ -1,11 +1,11 @@
+from Base_Interface import Base_Interface, Base_Resource
+
 import importlib
 import re
 import time
 import visa
 
-import controllers
-
-class c_VISA(controllers.c_Base):
+class c_VISA(Base_Interface):
     """
     VISA Controller
     
@@ -83,7 +83,7 @@ class c_VISA(controllers.c_Base):
     def getResources(self):
         return self.resources
             
-class r_VISA(controllers.r_Base):
+class r_VISA(Base_Resource):
     """
     VISA Resource Base class.
     
@@ -108,7 +108,7 @@ class r_VISA(controllers.r_Base):
     type = "VISA"
         
     def __init__(self, resID, controller, **kwargs):
-        controllers.r_Base.__init__(self, resID, controller, **kwargs)
+        Base_Resource.__init__(self, resID, controller, **kwargs)
         
         self.resource_manager = visa.ResourceManager()
         self.model_list = kwargs.get('models')
@@ -198,7 +198,7 @@ class r_VISA(controllers.r_Base):
         return self.instrument.query(data)
     
     def getProperties(self):
-        def_prop = controllers.r_Base.getProperties(self)
+        def_prop = Base_Resource.getProperties(self)
         
         VISA_prop = {'deviceVendor':     self.VID,
                      'deviceModel':      self.PID,
@@ -251,12 +251,12 @@ class r_VISA(controllers.r_Base):
                 
             # Only auto-load a model if a single model was found
             if len(validModels) == 1:
-                controllers.r_Base.loadModel(validModels[0])
+                Base_Resource.loadModel(self, validModels[0])
                 
                 return True
             
             return False
                 
         else:
-            return controllers.r_Base.loadModel(self, modelName)
+            return Base_Resource.loadModel(self, modelName)
     

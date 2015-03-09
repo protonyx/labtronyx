@@ -1,8 +1,8 @@
+from Base_Interface import Base_Interface, Base_Resource
+
 import sys
 
-import controllers
-
-class c_Debug(controllers.c_Base):
+class c_Debug(Base_Interface):
     
     info = {
         # Interface Author
@@ -41,7 +41,7 @@ class c_Debug(controllers.c_Base):
     def getResources(self):
         return self.resources
             
-class r_Debug(controllers.r_Base):
+class r_Debug(Base_Resource):
     type = "Debug"
     
     def open(self):

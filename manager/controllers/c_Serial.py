@@ -1,3 +1,5 @@
+from Base_Interface import Base_Interface, Base_Resource
+
 import importlib
 import sys
 
@@ -5,9 +7,7 @@ import serial
 import serial.tools.list_ports
 # list(serial.tools.list_ports.comports())
 
-import controllers
-
-class c_Serial(controllers.c_Base):
+class c_Serial(Base_Interface):
     
     info = {
         # Interface Author
@@ -94,11 +94,11 @@ class c_Serial(controllers.c_Base):
 
 
         
-class r_Serial(controllers.r_Base):
+class r_Serial(Base_Resource):
     type = "Serial"
         
     def __init__(self, resID, controller):
-        controllers.r_Base.__init__(self, resID, controller)
+        Base_Resource.__init__(self, resID, controller)
         
         try:
             self.instrument = serial.Serial(resID)

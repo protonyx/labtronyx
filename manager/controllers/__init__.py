@@ -31,7 +31,7 @@ def getAllInterfaces():
             # Iterate through each file
             filepath = os.path.join(dirpath, file)
             modulepath, fileExtension = os.path.splitext(filepath)
-            if fileExtension in ['.py', '.pyd', 'pyo'] and '__init__' not in file:
+            if fileExtension in ['.py', '.pyc'] and '__init__' not in file:
                 # Get module name from relative path
                 
                 com_pre = os.path.commonprefix([canpath, filepath])
@@ -40,17 +40,17 @@ def getAllInterfaces():
                 fileName, _ = os.path.splitext(file)
         
                 # Attempt to load the model
-                #try:
-                testModule = importlib.import_module(moduleName)
+                try:
+                    testModule = importlib.import_module(moduleName)
                 
-                # Check to make sure the correct class exists
-                testClass = getattr(testModule, fileName) # Will raise exception if doesn't exist
+                    # Check to make sure the correct class exists
+                    testClass = getattr(testModule, fileName) # Will raise exception if doesn't exist
+                    
+                    info = copy.deepcopy(testClass.info)
+                    interfaces[moduleName] = info
                 
-                info = copy.deepcopy(testClass.info)
-                interfaces[moduleName] = info
-                
-                #except Exception as e:
-                #    continue
+                except Exception as e:
+                    pass
                 
                 #===========================================================
                 # except AttributeError:

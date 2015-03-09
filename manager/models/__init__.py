@@ -40,17 +40,17 @@ def getAllDrivers():
                 fileName, _ = os.path.splitext(file)
         
                 # Attempt to load the model
-                #try:
-                testModule = importlib.import_module(moduleName)
-                
-                # Check to make sure the correct class exists
-                testClass = getattr(testModule, fileName) # Will raise exception if doesn't exist
-                
-                info = copy.deepcopy(testClass.info)
-                drivers[moduleName] = info
-                
-                #except Exception as e:
-                #    continue
+                try:
+                    testModule = importlib.import_module(moduleName)
+                    
+                    # Check to make sure the correct class exists
+                    testClass = getattr(testModule, fileName) # Will raise exception if doesn't exist
+                    
+                    info = copy.deepcopy(testClass.info)
+                    drivers[moduleName] = info
+                    
+                except Exception as e:
+                    continue
                 
                 #===========================================================
                 # except AttributeError:
