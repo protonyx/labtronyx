@@ -1,5 +1,6 @@
 import logging
 import sys
+import time
 
 class Config(object):
     # Software Branding
@@ -7,7 +8,9 @@ class Config(object):
     longname = 'Labtronyx Instrumentation Control Framework'
     
     # Version
-    version = '150212dev'
+    version = '0.1'
+    build = time.strftime("%y%m%d")
+    stage = 'dev'
     
     # Default port for manager objects to setup RPC servers on
     managerPort = 6780

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Getting Started with the Programming Interface &mdash; Animus - Lab Instrumentation Framework dev documentation</title>
+    <title>Getting Started with the Programming Interface &mdash; Labtronyx 0.1dev-150310 documentation</title>
     
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     'dev',
+        VERSION:     '0.1dev-150310',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,23 +23,23 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Animus - Lab Instrumentation Framework dev documentation" href="../index.html" /> 
+    <link rel="top" title="Labtronyx 0.1dev-150310 documentation" href="../index.html" /> 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
+  <body>
+    <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li><a href="../index.html">Animus - Lab Instrumentation Framework dev documentation</a> &raquo;</li> 
+        <li><a href="../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body" role="main">
+          <div class="body">
             
   <div class="section" id="getting-started-with-the-programming-interface">
 <h1>Getting Started with the Programming Interface<a class="headerlink" href="#getting-started-with-the-programming-interface" title="Permalink to this headline">¶</a></h1>
@@ -59,14 +59,14 @@
 <h2>Connecting to InstrumentManager instances<a class="headerlink" href="#connecting-to-instrumentmanager-instances" title="Permalink to this headline">¶</a></h2>
 <p>On instantiation, InstrumentControl will attempt to connect to a local
 InstrumentManager instance. Connections to InstrumentManager instances on remote
-machines can be added or removed using <code class="xref py py-func docutils literal"><span class="pre">InstrumentControl.addManager()</span></code> and
-<code class="xref py py-func docutils literal"><span class="pre">InstrumentControl.removeManager()</span></code>, respectively.</p>
-<p>When an InstrumentManager is added using <code class="xref py py-func docutils literal"><span class="pre">InstrumentControl.addManager()</span></code>,
+machines can be added or removed using <tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.addManager()</span></tt> and
+<tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.removeManager()</span></tt>, respectively.</p>
+<p>When an InstrumentManager is added using <tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.addManager()</span></tt>,
 all of the remote resources are cached by an internal call to
-<code class="xref py py-func docutils literal"><span class="pre">InstrumentControl.refreshManager()</span></code>. Cached resources are indexed by their
+<tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.refreshManager()</span></tt>. Cached resources are indexed by their
 Unique Resource Identifier (UUID).</p>
-<p>If an <code class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></code> instance is not already running, you can start
-one using <code class="xref py py-func docutils literal"><span class="pre">startWaitManager()</span></code> or <code class="xref py py-func docutils literal"><span class="pre">startManager()</span></code>:</p>
+<p>If an <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> instance is not already running, you can start
+one using <tt class="xref py py-func docutils literal"><span class="pre">startWaitManager()</span></tt> or <tt class="xref py py-func docutils literal"><span class="pre">startManager()</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">instr</span><span class="o">.</span><span class="n">startWaitManager</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -86,7 +86,7 @@ InstrumentManager. To connect to an InstrumentManager instance on another host:<
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
@@ -97,14 +97,12 @@ InstrumentManager. To connect to an InstrumentManager instance on another host:<
 </li>
 </ul>
 
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/developers/using_script.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/developers/using_script.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -121,18 +119,18 @@ InstrumentManager. To connect to an InstrumentManager instance on another host:<
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
              >index</a></li>
-        <li><a href="../index.html">Animus - Lab Instrumentation Framework dev documentation</a> &raquo;</li> 
+        <li><a href="../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer" role="contentinfo">
+    <div class="footer">
         &copy; Copyright 2015, Kevin Kennedy (Protonyx).
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3b1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

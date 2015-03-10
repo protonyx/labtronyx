@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Models &mdash; Animus - Lab Instrumentation Framework dev documentation</title>
+    <title>Models &mdash; Labtronyx 0.1dev-150310 documentation</title>
     
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     'dev',
+        VERSION:     '0.1dev-150310',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,13 +23,13 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Animus - Lab Instrumentation Framework dev documentation" href="../index.html" />
+    <link rel="top" title="Labtronyx 0.1dev-150310 documentation" href="../index.html" />
     <link rel="up" title="Developer Guide" href="index.html" />
     <link rel="next" title="Views" href="dev_view.html" />
     <link rel="prev" title="Controllers" href="dev_controller.html" /> 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
+  <body>
+    <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -41,7 +41,7 @@
         <li class="right" >
           <a href="dev_controller.html" title="Controllers"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Animus - Lab Instrumentation Framework dev documentation</a> &raquo;</li>
+        <li><a href="../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Developer Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -49,7 +49,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body" role="main">
+          <div class="body">
             
   <div class="section" id="models">
 <h1>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h1>
@@ -65,12 +65,12 @@ connectors, etc.). By so doing, the same model can be used without needing
 knowledge of the underlying controller that is being used. The Model simply
 lists which controllers it is compatible with, and InstrumentManager takes care
 of the rest.</p>
-<p>All models extend <code class="xref py py-class docutils literal"><span class="pre">models.mBase</span></code>, which attaches a RpcServer thread to the
+<p>All models extend <tt class="xref py py-class docutils literal"><span class="pre">models.mBase</span></tt>, which attaches a RpcServer thread to the
 model, allowing communication from InstrumentManagers. Remote Procedure Call
 (RPC) allows an object to be accessed from any networked machine as if it were
 a local object on the operator&#8217;s machine. This allows really easy application
 and script development, as the communication with the instrument over the
-network is taken care of by the <code class="xref py py-mod docutils literal"><span class="pre">common.Rpc</span></code> library.</p>
+network is taken care of by the <tt class="xref py py-mod docutils literal"><span class="pre">common.Rpc</span></tt> library.</p>
 <div class="section" id="execution-model">
 <h2>Execution Model<a class="headerlink" href="#execution-model" title="Permalink to this headline">¶</a></h2>
 <p>Model objects are stored in the same process and memory space as
@@ -80,14 +80,14 @@ This enables the model to communicate directly with the controller and get any
 additional information that is needed to send commands or receive data from the
 physical device.</p>
 <p>If no errors are raised during Model instantiation,
-an RPC Server thread is spawned for that Model by calling <code class="xref py py-func docutils literal"><span class="pre">rpc_start()</span></code>.
-This function is inherited from <code class="xref py py-class docutils literal"><span class="pre">common.Rpc.RpcBase</span></code>, which is inherited
-from <a class="reference internal" href="models.html#models.m_Base" title="models.m_Base"><code class="xref py py-class docutils literal"><span class="pre">models.m_Base</span></code></a>. For information about the execution model of the
-RPC server, see <code class="xref doc docutils literal"><span class="pre">Remote</span> <span class="pre">Procedure</span> <span class="pre">Call</span> <span class="pre">(RPC)</span> <span class="pre">Library</span></code>.</p>
+an RPC Server thread is spawned for that Model by calling <tt class="xref py py-func docutils literal"><span class="pre">rpc_start()</span></tt>.
+This function is inherited from <tt class="xref py py-class docutils literal"><span class="pre">common.Rpc.RpcBase</span></tt>, which is inherited
+from <tt class="xref py py-class docutils literal"><span class="pre">models.m_Base</span></tt>. For information about the execution model of the
+RPC server, see <tt class="xref doc docutils literal"><span class="pre">Remote</span> <span class="pre">Procedure</span> <span class="pre">Call</span> <span class="pre">(RPC)</span> <span class="pre">Library</span></tt>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">It is not necessary to worry about thread synchronization within a Model,
-it is all handled by <code class="xref py py-class docutils literal"><span class="pre">common.Rpc.RpcServer</span></code>.</p>
+it is all handled by <tt class="xref py py-class docutils literal"><span class="pre">common.Rpc.RpcServer</span></tt>.</p>
 </div>
 <p>Models were designed from the beginning to be network transparent. The
 underlying RPC framework handles all of the function calls, regardless of the
@@ -128,8 +128,8 @@ information such as:</p>
 <li>etc.</li>
 </ul>
 </div></blockquote>
-<p>Properties are retrieved by calling <code class="xref py py-func docutils literal"><span class="pre">getProperties()</span></code> from the Model. Models
-should override <code class="xref py py-func docutils literal"><span class="pre">getProperties()</span></code> and add additional properties that
+<p>Properties are retrieved by calling <tt class="xref py py-func docutils literal"><span class="pre">getProperties()</span></tt> from the Model. Models
+should override <tt class="xref py py-func docutils literal"><span class="pre">getProperties()</span></tt> and add additional properties that
 may be useful for application and script development, like the ones above.</p>
 <p>The following keys will always exist for all Models:</p>
 <table border="1" class="docutils">
@@ -221,28 +221,6 @@ and consolidation.</p>
 </div>
 <div class="section" id="recommended-api-implementations">
 <h2>Recommended API Implementations<a class="headerlink" href="#recommended-api-implementations" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="models.m_Base">
-<em class="property">class </em><code class="descclassname">models.</code><code class="descname">m_Base</code><span class="sig-paren">(</span><em>resource</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models.html#m_Base"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.m_Base" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="models.m_Base._onLoad">
-<code class="descname">_onLoad</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models.html#m_Base._onLoad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.m_Base._onLoad" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called shortly after a Model is instantiated. Since Models can be run
-in a new thread, all member attributes in __init__ must be pickleable.
-If there are attributes that cannot be pickled, load them here.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="models.m_Base._onUnload">
-<code class="descname">_onUnload</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/models.html#m_Base._onUnload"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#models.m_Base._onUnload" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when a Model is unloaded by the InstrumentManager. After this
-function is called, all reference will be nulled, and the object will
-be marked for Garbage Collection. This function should ensure that no
-object references are orphaned.</p>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 </div>
 
@@ -250,7 +228,7 @@ object references are orphaned.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
@@ -270,14 +248,12 @@ object references are orphaned.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="dev_view.html"
                         title="next chapter">Views</a></p>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/developers/dev_model.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/developers/dev_model.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -294,7 +270,7 @@ object references are orphaned.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -306,13 +282,13 @@ object references are orphaned.</p>
         <li class="right" >
           <a href="dev_controller.html" title="Controllers"
              >previous</a> |</li>
-        <li><a href="../index.html">Animus - Lab Instrumentation Framework dev documentation</a> &raquo;</li>
+        <li><a href="../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
           <li><a href="index.html" >Developer Guide</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer" role="contentinfo">
+    <div class="footer">
         &copy; Copyright 2015, Kevin Kennedy (Protonyx).
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3b1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>
