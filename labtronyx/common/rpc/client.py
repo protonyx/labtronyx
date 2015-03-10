@@ -40,6 +40,9 @@ class RpcClient(object):
         self.timeout = self.RPC_TIMEOUT
         self.nextID = 1
         
+        if self.port is None:
+            raise RpcServerNotFound()
+        
         self.methods = []
         self._callbacks = {}
         
@@ -51,8 +54,6 @@ class RpcClient(object):
         self._refresh()
             
         self._setTimeout() # Default
-        
-
         
     def _resolveAddress(self, address):
         try:
@@ -156,11 +157,17 @@ class RpcClient(object):
             pass
     
     def _send(self, data_out):
-        try:
-            self.socket.send(data_out)
-            
-        except socket.error as e:
-            raise
+        for attempt in range(2):
+            try:
+                self.socket.send(data_out)
+                break
+                
+            except socket.error as e:
+                if e.errno == errno.ECONNRESET:
+                    self._disconnect()
+                    self._connect()
+                else:
+                    raise
     
     def _recv(self):
         ready_to_read, _, _ = select.select([self.socket], [], [], self.timeout)

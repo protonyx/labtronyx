@@ -1,4 +1,5 @@
-from Base_Interface import Base_Interface, Base_Resource
+from Base_Interface import Base_Interface
+from Base_Resource import Base_Resource
 
 import struct
 import time
@@ -7,7 +8,7 @@ import numpy
 
 from common.icp import UPEL_ICP
 
-class c_UPEL(Base_Interface):
+class i_UPEL(Base_Interface):
     
     info = {
         # Interface Author

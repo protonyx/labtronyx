@@ -8,6 +8,9 @@ import logging
 import logging.handlers
 import socket
 
+import common
+from common.rpc import RpcClient
+
 class InstrumentControl(object):
     """
     :param Logger: Logger instance if you wish to override the internal instance
@@ -43,9 +46,6 @@ class InstrumentControl(object):
         if not self.rootPath in sys.path:
             sys.path.append(self.rootPath)
             
-        import common
-        from common import is_valid_ipv4_address
-        from common.rpc import RpcClient
         common_globals = common.ICF_Common()
         self.config = common_globals.getConfig()
 
@@ -108,7 +108,7 @@ class InstrumentControl(object):
         if input in self.hostnames:
             return self.hostnames.get(input)
         
-        elif is_valid_ipv4_address(input):
+        elif common.is_valid_ipv4_address(input):
             return input
         
         else:
@@ -349,7 +349,11 @@ class InstrumentControl(object):
                     
                     self.properties[res_uuid] = res_dict
                         
-                    # TODO: Purge RPC Clients that are no longer valid?
+                # Purge resources that are no longer in remote
+                for res_uuid, res_dict in self.properties.items():
+                    if res_dict.get('address') == address:
+                        if res_uuid not in remote_resources:
+                            self.properties.pop(res_uuid)
     
                 return True
             
@@ -467,14 +471,11 @@ class InstrumentControl(object):
         
         else:
             # Create an RPC Client if one does not already exist
-            try:
-                res_dict = self.getResources().get(res_uuid)
-                address = res_dict.get('address')
-                port = res_dict.get('port')
-                testInstrument = RpcClient(address=address, port=port)
-                self.resources[res_uuid] = testInstrument
-            except:
-                self.logger.exception("Exception while creating RPC link for resource")
+            res_dict = self.getResources().get(res_uuid)
+            address = res_dict.get('address')
+            port = res_dict.get('port')
+            testInstrument = RpcClient(address=address, port=port)
+            self.resources[res_uuid] = testInstrument
                 
             return self.resources.get(res_uuid)
     

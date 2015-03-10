@@ -25,7 +25,7 @@ class a_Main(Tk.Tk):
     - Nanny thread to periodically check if connected hosts and resources are still active
     """
     applets = {}  # Module name -> View info
-    openViews = {}
+    openApplets = {}
     
     def __init__(self, master=None):
         Tk.Tk.__init__(self, master)
@@ -286,7 +286,7 @@ class a_Main(Tk.Tk):
             driverName = properties.get('driver')
             validApplets = []
             
-            if modelName is not None:
+            if applet is not None:
                 # Find a view with a compatible model
                 for appletModule, appletInfo in self.applets.items():
                     if driverName in appletInfo.get('validDrivers', []):
@@ -502,11 +502,12 @@ class ResourceTree(Tk.Frame):
         self._refreshResources()
 
         # Get a flat list of resources and sort
-        resources = self.resources.values()
-        resources.sort(key=lambda res: res.get(sort, ''), reverse=reverseOrder)
+        resources = self.resources
+        resourceProperties = resources.values()
+        resourceProperties.sort(key=lambda res: res.get(sort, ''), reverse=reverseOrder)
         
         # Populate child nodes
-        for res in resources:
+        for res in resourceProperties:
             lineID = res.get('uuid')
             group = res.get(self.treeGroup)
             text = res.get('resourceID', '')
@@ -519,6 +520,12 @@ class ResourceTree(Tk.Frame):
             self.tree.set(lineID, 'Model', res.get('deviceModel', ''))
             self.tree.set(lineID, 'Type', res.get('deviceType', ''))
             self.tree.set(lineID, 'Serial', res.get('deviceSerial', ''))
+            
+        # Purge old nodes
+        for res_uuid in self.nodes:
+            if res_uuid not in resources:
+                self.nodes.remove(res_uuid)
+                self.tree.delete(res_uuid)
     
     def _refreshResources(self):
         self.ICF.refreshResources()

@@ -79,6 +79,7 @@ class InstrumentManager(object):
         Stop the InstrumentManager instance. Attempts to shutdown and free
         all resources.
         """
+        self.logger.debug("InstrumentManager asked to stop")
         for res in self.resources:
             try:
                 res.close()
@@ -132,6 +133,7 @@ class InstrumentManager(object):
             try:
                 inter = self.interfaces.get(interface)
                 inter.close()
+                inter.stop()
                 self.logger.info("Stopped Interface: %s" % interface)
                 self.interfaces.remove(inter)
             except:

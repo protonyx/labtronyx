@@ -16,14 +16,17 @@ class v_rpc(views.v_Base):
         # Revision date of View version
         'date':                 '2015-02-11',  
         # Description
-        'description':          'RPC test view',  
+        'description':          'RPC Method Invoker',  
             
         # List of compatible Models
-        'validModels':          ['']
+        'validModels':          ['Debug'],
+        
+        # List of compatible resource types
+        'validResourceTypes':   ['Debug']
     }
         
     def run(self):
-        self.wm_title("RPC Test")
+        self.wm_title("Method Tester")
         
         # GUI Elements
         # Labels

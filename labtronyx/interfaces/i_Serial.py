@@ -1,4 +1,5 @@
-from Base_Interface import Base_Interface, Base_Resource
+from Base_Interface import Base_Interface
+from Base_Resource import Base_Resource
 
 import importlib
 import sys
@@ -7,7 +8,9 @@ import serial
 import serial.tools.list_ports
 # list(serial.tools.list_ports.comports())
 
-class c_Serial(Base_Interface):
+class i_Serial(Base_Interface):
+    
+    REFRESH_RATE = 5.0 # Seconds
     
     info = {
         # Interface Author
@@ -38,9 +41,6 @@ class c_Serial(Base_Interface):
     
     def getResources(self):
         return self.resources
-    
-    def canEditResources(self):
-        return True
     
     #===========================================================================
     # Optional - Automatic Controllers

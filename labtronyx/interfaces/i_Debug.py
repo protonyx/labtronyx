@@ -1,8 +1,9 @@
-from Base_Interface import Base_Interface, Base_Resource
+from Base_Interface import Base_Interface
+from Base_Resource import Base_Resource
 
 import sys
 
-class c_Debug(Base_Interface):
+class i_Debug(Base_Interface):
     
     info = {
         # Interface Author
@@ -30,6 +31,9 @@ class c_Debug(Base_Interface):
     def close(self):
         return True
     
+    def run(self):
+        self.refresh()
+    
     def refresh(self):
         if "-d" in sys.argv[1:]:
             if 'DEBUG' not in self.resources:
@@ -49,3 +53,11 @@ class r_Debug(Base_Resource):
     
     def close(self):
         return True
+    
+    def getProperties(self):
+        prop = Base_Resource.getProperties(self)
+        prop['deviceVendor'] = 'Labtronyx'
+        prop['deviceModel'] = 'Debug'
+        prop['deviceType'] = 'Debug'
+        
+        return prop

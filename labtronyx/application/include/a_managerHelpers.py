@@ -126,13 +126,12 @@ class a_LoadDriver(Tk.Toplevel):
         self.resType = self.resInfo.get('resourceType')
         self.address = self.resInfo.get('address')
         
-        allmodels = self.ICF.getModels(self.address)
-        
-        # Find valid models for this resource type
-        self.models = {}
-        for modelModule, modelInfo in allmodels.items():
-            if self.resType in modelInfo.get('validResourceTypes', []):
-                self.models[modelModule] = modelInfo
+        # Find valid drivers for this resource type
+        allDrivers = self.ICF.getDrivers(self.address)
+        self.validDrivers = {}
+        for driverModule, driverInfo in allDrivers.items():
+            if self.resType in driverInfo.get('validResourceTypes', []):
+                self.validDrivers[driverModule] = driverInfo
         
         self.wm_title('Load a Driver...')
         self.lbl_instructions = Tk.Label(self, text=self.instructions,
@@ -185,20 +184,23 @@ class a_LoadDriver(Tk.Toplevel):
         self.lst_vendor.bind('<ButtonRelease-1>', self.e_VendorClick)
         self.lst_model.bind('<ButtonRelease-1>', self.e_ModelClick)
         
-        # Populate Vendor list
-        vendors = []
-        for modelInfo in self.models.values():
-            modelVendor = modelInfo.get('deviceVendor')
-            if modelVendor is not None and modelVendor not in vendors:
-                vendors.append(str(modelVendor))
-        vendors.sort()
-        self.lst_vendor.insert(Tk.END, *vendors)
-        self.selectedVendor = None
-        self.selectedModel = None
+        self.populateVendors()
         
         # Make this dialog modal
         self.focus_set()
         self.grab_set()
+        
+    def populateVendors(self):
+        # Populate Vendor list
+        vendors = []
+        for driverInfo in self.validDrivers.values():
+            deviceVendor = driverInfo.get('deviceVendor')
+            if deviceVendor is not None and deviceVendor not in vendors:
+                vendors.append(str(deviceVendor))
+        vendors.sort()
+        self.lst_vendor.insert(Tk.END, *vendors)
+        self.selectedVendor = None
+        self.selectedModel = None
         
     def e_VendorClick(self, event):
         self.selectedVendor = self.lst_vendor.curselection()[0]
@@ -206,7 +208,7 @@ class a_LoadDriver(Tk.Toplevel):
         self.lst_model.delete(0, Tk.END)
     
         filtered_models = []
-        for modelInfo in self.models.values():
+        for modelInfo in self.validDrivers.values():
             modelVendor = modelInfo.get('deviceVendor')
             if self.selectedVendor == modelVendor:
                 deviceModel = modelInfo.get('deviceModel')
@@ -221,7 +223,7 @@ class a_LoadDriver(Tk.Toplevel):
     def cb_Load(self):
         if self.selectedModel is not None and self.selectedVendor is not None:
             # Load the selected model
-            for modelModule, modelInfo in self.models.items():
+            for modelModule, modelInfo in self.validDrivers.items():
                 if self.selectedVendor == modelInfo.get('deviceVendor') and \
                     self.selectedModel in modelInfo.get('deviceModel'):
                     

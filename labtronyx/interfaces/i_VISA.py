@@ -1,16 +1,19 @@
-from Base_Interface import Base_Interface, Base_Resource
+from Base_Interface import Base_Interface
+from Base_Resource import Base_Resource
 
 import importlib
 import re
 import time
 import visa
 
-class c_VISA(Base_Interface):
+class i_VISA(Base_Interface):
     """
     VISA Controller
     
     Wraps PyVISA. Requires a VISA driver to be installed on the system.
     """
+    
+    REFRESH_RATE = 5.0 # Seconds
     
     info = {
         # Interface Author

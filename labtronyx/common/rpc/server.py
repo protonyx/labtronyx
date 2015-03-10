@@ -28,9 +28,6 @@ class RpcServer(object):
         protected and will not be invoked
     """
     
-    # Exclusive access times out after 60 seconds
-    EXCLUSIVE_TIMEOUT = 60.0
-    
     _identity = 'JSON-RPC/2.0'
     type = "TCP"
     
@@ -65,7 +62,7 @@ class RpcServer(object):
                 self.srv_socket.bind(('', self.port))
                 self.srv_socket.setblocking(0)
             else:
-                raise RuntimeError
+                raise RuntimeError('Must provide a server type')
             
             # Update port if randomly assigned
             _, self.port = self.srv_socket.getsockname()
@@ -286,6 +283,8 @@ class RpcServerThread(threading.Thread):
         self.logger.debug('[%s] RPC Server stopped', self.name)
         
     def join(self, timeout=None):
+        self.logger.debug('[%s] RPC Server asked to stop', self.name)
+        
         for conn in self.server._connections:
             conn.join()
             

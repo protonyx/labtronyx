@@ -20,7 +20,7 @@ class m_debug(Base_Driver):
         'deviceType':           'Debug',      
         
         # List of compatible resource types
-        'validResourceTypes':   ['c_Debug']            
+        'validResourceTypes':   ['Debug']            
     }
     
     def _onLoad(self):
