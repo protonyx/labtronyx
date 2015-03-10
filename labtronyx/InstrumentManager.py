@@ -1,4 +1,3 @@
-# Python Dependencies
 import os, sys
 import time
 import socket
@@ -7,45 +6,46 @@ import copy
 import importlib, inspect
 import logging, logging.handlers
 
-sys.path.append("..")
-import common
-import common.rpc as rpc
-
-sys.path.append(".")
-import models
-import controllers
-
 class InstrumentManager(object):
     
-    models = {} # Module name -> Model info
-    
-    controllers = {} # Controller name -> controller object
+    drivers = {} # Module name -> Model info
+
+    interfaces = {} # Controller name -> controller object
     resources = {} # UUID -> Resource Object
     properties = {} # UUID -> Property Dictionary
     
     def __init__(self):
+        self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
+        
+        if not self.rootPath in sys.path:
+            sys.path.append(self.rootPath)
+        
+        import common
         common_globals = common.ICF_Common()
-        self.rootPath = common_globals.getRootPath()
         self.config = common_globals.getConfig()
         self.logger = common_globals.getLogger()
         
-        self.logger.info("Instrument Control and Automation Framework")
+        self.logger.info(self.config.longname)
         self.logger.info("InstrumentManager, Version: %s", self.config.version)
         
         try:
+            import common.rpc as rpc
             self.rpc_server = rpc.RpcServer(name='InstrumentManager-RPC-Server', 
                                             port=self.config.managerPort,
                                             logger=self.logger)
             self.rpc_server.registerObject(self)
             
             # Load Interfaces
-            self.interfaces = controllers.getAllInterfaces()
+            import interfaces
+            interface_info = interfaces.getAllInterfaces()
             
-            for interf in self.interfaces.keys():
+            for interf in interface_info.keys():
                 self.logger.debug("Found Interface: %s", interf)
+                self.enableInterface(interf)
         
             # Load Drivers
-            self.drivers = models.getAllDrivers()
+            import drivers
+            self.drivers = drivers.getAllDrivers()
             
             for driver in self.drivers.keys():
                 self.logger.debug("Found Driver: %s", driver)
@@ -61,9 +61,9 @@ class InstrumentManager(object):
         Notify InstrumentManager of the creation of a new resource. Called by
         controllers
         """
-        for cont in self.controllers.values():
-            cont_res = cont.getResources()
-            for resID, res_obj in cont_res.items():
+        for interface in self.interfaces.values():
+            int_res = interface.getResources()
+            for resID, res_obj in int_res.items():
             
                 res_uuid = res_obj.getUUID()
         
@@ -85,11 +85,8 @@ class InstrumentManager(object):
             except:
                 pass
                 
-        for cont in self.controllers:
-            try:
-                cont.close()
-            except:
-                pass
+        for interface in self.interfaces:
+            self.disableInterface(interface)
                 
         # Stop the InstrumentManager RPC Server
         self.rpc_server.rpc_stop()
@@ -103,24 +100,45 @@ class InstrumentManager(object):
         return self.config.version
         
     #===========================================================================
-    # Controller Operations
+    # Interface Operations
     #===========================================================================
     
-    def getControllers(self):
+    def getInterfaces(self):
         """
         Get a list of controllers known to InstrumentManager
         
         :returns: list
         """
-        return self.controllers.keys()
+        return self.interfaces.keys()
     
-    def enableController(self, controller):
-        # TODO: Implement this
-        pass
+    def enableInterface(self, interface):
+        if interface not in self.interfaces:
+            try:
+                interfaceModule = importlib.import_module(interface)
+                className = interface.split('.')[-1]
+                interfaceClass = getattr(interfaceModule, className)
+                inter = interfaceClass(self)
+                inter.open()
+                self.logger.info("Started Interface: %s" % interface)
+                self.interfaces[interface] = inter
+            except:
+                self.logger.exception("Exception during interface open")
+                
+        else:
+            raise RuntimeError("Interface is already running!")
     
-    def disableController(self, controller):
-        # TODO: Implement this
-        pass
+    def disableInterface(self, interface):
+        if interface in self.interfaces:
+            try:
+                inter = self.interfaces.get(interface)
+                inter.close()
+                self.logger.info("Stopped Interface: %s" % interface)
+                self.interfaces.remove(inter)
+            except:
+                self.logger.exception("Exception during interface close")
+                
+        else:
+            raise RuntimeError("Interface is not running!")
         
     #===========================================================================
     # Resource Operations
@@ -179,10 +197,10 @@ class InstrumentManager(object):
         :type ResID: str
         :returns: bool - True if successful, False otherwise
         """
-        if controller in self.controllers:
+        if interface in self.interfaces:
             try:
-                cont_obj = self.controllers.get(controller)
-                return cont_obj.addResource(ResID)
+                int_obj = self.interfaces.get(interface)
+                return int_obj.addResource(ResID)
             
             except NotImplementedError:
                 return False
@@ -193,11 +211,11 @@ class InstrumentManager(object):
         return False
 
     #===========================================================================
-    # Model Operations
+    # Driver Operations
     #===========================================================================
                 
-    def getModels(self):
-        return self.models
+    def getDrivers(self):
+        return self.drivers
     
 if __name__ == "__main__":
     # If InstrumentManager is run in interactive mode, just call run

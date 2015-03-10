@@ -23,6 +23,10 @@ class c_UPEL(Base_Interface):
     
     # Dict: ResID -> UPEL_ICP_Device Object
     resourceObjects = {}
+    
+    # UPEL Controller Config
+    broadcastIP = '192.168.1.255'
+    UPELPort = 7968
 
     def open(self):
         return False

@@ -1,5 +1,5 @@
 import socket
-
+import importlib
 import logging
 import os
 import sys
@@ -35,7 +35,8 @@ def resolve_hostname(hostname):
             
 class ICF_Common(object):
     """
-    ICF_Common provides a uniform base of functions for objects in the Instrument Control Model-View-Controller framework
+    ICF_Common provides a uniform base of functions for objects in the 
+    Instrument Control Model-View-Controller framework
     
     Dynamically import configuration files given a filename
     
@@ -45,8 +46,6 @@ class ICF_Common(object):
     
     """
 
-    # Dictionary of instantiated devices with serial number as the key
-    
     loggerName = "InstrumentControl"
     loggerOverride = None
     
@@ -55,8 +54,11 @@ class ICF_Common(object):
     
     def __init__(self):
         # Get the root path
-        can_path = os.path.dirname(os.path.realpath(os.path.join(__file__, os.pardir))) # Resolves symbolic links
-        self.rootPath = os.path.abspath(can_path)
+        can_path = os.path.dirname(os.path.realpath(os.path.join(__file__, os.pardir)))
+        self.rootPath = os.path.abspath(can_path) # Resolves symbolic links
+        
+        if not self.rootPath in sys.path:
+            sys.path.append(self.rootPath)
         
         if self.config is None:
             self.loadConfig('default')
@@ -72,12 +74,9 @@ class ICF_Common(object):
     #===========================================================================
     
     def loadConfig(self, configFile):
-        self.configPath = os.path.join(self.rootPath, 'config')
-        self.configFile = os.path.join(self.configPath, '%s.py' % configFile)
         
         try:
-            import imp
-            cFile = imp.load_source('config', self.configFile)
+            cFile = importlib.import_module('config.%s' % configFile)
             self.config = cFile.Config()
             
         except Exception as e:

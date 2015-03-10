@@ -8,11 +8,6 @@ import logging
 import logging.handlers
 import socket
 
-# Instrument Control Classes
-import common
-from common import is_valid_ipv4_address
-from common.rpc import RpcClient
-
 class InstrumentControl(object):
     """
     :param Logger: Logger instance if you wish to override the internal instance
@@ -43,20 +38,16 @@ class InstrumentControl(object):
     
     def __init__(self, **kwargs):
         # Get the root path
-        can_path = os.path.dirname(os.path.realpath(__file__)) # Resolves symbolic links
-        rootPath = os.path.abspath(can_path)
-        configPath = os.path.join(rootPath, 'config')
-        configFile = os.path.join(configPath, 'default.py')
+        self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
         
-        try:
-            import imp
-            cFile = imp.load_source('default', configFile)
-            self.config = cFile.Config()
-            self.rootPath = rootPath
+        if not self.rootPath in sys.path:
+            sys.path.append(self.rootPath)
             
-        except Exception as e:
-            print("FATAL ERROR: Unable to import config file")
-            sys.exit()
+        import common
+        from common import is_valid_ipv4_address
+        from common.rpc import RpcClient
+        common_globals = common.ICF_Common()
+        self.config = common_globals.getConfig()
 
          # Setup Logger
         if 'Logger' in kwargs or 'logger' in kwargs:
@@ -100,8 +91,6 @@ class InstrumentControl(object):
                 time.sleep(2.0)
         except:
             pass
-            
-        
     
     #===========================================================================
     # Manager Operations    
@@ -305,10 +294,10 @@ class InstrumentControl(object):
         return self.managers.get(address, None)
     
     #===========================================================================
-    # Controller Operations
+    # Interface Operations
     #===========================================================================
     
-    def getControllers(self, address):
+    def getInterfaces(self, address):
         """
         Get a list of controllers from a given InstrumentManager instance.
         
@@ -320,7 +309,7 @@ class InstrumentControl(object):
         
         if address in self.managers.keys():
             man = self.managers.get(address)
-            return man.getControllers()
+            return man.getInterfaces()
 
     #===========================================================================
     # Resource Operations
@@ -426,10 +415,10 @@ class InstrumentControl(object):
             return False
     
     #===========================================================================
-    # Models
+    # Drivers
     #===========================================================================
     
-    def getModels(self, address):
+    def getDrivers(self, address):
         """
         Get the list of Models from an InstrumentManager instance
         
@@ -444,7 +433,7 @@ class InstrumentControl(object):
             man = self.managers.get(address, None)
             
             if man is not None:
-                return man.getModels()
+                return man.getDrivers()
             
             else:
                 return []

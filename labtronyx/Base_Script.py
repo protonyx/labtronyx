@@ -1,14 +1,14 @@
+from InstrumentControl import InstrumentControl
+
 import threading
 import logging
 import inspect
 import time
 import sys
-sys.path.append('..')
 
 import Tkinter as Tk
-from InstrumentControl import InstrumentControl
 
-class t_Base(object):
+class Base_Script(object):
     """
     Base object for tests
     

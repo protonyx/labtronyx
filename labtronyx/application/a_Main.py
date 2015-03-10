@@ -8,8 +8,8 @@ import Tkinter as Tk
 import ttk
 import tkMessageBox
 
-#import ImageTk
-#from PIL import Image
+# import ImageTk
+# from PIL import Image
 
 sys.path.append("..")
 from InstrumentControl import InstrumentControl
@@ -24,7 +24,7 @@ class a_Main(Tk.Tk):
     - Persistant settings
     - Nanny thread to periodically check if connected hosts and resources are still active
     """
-    views = {}      # Module name -> View info
+    applets = {}  # Module name -> View info
     openViews = {}
     
     def __init__(self, master=None):
@@ -32,7 +32,7 @@ class a_Main(Tk.Tk):
         
         # Get root directory
         # Get the root path
-        can_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir) # Resolves symbolic links
+        can_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.pardir)  # Resolves symbolic links
         self.rootPath = os.path.abspath(can_path)
         
         # Instantiate a logger
@@ -40,74 +40,25 @@ class a_Main(Tk.Tk):
         self.logFormatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
         self.logger.setLevel(logging.DEBUG)
         # TODO: Log to console?
-        #console = logging.StreamHandler(stream=sys.stdout)
-        #self.logger.addHandler(console)
+        # console = logging.StreamHandler(stream=sys.stdout)
+        # self.logger.addHandler(console)
         # TODO: Log to file?
         
         # Instantiate an InstrumentControl object
         self.ICF = InstrumentControl(Logger=self.logger)
         self.ICF.addManager('localhost')
-        
             
         # GUI Startup
         self.rebuild()
         self.rebind()
         
-        # Index views
-        self.__loadViews()
+        # Load applets
+        import applets
+        self.applets = applets.getAllApplets()
         
         # TODO: Persistent Settings
         
         self.logger.info('Application start')
-    
-    def __pathToModuleName(self, path):
-        # Get module name from relative path
-        com_pre = os.path.commonprefix([self.rootPath, path])
-        r_path = path.replace(com_pre + os.path.sep, '')
-        
-        modulePath = r_path.replace(os.path.sep, '.')
-        return modulePath
-        
-    def __loadViews(self):
-        # Clear the view dictionary
-        self.views.clear()
-        
-        # Build view dictionary
-        view_dir = os.path.join(self.rootPath, 'application', 'views')
-        allviews = os.walk(view_dir)
-        for dir in allviews:
-            # Verify valid directory
-            if len(dir[2]) == 0:
-                # Directory is empty, move on
-                continue
-            
-            elif '__init__.py' not in dir[2]:
-                # Directory must be a python module
-                # TODO: Create an __init__.py file if one does not exist
-                self.logger.warning('Non-module folder found: %s', dir[0])
-                continue
-            
-            for file in dir[2]:
-                # Iterate through each file
-                if file[-3:] == '.py' and '__init__' not in file:
-                    # Get module name from relative path     
-                    className = file.replace('.py', '')
-                    viewModule = self.__pathToModuleName(dir[0]) + '.' + className
-
-                    # Attempt to load the view
-                    try:
-                        testModule = importlib.import_module(viewModule)
-                        
-                        # Check to make sure the correct class exists
-                        testClass = getattr(testModule, className) # Will raise exception if doesn't exist
-                        
-                        view_info = copy.deepcopy(testClass.info)
-                        self.views[viewModule] = view_info
-                    
-                    except Exception as e:
-                        self.logger.error('Unable to load module %s: %s', viewModule, str(e))
-                        continue
-    
 
     
     def rebuild(self):
@@ -127,7 +78,7 @@ class a_Main(Tk.Tk):
         |                                   |
         +-----------------------------------+
         """
-        #ttk.Style().theme_use('vista')
+        # ttk.Style().theme_use('vista')
         self.wm_title("Instrument Control and Automation")
         self.minsize(500, 500)
         self.geometry("800x600")
@@ -147,11 +98,11 @@ class a_Main(Tk.Tk):
         # File - LogLevel
         self.m_File_LogLevel = Tk.Menu(self.m_File)
         self.m_File.add_cascade(menu=self.m_File_LogLevel, label='Log Level')
-        self.m_File_LogLevel.add_radiobutton(label='Critical',  command=lambda: self.cb_setLogLevel(logging.CRITICAL))
-        self.m_File_LogLevel.add_radiobutton(label='Error',     command=lambda: self.cb_setLogLevel(logging.ERROR))
-        self.m_File_LogLevel.add_radiobutton(label='Warning',   command=lambda: self.cb_setLogLevel(logging.WARNING))
-        self.m_File_LogLevel.add_radiobutton(label='Info',      command=lambda: self.cb_setLogLevel(logging.INFO))
-        self.m_File_LogLevel.add_radiobutton(label='Debug',     command=lambda: self.cb_setLogLevel(logging.DEBUG))
+        self.m_File_LogLevel.add_radiobutton(label='Critical', command=lambda: self.cb_setLogLevel(logging.CRITICAL))
+        self.m_File_LogLevel.add_radiobutton(label='Error', command=lambda: self.cb_setLogLevel(logging.ERROR))
+        self.m_File_LogLevel.add_radiobutton(label='Warning', command=lambda: self.cb_setLogLevel(logging.WARNING))
+        self.m_File_LogLevel.add_radiobutton(label='Info', command=lambda: self.cb_setLogLevel(logging.INFO))
+        self.m_File_LogLevel.add_radiobutton(label='Debug', command=lambda: self.cb_setLogLevel(logging.DEBUG))
         
         self.m_File.add_separator()
         self.m_File.add_command(label='Exit', command=self.cb_exitWindow)
@@ -183,8 +134,8 @@ class a_Main(Tk.Tk):
         #     Treeview Frame
         #     Min size: 400px
         #=======================================================================
-        self.treeFrame = ResourceTree(self.HPane, self.ICF) #, highlightcolor='green', highlightthickness=2)
-        #self.VPane.add(self.treeFrame, width=800, minsize=400)
+        self.treeFrame = ResourceTree(self.HPane, self.ICF)  # , highlightcolor='green', highlightthickness=2)
+        # self.VPane.add(self.treeFrame, width=800, minsize=400)
         self.HPane.add(self.treeFrame, width=600, minsize=400)
         
         #=======================================================================
@@ -249,7 +200,7 @@ class a_Main(Tk.Tk):
             self.destroy()
             
     def cb_setLogLevel(self, level):
-        #numeric_level = getattr(logging, loglevel.upper(), None)
+        # numeric_level = getattr(logging, loglevel.upper(), None)
         self.logger.setLevel(level)
         self.logger.log(level, 'Log Level Changed')
             
@@ -276,10 +227,10 @@ class a_Main(Tk.Tk):
     def cb_addResource(self, address):
         from include.a_managerHelpers import a_AddResource
             
-        controllers = self.ICF.getControllers(address)
+        interfaces = self.ICF.getControllers(address)
             
         # Create the child window
-        w_addResource = a_AddResource(self, self, controllers, lambda controller, resID: self.ICF.addResource(address, controller, resID))
+        w_addResource = a_AddResource(self, self, interfaces, lambda interface, resID: self.ICF.addResource(address, interface, resID))
         
         # Make the child modal
         w_addResource.focus_set()
@@ -288,40 +239,40 @@ class a_Main(Tk.Tk):
     def cb_refreshTree(self, address=None):
         self.treeFrame.refresh()
         
-    def cb_loadView(self, uuid, viewModule=None):
-        if viewModule is not None:
+    def cb_loadApplet(self, uuid, applet=None):
+        if applet is not None:
             try:
                 # Check if the specified model is valid
-                testModule = importlib.import_module(viewModule)
-                reload(testModule) # Reload the module in case anything has changed
+                testModule = importlib.import_module(applet)
+                reload(testModule)  # Reload the module in case anything has changed
                 
-                className = viewModule.split('.')[-1]
-                viewClass = getattr(testModule, className)
+                className = applet.split('.')[-1]
+                testClass = getattr(testModule, className)
                 
                 instrument = self.ICF.getInstrument(uuid)
                 
                 if instrument is not None:
-                    viewWindow = viewClass(self, instrument)
+                    appletInst = testClass(self, instrument)
                     
                     # Store the object in open views
-                    self.openViews[uuid] = viewWindow
+                    self.openApplets[uuid] = appletInst
                     
-                    viewWindow.run()
+                    appletInst.run()
                     
                 else:
-                    tkMessageBox.showwarning('Unable to load view', 'Unable to get a handle for the resource')
+                    tkMessageBox.showwarning('Unable to load applet', 'Unable to get a handle for the resource')
                 
             except:
-                self.logger.exception("Failed to load view: %s", viewModule)
+                self.logger.exception("Failed to load applet: %s", applet)
                 
         else:
             # Check if a view is already open
-            if uuid in self.openViews.keys():
+            if uuid in self.openApplets.keys():
                 try:
                     # Do nothing? Bring window into focus?
-                    view_window = self.openViews.get(uuid)
+                    appletInst = self.openApplets.get(uuid)
                     
-                    view_window.lift()
+                    appletInst.lift()
                 
                     return None
                 except:
@@ -332,35 +283,35 @@ class a_Main(Tk.Tk):
             instrument = self.ICF.getInstrument(uuid)
             properties = instrument.getProperties()
             
-            modelName = properties.get('modelName')
-            validViews = []
+            driverName = properties.get('driver')
+            validApplets = []
             
             if modelName is not None:
                 # Find a view with a compatible model
-                for viewModule, viewInfo in self.views.items():
-                    if modelName in viewInfo.get('validModels', []):
-                        validViews.append(viewModule)
+                for appletModule, appletInfo in self.applets.items():
+                    if driverName in appletInfo.get('validDrivers', []):
+                        validApplets.append(appletModule)
             else:
                 # Find a generic view for this resource type
                 resType = properties.get('resourceType')
-                for viewModule, viewInfo in self.views.items():
-                    if resType in viewInfo.get('validResourceTypes', []):
-                        validViews.append(viewModule)
+                for appletModule, appletInfo in self.applets.items():
+                    if resType in appletInfo.get('validResourceTypes', []):
+                        validApplets.append(appletModule)
                 
             # Load the view
-            if len(validViews) > 1:
+            if len(validApplets) > 1:
                 # Load view selector if more than one found
-                from include.a_managerHelpers import a_ViewSelector
+                from include.a_managerHelpers import a_AppletSelector
                 
                 # Create the child window
-                w_ViewSelector = a_ViewSelector(self, validViews, lambda viewModule: self.loadView(uuid, viewModule))
+                w_AppletSelector = a_AppletSelector(self, validApplets, lambda appletModule: self.loadApplet(uuid, appletModule))
     
-            elif len(validViews) == 1 and validViews[0] is not None:
+            elif len(validApplets) == 1 and validApplets[0] is not None:
                 # Load the view
-                self.cb_loadView(uuid, validViews[0])
+                self.cb_loadApplet(uuid, validApplets[0])
                 
             else:
-                tkMessageBox.showwarning('Unable to load view', 'No suitable views could be found for this model')
+                tkMessageBox.showwarning('Unable to load applet', 'No suitable applets could be found for this resource')
         
     def cb_loadDriver(self, uuid):
         # Spawn a window to select the driver to load
@@ -377,8 +328,8 @@ class a_Main(Tk.Tk):
         dev.unloadModel()
         
         self.ICF.refreshInstrument(uuid)
-        #addr = self.ICF.getAddressFromUUID(uuid)
-        #self.ICF.refresh
+        # addr = self.ICF.getAddressFromUUID(uuid)
+        # self.ICF.refresh
         self.treeFrame.refresh()
         
     def cb_res_properties(self, uuid):
@@ -423,9 +374,9 @@ class a_Main(Tk.Tk):
             # -Control Instrument (Launch View/GUI)
             res_props = resources.get(elem)
             
-            menu.add_command(label='Control Device', command=lambda: self.cb_loadView(elem))
+            menu.add_command(label='Control Device', command=lambda: self.cb_loadApplet(elem))
             
-            if res_props.get('modelName', None) == None:
+            if res_props.get('driver', None) == None:
                 menu.add_command(label='Load Driver', command=lambda: self.cb_loadDriver(elem))
             else:
                 menu.add_command(label='Unload Driver', command=lambda: self.cb_unloadDriver(elem))
@@ -452,7 +403,7 @@ class Statusbar(Tk.Frame):
         if sections < 1:
             sections = 1
                 
-        self.sections = [None]*sections
+        self.sections = [None] * sections
         for i in range(0, sections):
             self.sections[i] = Tk.Label(self, bd=1, relief=Tk.SUNKEN, anchor=Tk.W)
             self.sections[i].pack(fill=Tk.X)
@@ -520,7 +471,7 @@ class ResourceTree(Tk.Frame):
         if self.treeGroup is 'hostname':
             # Fixes a bug where hosts were not added if no resources were present
             for gval in self.ICF.getConnectedHosts():
-                self.tree.insert('', Tk.END, gval, text=gval, open=True) #, image=img_host)
+                self.tree.insert('', Tk.END, gval, text=gval, open=True)  # , image=img_host)
                 
         elif self.treeGroup in self.validGroups:
             group_vals = []
@@ -544,10 +495,10 @@ class ResourceTree(Tk.Frame):
         """
         # TODO: Get tree view images working
         # Import Image Assets
-        #img_host = Image.open('assets/computer.png')
-        #img_host = ImageTk.PhotoImage(img_host)
-        #img_device = Image.open('assets/drive.png')
-        #img_device = ImageTk.PhotoImage(img_device)
+        # img_host = Image.open('assets/computer.png')
+        # img_host = ImageTk.PhotoImage(img_host)
+        # img_device = Image.open('assets/drive.png')
+        # img_device = ImageTk.PhotoImage(img_device)
         self._refreshResources()
 
         # Get a flat list of resources and sort
@@ -561,7 +512,7 @@ class ResourceTree(Tk.Frame):
             text = res.get('resourceID', '')
             
             if lineID is not None and lineID not in self.nodes:
-                self.tree.insert(group, Tk.END, lineID, text=text) #, image=img_device)
+                self.tree.insert(group, Tk.END, lineID, text=text)  # , image=img_device)
                 self.nodes.append(lineID)
             
             self.tree.set(lineID, 'Vendor', res.get('deviceVendor', ''))

@@ -3,7 +3,7 @@
 import Tkinter as Tk
 from common.rpc import RpcClient
 
-class v_Base(Tk.Toplevel):
+class Base_Applet(Tk.Toplevel):
     
     def __init__(self, master, resource):
         Tk.Toplevel.__init__(self, master, padx=5, pady=5)

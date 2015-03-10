@@ -4,7 +4,6 @@ import threading
 import importlib
 import sys
 
-sys.path.append("..")
 import common
 import common.rpc as rpc
 
@@ -157,7 +156,7 @@ class Base_Resource(object):
         self.__groupTag = kwargs.get('groupTag', '')
         self.__status = 'INIT'
         
-        self.model = None
+        self.driver = None
         
         # Start RPC Server
         self.rpc_server = rpc.RpcServer(name='%s-%s' % (controller.getControllerName(), resID),
@@ -209,12 +208,12 @@ class Base_Resource(object):
             }
         
         # Append Model properties if a Model is loaded
-        if self.model is not None:
-            model_prop = self.model.getProperties()
+        if self.driver is not None:
+            driver_prop = self.driver.getProperties()
             
-            model_prop['modelName'] = self.model.getModelName()
+            driver_prop['driver'] = self.driver.getDriverName()
             
-            res_prop.update(model_prop)
+            res_prop.update(driver_prop)
         
         return res_prop
     

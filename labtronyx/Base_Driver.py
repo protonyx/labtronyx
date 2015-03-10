@@ -4,7 +4,6 @@ import importlib
 import logging
 import threading
 
-sys.path.append("..")
 import common
 import common.rpc
 
@@ -150,12 +149,6 @@ class Base_Driver(object):
     #===========================================================================
     # Inherited Functions
     #===========================================================================
-    
-    def getModelName(self):
-        """
-        :deprecated:
-        """
-        return self.getDriverName()
     
     def getDriverName(self):
         """

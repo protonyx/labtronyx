@@ -1,16 +1,14 @@
-import time
-import struct
-import serial
-import csv
-
-import numpy as np
+from labtronyx.Base_Script import Base_Script
 
 import sys
-sys.path.append('.')
+import time
+import struct
+import csv
 
-from t_Base import t_Base
+import serial
+import numpy as np
 
-class t_AMPED(t_Base):
+class t_AMPED(Base_Script):
     
     test_info = {
         'name': "AMPED v2.2 Test Suite",
