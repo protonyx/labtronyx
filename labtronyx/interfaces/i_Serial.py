@@ -10,8 +10,6 @@ import serial.tools.list_ports
 
 class i_Serial(Base_Interface):
     
-    REFRESH_RATE = 5.0 # Seconds
-    
     info = {
         # Interface Author
         'author':               'KKENNEDY',
@@ -24,7 +22,7 @@ class i_Serial(Base_Interface):
     # Dict: ResID -> (VID, PID)
     resources = {}
     
-    auto_load = False
+    REFRESH_RATE = 5.0 # Seconds
 
     def open(self):
         return True
@@ -92,7 +90,7 @@ class i_Serial(Base_Interface):
     #             pass
     #===========================================================================
 
-
+import common.status
         
 class r_Serial(Base_Resource):
     type = "Serial"
@@ -106,9 +104,12 @@ class r_Serial(Base_Resource):
             self.logger.info("Identified new Serial resource: %s", resID)
             
         except serial.SerialException:
-            pass
+            self.setResourceStatus(common.status.error)
+            self.logger.exception("Unable to create resource")
         except:
             pass
+        
+        self.setResourceStatus(common.status.ready)
         
     #===========================================================================
     # Resource State
@@ -132,19 +133,19 @@ class r_Serial(Base_Resource):
     
     def configure(self, **kwargs):
         if 'baudrate' in kwargs:
-            self.instrument.setBaudrate(kwargs.get('baudrate'))
+            self.instrument.setBaudrate(int(kwargs.get('baudrate')))
             
         if 'timeout' in kwargs:
-            self.instrument.setTimeout(kwargs.get('timeout'))
+            self.instrument.setTimeout(float(kwargs.get('timeout')))
             
         if 'bytesize' in kwargs:
-            self.instrument.setByteSize(kwargs.get('bytesize'))
+            self.instrument.setByteSize(int(kwargs.get('bytesize')))
             
         if 'parity' in kwargs:
             self.instrument.setParity(kwargs.get('parity'))
             
         if 'stopbits' in kwargs:
-            self.instrument.setStopbits(kwargs.get('stopbits'))
+            self.instrument.setStopbits(int(kwargs.get('stopbits')))
             
     def getConfiguration(self):
         return self.instrument.getSettingsDict()
