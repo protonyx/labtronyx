@@ -22,6 +22,8 @@ class Base_Resource(object):
         self.__groupTag = kwargs.get('groupTag', '')
         self.__status = 'INIT'
         
+        self.__lock = None
+        
         self.driver = None
         
         # Start RPC Server
@@ -106,12 +108,6 @@ class Base_Resource(object):
         """
         raise NotImplementedError
     
-    def lock(self):
-        raise NotImplementedError
-    
-    def unlock(self):
-        raise NotImplementedError
-    
     #===========================================================================
     # Data Transmission
     #===========================================================================
@@ -124,6 +120,93 @@ class Base_Resource(object):
     
     def query(self):
         raise NotImplementedError
+    
+    #===========================================================================
+    # Resource Locking
+    #===========================================================================
+    
+    def lock(self):
+        """
+        Lock the resource for exclusive access to the IP Address of the active
+        RPC connection
+        
+        :returns: True if successful, False otherwise
+        """
+        conn = self.rpc_server.getActiveConnection()
+        
+        if self.__lock == None:
+            try:
+                address, _ = self.conn.getsockname()
+                self.__lock = address
+                self.logger.debug("Connection [%s] aquired resource lock", address)
+                return True
+            except:
+                return False
+        
+        else:
+            return False
+    
+    def unlock(self):
+        """
+        Unlock the resource for general access. Must be called from the IP
+        Address of the connection currently holding the lock.
+        
+        :returns: True if successful, False otherwise
+        """
+        conn = self.rpc_server.getActiveConnection()
+        
+        try:
+            address, _ = self.conn.getsockname()
+            
+            if self.__lock == address:
+                self.__lock = None
+                self.logger.debug("Connection [%s] released resource lock", address)
+                return True
+        
+            else:
+                return False
+        except:
+            return False
+        
+    def force_unlock(self):
+        """
+        Force unlocks the resource even if called from an IP Address that does
+        not hold the lock
+        
+        :returns: None
+        """
+        conn = self.rpc_server.getActiveConnection()
+        self.__lock = None
+        
+        try:
+            address, _ = self.conn.getsockname()
+            self.logger.debug("Connection [%s] force released resource lock", address)
+            
+        except:
+            pass
+    
+    def getLockAddress(self):
+        """
+        Get the IP Address of the connection currently holding the resource
+        lock.
+        
+        :returns: str
+        """
+        return self.__lock
+    
+    def hasLock(self):
+        """
+        Query if the current connection holds the resource lock.
+        
+        :returns: bool
+        """
+        conn = self.rpc_server.getActiveConnection()
+        
+        try:
+            address, _ = self.conn.getsockname()
+            return (address == self.__lock)
+        except:
+            return False
     
     #===========================================================================
     # Driver
