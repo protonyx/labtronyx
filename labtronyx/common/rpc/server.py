@@ -46,6 +46,7 @@ class RpcServer(object):
         self.connections_reg = {}
         
         self.rpc_lock = threading.Lock()
+        self.rpc_locker = None # Connection that holds the lock
         self.rpc_startTime = datetime.now()
         
         # Attempt to bind sockets
@@ -98,6 +99,15 @@ class RpcServer(object):
     #===========================================================================
     # Connection Management and Notifications
     #===========================================================================
+    
+    def getActiveConnection(self):
+        """
+        Get the connection that currenly holds the RPC execution lock. Can be
+        used by registered objects to get the address of the connection
+        
+        :returns: socket.socket
+        """
+        return self.rpc_locker
     
     def notifyClients(self, event, *args, **kwargs):
         for address, port in self.connections_reg.items():
@@ -201,6 +211,7 @@ class RpcServer(object):
             This operation may take a small amount of time for the srv_socket to
             register the stop request.
         """
+        self.__rpc_thread.stop()
         self.__rpc_thread.join()
 
     def rpc_uptime(self):
@@ -282,15 +293,14 @@ class RpcServerThread(threading.Thread):
         
         self.logger.debug('[%s] RPC Server stopped', self.name)
         
-    def join(self, timeout=None):
+    def stop(self, timeout=None):
         self.logger.debug('[%s] RPC Server asked to stop', self.name)
         
         for conn in self.server._connections:
+            conn.stop()
             conn.join()
             
         self.e_alive.clear()
-        
-        threading.Thread.join(self, timeout=timeout)
     
 class RpcConnection(threading.Thread):
     """
@@ -319,8 +329,6 @@ class RpcConnection(threading.Thread):
         self.logger = kwargs.get('logger', logging)
         
         self.address, _ = self.conn_socket.getsockname()
-        
-        self.lock = self.server.rpc_lock
         
         self.e_alive = threading.Event()
         self.notification_queue = Queue.Queue()
@@ -412,10 +420,8 @@ class RpcConnection(threading.Thread):
             
         self.server._connections.remove(self)
             
-    def join(self, timeout=None):
+    def stop(self, timeout=None):
         self.e_alive.clear()
-        
-        threading.Thread.join(self, timeout=timeout)
         
     def processRequest(self, req):
         id = req.getID()
@@ -425,8 +431,13 @@ class RpcConnection(threading.Thread):
         try:
             test_method = self.server.findMethod(method)
             
-            with self.lock:
-                return req.call(test_method)
+            with self.server.rpc_lock:
+                self.server.rpc_locker = self.conn_socket
+                
+                ret = req.call(test_method)
+                
+                self.server.rpc_locker = None
+                return ret
             
         # Bubble all exceptions up to the calling function
         except RpcMethodNotFound:
