@@ -39,7 +39,7 @@ class i_VISA(Base_Interface):
                     if res not in self.resources.keys():
                         try:
                             new_resource = r_VISA(res, self, 
-                                                  models=self.manager.getModels())
+                                                  drivers=self.manager.getDrivers())
                             
                             self.resources[res] = new_resource
                             
@@ -114,7 +114,7 @@ class r_VISA(Base_Resource):
         Base_Resource.__init__(self, resID, controller, **kwargs)
         
         self.resource_manager = visa.ResourceManager()
-        self.model_list = kwargs.get('models')
+        self.driver_list = kwargs.get('drivers', {})
 
         try:
             self.logger.info("Created VISA Resource: %s", resID)
@@ -124,7 +124,7 @@ class r_VISA(Base_Resource):
             self.identify()
             self.status = 'READY'
             
-            self.loadModel()
+            self.loadDriver()
             
             
         except visa.VisaIOError as e:
@@ -192,7 +192,11 @@ class r_VISA(Base_Resource):
     #===========================================================================
     
     def write(self, data):
-        return self.instrument.write(data)
+        for attempt in range(2):
+            try:
+                return self.instrument.write(data)
+            except visa.InvalidSession:
+                self.open()
     
     def read(self):
         return self.instrument.read()
@@ -215,10 +219,10 @@ class r_VISA(Base_Resource):
                 
     
     #===========================================================================
-    # Models
+    # Drivers
     #===========================================================================
     
-    def loadModel(self, modelName=None):
+    def loadDriver(self, driverName=None):
         """
         Load a Model. VISA supports enumeration and will thus search for a
         compatible model. A Model name can be specified to load a specific model,
@@ -226,7 +230,7 @@ class r_VISA(Base_Resource):
         when importing, in case an update has occured. If more than one 
         compatible model is found, no model will be loaded
         
-        `modelName` must be an importable module on the remote system. The
+        `driverName` must be an importable module on the remote system. The
         base folder used to locate the module is the `models` folder.
         
         On startup, the resource will attempt to load a valid Model 
@@ -236,12 +240,12 @@ class r_VISA(Base_Resource):
         
         :returns: True if successful, False otherwise
         """
-        if modelName is None:
+        if driverName is None:
             # Search for a compatible model
             validModels = []
             
             # Iterate through all Models to find compatible Models
-            for modelModule, modelInfo in self.model_list.items():
+            for modelModule, modelInfo in self.driver_list.items():
                 try:
                     for resType in modelInfo.get('validResourceTypes'):
                         if resType in ['VISA', 'visa']:
@@ -254,12 +258,12 @@ class r_VISA(Base_Resource):
                 
             # Only auto-load a model if a single model was found
             if len(validModels) == 1:
-                Base_Resource.loadModel(self, validModels[0])
+                Base_Resource.loadDriver(self, validModels[0])
                 
                 return True
             
             return False
                 
         else:
-            return Base_Resource.loadModel(self, modelName)
+            return Base_Resource.loadDriver(self, driverName)
     

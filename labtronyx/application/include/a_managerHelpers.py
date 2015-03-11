@@ -80,19 +80,19 @@ class a_AddResource(Tk.Toplevel):
     def cb_Cancel(self):
         self.destroy()
         
-class a_ViewSelector(Tk.Toplevel):
+class a_AppletSelector(Tk.Toplevel):
     
-    def __init__(self, master, views, cb_func):
+    def __init__(self, master, applets, cb_func):
         Tk.Toplevel.__init__(self, master, padx=2, pady=2)
         
         # Store reference to parent window callback function
         self.cb_func = cb_func
-        self.view = Tk.StringVar(self)
-        self.view.set(views[0])
+        self.applet = Tk.StringVar(self)
+        self.applet.set(applets[0])
         
-        self.wm_title('Load a view...')
-        Tk.Label(self, text='Multiple views found, select one to load:').grid(row=0, column=0, columnspan=2)
-        self.lst_view = Tk.OptionMenu(self, self.view, *views).grid(row=1, column=0, columnspan=2)
+        self.wm_title('Load an Applet...')
+        Tk.Label(self, text='Multiple applets found, select one to load:').grid(row=0, column=0, columnspan=2)
+        self.lst_view = Tk.OptionMenu(self, self.applet, *applets).grid(row=1, column=0, columnspan=2)
         Tk.Button(self, text='Cancel', command=lambda: self.cb_Cancel()).grid(row=2, column=0)
         Tk.Button(self, text='Launch', command=lambda: self.cb_Load()).grid(row=2, column=1)
         
@@ -101,9 +101,9 @@ class a_ViewSelector(Tk.Toplevel):
         self.grab_set()
         
     def cb_Load(self):
-        view = self.view.get()
+        applet = self.applet.get()
         
-        self.cb_func(view)
+        self.cb_func(applet)
         
         # Close this window
         self.destroy()
@@ -227,7 +227,7 @@ class a_LoadDriver(Tk.Toplevel):
                 if self.selectedVendor == modelInfo.get('deviceVendor') and \
                     self.selectedModel in modelInfo.get('deviceModel'):
                     
-                    if not self.res.loadModel(modelModule):
+                    if not self.res.loadDriver(modelModule):
                         tkMessageBox.showwarning('Unable to load driver', 'An error occured while loading the driver')
                         
                     self.ICF.refreshResources()

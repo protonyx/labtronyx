@@ -1,9 +1,8 @@
-
-import application.views as views
+from Base_Applet import Base_Applet
 
 import Tkinter as Tk
 
-class v_UPEL(views.v_Base):
+class v_UPEL(Base_Applet):
     
     info = {
         # View revision author

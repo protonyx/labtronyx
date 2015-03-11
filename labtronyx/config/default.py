@@ -9,7 +9,7 @@ class Config(object):
     
     # Version
     version = '0.1'
-    build = time.strftime("%y%m%d")
+    build = '150310' # time.strftime("%y%m%d")
     stage = 'dev'
     
     # Default port for manager objects to setup RPC servers on

@@ -56,6 +56,9 @@ class a_Main(Tk.Tk):
         import applets
         self.applets = applets.getAllApplets()
         
+        for applet in self.applets.keys():
+            self.logger.debug("Found Applet: %s", applet)
+        
         # TODO: Persistent Settings
         
         self.logger.info('Application start')
@@ -286,17 +289,16 @@ class a_Main(Tk.Tk):
             driverName = properties.get('driver')
             validApplets = []
             
-            if applet is not None:
-                # Find a view with a compatible model
-                for appletModule, appletInfo in self.applets.items():
-                    if driverName in appletInfo.get('validDrivers', []):
-                        validApplets.append(appletModule)
-            else:
-                # Find a generic view for this resource type
-                resType = properties.get('resourceType')
-                for appletModule, appletInfo in self.applets.items():
-                    if resType in appletInfo.get('validResourceTypes', []):
-                        validApplets.append(appletModule)
+            # Find a view with a compatible model
+            for appletModule, appletInfo in self.applets.items():
+                if driverName in appletInfo.get('validDrivers', []):
+                    validApplets.append(appletModule)
+                    
+            # Find a generic view for this resource type
+            resType = properties.get('resourceType')
+            for appletModule, appletInfo in self.applets.items():
+                if resType in appletInfo.get('validResourceTypes', []):
+                    validApplets.append(appletModule)
                 
             # Load the view
             if len(validApplets) > 1:
@@ -304,7 +306,7 @@ class a_Main(Tk.Tk):
                 from include.a_managerHelpers import a_AppletSelector
                 
                 # Create the child window
-                w_AppletSelector = a_AppletSelector(self, validApplets, lambda appletModule: self.loadApplet(uuid, appletModule))
+                w_AppletSelector = a_AppletSelector(self, validApplets, lambda appletModule: self.cb_loadApplet(uuid, appletModule))
     
             elif len(validApplets) == 1 and validApplets[0] is not None:
                 # Load the view

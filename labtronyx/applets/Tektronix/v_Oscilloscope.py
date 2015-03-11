@@ -1,13 +1,14 @@
-import application.views as views
+from Base_Applet import Base_Applet
 
 import Tkinter as Tk
+
 import matplotlib
 import pylab
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 
-class v_Oscilloscope(views.v_Base):
+class v_Oscilloscope(Base_Applet):
     
     info = {
         # View revision author
@@ -18,10 +19,8 @@ class v_Oscilloscope(views.v_Base):
         'date':                 '2015-02-11',    
         
         # List of compatible models
-        'validModels':          ['models.Tektronix.Oscilloscope.m_OscilloscopeBase', 
-                                 'models.Tektronix.Oscilloscope.m_DigitalPhosphor',
-                                 'models.Tektronix.Oscilloscope.m_MixedDomain',
-                                 'models.Tektronix.Oscilloscope.m_MixedSignal']
+        'validDrivers':          ['Tektronix.Oscilloscope.m_MixedSignal', 
+                                  'Tektronix.Oscilloscope.m_Oscilloscope']
     }
     
     def _plot(self):

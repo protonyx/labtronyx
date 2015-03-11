@@ -6,6 +6,8 @@ import base64
 import csv
 import sys
 
+import numpy
+
 class m_Oscilloscope(Base_Driver):
     
     info = {
@@ -21,7 +23,7 @@ class m_Oscilloscope(Base_Driver):
         'deviceModel':          [ # DPO2XXX Series
                     
                                 # DPO3XXX Series
-                                
+                                "DPO2024", # TODO: Verify this driver works for this model
                                 # DPO4XXX Series
                                 
                                 # DPO5XXX Series
@@ -45,7 +47,7 @@ class m_Oscilloscope(Base_Driver):
         # Compatible VISA Manufacturers
         'VISA_compatibleManufacturers': ['TEKTRONIX', 'Tektronix'],
         # Compatible VISA Models
-        'VISA_compatibleModels':        [
+        'VISA_compatibleModels':        ["DPO2024"
                                          "DPO5054", "DPO5054B", "DPO5104", 
                                          "DPO5104B", "DPO5204", "DPO5204B", 
                                          "DPO5034", "DPO5034B", "DPO7054C", 
@@ -64,6 +66,8 @@ class m_Oscilloscope(Base_Driver):
     def _onLoad(self):
         self.instr = self.getResource()
         
+        self.instr.open()
+        
         # Configure scope
         self.instr.write('HEADER OFF')
         resp = str(self.instr.query('HEADER?')).strip()
@@ -72,12 +76,6 @@ class m_Oscilloscope(Base_Driver):
             self.instr.write('HEADER OFF')
             
         self.data = {}
-        
-        # Attempt to import numpy
-        try:
-            import numpy
-        except:
-            pass
         
     def _onUnload(self):
         pass

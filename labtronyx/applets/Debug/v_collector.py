@@ -1,8 +1,4 @@
-import application.views as views
-
-import common
-#from common.jsonrpc import *
-from common.rpc import *
+from Base_Applet import Base_Applet
 
 import Tkinter as Tk
 
@@ -14,7 +10,7 @@ matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.backend_bases import key_press_handler
 
-class v_collector(views.v_Base):
+class v_collector(Base_Applet):
     
     info = {
         # View revision author

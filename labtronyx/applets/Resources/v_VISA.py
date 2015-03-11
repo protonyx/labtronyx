@@ -1,9 +1,8 @@
-
-import application.views as views
+from Base_Applet import Base_Applet
 
 import Tkinter as Tk
 
-class v_VISA(views.v_Base):
+class v_VISA(Base_Applet):
     
     info = {
         # View revision author

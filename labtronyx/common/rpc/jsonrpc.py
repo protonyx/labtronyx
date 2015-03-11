@@ -206,7 +206,7 @@ class JsonRpcPacket(object):
     def getRequests(self):
         return self.requests
     
-    def addResponse(self, id, result):
+    def addResponse(self, id, result):            
         self.responses.append(JsonRpc_Response(id=id,
                                                result=result))
         

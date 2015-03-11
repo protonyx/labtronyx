@@ -5,16 +5,13 @@ from common.rpc import RpcClient
 
 class Base_Applet(Tk.Toplevel):
     
-    def __init__(self, master, resource):
+    def __init__(self, master, instrument):
         Tk.Toplevel.__init__(self, master, padx=5, pady=5)
         
-        self.__resource = resource
+        self.__instrument = instrument
         
-        # TODO: Remove this, deprecated
-        self.model = resource
-        
-    def getResource(self):
-        return self.__resource
+    def getInstrument(self):
+        return self.__instrument
             
     def run(self):
         raise NotImplementedError

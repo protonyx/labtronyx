@@ -126,67 +126,67 @@ class Base_Resource(object):
         raise NotImplementedError
     
     #===========================================================================
-    # Models
+    # Driver
     #===========================================================================
     
-    def hasModel(self):
-        return self.model is not None
+    def hasDriver(self):
+        return self.driver is not None
     
-    def loadModel(self, modelName):
+    def loadDriver(self, driverName):
         """
-        Load a Model. A Model name can be specified to load a specific model,
-        even if it may not be compatible with this resource. Reloads model
-        when importing, in case an update has occured.
+        Load a Driver for a resource. A driver name can be specified to load a 
+        specific module, even if it may not be compatible with this resource. 
+        Reloads driver when importing, in case an update has occured.
         
         Example::
         
-            instr.loadModel('Tektronix.Oscilloscope.m_DigitalPhosphor')
+            instr.loadDriver('Tektronix.Oscilloscope.m_DigitalPhosphor')
         
-        :param modelName: Module name of the desired Model
-        :type modelName: str
+        :param driverName: Module name of the desired Model
+        :type driverName: str
         :returns: True if successful, False otherwise
         """
         try:
             # Check if the specified model is valid
-            testModule = importlib.import_module(modelName)
+            testModule = importlib.import_module(driverName)
             reload(testModule) # Reload the module in case anything has changed
             
-            className = modelName.split('.')[-1]
+            className = driverName.split('.')[-1]
             testClass = getattr(testModule, className)
             
-            self.model = testClass(self)
-            self.model._onLoad()
+            self.driver = testClass(self)
+            self.driver._onLoad()
             
             # RPC register object
-            self.rpc_server.registerObject(self.model)
-            self.rpc_server.notifyClients('event_model_loaded')
+            self.rpc_server.registerObject(self.driver)
+            self.rpc_server.notifyClients('event_driver_loaded')
             
             return True
 
         except:
 
-            self.logger.exception('Failed to load model: %s', modelName)
+            self.logger.exception('Failed to load driver: %s', driverName)
             return False
     
-    def unloadModel(self):
+    def unloadDriver(self):
         """
-        If a Model is currently loaded for the resource, unload the resource.
+        If a Driver is currently loaded for the resource, unload it.
         
         :returns: True if successful, False otherwise
         """
-        if self.model is not None:
+        if self.driver is not None:
             try:
-                self.model._onUnload()
+                self.driver._onUnload()
                 # RPC unregister object
                 
-                self.rpc_server.unregisterObject(self.model)
-                self.rpc_server.notifyClients('event_model_unloaded')
+                self.rpc_server.unregisterObject(self.driver)
+                self.rpc_server.notifyClients('event_driver_unloaded')
                 
             except:
-                self.logger.exception('Exception while unloading model')
+                self.logger.exception('Exception while unloading driver')
                 
-            del self.model
-            self.model = None
+            del self.driver
+            self.driver = None
                 
             return True
         

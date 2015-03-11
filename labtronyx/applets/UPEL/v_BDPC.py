@@ -1,13 +1,13 @@
-import application.views as views
-
-from application.widgets import *
+from Base_Applet import Base_Applet
 
 import Tkinter as Tk
+
+from application.widgets import *
 
 # ICP Widgets
 from . import *
 
-class v_BDPC(views.v_Base):
+class v_BDPC(Base_Applet):
     """
     Base BDPC View. Collects and displays the following information:
     
@@ -41,9 +41,9 @@ class v_BDPC(views.v_Base):
         'date':                 '2015-02-11',    
         
         # List of compatible models
-        'validModels':          ['models.UPEL.BDPC.m_BDPC_BR2',
-                                 'models.UPEL.BDPC.m_BDPC_BR32',
-                                 'models.UPEL.BDPC.m_BDPC_SRC6']
+        'validDrivers':          ['UPEL.BDPC.m_BDPC_BR2',
+                                  'UPEL.BDPC.m_BDPC_BR32',
+                                  'UPEL.BDPC.m_BDPC_SRC6']
     }
     
     def run(self):

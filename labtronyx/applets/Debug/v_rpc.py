@@ -1,12 +1,9 @@
-import application.views as views
-
-import common
-#from common.jsonrpc import *
-from common.rpc import *
+from Base_Applet import Base_Applet
 
 import Tkinter as Tk
+import tkMessageBox
 
-class v_rpc(views.v_Base):
+class v_rpc(Base_Applet):
     
     info = {
         # View revision author
@@ -19,55 +16,78 @@ class v_rpc(views.v_Base):
         'description':          'RPC Method Invoker',  
             
         # List of compatible Models
-        'validModels':          ['Debug'],
+        'validDrivers':          ['Debug.m_Debug'],
         
         # List of compatible resource types
-        'validResourceTypes':   ['Debug']
+        'validResourceTypes':   ['Debug', 'VISA', 'Serial']
     }
         
     def run(self):
         self.wm_title("Method Tester")
         
+        self.instr = self.getInstrument()
+        
+        #=======================================================================
         # GUI Elements
-        # Labels
-        Tk.Label(self, text='Method').grid(row=0, column=1)
-        Tk.Label(self, text='Params').grid(row=1, column=1)
-        Tk.Label(self, text='Id').grid(row=2, column=1)
+        #=======================================================================
+        # Select Method
+        Tk.Label(self, text='Method').grid(row=0, column=0)
         
-        # Text fields
-        self.txtMethod = Tk.Entry(self)
-        self.txtMethod.grid(row=0,column=2)
-        self.txtParams = Tk.Entry(self)
-        self.txtParams.grid(row=1,column=2)
-        self.txtId = Tk.Entry(self)
-        self.txtId.grid(row=2,column=2)
-        
-        # Listbox frame
         self.frameMethods = Tk.Frame(self)
-        self.frameMethods.grid(row=0,column=0,rowspan=3)
-        scrollbar = Tk.Scrollbar(self.frameMethods, orient=Tk.VERTICAL)
-        self.methodList = Tk.Listbox(self.frameMethods, yscrollcommand=scrollbar.set)
-        scrollbar.config(command=self.methodList.yview)
-        scrollbar.pack(side=Tk.RIGHT, fill=Tk.Y)
+        
+        self.scrollbar = Tk.Scrollbar(self.frameMethods, orient=Tk.VERTICAL)
+        self.methodList = Tk.Listbox(self.frameMethods, yscrollcommand=self.scrollbar.set)
+        self.scrollbar.config(command=self.methodList.yview)
+        self.scrollbar.pack(side=Tk.RIGHT, fill=Tk.Y)
         self.methodList.pack(side=Tk.LEFT, fill=Tk.BOTH, expand=1)
         
-        # Buttons
-        self.btnSend = Tk.Button(self, text="Send", command=self.cb_Send)
-        self.btnSend.grid(row=3,column=2)
+        self.frameMethods.grid(row=0,column=1, 
+                               sticky=Tk.N+Tk.E+Tk.S+Tk.W, padx=5, pady=5)
         
-        for proc in self.model.methods:
+        self.methodList.bind('<<ListboxSelect>>', self.e_ListBoxClick)
+        
+        # Eval Box
+        Tk.Label(self, text='Command').grid(row=1, column=0)
+        self.str_eval = Tk.StringVar()
+        self.txtMethod = Tk.Entry(self, textvariable=self.str_eval, width=50)
+        self.txtMethod.grid(row=1, column=1, 
+                            sticky=Tk.N+Tk.E+Tk.S+Tk.W, padx=5, pady=5)
+        
+        # Return Box
+        Tk.Label(self, text='Return').grid(row=2, column=0)
+        self.str_return = Tk.StringVar()
+        self.txtReturn = Tk.Entry(self, textvariable=self.str_return, width=50)
+        self.txtReturn.grid(row=2, column=1,
+                            sticky=Tk.N+Tk.E+Tk.S+Tk.W, padx=5, pady=5)
+        
+        # Execute Button
+        self.btnSend = Tk.Button(self, text="Execute", command=self.cb_Send)
+        self.btnSend.grid(row=3, column=0, columnspan=2,
+                          padx=5, pady=5)
+        
+        self.cb_refresh()
+        
+    def cb_refresh(self):
+        # Clear listbox
+        self.methodList.delete(0, Tk.END)
+        
+        # Populate Listbox
+        methods = self.instr.rpc_getMethods()
+        for proc in methods:
             self.methodList.insert(Tk.END, proc)
         
     def cb_Send(self):
-        method = str(self.txtMethod.get())
-        if hasattr(self.model, method):
-            ret = getattr(self.model, method)()
-        else:
-            ret = 'Method not found'
+        try:
+            res = eval('self.instr.' + self.str_eval.get())
             
-        import ctypes  # An included library with Python install.
-        def Mbox(title, text, style):
-            ctypes.windll.user32.MessageBoxA(0, text, title, style)
-        Mbox('Your title', str(ret), 1)
+            self.str_return.set(res)
+        except Exception as e:
+            tkMessageBox.showerror('Exception', str(e))
+        
+    def e_ListBoxClick(self, event):
+        items = self.methodList.curselection()
+        method = self.methodList.get(items[0])
+        
+        self.str_eval.set(str(method) + '()')
         
         
