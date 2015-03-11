@@ -8,7 +8,7 @@ import pylab
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 
-class v_Oscilloscope(Base_Applet):
+class oscilloscope(Base_Applet):
     
     info = {
         # View revision author

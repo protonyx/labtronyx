@@ -2,7 +2,7 @@ from Base_Applet import Base_Applet
 
 import Tkinter as Tk
 
-class v_UPEL(Base_Applet):
+class UPEL(Base_Applet):
     
     info = {
         # View revision author

@@ -3,7 +3,7 @@ from Base_Applet import Base_Applet
 import Tkinter as Tk
 import tkMessageBox
 
-class v_rpc(Base_Applet):
+class MethodTest(Base_Applet):
     
     info = {
         # View revision author
