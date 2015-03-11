@@ -31,7 +31,7 @@ def getAllApplets():
             # Iterate through each file
             filepath = os.path.join(dirpath, file)
             modulepath, fileExtension = os.path.splitext(filepath)
-            if fileExtension in ['.py', '.pyc'] and '__init__' not in file:
+            if fileExtension in ['.py'] and '__init__' not in file:
                 # Get module name from relative path
                 
                 com_pre = os.path.commonprefix([canpath, filepath])
