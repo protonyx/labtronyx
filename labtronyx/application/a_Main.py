@@ -14,6 +14,8 @@ import tkMessageBox
 sys.path.append("..")
 from InstrumentControl import InstrumentControl
 
+from include import *
+
 class a_Main(Tk.Tk):
     """
     Main application for 
@@ -209,10 +211,9 @@ class a_Main(Tk.Tk):
             
     def cb_managerConnect(self):
         # Spawn a window to get address and port
-        from include.a_managerHelpers import a_ConnectToHost
         
         # Create the child window
-        w_connectToHost = a_ConnectToHost(self, lambda address, port: self.cb_addManager(address, port))
+        w_connectToHost = ManagerPages.a_ConnectToHost(self, lambda address, port: self.cb_addManager(address, port))
         
     def cb_addManager(self, address, port=None):
         # Attempt a connection to the manager
@@ -228,12 +229,10 @@ class a_Main(Tk.Tk):
         self.cb_refreshTree()
         
     def cb_addResource(self, address):
-        from include.a_managerHelpers import a_AddResource
-            
         interfaces = self.ICF.getControllers(address)
             
         # Create the child window
-        w_addResource = a_AddResource(self, self, interfaces, lambda interface, resID: self.ICF.addResource(address, interface, resID))
+        w_addResource = ManagerPages.a_AddResource(self, self, interfaces, lambda interface, resID: self.ICF.addResource(address, interface, resID))
         
         # Make the child modal
         w_addResource.focus_set()
@@ -303,10 +302,9 @@ class a_Main(Tk.Tk):
             # Load the view
             if len(validApplets) > 1:
                 # Load view selector if more than one found
-                from include.a_managerHelpers import a_AppletSelector
                 
                 # Create the child window
-                w_AppletSelector = a_AppletSelector(self, validApplets, lambda appletModule: self.cb_loadApplet(uuid, appletModule))
+                w_AppletSelector = ResourcePages.a_AppletSelector(self, validApplets, lambda appletModule: self.cb_loadApplet(uuid, appletModule))
     
             elif len(validApplets) == 1 and validApplets[0] is not None:
                 # Load the view
@@ -317,10 +315,9 @@ class a_Main(Tk.Tk):
         
     def cb_loadDriver(self, uuid):
         # Spawn a window to select the driver to load
-        from include.a_managerHelpers import a_LoadDriver
         
         # Create the child window
-        w_DriverSelector = a_LoadDriver(self, self.ICF, uuid)
+        w_DriverSelector = ResourcePages.a_LoadDriver(self, self.ICF, uuid)
         
         self.treeFrame.refresh()
             
@@ -333,6 +330,18 @@ class a_Main(Tk.Tk):
         # addr = self.ICF.getAddressFromUUID(uuid)
         # self.ICF.refresh
         self.treeFrame.refresh()
+        
+    def cb_configResource(self, uuid):
+        res = self.ICF.getResources().get(uuid)
+        instr = self.ICF.getInstrument(uuid)
+        type = res.get('resourceType')
+        
+        if hasattr(ConfigPages, 'config_%s' % type):
+            config_class = getattr(ConfigPages, 'config_%s' % type)
+            w_ConfigWindow = config_class(self, instr)
+            
+        else:
+            tkMessageBox.showwarning('Resource Error', 'This resource has no configuration options')
         
     def cb_res_properties(self, uuid):
         pass
@@ -382,6 +391,10 @@ class a_Main(Tk.Tk):
                 menu.add_command(label='Load Driver', command=lambda: self.cb_loadDriver(elem))
             else:
                 menu.add_command(label='Unload Driver', command=lambda: self.cb_unloadDriver(elem))
+                
+            type = res_props.get('resourceType')
+            if hasattr(ConfigPages, 'config_%s' % type):
+                menu.add_command(label='Configure', command=lambda: self.cb_configResource(elem))
             
             menu.add_command(label='Properties...', command=lambda: self.cb_res_properties(elem))
         
