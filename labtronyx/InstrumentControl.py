@@ -373,11 +373,21 @@ class InstrumentControl(object):
         """
         return self.properties
     
+    def getResourceProperties(self, res_uuid):
+        """
+        Get the resource property dictionary for a given UUID
+        
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: dict
+        """
+        return self.properties.get(res_uuid, {})
+    
     #===========================================================================
     # Resource Management
     #===========================================================================
     
-    def addResource(self, address, controller, ResID, VendorID=None, ProductID=None):
+    def addResource(self, address, controller, ResID):
         """
         Create a managed resource within a controller object
         
@@ -400,10 +410,6 @@ class InstrumentControl(object):
         :type controller: str
         :param ResID: Resource Identifier
         :type ResID: str
-        :param VendorID: Vendor Identifier for automatic model loading
-        :type VendorID: str
-        :param ProductID: Product Identifier for automatic model loading
-        :type ProductID: str
         
         :returns: bool - True if success, False otherwise
         """

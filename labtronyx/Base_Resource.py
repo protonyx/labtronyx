@@ -118,7 +118,7 @@ class Base_Resource(object):
     def read(self):
         raise NotImplementedError
     
-    def query(self):
+    def query(self, data):
         raise NotImplementedError
     
     #===========================================================================

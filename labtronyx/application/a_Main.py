@@ -350,8 +350,8 @@ class a_Main(Tk.Tk):
         else:
             tkMessageBox.showwarning('Resource Error', 'This resource has no configuration options')
         
-    def cb_res_properties(self, uuid):
-        pass
+    def cb_ResourceProperties(self, uuid):
+        w_ResourceProperties = ResourcePages.a_PropertyWindow(self, self.ICF, uuid)
     
     #===========================================================================
     # Notification Event Handlers
@@ -418,7 +418,7 @@ class a_Main(Tk.Tk):
             if hasattr(ConfigPages, 'config_%s' % type):
                 menu.add_command(label='Configure', command=lambda: self.cb_configResource(elem))
             
-            menu.add_command(label='Properties...', command=lambda: self.cb_res_properties(elem))
+            menu.add_command(label='Properties...', command=lambda: self.cb_ResourceProperties(elem))
         
         else:
             # Something else maybe empty space?

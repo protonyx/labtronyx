@@ -163,4 +163,22 @@ class a_LoadDriver(Tk.Toplevel):
         
     def cb_Cancel(self):
         self.destroy()
-    
+        
+class a_PropertyWindow(Tk.Toplevel):
+    def __init__(self, master, ICF, uuid):
+        Tk.Toplevel.__init__(self, master, padx=2, pady=2)
+        
+        self.ICF = ICF
+        
+        res_dict = self.ICF.getResourceProperties(uuid)
+        
+        row = 0
+        for key, value in res_dict.items():
+            Tk.Label(self, text=key, width=20).grid(row=row, column=0, 
+                                                    sticky=Tk.W, padx=2, pady=2)
+            Tk.Label(self, text=value, width=40).grid(row=row, column=1, 
+                                                      sticky=Tk.W, padx=2, pady=2)
+            row += 1
+        
+    def cb_close(self):
+        self.destroy()
