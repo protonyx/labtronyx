@@ -48,11 +48,12 @@ class a_Main(Tk.Tk):
         
         # Instantiate an InstrumentControl object
         self.ICF = InstrumentControl(Logger=self.logger)
-        self.ICF.addManager('localhost')
             
         # GUI Startup
         self.rebuild()
         self.rebind()
+        
+        self.cb_addManager('localhost')
         
         # Load applets
         import applets
@@ -64,7 +65,8 @@ class a_Main(Tk.Tk):
         # TODO: Persistent Settings
         
         self.logger.info('Application start')
-
+        
+        self.process_notifications()
     
     def rebuild(self):
         """
@@ -218,6 +220,11 @@ class a_Main(Tk.Tk):
     def cb_addManager(self, address, port=None):
         # Attempt a connection to the manager
         self.ICF.addManager(address, port)
+        
+        man = self.ICF.getManager(address)
+        man._enableNotifications()
+        man._registerCallback('event_new_resource', lambda: self.cb_event_new_resource())
+        
         self.cb_refreshTree()
     
     def cb_managerDisconnect(self, address):
@@ -345,6 +352,21 @@ class a_Main(Tk.Tk):
         
     def cb_res_properties(self, uuid):
         pass
+    
+    #===========================================================================
+    # Notification Event Handlers
+    #===========================================================================
+    
+    def process_notifications(self):
+        managers = self.ICF.getManager()
+        
+        for addresss, man in managers.items():
+            man._checkNotifications()
+            
+        self.after(1000, self.process_notifications)
+    
+    def cb_event_new_resource(self):
+        return self.cb_refreshTree()
 
     #===========================================================================
     # Event Handlers

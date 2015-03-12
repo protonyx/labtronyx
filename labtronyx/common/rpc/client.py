@@ -47,6 +47,7 @@ class RpcClient(object):
         self._callbacks = {}
         
         self._connect()
+        self.note_socket = None
             
         # Update the hostname
         self.hostname = self._rpcCall('rpc_getHostname')
@@ -113,6 +114,9 @@ class RpcClient(object):
             _, port = self.note_socket.getsockname()
             
             self._rpcCall('rpc_register', address, port)
+            
+            self.logger.debug("RPC Notifications enabled")
+            
             return True
         
         except:

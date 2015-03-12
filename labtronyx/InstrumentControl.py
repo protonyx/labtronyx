@@ -273,7 +273,7 @@ class InstrumentControl(object):
         else:
             return False
         
-    def getManager(self, address):
+    def getManager(self, address=None):
         """
         Get an InstrumentManager object for the host at `address`. Object
         returned is an :class:`common.rpc.RpcClient` object that is linked to
@@ -289,9 +289,13 @@ class InstrumentControl(object):
         :returns: :class:`common.rpc.RpcClient` object or None if there is no \
         existing connection to `address`
         """
-        address = self._resolveAddress(address)
-            
-        return self.managers.get(address, None)
+        if address is None:
+            return self.managers
+        
+        else:
+            address = self._resolveAddress(address)
+                
+            return self.managers.get(address, None)
     
     #===========================================================================
     # Interface Operations
