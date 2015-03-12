@@ -4,6 +4,8 @@ import time
 
 from . import m_BDPC_Base
 
+import common.status
+
 class Base_Serial(m_BDPC_Base):
     
     pkt_struct = struct.Struct("BBBBBBBB")
@@ -136,17 +138,20 @@ class Base_Serial(m_BDPC_Base):
         }
     
     def _onLoad(self):
-        self.instr = self.getResource()
+        self.resource = self.getResource()
         
         # Configure the COM Port
-        self.instr.configure(baudrate=115200,
-                             timeout=0.5,
-                             bytesize=8,
-                             parity='E',
-                             stopbits=1)
+        self.resource.configure(baudrate=115200,
+                                timeout=0.25,
+                                bytesize=8,
+                                parity='E',
+                                stopbits=1)
+        
+        # Attempt to get the status
+        self.getStatus()
         
     def _onUnload(self):
-        pass
+        self.resource.close()
         
     def getProperties(self):
         prop = m_BDPC_Base.getProperties(self)
@@ -204,7 +209,7 @@ class Base_Serial(m_BDPC_Base):
         :type data: int
         """
         packet = self._SRC_pack(addr, data)
-        self.instr.write(packet)
+        self.resource.write(packet)
         self.logger.debug("SRC TX: %s", packet.encode('hex'))
     
     def _SRC_read_packet(self):
@@ -215,15 +220,15 @@ class Base_Serial(m_BDPC_Base):
         :returns: tuple (address, data) if found, None otherwise
         """
         
-        while (self.instr.inWaiting() > 0):
+        while (self.resource.inWaiting() > 0):
             # Read the next byte in the serial buffer
-            buf = self.instr.read(1)
+            buf = self.resource.read(1)
             # Check if the byte is a START_SYNC
             if (buf == chr(0x24)):
-                bytesWaiting = self.instr.inWaiting()
+                bytesWaiting = self.resource.inWaiting()
                 if (bytesWaiting >= (self.pkt_struct.size - 1)):
                     # Retrieve the rest of the packet
-                    buf = buf + self.instr.read(self.pkt_struct.size - 1)
+                    buf = buf + self.resource.read(self.pkt_struct.size - 1)
                     
                     # Is there an END_SYNC at the end of the packet?
                     if buf[-1] == chr(0x1E):
@@ -247,55 +252,71 @@ class Base_Serial(m_BDPC_Base):
                         # Keep searching for a valid packet
                 else:
                     # START_SYNC but not full packet in the queue
-                    buf = buf + self.instr.read(self.instr.inWaiting())
+                    buf = buf + self.resource.read(self.resource.inWaiting())
                     self.logger.error("SRC RX Incomplete Packet: %s", buf.encode('hex'))
                     
         return None
         
-    def _SRC_read_register(self, address):
-        address = address & 0x7F
-        
-        for attempt in range(3):
-            self._SRC_write_packet(address, 0)
-            time.sleep(0.1)
+    def read_register(self, address):
+        if self.resource.getResourceStatus() != common.status.error:
+            address = address & 0x7F
             
-            recv = self._SRC_read_packet()
-            if recv is not None:
-                addr, data = recv
+            for attempt in range(3):
+                self._SRC_write_packet(address, 0)
+                time.sleep(0.1)
                 
-                if addr == address:
-                    return data
-                else:
-                    self.logger.error("SRC RX address did not match TX address, retrying")
-                
-            # Attempt failed, try again
-        
-        # Retries failed
-        self.logger.error("Unable to read register %s", address)
-        raise RuntimeError
+                recv = self._SRC_read_packet()
+                if recv is not None:
+                    addr, data = recv
+                    
+                    if addr == address:
+                        return data
+                    else:
+                        self.logger.error("SRC RX address did not match TX address, retrying")
+                    
+                # Attempt failed, try again
+            
+            # Retries failed
+            self.logger.error("Unable to read register %s", address)
+            
+            # Flag the resource as unresponsive
+            self.resource.setResourceStatus(common.status.error)
+            
+            raise RuntimeError()
+            
+        else:
+            raise RuntimeError()
     
-    def _SRC_write_register(self, address, data):
-        address_write = int(address) | 0x80
-        data = int(data)
-        
-        for attempt in range(3):
-            self._SRC_write_packet(address_write, data)
-            time.sleep(0.1)
+    def write_register(self, address, data):
+        if self.resource.getResourceStatus() != common.status.error:
+            address_write = int(address) | 0x80
+            data = int(data)
             
-            recv = self._SRC_read_packet()
-            if recv is not None:
-                addr, data_ret = recv
+            for attempt in range(3):
+                self._SRC_write_packet(address_write, data)
+                time.sleep(0.1)
                 
-                if addr == address and data_ret == data:
-                    return data_ret
-                else:
-                    self.logger.error("SRC RX did not match TX, retrying")
+                recv = self._SRC_read_packet()
+                if recv is not None:
+                    addr, data_ret = recv
+                    
+                    if addr == address and data_ret == data:
+                        return data_ret
+                    else:
+                        self.logger.error("SRC RX did not match TX, retrying")
+                    
+                # Attempt failed, try again
                 
-            # Attempt failed, try again
+            # Retries failed
+            self.logger.error("Unable to write register %s", address)    
             
-        # Retries failed
-        self.logger.error("Unable to write register %s", address)    
-        raise RuntimeError
+            # Flag the resource as unresponsive
+            self.resource.setResourceStatus(common.status.unresponsive)
+            
+            raise RuntimeError()
+            
+        else:
+            raise RuntimeError()
     
     def convert_twoscomp(self, num, total_bits):
         if ( (num&(1<<(total_bits-1))) != 0):
@@ -309,7 +330,7 @@ class Base_Serial(m_BDPC_Base):
     
     def setOption(self, **kwargs):
         address = self.registers.get('CONTROL')
-        control_reg = self._SRC_read_register(address)
+        control_reg = self.read_register(address)
         
         for field_tag in kwargs:
             if field_tag in self.options.values():
@@ -327,11 +348,11 @@ class Base_Serial(m_BDPC_Base):
                     # field_tag was not found in options dictionary
                     pass
         
-        self._SRC_write_register(address, control_reg)
+        self.write_register(address, control_reg)
                 
     def getOption(self):
         address = self.registers.get('CONTROL')
-        control_reg = self._SRC_read_register(address)
+        control_reg = self.read_register(address)
         
         temp_dict = {}
         
@@ -358,17 +379,17 @@ class Base_Serial(m_BDPC_Base):
     def setSensorOffset(self, sensor, offset):
         sensor_reg = self.sensor_os_regs.get(sensor)
         address = self.registers.get(sensor_reg)
-        return self._SRC_write_register(address,offset)
+        return self.write_register(address,offset)
     
     def getSensorOffset(self, sensor):
         sensor_reg = self.sensor_regs.get(sensor)
         address = self.registers.get(sensor_reg)
-        return self._SRC_read_register(address)
+        return self.read_register(address)
     
     def getSensorValue(self, sensor):
         sensor_reg = self.sensor_regs.get(sensor)
         address = self.registers.get(sensor_reg)
-        value = self._SRC_read_register(address)
+        value = self.read_register(address)
         
         gain = self.sensor_gain.get(sensor)
         
@@ -391,7 +412,7 @@ class Base_Serial(m_BDPC_Base):
     def getSensorRawValue(self, sensor):
         sensor_reg = self.sensor_regs.get(sensor)
         address = self.registers.get(sensor_reg)
-        return self._SRC_read_register(address)
+        return self.read_register(address)
         
     def getSensorUnits(self, sensor):
         return self.sensor_units.get(sensor)
@@ -404,58 +425,58 @@ class Base_Serial(m_BDPC_Base):
     #===========================================================================
     def getVoltageReference(self):
         address = self.registers.get('VLIMIT')
-        set_v = self._SRC_read_register(address)
+        set_v = self.read_register(address)
         return (float(set_v) / float(self.getSensorGain('SecondaryVoltage')))
     
     def setVoltageReference(self, set_v):
         address = self.registers.get('VLIMIT')
         set_v = int(float(set_v) * self.getSensorGain('SecondaryVoltage'))
-        return self._SRC_write_register(address, set_v);
+        return self.write_register(address, set_v);
     
     def getCurrentReference(self):
         address = self.registers.get('ILIMIT')
-        set_i = self._SRC_read_register(address)
+        set_i = self.read_register(address)
         return (float(set_i) / float(self.getSensorGain('SecondaryCurrent')))
 
     def setCurrentReference(self, set_i):
         address = self.registers.get('ILIMIT')
         set_i = int(float(set_i) * self.getSensorGain('SecondaryCurrent'))
-        return self._SRC_write_register(address, set_i);
+        return self.write_register(address, set_i);
     
     def getPowerReference(self):
         address = self.registers.get('PLIMIT')
-        return self._SRC_read_register(address)
+        return self.read_register(address)
     
     def setPowerReference(self, set_p):
         address = self.registers.get('PLIMIT')
-        return self._SRC_write_register(address, set_p);
+        return self.write_register(address, set_p);
     
     def setPowerCommand(self, command):        
         command = command * 0x7FF
         address = self.registers.get('PCMD')
-        return self._SRC_write_register(address, command)       
+        return self.write_register(address, command)       
     
     def setPhaseShift(self, angle):
         address = self.registers.get('MPS')
         angle_converted = int(float(angle * 0x7FF) / 180)
-        return self._SRC_write_register(address, angle_converted)
+        return self.write_register(address, angle_converted)
         
     def getPhaseShift(self):
         address = self.registers.get('MPS')
-        angle = self._SRC_read_register(address)
+        angle = self.read_register(address)
         return float(angle * 180) / 0x7FF
         
     def setPhaseAngle(self, leg, angle):        
         reg = self.phase_angle.get(leg)
         address = self.registers.get(reg)
         angle_converted = int(float(angle * 0x7FF) / 180)
-        return self._SRC_write_register(address, angle_converted)
+        return self.write_register(address, angle_converted)
     
     def setDeadTime(self, leg, nanoseconds):
         reg = self.dead_time.get(leg)
         address = self.registers.get(reg)
         nanoseconds_converted = int( float(nanoseconds) / 5)
-        return self._SRC_write_register(address, nanoseconds_converted)
+        return self.write_register(address, nanoseconds_converted)
     
     def setGain(self, gain):
         address_a = self.registers.get('GAIN_A')
@@ -471,15 +492,15 @@ class Base_Serial(m_BDPC_Base):
                     write_a = a
                     write_b = b
                     
-        self._SRC_write_register(address_a, write_a)
-        self._SRC_write_register(address_b, write_b)
+        self.write_register(address_a, write_a)
+        self.write_register(address_b, write_b)
         
     #===========================================================================
     # Diagnostics
     #===========================================================================
     def getStatus(self):
         address = self.registers.get('STATUS')
-        status_reg = self._SRC_read_register(address)
+        status_reg = self.read_register(address)
         
         temp_dict = {}
         
@@ -495,13 +516,13 @@ class Base_Serial(m_BDPC_Base):
         
     def getConversionRatioMeasured(self):
         address = self.registers.get('CONVRATIO')
-        conv_ratio = self._SRC_read_register(address)
+        conv_ratio = self.read_register(address)
         conv_ratio_normalized = float(conv_ratio)/0xFFF        
         return conv_ratio_normalized
         
     def getPowerCommand(self):
         address = self.registers.get('MPCMD')
-        pcmd = self._SRC_read_register(address)
+        pcmd = self.read_register(address)
         pcmd = self.convert_twoscomp(pcmd, total_bits=12)
         pcmd_normalized = float(pcmd) / 0x7FF        
         return pcmd_normalized
@@ -514,7 +535,7 @@ class Base_Serial(m_BDPC_Base):
                 phase_reg = self.phase_angle_reg.get(arg)
                 address = self.registers.get(phase_reg)
                 
-                angle = self._SRC_read_register(address)
+                angle = self.read_register(address)
                 angle_converted = float(angle * 180) / 0x7FF
                 
                 ret[arg] = angle_converted
@@ -523,10 +544,10 @@ class Base_Serial(m_BDPC_Base):
                 
     def getGain(self):
         address_a = self.registers.get('GAINA_RO')
-        gain_a = self._SRC_read_register(address) 
+        gain_a = self.read_register(address) 
         
         address_b = self.registers.get('GAINB_RO')
-        gain_b = self._SRC_read_register(address)
+        gain_b = self.read_register(address)
         
         return float(gain_a) / (2**gain_b)
     
@@ -537,9 +558,9 @@ class Base_Serial(m_BDPC_Base):
         
         dict = {}
         
-        dict['power'] =  self._SRC_read_register(address_p)    
-        dict['voltage'] = self._SRC_read_register(address_v)
-        dict['current'] = self._SRC_read_register(address_i)
+        dict['power'] =  self.read_register(address_p)    
+        dict['voltage'] = self.read_register(address_v)
+        dict['current'] = self.read_register(address_i)
         
         return min(dict)      
         
