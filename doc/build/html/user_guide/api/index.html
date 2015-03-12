@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Application Programmer Interface (API) &mdash; Labtronyx 0.1dev-150310 documentation</title>
+    <title>Labtronyx Python Library &mdash; Labtronyx 0.1dev-150310 documentation</title>
     
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -25,8 +25,8 @@
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <link rel="top" title="Labtronyx 0.1dev-150310 documentation" href="../../index.html" />
     <link rel="up" title="User Guide" href="../index.html" />
-    <link rel="next" title="InstrumentControl" href="api.html" />
-    <link rel="prev" title="Supported Instruments" href="../instruments/index.html" /> 
+    <link rel="next" title="Introduction" href="intro.html" />
+    <link rel="prev" title="Tektronix" href="../instruments/tektronix.html" /> 
   </head>
   <body>
     <div class="related">
@@ -36,10 +36,10 @@
           <a href="../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="api.html" title="InstrumentControl"
+          <a href="intro.html" title="Introduction"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../instruments/index.html" title="Supported Instruments"
+          <a href="../instruments/tektronix.html" title="Tektronix"
              accesskey="P">previous</a> |</li>
         <li><a href="../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">User Guide</a> &raquo;</li> 
@@ -51,11 +51,52 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="application-programmer-interface-api">
-<h1>Application Programmer Interface (API)<a class="headerlink" href="#application-programmer-interface-api" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="labtronyx-python-library">
+<h1>Labtronyx Python Library<a class="headerlink" href="#labtronyx-python-library" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="api.html">InstrumentControl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#importing-instrumentcontrol">Importing InstrumentControl</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#connect-to-a-host">Connect to a Host</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#connecting-to-instruments">Connecting to Instruments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#using-instruments">Using Instruments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#loading-and-unloading-drivers">Loading and Unloading Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#api-documentation">API Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="scripts.html">Developing Scripts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="scripts.html#script-framework">Script Framework</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Topics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="advanced.html#manually-managing-resources">Manually Managing Resources</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="resources/index.html">Resources</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="resources/serial.html">Serial</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="resources/serial.html#dependencies">Dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="resources/serial.html#interface">Interface</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="resources/upel.html">UPEL Instrument Control Protocol (ICP)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="resources/upel.html#dependencies">Dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="resources/upel.html#interface">Interface</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="resources/visa.html">Virtual Instrument Software Architecture (VISA)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="resources/visa.html#dependencies">Dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="resources/visa.html#interface">Interface</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="drivers/index.html">Driver APIs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="drivers/Agilent.m_SMU.html">Agilent.m_SMU</a></li>
+<li class="toctree-l2"><a class="reference internal" href="drivers/BK_Precision.Load.m_85XX.html">BK_Precision.Load.m_85XX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="drivers/Tektronix.Oscilloscope.m_Oscilloscope.html">Tektronix.Oscilloscope.m_Oscilloscope</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -67,11 +108,11 @@
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../instruments/index.html"
-                        title="previous chapter">Supported Instruments</a></p>
+  <p class="topless"><a href="../instruments/tektronix.html"
+                        title="previous chapter">Tektronix</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="api.html"
-                        title="next chapter">InstrumentControl</a></p>
+  <p class="topless"><a href="intro.html"
+                        title="next chapter">Introduction</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../../_sources/user_guide/api/index.txt"
@@ -101,10 +142,10 @@
           <a href="../../genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="api.html" title="InstrumentControl"
+          <a href="intro.html" title="Introduction"
              >next</a> |</li>
         <li class="right" >
-          <a href="../instruments/index.html" title="Supported Instruments"
+          <a href="../instruments/tektronix.html" title="Tektronix"
              >previous</a> |</li>
         <li><a href="../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
           <li><a href="../index.html" >User Guide</a> &raquo;</li> 

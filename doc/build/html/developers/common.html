@@ -25,8 +25,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Labtronyx 0.1dev-150310 documentation" href="../index.html" />
     <link rel="up" title="Developer Guide" href="index.html" />
-    <link rel="next" title="Remote Procedure Call (RPC) Library" href="rpc.html" />
-    <link rel="prev" title="Tests" href="dev_test.html" /> 
+    <link rel="prev" title="Applets" href="applets.html" /> 
   </head>
   <body>
     <div class="related">
@@ -36,10 +35,7 @@
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="rpc.html" title="Remote Procedure Call (RPC) Library"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="dev_test.html" title="Tests"
+          <a href="applets.html" title="Applets"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Developer Guide</a> &raquo;</li> 
@@ -54,14 +50,267 @@
   <div class="section" id="common-library">
 <h1>Common Library<a class="headerlink" href="#common-library" title="Permalink to this headline">¶</a></h1>
 <p>This file will contain documentation for common library modules.</p>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="rpc.html">Remote Procedure Call (RPC) Library</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="rpc.html#rpcbase">RpcBase</a></li>
-<li class="toctree-l2"><a class="reference internal" href="rpc.html#rpcclient">RpcClient</a></li>
+<div class="section" id="remote-procedure-call-rpc-library">
+<h2>Remote Procedure Call (RPC) Library<a class="headerlink" href="#remote-procedure-call-rpc-library" title="Permalink to this headline">¶</a></h2>
+<p>The RPC Library leverages JSON-RPC 2.0 and the <a class="reference external" href="http://docs.python.org/2.7/library/socket.html#module-socket" title="(in Python v2.7)"><tt class="xref py py-mod docutils literal"><span class="pre">socket</span></tt></a> library to allow
+function calls using TCP/IP Packets. This library is used heavily in
+InstrumentControl and InstrumentManager.</p>
+<div class="section" id="json-rpc">
+<h3>JSON-RPC<a class="headerlink" href="#json-rpc" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="labtronyx.common.rpc.jsonrpc.JsonRpcPacket">
+<em class="property">class </em><tt class="descclassname">labtronyx.common.rpc.jsonrpc.</tt><tt class="descname">JsonRpcPacket</tt><big>(</big><em>str_req=None</em><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/jsonrpc.html#JsonRpcPacket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.jsonrpc.JsonRpcPacket" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="rpcserver">
+<h3>RpcServer<a class="headerlink" href="#rpcserver" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="labtronyx.common.rpc.server.RpcServer">
+<em class="property">class </em><tt class="descclassname">labtronyx.common.rpc.server.</tt><tt class="descname">RpcServer</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/server.html#RpcServer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.server.RpcServer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flexible RPC server that runs in a Python thread. Wraps any Python object
+and allows remote machines to call functions and receive returned data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>logger</strong> (<em>Logging.logger</em>) &#8211; Logger instance if you wish to override the internal instance</li>
+<li><strong>port</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Port to attach srv_socket to</li>
+<li><strong>name</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Internal name for the RPC server thread</li>
 </ul>
-</li>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Method calls to functions that begin with an underscore are considered 
+protected and will not be invoked</p>
+</div>
+<dl class="method">
+<dt id="labtronyx.common.rpc.server.RpcServer.findMethod">
+<tt class="descname">findMethod</tt><big>(</big><em>method</em><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/server.html#RpcServer.findMethod"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.server.RpcServer.findMethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a bound method after searching through the server methods and the
+methods of all registered objects</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.common.rpc.server.RpcServer.getActiveConnection">
+<tt class="descname">getActiveConnection</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/server.html#RpcServer.getActiveConnection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.server.RpcServer.getActiveConnection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the connection that currenly holds the RPC execution lock. Can be
+used by registered objects to get the address of the connection</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">socket.socket</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.common.rpc.server.RpcServer.rpc_getConnections">
+<tt class="descname">rpc_getConnections</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/server.html#RpcServer.rpc_getConnections"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.server.RpcServer.rpc_getConnections" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of connections to the RPC server</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.common.rpc.server.RpcServer.rpc_getHostname">
+<tt class="descname">rpc_getHostname</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/server.html#RpcServer.rpc_getHostname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.server.RpcServer.rpc_getHostname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the hostname of the RpcServer host.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str - hostname</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.common.rpc.server.RpcServer.rpc_getMethods">
+<tt class="descname">rpc_getMethods</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/server.html#RpcServer.rpc_getMethods"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.server.RpcServer.rpc_getMethods" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of valid methods in the registered objects. Protected methods
+that begin with an underscore (&#8216;_&#8217;) are not included.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of strings</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.common.rpc.server.RpcServer.rpc_getPort">
+<tt class="descname">rpc_getPort</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/server.html#RpcServer.rpc_getPort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.server.RpcServer.rpc_getPort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the bound port of a running RpcServer thread.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">int - Port</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.common.rpc.server.RpcServer.rpc_isRunning">
+<tt class="descname">rpc_isRunning</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/server.html#RpcServer.rpc_isRunning"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.server.RpcServer.rpc_isRunning" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if there is an RpcServer thread running</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">bool - True if running, False if not running</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.common.rpc.server.RpcServer.rpc_stop">
+<tt class="descname">rpc_stop</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/server.html#RpcServer.rpc_stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.server.RpcServer.rpc_stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the server srv_socket and stop the RpcServer thread</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This operation may take a small amount of time for the srv_socket to
+register the stop request.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.common.rpc.server.RpcServer.rpc_uptime">
+<tt class="descname">rpc_uptime</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/server.html#RpcServer.rpc_uptime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.server.RpcServer.rpc_uptime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the uptime of the RpcServer</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">int - uptime in seconds</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="rpcclient">
+<h3>RpcClient<a class="headerlink" href="#rpcclient" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="labtronyx.common.rpc.client.RpcClient">
+<em class="property">class </em><tt class="descclassname">labtronyx.common.rpc.client.</tt><tt class="descname">RpcClient</tt><big>(</big><em>address</em>, <em>port</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/client.html#RpcClient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.client.RpcClient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flexible RPC client that connects to an RpcServer instance either on a local
+host or remote host. Abstracts a remote object using the magic of Python.
+By utilizing functions from the remote RpcServer and object that extends
+RpcBase, RpcClient can dynamically create method aliases. In this way, a
+RpcClient object can &#8220;become&#8221; an instance of an object on a remote host.</p>
+<p>Establishes a TCP connection to the server through which all requests are
+send and responses are received. This is a blocking operation, so only one
+request can be sent at a time (currently).</p>
+<p>To manually call a remote method, use the function RpcClient._rpcCall</p>
+<p>TODO: Add batch processing</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>address</strong> (<em>str - IPv4</em>) &#8211; IP Address of remote RpcServer (Defaults to &#8216;localhost&#8217;)</li>
+<li><strong>port</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Port of remote RpcServer</li>
 </ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="labtronyx.common.rpc.client.RpcClient._addAlias">
+<tt class="descname">_addAlias</tt><big>(</big><em>methodName</em><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/client.html#RpcClient._addAlias"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.client.RpcClient._addAlias" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dynamically create a method internal to the RpcClient object that will
+invoke an RPC method call when called.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>methodName</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Name of method</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.common.rpc.client.RpcClient._enableNotifications">
+<tt class="descname">_enableNotifications</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/client.html#RpcClient._enableNotifications"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.client.RpcClient._enableNotifications" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open a UDP port and send a notification registration request to the
+server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if successful, False otherwise</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.common.rpc.client.RpcClient._refresh">
+<tt class="descname">_refresh</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/client.html#RpcClient._refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.client.RpcClient._refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of methods from the RPC server and dynamically fill the
+object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.common.rpc.client.RpcClient._rpcCall">
+<tt class="descname">_rpcCall</tt><big>(</big><em>remote_method</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/client.html#RpcClient._rpcCall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.client.RpcClient._rpcCall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls a function on the remote host with both positional and keyword
+arguments</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd><ul class="first last simple">
+<li>Whatever the remote function returns</li>
+</ul>
+</dd>
+<dt>Exceptions:</dt>
+<dd><ul class="first last simple">
+<li>AttributeError when method not found (same as if a local call)</li>
+<li>RuntimeError when the remote host sent back a server error</li>
+<li>Rpc_Timeout when the request times out</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.common.rpc.client.RpcClient._setTimeout">
+<tt class="descname">_setTimeout</tt><big>(</big><em>new_to=None</em><big>)</big><a class="reference internal" href="../_modules/labtronyx/common/rpc/client.html#RpcClient._setTimeout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.common.rpc.client.RpcClient._setTimeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the Timeout limit for an RPC Method call</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>new_to</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; New Timeout time in seconds</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 </div>
 
@@ -71,12 +320,22 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Common Library</a><ul>
+<li><a class="reference internal" href="#remote-procedure-call-rpc-library">Remote Procedure Call (RPC) Library</a><ul>
+<li><a class="reference internal" href="#json-rpc">JSON-RPC</a></li>
+<li><a class="reference internal" href="#rpcserver">RpcServer</a></li>
+<li><a class="reference internal" href="#rpcclient">RpcClient</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
-  <p class="topless"><a href="dev_test.html"
-                        title="previous chapter">Tests</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="rpc.html"
-                        title="next chapter">Remote Procedure Call (RPC) Library</a></p>
+  <p class="topless"><a href="applets.html"
+                        title="previous chapter">Applets</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/developers/common.txt"
@@ -106,10 +365,7 @@
           <a href="../genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="rpc.html" title="Remote Procedure Call (RPC) Library"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="dev_test.html" title="Tests"
+          <a href="applets.html" title="Applets"
              >previous</a> |</li>
         <li><a href="../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
           <li><a href="index.html" >Developer Guide</a> &raquo;</li> 

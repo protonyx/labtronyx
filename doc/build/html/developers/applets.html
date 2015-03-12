@@ -1,0 +1,206 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Applets &mdash; Labtronyx 0.1dev-150310 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1dev-150310',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Labtronyx 0.1dev-150310 documentation" href="../index.html" />
+    <link rel="up" title="Developer Guide" href="index.html" />
+    <link rel="next" title="Common Library" href="common.html" />
+    <link rel="prev" title="Drivers" href="drivers.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="common.html" title="Common Library"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="drivers.html" title="Drivers"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Developer Guide</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="applets">
+<h1>Applets<a class="headerlink" href="#applets" title="Permalink to this headline">¶</a></h1>
+<p>Applets allows a seperation of visual code from instrument control code.</p>
+<p>Applets draw the graphical user interface (GUI) and handle callbacks from GUI
+elements when the user interacts with them. Applets communicate with a model
+using the <tt class="xref py py-mod docutils literal"><span class="pre">common.Rpc</span></tt> library to change the physical device state or to
+retrieve data. Views are the primary interface point for an operator. The
+purpose of views is to separate the GUI elements from the application logic.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Applets are not used in any of the API functions, they can only be launched in
+Application mode. The Application GUI will index the <cite>applets</cite> folder and
+make them available.</p>
+</div>
+<div class="section" id="widgets">
+<h2>Widgets<a class="headerlink" href="#widgets" title="Permalink to this headline">¶</a></h2>
+<p>Widgets are pre-built interface elements to perform common actions. A collection
+of widget are provided to make building views much easier. Widgets are
+instantiated</p>
+</div>
+<div class="section" id="notifications">
+<h2>Notifications<a class="headerlink" href="#notifications" title="Permalink to this headline">¶</a></h2>
+<p>Event notifications can be enabled to avoid polling in applets. They are enabled
+using by calling <cite>common.rpc.RpcClient._enableNotifications</cite></p>
+</div>
+<div class="section" id="using-collectors">
+<h2>Using Collectors<a class="headerlink" href="#using-collectors" title="Permalink to this headline">¶</a></h2>
+<p>In some applications, it may be beneficial to collect data at a regular and
+precise intervals. Collectors serve this purpose by running at regular
+intervals.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Make sure to take into account the amount of time it takes to retrieve data
+from a physical device. This will depend on the interface used, the data
+transfer rate, operating system overhead and the process priority. This will
+limit how quickly you will be able to collect data.</p>
+</div>
+<p>To start a collector, you must tell the driver which function you would like to
+call, how often you would like to call it and how to interpret the returned
+data. This is done by calling <cite>startCollector</cite> on the Instrument
+object.</p>
+<dl class="class">
+<dt id="labtronyx.Base_Driver.Base_Driver">
+<em class="property">class </em><tt class="descclassname">labtronyx.Base_Driver.</tt><tt class="descname">Base_Driver</tt><big>(</big><em>resource</em><big>)</big><a class="reference internal" href="../_modules/labtronyx/Base_Driver.html#Base_Driver"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.Base_Driver.Base_Driver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Driver Base Class</p>
+<dl class="method">
+<dt id="labtronyx.Base_Driver.Base_Driver.startCollector">
+<tt class="descname">startCollector</tt><big>(</big><em>method</em>, <em>interval</em>, <em>depth</em><big>)</big><a class="reference internal" href="../_modules/labtronyx/Base_Driver.html#Base_Driver.startCollector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.Base_Driver.Base_Driver.startCollector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts a Collector thread to retrieve data at a regular interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>method</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Name of the method to invoke</li>
+<li><strong>interval</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Interval in seconds between method invokations</li>
+<li><strong>depth</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Number of samples to keep</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Boolean, True if successful, False otherwise.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre>dev = instr.getInstrument_list()[0]
+
+dev.startCollector(&#39;getMeasurement&#39;, 100, lambda x: print x)
+</pre></div>
+</div>
+<p>To stop a collector, notify the Model by calling <cite>stopCollector</cite> with the
+name of the method.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">dev</span><span class="o">.</span><span class="n">stopCollector</span><span class="p">(</span><span class="s">&#39;getMeasurement&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To change the interval time, call the <cite>startCollector</cite> method with the new
+interval. Only one collector can be running at a time for each method, so the
+old collector will be destroyed and a new one will be created.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Applets</a><ul>
+<li><a class="reference internal" href="#widgets">Widgets</a></li>
+<li><a class="reference internal" href="#notifications">Notifications</a></li>
+<li><a class="reference internal" href="#using-collectors">Using Collectors</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="drivers.html"
+                        title="previous chapter">Drivers</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="common.html"
+                        title="next chapter">Common Library</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/developers/applets.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="common.html" title="Common Library"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="drivers.html" title="Drivers"
+             >previous</a> |</li>
+        <li><a href="../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Developer Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Kevin Kennedy (Protonyx).
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

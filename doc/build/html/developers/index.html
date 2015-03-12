@@ -25,7 +25,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Labtronyx 0.1dev-150310 documentation" href="../index.html" />
     <link rel="next" title="Introduction" href="intro.html" />
-    <link rel="prev" title="InstrumentControl" href="../user_guide/api/api.html" /> 
+    <link rel="prev" title="Tektronix.Oscilloscope.m_Oscilloscope" href="../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html" /> 
   </head>
   <body>
     <div class="related">
@@ -38,7 +38,7 @@
           <a href="intro.html" title="Introduction"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../user_guide/api/api.html" title="InstrumentControl"
+          <a href="../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html" title="Tektronix.Oscilloscope.m_Oscilloscope"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li> 
       </ul>
@@ -53,49 +53,45 @@
 <h1>Developer Guide<a class="headerlink" href="#developer-guide" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="style.html">Style Guidelines</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="style.html#coding-conventions">Coding Conventions</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="style.html#naming-variables-functions-and-classes">Naming Variables, Functions and Classes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="style.html#doc-strings">Doc Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#style-guidelines">Style Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#naming-variables-functions-and-classes">Naming Variables, Functions and Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="intro.html#doc-strings">Doc Strings</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#architecture">Architecture</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="dev_manager.html">InstrumentManager</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="dev_manager.html#architecture">Architecture</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dev_manager.html#resources">Resources</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dev_manager.html#properties">Properties</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dev_manager.html#internal-api">Internal API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="interfaces.html">Controllers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="interfaces.html#types-of-controllers">Types of Controllers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interfaces.html#controller-template">Controller Template</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interfaces.html#required-api-implementations">Required API Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interfaces.html#optional-api-implementations">Optional API Implementations</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="dev_controller.html">Controllers</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="dev_controller.html#types-of-controllers">Types of Controllers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dev_controller.html#controller-template">Controller Template</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dev_controller.html#required-api-implementations">Required API Implementations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dev_controller.html#optional-api-implementations">Optional API Implementations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="resources.html#properties">Properties</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="dev_model.html">Models</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="dev_model.html#execution-model">Execution Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dev_model.html#properties">Properties</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dev_model.html#model-inheritance">Model Inheritance</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dev_model.html#model-template">Model Template</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dev_model.html#recommended-api-implementations">Recommended API Implementations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="drivers.html">Drivers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="drivers.html#execution-model">Execution Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="drivers.html#properties">Properties</a></li>
+<li class="toctree-l2"><a class="reference internal" href="drivers.html#driver-inheritance">Driver Inheritance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="drivers.html#driver-template">Driver Template</a></li>
+<li class="toctree-l2"><a class="reference internal" href="drivers.html#recommended-api-implementations">Recommended API Implementations</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="dev_view.html">Views</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="dev_view.html#widgets">Widgets</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="dev_test.html">Tests</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="dev_test.html#test-template">Test Template</a></li>
+<li class="toctree-l1"><a class="reference internal" href="applets.html">Applets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="applets.html#widgets">Widgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="applets.html#notifications">Notifications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="applets.html#using-collectors">Using Collectors</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="common.html">Common Library</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="rpc.html">Remote Procedure Call (RPC) Library</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="rpc.html#rpcbase">RpcBase</a></li>
-<li class="toctree-l3"><a class="reference internal" href="rpc.html#rpcclient">RpcClient</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common.html#remote-procedure-call-rpc-library">Remote Procedure Call (RPC) Library</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="common.html#json-rpc">JSON-RPC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="common.html#rpcserver">RpcServer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="common.html#rpcclient">RpcClient</a></li>
 </ul>
 </li>
 </ul>
@@ -111,8 +107,8 @@
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../user_guide/api/api.html"
-                        title="previous chapter">InstrumentControl</a></p>
+  <p class="topless"><a href="../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html"
+                        title="previous chapter">Tektronix.Oscilloscope.m_Oscilloscope</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="intro.html"
                         title="next chapter">Introduction</a></p>
@@ -148,7 +144,7 @@
           <a href="intro.html" title="Introduction"
              >next</a> |</li>
         <li class="right" >
-          <a href="../user_guide/api/api.html" title="InstrumentControl"
+          <a href="../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html" title="Tektronix.Oscilloscope.m_Oscilloscope"
              >previous</a> |</li>
         <li><a href="../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li> 
       </ul>

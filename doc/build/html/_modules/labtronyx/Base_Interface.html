@@ -1,0 +1,216 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>labtronyx.Base_Interface &mdash; Labtronyx 0.1dev-150310 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1dev-150310',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Labtronyx 0.1dev-150310 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for labtronyx.Base_Interface</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">importlib</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">common</span>
+<span class="kn">import</span> <span class="nn">common.rpc</span> <span class="kn">as</span> <span class="nn">rpc</span>
+
+<div class="viewcode-block" id="Base_Interface"><a class="viewcode-back" href="../../developers/interfaces.html#labtronyx.Base_Interface.Base_Interface">[docs]</a><span class="k">class</span> <span class="nc">Base_Interface</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Interface Base Class</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">REFRESH_RATE</span> <span class="o">=</span> <span class="mf">5.0</span> <span class="c"># Seconds</span>
+
+    <span class="c"># TODO: Interface will have hooks into the persistence config to &quot;remember&quot; how</span>
+    <span class="c">#       a particular device is configured when the program is run in the future.</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">manager</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param manager: Reference to the InstrumentManager instance</span>
+<span class="sd">        :type manager: InstrumentManager object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">common_globals</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">ICF_Common</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">common_globals</span><span class="o">.</span><span class="n">getConfig</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">common_globals</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">resources</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">manager</span> <span class="o">=</span> <span class="n">manager</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">e_alive</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">e_alive</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">__interface_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getInterfaceName</span><span class="p">(),</span> <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__interface_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Interface Thread</span>
+    <span class="c">#===========================================================================</span>
+    
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Interface thread</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">while</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">e_alive</span><span class="o">.</span><span class="n">isSet</span><span class="p">()):</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+            
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">REFRESH_RATE</span><span class="p">)</span>
+            
+    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">e_alive</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__interface_thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+            
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Interface Methods</span>
+    <span class="c">#===========================================================================</span>
+
+    <span class="k">def</span> <span class="nf">getInterfaceName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+
+    <span class="c"># Inheriting classes must implement these functions:</span>
+<div class="viewcode-block" id="Base_Interface.open"><a class="viewcode-back" href="../../developers/interfaces.html#labtronyx.Base_Interface.Base_Interface.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Interface Initialization</span>
+<span class="sd">        </span>
+<span class="sd">        Make any system driver calls necessary to initialize communication. If</span>
+<span class="sd">        any kind of exception occurs that will inhibit communication, this</span>
+<span class="sd">        function should return False to indicate an error to the </span>
+<span class="sd">        InstrumentManager.</span>
+<span class="sd">        </span>
+<span class="sd">        Any exceptions raised will be caught by the InstrumentManager, and it</span>
+<span class="sd">        will be assumed that the interface failed to initialize. A subsequent</span>
+<span class="sd">        call to :func:`close` will be made in this case.</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: bool - True if ready, False if error occurred</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    </div>
+<div class="viewcode-block" id="Base_Interface.close"><a class="viewcode-back" href="../../developers/interfaces.html#labtronyx.Base_Interface.Base_Interface.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Interface clean-up</span>
+<span class="sd">        </span>
+<span class="sd">        Make any system driver calls necessary to clean-up interface</span>
+<span class="sd">        operations. This function should explicitly free any system resources</span>
+<span class="sd">        to prevent locking errors.</span>
+<span class="sd">        </span>
+<span class="sd">        Any exceptions raised will be caught by the InstrumentManager.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+<div class="viewcode-block" id="Base_Interface.getResources"><a class="viewcode-back" href="../../developers/interfaces.html#labtronyx.Base_Interface.Base_Interface.getResources">[docs]</a>    <span class="k">def</span> <span class="nf">getResources</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the dictionary of resources by ID.</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+<div class="viewcode-block" id="Base_Interface.refresh"><a class="viewcode-back" href="../../developers/interfaces.html#labtronyx.Base_Interface.Base_Interface.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Refreshes the resource list. This function is called regularly by the</span>
+<span class="sd">        controller thread.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    </div>
+    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ResID</span><span class="p">,</span> <span class="n">VID</span><span class="p">,</span> <span class="n">PID</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Manually add a resource to the controller</span>
+<span class="sd">        </span>
+<span class="sd">        :param ResID: Resource Identifier</span>
+<span class="sd">        :type ResID: str</span>
+<span class="sd">        :param VID: Vendor Identifier</span>
+<span class="sd">        :type VID: str</span>
+<span class="sd">        :param PID: Product Identifier</span>
+<span class="sd">        :type PID: str</span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    
+    <span class="k">def</span> <span class="nf">destroyResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ResID</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove a manually added resource</span>
+<span class="sd">        </span>
+<span class="sd">        :param ResID: Resource Identifier</span>
+<span class="sd">        :type ResID: str</span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Kevin Kennedy (Protonyx).
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

@@ -25,7 +25,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Labtronyx 0.1dev-150310 documentation" href="../index.html" />
     <link rel="up" title="Developer Guide" href="index.html" />
-    <link rel="next" title="Style Guidelines" href="style.html" />
+    <link rel="next" title="Controllers" href="interfaces.html" />
     <link rel="prev" title="Developer Guide" href="index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="style.html" title="Style Guidelines"
+          <a href="interfaces.html" title="Controllers"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Developer Guide"
@@ -53,6 +53,39 @@
             
   <div class="section" id="introduction">
 <h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="style-guidelines">
+<h2>Style Guidelines<a class="headerlink" href="#style-guidelines" title="Permalink to this headline">¶</a></h2>
+<p>See Python <span class="target" id="index-0"></span><a class="pep reference external" href="http://www.python.org/dev/peps/pep-0008"><strong>PEP 8</strong></a></p>
+<p>See <a class="reference external" href="https://google-styleguide.googlecode.com/svn/trunk/pyguide.html">Google Style Guide</a></p>
+<p>Exceptions to those documents are listed in the following sections.</p>
+<div class="section" id="naming-variables-functions-and-classes">
+<h3>Naming Variables, Functions and Classes<a class="headerlink" href="#naming-variables-functions-and-classes" title="Permalink to this headline">¶</a></h3>
+<p>Classes should be named using CamelCase with the first letter capitalized.</p>
+<p>Functions should be named using camelCase with the first letter <em>not</em> capitalized.</p>
+<p>Variables as class attributes should use camelCase, but variables within a
+function do not have to follow any particular convention.</p>
+<p>Constants should be ALL_CAPS with underscores for spaces</p>
+</div>
+<div class="section" id="doc-strings">
+<h3>Doc Strings<a class="headerlink" href="#doc-strings" title="Permalink to this headline">¶</a></h3>
+<p>This documentation is generated using <a class="reference external" href="http://sphinx-doc.org/">Sphinx</a>.
+Prefer Sphinx-style doc-strings over the Google Style Guide.</p>
+</div>
+</div>
+<div class="section" id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h2>
+<p>The InstrumentManager class uses a slightly modified <a class="reference external" href="http://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller">Model-View-Controller</a>
+design paradigm, which separates the low-level system calls from the instrument
+drivers. By using this design approach, core program functionality is isolated
+into smaller chunks in order to keep errors from propagating throughout the
+entire program. If an exception is raised in a Controller or Model, it can be
+caught easily before the entire framework is destabilized.</p>
+<p>On startup, the InstrumentManager will scan the program directory for valid
+controllers. For each controller that is found, a scan will be initiated and the
+found resources indexed. Once all resources are indexed, InstrumentManager
+attempts to load models for each of them based on the Vendor and Product
+identifier returned from the controller.</p>
+</div>
 </div>
 
 
@@ -61,12 +94,25 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Introduction</a><ul>
+<li><a class="reference internal" href="#style-guidelines">Style Guidelines</a><ul>
+<li><a class="reference internal" href="#naming-variables-functions-and-classes">Naming Variables, Functions and Classes</a></li>
+<li><a class="reference internal" href="#doc-strings">Doc Strings</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#architecture">Architecture</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
                         title="previous chapter">Developer Guide</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="style.html"
-                        title="next chapter">Style Guidelines</a></p>
+  <p class="topless"><a href="interfaces.html"
+                        title="next chapter">Controllers</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/developers/intro.txt"
@@ -96,7 +142,7 @@
           <a href="../genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="style.html" title="Style Guidelines"
+          <a href="interfaces.html" title="Controllers"
              >next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Developer Guide"

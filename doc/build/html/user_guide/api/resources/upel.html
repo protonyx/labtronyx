@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>&lt;no title&gt; &mdash; Labtronyx 0.1dev-150310 documentation</title>
+    <title>UPEL Instrument Control Protocol (ICP) &mdash; Labtronyx 0.1dev-150310 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -23,7 +23,10 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <link rel="top" title="Labtronyx 0.1dev-150310 documentation" href="../../../index.html" /> 
+    <link rel="top" title="Labtronyx 0.1dev-150310 documentation" href="../../../index.html" />
+    <link rel="up" title="Resources" href="index.html" />
+    <link rel="next" title="Virtual Instrument Software Architecture (VISA)" href="visa.html" />
+    <link rel="prev" title="Serial" href="serial.html" /> 
   </head>
   <body>
     <div class="related">
@@ -32,7 +35,16 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li><a href="../../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="visa.html" title="Virtual Instrument Software Architecture (VISA)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="serial.html" title="Serial"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >User Guide</a> &raquo;</li>
+          <li><a href="../index.html" >Labtronyx Python Library</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Resources</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -41,13 +53,68 @@
         <div class="bodywrapper">
           <div class="body">
             
-  
+  <div class="section" id="upel-instrument-control-protocol-icp">
+<h1>UPEL Instrument Control Protocol (ICP)<a class="headerlink" href="#upel-instrument-control-protocol-icp" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<p>None</p>
+</div>
+<div class="section" id="interface">
+<h2>Interface<a class="headerlink" href="#interface" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="labtronyx.interfaces.i_UPEL.i_UPEL">
+<em class="property">class </em><tt class="descclassname">labtronyx.interfaces.i_UPEL.</tt><tt class="descname">i_UPEL</tt><big>(</big><em>manager</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/interfaces/i_UPEL.html#i_UPEL"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.interfaces.i_UPEL.i_UPEL" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="labtronyx.interfaces.i_UPEL.i_UPEL.addResource">
+<tt class="descname">addResource</tt><big>(</big><em>ResID</em>, <em>VID=None</em>, <em>PID=None</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/interfaces/i_UPEL.html#i_UPEL.addResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.interfaces.i_UPEL.i_UPEL.addResource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Treats an addResource request as a hint that a device exists. Attempts
+to send a discovery packet to the device to get more information.</p>
+<p>The ICP thread will automatically handle the creation of an
+instrument for the new resource.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ResID</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Resource ID (IP Address)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">bool. True if successful, False otherwise</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.interfaces.i_UPEL.i_UPEL.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#labtronyx.interfaces.i_UPEL.i_UPEL.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interface thread</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
 
           </div>
         </div>
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="../../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">UPEL Instrument Control Protocol (ICP)</a><ul>
+<li><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li><a class="reference internal" href="#interface">Interface</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="serial.html"
+                        title="previous chapter">Serial</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="visa.html"
+                        title="next chapter">Virtual Instrument Software Architecture (VISA)</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../../../_sources/user_guide/api/resources/upel.txt"
@@ -76,7 +143,16 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../../genindex.html" title="General Index"
              >index</a></li>
-        <li><a href="../../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li> 
+        <li class="right" >
+          <a href="visa.html" title="Virtual Instrument Software Architecture (VISA)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="serial.html" title="Serial"
+             >previous</a> |</li>
+        <li><a href="../../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >User Guide</a> &raquo;</li>
+          <li><a href="../index.html" >Labtronyx Python Library</a> &raquo;</li>
+          <li><a href="index.html" >Resources</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

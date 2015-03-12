@@ -1,0 +1,649 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Introduction &mdash; Labtronyx 0.1dev-150310 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1dev-150310',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Labtronyx 0.1dev-150310 documentation" href="../../index.html" />
+    <link rel="up" title="Labtronyx Python Library" href="index.html" />
+    <link rel="next" title="Developing Scripts" href="scripts.html" />
+    <link rel="prev" title="Labtronyx Python Library" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="scripts.html" title="Developing Scripts"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Labtronyx Python Library"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >User Guide</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Labtronyx Python Library</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>Labtronyx was built in Python to take advantage of the powerful capabilities
+and rapid development</p>
+<div class="section" id="importing-instrumentcontrol">
+<h2>Importing InstrumentControl<a class="headerlink" href="#importing-instrumentcontrol" title="Permalink to this headline">¶</a></h2>
+<p>To use the InstrumentControl API:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">labtronyx</span>
+<span class="n">instr</span> <span class="o">=</span> <span class="n">labtronyx</span><span class="o">.</span><span class="n">InstrumentControl</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="connect-to-a-host">
+<h2>Connect to a Host<a class="headerlink" href="#connect-to-a-host" title="Permalink to this headline">¶</a></h2>
+<p>On instantiation, InstrumentControl will attempt to connect to a local
+InstrumentManager instance. Connections to InstrumentManager instances on remote
+machines can be added or removed using <tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.addManager()</span></tt> and
+<tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.removeManager()</span></tt>, respectively.</p>
+<p>When an InstrumentManager is added using <tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.addManager()</span></tt>,
+all of the remote resources are cached by an internal call to
+<tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.refreshManager()</span></tt>. Cached resources are indexed by their
+Unique Resource Identifier (UUID).</p>
+<p>If an <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> instance is not already running, you can start
+one using <tt class="xref py py-func docutils literal"><span class="pre">startWaitManager()</span></tt> or <tt class="xref py py-func docutils literal"><span class="pre">startManager()</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">instr</span><span class="o">.</span><span class="n">startWaitManager</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>By default, InstrumentControl will attempt to connect to a local instance of
+InstrumentManager. To connect to an InstrumentManager instance on another host:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">instr</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="s">&#39;192.168.0.1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>InstrumentControl can also resolve hostnames:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">instr</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="s">&#39;kkennedy&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="connecting-to-instruments">
+<h2>Connecting to Instruments<a class="headerlink" href="#connecting-to-instruments" title="Permalink to this headline">¶</a></h2>
+<p>InstrumentControl can connect to any Instrument on any machine that has been
+added using <tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.addManager()</span></tt>. You can find instruments by:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Type</li>
+<li>Model Number</li>
+<li>Serial Number</li>
+</ul>
+</div></blockquote>
+<p>Looking up instruments by Type and Model Number may return multiple instruments
+if there are many devices connected. In these cases, InstrumentControl will
+return a list of devices that match. The programmer will have to use other
+logic to determine which device to use. The easiest way to deal with this
+situation is to identify a device by serial number, though there is always the
+possibility that devices from different vendors could have the same serial
+number.</p>
+<p>To connect to instruments by type:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">scope</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">getInstrument_type</span><span class="p">(</span><span class="s">&#39;Oscilloscope&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To connect to instruments by Model number:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">smu</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">getInstrument_model</span><span class="p">(</span><span class="s">&#39;B2902A&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To connect to instruments by Serial number:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">dev</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">getInstrument_serial</span><span class="p">(</span><span class="s">&#39;12345&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To get a list of all instruments:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nb">all</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">getInstrument_list</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="using-instruments">
+<h2>Using Instruments<a class="headerlink" href="#using-instruments" title="Permalink to this headline">¶</a></h2>
+<p>Instruments can be used like any Python object, with some limitations. Under
+the hood, Instruments are an RPC-endpoint connected to a socket on the
+InstrumentManager. While this whole process should be mostly transparent to
+both the user and the developer, some things are limited:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Only methods can be called, it is not possible to access object attributes</li>
+<li>Accessing or Modifying attributes can only be done by wrapping the attribute in a set of methods (getters and setters)</li>
+<li>Methods that begin with &#8216;_&#8217; are considered protected and cannot be accessed</li>
+<li>The RPC subsystem introduces 2-20 milliseconds of latency</li>
+</ul>
+</div></blockquote>
+<p>see <a class="reference internal" href="drivers/index.html"><em>Driver APIs</em></a> for further documentation on each
+driver.</p>
+</div>
+<div class="section" id="loading-and-unloading-drivers">
+<h2>Loading and Unloading Drivers<a class="headerlink" href="#loading-and-unloading-drivers" title="Permalink to this headline">¶</a></h2>
+<p>Drivers are code modules that contain the information needed to communicate
+with a specific instrument. Labtronyx will try to automatically identify a
+suitable driver to load, but it is sometimes necessary to load a specific
+driver.</p>
+<p>To load a driver for an instrument, you must know the UUID of the instrument.
+The UUID can be retrieved if you know the Resource Identifier (Resource ID) of
+the instrument. The Resource ID is related to how the instrument is connected
+to the computer. e.g. COM5 (Serial), ASRL::5 (VISA):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">instrument</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">getInstrument</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="s">&#39;localhost&#39;</span><span class="p">,</span> <span class="n">resID</span><span class="o">=</span><span class="s">&#39;ASRL::9&#39;</span><span class="p">)</span>
+
+<span class="n">instrument</span><span class="o">.</span><span class="n">loadDriver</span><span class="p">(</span><span class="s">&#39;Tektronix.Oscilloscope.m_DigitalPhosphor&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To unload a driver:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">instrument</span><span class="o">.</span><span class="n">unloadModel</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="api-documentation">
+<h2>API Documentation<a class="headerlink" href="#api-documentation" title="Permalink to this headline">¶</a></h2>
+<p>The InstrumentControl object is the primary interface to communicating with
+instruments. It simplifies script development by abstracting local and remote
+instruments as simple Python objects.</p>
+<dl class="class">
+<dt id="labtronyx.InstrumentControl.InstrumentControl">
+<em class="property">class </em><tt class="descclassname">labtronyx.InstrumentControl.</tt><tt class="descname">InstrumentControl</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Logger</strong> (<em>Logging.logger</em>) &#8211; Logger instance if you wish to override the internal instance</td>
+</tr>
+</tbody>
+</table>
+<p>InstrumentControl is a helper class that provides functionality to 
+communicate with any number of local or remote InstrumentManager instances.</p>
+<p>InstrumentControl simplifies the process of writing test instrument
+automation and control scripts. This is accomplished by abstracting the
+communication with <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> instances that contain the device
+interface code.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">InstrumentManager must be running on the local or remote machine that you
+are trying to connect to. <tt class="xref py py-func docutils literal"><span class="pre">InstrumentControl.startManager()</span></tt> can be
+used to spawn a new process of InstrumentManager.</p>
+</div>
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.addManager">
+<tt class="descname">addManager</tt><big>(</big><em>address</em>, <em>port=None</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.addManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.addManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Connect to a manager instance at the given address and port. If the
+connection is successful, the remote resources are automatically
+added to the pool of resources using <tt class="xref py py-func docutils literal"><span class="pre">refreshResources()</span></tt></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>address</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; IP Address or Hostname</li>
+<li><strong>port</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Port</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">True if manager found, False if connection failed</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.addResource">
+<tt class="descname">addResource</tt><big>(</big><em>address</em>, <em>controller</em>, <em>ResID</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.addResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.addResource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a managed resource within a controller object</p>
+<p>If <cite>controller</cite> is not a valid controller on the remote manager instance,
+or if the controller does not support manually adding resources, this 
+function will return False.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Controllers that rely on system resources such as VISA or serial
+can only communicate with devices that are known to the system.
+Controllers that have no way to scan or enumerate devices depend on
+this function to make it aware of the device. An example of this is
+a CAN bus-based Controller, which must know a device address before
+communication can be established.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>address</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; IP Address of manager</li>
+<li><strong>controller</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Name of controller to attach new resource</li>
+<li><strong>ResID</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Resource Identifier</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">bool - True if success, False otherwise</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.getConnectedAddresses">
+<tt class="descname">getConnectedAddresses</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.getConnectedAddresses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.getConnectedAddresses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of connected addresses</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of connected addresses</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.getConnectedHosts">
+<tt class="descname">getConnectedHosts</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.getConnectedHosts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.getConnectedHosts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of connected hostnames</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of connected hostnames</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.getDrivers">
+<tt class="descname">getDrivers</tt><big>(</big><em>address</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.getDrivers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.getDrivers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the list of Models from an InstrumentManager instance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; IP Address of manager</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.getHostname">
+<tt class="descname">getHostname</tt><big>(</big><em>address</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.getHostname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.getHostname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the Hostname for the given address</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> (<em>str - IPv4</em>) &#8211; IP Address</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.getInstrument">
+<tt class="descname">getInstrument</tt><big>(</big><em>res_uuid</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.getInstrument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.getInstrument" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> instance that is linked to a resource on a
+local or remote machine.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>res_uuid</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Unique Resource Identifier (UUID)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">RpcClient object or None if UUID does not match a valid resource</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.getInstrument_driver">
+<tt class="descname">getInstrument_driver</tt><big>(</big><em>d_driver</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.getInstrument_driver"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.getInstrument_driver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects for resources with the given 
+device driver (Model).</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Only resources that have a model loaded will report a device type.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.getInstrument_list">
+<tt class="descname">getInstrument_list</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.getInstrument_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.getInstrument_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects for all resources with models
+loaded</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This function opens a socket to every known instrument with a Model
+loaded. This could use a lot of system resources both locally and
+on remote InstrumentManagers if you don&#8217;t need them.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.getInstrument_model">
+<tt class="descname">getInstrument_model</tt><big>(</big><em>model_number</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.getInstrument_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.getInstrument_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects for resources with the given 
+model number.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Only resources that have a model loaded will report a model number.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.getInstrument_serial">
+<tt class="descname">getInstrument_serial</tt><big>(</big><em>serial_number</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.getInstrument_serial"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.getInstrument_serial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> object for the resource with the given serial
+number.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Only resources that have a model loaded will report a serial number.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> object</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.getInstrument_type">
+<tt class="descname">getInstrument_type</tt><big>(</big><em>d_type</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.getInstrument_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.getInstrument_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects for resources with the given 
+device type.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Only resources that have a model loaded will report a device type.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.getInterfaces">
+<tt class="descname">getInterfaces</tt><big>(</big><em>address</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.getInterfaces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.getInterfaces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of controllers from a given InstrumentManager instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> (<em>str - IPv4</em>) &#8211; IP Address</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.getManager">
+<tt class="descname">getManager</tt><big>(</big><em>address=None</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.getManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.getManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get an InstrumentManager object for the host at <cite>address</cite>. Object
+returned is an <tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt> object that is linked to
+a remote InstrumentManager instance.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This will always return an <tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt> object, even
+if the InstrumentManager instance is on the local machine.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; IP Address of manger</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref py py-class docutils literal"><span class="pre">common.rpc.RpcClient</span></tt> object or None if there is no         existing connection to <cite>address</cite></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.getResourceProperties">
+<tt class="descname">getResourceProperties</tt><big>(</big><em>res_uuid</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.getResourceProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.getResourceProperties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the resource property dictionary for a given UUID</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>res_uuid</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Unique Resource Identifier (UUID)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.getResources">
+<tt class="descname">getResources</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.getResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.getResources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a listing of all resources from all InstrumentManager instances.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dict (Resource UUID as key)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.refreshResources">
+<tt class="descname">refreshResources</tt><big>(</big><em>address=None</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.refreshResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.refreshResources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh the local resource cache of all connected InstrumentManager
+instances. If an address is provided, only the specified cache will be
+refreshed.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Use <tt class="xref py py-func docutils literal"><span class="pre">addManager()</span></tt> to establish a connection to a manager
+before calling this function.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; IP Address or Hostname</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True unless there is no existing connection to <cite>address</cite></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.removeManager">
+<tt class="descname">removeManager</tt><big>(</big><em>address</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.removeManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.removeManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disconnect from the manager instance at <cite>address</cite> and purge all cached
+resources from that host.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; IP Address of manger</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True unless there is no existing connection to <cite>address</cite></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.startManager">
+<tt class="descname">startManager</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.startManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.startManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start a local instance of <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> using 
+<tt class="xref py py-func docutils literal"><span class="pre">subprocess.Popen()</span></tt>.</p>
+<p>No attempt is made to check whether an <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt>
+process is already running. The default behavior for :class:&#8217;InstrumentManager&#8217;
+is to exit when the port is already in use.</p>
+<p>See :class:&#8217;InstrumentManager&#8217; documentation for more information.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This function does not block! If the <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt>
+instance is not fully initialized before attempting to connect to it,
+timeouts will occur.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.stopManager">
+<tt class="descname">stopManager</tt><big>(</big><em>address</em>, <em>port=None</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.stopManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.stopManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a stop signal to a manager instance running on a local or remote
+machine.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> cannot be restarted once it is stopped</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>address</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; IP Address or Hostname</li>
+<li><strong>port</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Port</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Nothing</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Introduction</a><ul>
+<li><a class="reference internal" href="#importing-instrumentcontrol">Importing InstrumentControl</a></li>
+<li><a class="reference internal" href="#connect-to-a-host">Connect to a Host</a></li>
+<li><a class="reference internal" href="#connecting-to-instruments">Connecting to Instruments</a></li>
+<li><a class="reference internal" href="#using-instruments">Using Instruments</a></li>
+<li><a class="reference internal" href="#loading-and-unloading-drivers">Loading and Unloading Drivers</a></li>
+<li><a class="reference internal" href="#api-documentation">API Documentation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Labtronyx Python Library</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="scripts.html"
+                        title="next chapter">Developing Scripts</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/user_guide/api/intro.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="scripts.html" title="Developing Scripts"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Labtronyx Python Library"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >User Guide</a> &raquo;</li>
+          <li><a href="index.html" >Labtronyx Python Library</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Kevin Kennedy (Protonyx).
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

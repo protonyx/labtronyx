@@ -1,8 +1,11 @@
-Application Programmer Interface (API)
-======================================
+Labtronyx Python Library
+========================
 
 .. toctree::
 
-   api
+   intro
+   scripts
+   advanced
+   examples
    resources/index
    drivers/index

@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Advanced Topics &mdash; Labtronyx 0.1dev-150310 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1dev-150310',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Labtronyx 0.1dev-150310 documentation" href="../../index.html" />
+    <link rel="up" title="Labtronyx Python Library" href="index.html" />
+    <link rel="next" title="Examples" href="examples.html" />
+    <link rel="prev" title="Developing Scripts" href="scripts.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="examples.html" title="Examples"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="scripts.html" title="Developing Scripts"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >User Guide</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Labtronyx Python Library</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="advanced-topics">
+<h1>Advanced Topics<a class="headerlink" href="#advanced-topics" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="manually-managing-resources">
+<h2>Manually Managing Resources<a class="headerlink" href="#manually-managing-resources" title="Permalink to this headline">¶</a></h2>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This is an experimental feature and has not been well tested, since there
+are no devices currently that would need this support. Its possible it won&#8217;t
+work at all. This section should give you an idea of how it will work...
+someday.</p>
+</div>
+<p>The ability to manage resources is dependent on the nature of a controller.
+Most controllers accessed a fixed set of system resources that are known.
+A serial controller is an example of this, as the system only allows connection
+to a known COM port and provides a list of available ports. Some controllers
+may not always be aware of available resources. For example, if a controller
+interfaces with a CAN bus, it may need additional information like a device
+address in order to establish communication. It is not always practical to scan
+through the entirety of possible device addresses to find a device.</p>
+<p>For controllers that support manually adding resources:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">InstrumentControl</span> <span class="kn">import</span> <span class="n">InstrumentControl</span>
+<span class="n">instr</span> <span class="o">=</span> <span class="n">InstrumentControl</span><span class="p">()</span>
+
+<span class="n">new_uuid</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">addResource</span><span class="p">(</span><span class="s">&#39;c_CAN&#39;</span><span class="p">,</span> <span class="s">&#39;ACME&#39;</span><span class="p">,</span> <span class="s">&#39;ABC 2000&#39;</span><span class="p">)</span>
+
+<span class="c"># Refresh the resources list to find the new resource</span>
+<span class="n">instr</span><span class="o">.</span><span class="n">refreshManager</span><span class="p">()</span>
+
+<span class="n">widget</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">getInstrument_model</span><span class="p">(</span><span class="s">&#39;ABC 2000&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To destroy a resource, provide the Resource UUID:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">instr</span><span class="o">.</span><span class="n">destroyResource</span><span class="p">(</span><span class="s">&#39;c_CAN&#39;</span><span class="p">,</span> <span class="s">&#39;360ba14f-19be-11e4-95bf-a0481c94faff&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Advanced Topics</a><ul>
+<li><a class="reference internal" href="#manually-managing-resources">Manually Managing Resources</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="scripts.html"
+                        title="previous chapter">Developing Scripts</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="examples.html"
+                        title="next chapter">Examples</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/user_guide/api/advanced.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="examples.html" title="Examples"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="scripts.html" title="Developing Scripts"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >User Guide</a> &raquo;</li>
+          <li><a href="index.html" >Labtronyx Python Library</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Kevin Kennedy (Protonyx).
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

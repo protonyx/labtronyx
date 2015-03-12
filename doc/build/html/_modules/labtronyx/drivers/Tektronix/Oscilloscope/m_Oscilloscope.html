@@ -1,0 +1,920 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope &mdash; Labtronyx 0.1dev-150310 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../../',
+        VERSION:     '0.1dev-150310',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+    <link rel="top" title="Labtronyx 0.1dev-150310 documentation" href="../../../../../index.html" />
+    <link rel="up" title="Module code" href="../../../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="../../../../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
+          <li><a href="../../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">Base_Driver</span> <span class="kn">import</span> <span class="n">Base_Driver</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<div class="viewcode-block" id="m_Oscilloscope"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope">[docs]</a><span class="k">class</span> <span class="nc">m_Oscilloscope</span><span class="p">(</span><span class="n">Base_Driver</span><span class="p">):</span>
+    
+    <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="c"># Model revision author</span>
+        <span class="s">&#39;author&#39;</span><span class="p">:</span>               <span class="s">&#39;KKENNEDY&#39;</span><span class="p">,</span>
+        <span class="c"># Model version</span>
+        <span class="s">&#39;version&#39;</span><span class="p">:</span>              <span class="s">&#39;1.0&#39;</span><span class="p">,</span>
+        <span class="c"># Revision date of Model version</span>
+        <span class="s">&#39;date&#39;</span><span class="p">:</span>                 <span class="s">&#39;2015-01-31&#39;</span><span class="p">,</span>
+        <span class="c"># Device Manufacturer</span>
+        <span class="s">&#39;deviceVendor&#39;</span><span class="p">:</span>         <span class="s">&#39;Tektronix&#39;</span><span class="p">,</span>
+        <span class="c"># List of compatible device models</span>
+        <span class="s">&#39;deviceModel&#39;</span><span class="p">:</span>          <span class="p">[</span> <span class="c"># DPO2XXX Series</span>
+                    
+                                <span class="c"># DPO3XXX Series</span>
+                                <span class="s">&quot;DPO2024&quot;</span><span class="p">,</span> <span class="c"># TODO: Verify this driver works for this model</span>
+                                <span class="c"># DPO4XXX Series</span>
+                                
+                                <span class="c"># DPO5XXX Series</span>
+                                <span class="s">&quot;DPO5054&quot;</span><span class="p">,</span> <span class="s">&quot;DPO5054B&quot;</span><span class="p">,</span> <span class="s">&quot;DPO5104&quot;</span><span class="p">,</span> <span class="s">&quot;DPO5104B&quot;</span><span class="p">,</span> 
+                                <span class="s">&quot;DPO5204&quot;</span><span class="p">,</span> <span class="s">&quot;DPO5204B&quot;</span><span class="p">,</span> <span class="s">&quot;DPO5034&quot;</span><span class="p">,</span> <span class="s">&quot;DPO5034B&quot;</span><span class="p">,</span>
+                                <span class="c"># DPO7XXX Series</span>
+                                <span class="s">&quot;DPO7054C&quot;</span><span class="p">,</span> <span class="s">&quot;DPO7104C&quot;</span><span class="p">,</span> <span class="s">&quot;DPO7254C&quot;</span><span class="p">,</span> <span class="s">&quot;DPO7354C&quot;</span><span class="p">,</span>
+                                <span class="c"># DPO7XXXX Series</span>
+                                <span class="s">&quot;DPO70404C&quot;</span><span class="p">,</span> <span class="s">&quot;DPO70604C&quot;</span><span class="p">,</span> <span class="s">&quot;DPO70804C&quot;</span><span class="p">,</span> 
+                                <span class="s">&quot;DPO71254C&quot;</span><span class="p">,</span> <span class="s">&quot;DPO71604C&quot;</span><span class="p">,</span> <span class="s">&quot;DPO72004C&quot;</span><span class="p">,</span> 
+                                <span class="s">&quot;DPO72304DX&quot;</span><span class="p">,</span> <span class="s">&quot;DPO72504DX&quot;</span><span class="p">,</span> <span class="s">&quot;DPO73304DX&quot;</span><span class="p">],</span>
+        <span class="c"># Device type    </span>
+        <span class="s">&#39;deviceType&#39;</span><span class="p">:</span>           <span class="s">&#39;Oscilloscope&#39;</span><span class="p">,</span>      
+        
+        <span class="c"># List of compatible resource types</span>
+        <span class="s">&#39;validResourceTypes&#39;</span><span class="p">:</span>   <span class="p">[</span><span class="s">&#39;VISA&#39;</span><span class="p">],</span>  
+        
+        <span class="c">#=======================================================================</span>
+        <span class="c"># VISA Attributes        </span>
+        <span class="c">#=======================================================================</span>
+        <span class="c"># Compatible VISA Manufacturers</span>
+        <span class="s">&#39;VISA_compatibleManufacturers&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;TEKTRONIX&#39;</span><span class="p">,</span> <span class="s">&#39;Tektronix&#39;</span><span class="p">],</span>
+        <span class="c"># Compatible VISA Models</span>
+        <span class="s">&#39;VISA_compatibleModels&#39;</span><span class="p">:</span>        <span class="p">[</span><span class="s">&quot;DPO2024&quot;</span>
+                                         <span class="s">&quot;DPO5054&quot;</span><span class="p">,</span> <span class="s">&quot;DPO5054B&quot;</span><span class="p">,</span> <span class="s">&quot;DPO5104&quot;</span><span class="p">,</span> 
+                                         <span class="s">&quot;DPO5104B&quot;</span><span class="p">,</span> <span class="s">&quot;DPO5204&quot;</span><span class="p">,</span> <span class="s">&quot;DPO5204B&quot;</span><span class="p">,</span> 
+                                         <span class="s">&quot;DPO5034&quot;</span><span class="p">,</span> <span class="s">&quot;DPO5034B&quot;</span><span class="p">,</span> <span class="s">&quot;DPO7054C&quot;</span><span class="p">,</span> 
+                                         <span class="s">&quot;DPO7104C&quot;</span><span class="p">,</span> <span class="s">&quot;DPO7254C&quot;</span><span class="p">,</span> <span class="s">&quot;DPO7354C&quot;</span><span class="p">,</span> 
+                                         <span class="s">&quot;DPO70404C&quot;</span><span class="p">,</span> <span class="s">&quot;DPO70604C&quot;</span><span class="p">,</span> <span class="s">&quot;DPO70804C&quot;</span><span class="p">,</span> 
+                                         <span class="s">&quot;DPO71254C&quot;</span><span class="p">,</span> <span class="s">&quot;DPO71604C&quot;</span><span class="p">,</span> <span class="s">&quot;DPO72004C&quot;</span><span class="p">,</span> 
+                                         <span class="s">&quot;DPO72304DX&quot;</span><span class="p">,</span> <span class="s">&quot;DPO72504DX&quot;</span><span class="p">,</span> <span class="s">&quot;DPO73304DX&quot;</span>
+                                         <span class="p">]</span>
+    <span class="p">}</span>
+    
+    <span class="c"># Device Specific constants</span>
+    <span class="n">validWaveforms</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;CH1&#39;</span><span class="p">,</span> <span class="s">&#39;CH2&#39;</span><span class="p">,</span> <span class="s">&#39;CH3&#39;</span><span class="p">,</span> <span class="s">&#39;CH4&#39;</span><span class="p">,</span> <span class="s">&#39;REF1&#39;</span><span class="p">,</span> <span class="s">&#39;REF2&#39;</span><span class="p">,</span> <span class="s">&#39;REF3&#39;</span><span class="p">,</span> <span class="s">&#39;REF4&#39;</span><span class="p">,</span> <span class="s">&#39;MATH1&#39;</span><span class="p">,</span> <span class="s">&#39;MATH2&#39;</span><span class="p">,</span> <span class="s">&#39;MATH3&#39;</span><span class="p">,</span> <span class="s">&#39;MATH4&#39;</span><span class="p">]</span>
+    <span class="n">validTriggerTypes</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;EDGE&#39;</span><span class="p">,</span> <span class="s">&#39;TRANSITION&#39;</span><span class="p">]</span>
+    <span class="n">validCursorTypes</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;HBARS&#39;</span><span class="p">,</span> <span class="s">&#39;VBARS&#39;</span><span class="p">,</span> <span class="s">&#39;SCREEN&#39;</span><span class="p">,</span> <span class="s">&#39;WAVEFORM&#39;</span><span class="p">,</span> <span class="s">&#39;XY&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_onLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getResource</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+        
+        <span class="c"># Configure scope</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;HEADER OFF&#39;</span><span class="p">)</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&#39;HEADER?&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">resp</span> <span class="o">!=</span> <span class="s">&#39;0&#39;</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;HEADER OFF&#39;</span><span class="p">)</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+        
+    <span class="k">def</span> <span class="nf">_onUnload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+        
+<div class="viewcode-block" id="m_Oscilloscope.defaultSetup"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.defaultSetup">[docs]</a>    <span class="k">def</span> <span class="nf">defaultSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resets the Oscilloscope to the Default Setup</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;FAC&quot;</span><span class="p">)</span>
+        
+        <span class="c"># TODO: Make this not a static delay</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_onLoad</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="m_Oscilloscope.getEnabledWaveforms"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.getEnabledWaveforms">[docs]</a>    <span class="k">def</span> <span class="nf">getEnabledWaveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a list of the enabled waveforms.</span>
+<span class="sd">        </span>
+<span class="sd">        Example::</span>
+<span class="sd">        </span>
+<span class="sd">            &gt;&gt; scope.getEnabledWaveforms()</span>
+<span class="sd">            [&#39;CH1&#39;, &#39;CH3&#39;]</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">en_ch</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">m_OscilloscopeBase</span><span class="o">.</span><span class="n">validWaveforms</span><span class="p">:</span>
+            <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&#39;SELECT:&#39;</span> <span class="o">+</span> <span class="n">ch</span> <span class="o">+</span> <span class="s">&#39;?&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">resp</span><span class="p">):</span>
+                <span class="n">en_ch</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">en_ch</span>
+    </div>
+<div class="viewcode-block" id="m_Oscilloscope.setAcquisitionSetup"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.setAcquisitionSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setAcquisitionSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set Acquisition Modes</span>
+<span class="sd">        </span>
+<span class="sd">        .. note::</span>
+<span class="sd">        </span>
+<span class="sd">            Not all features are available on all models</span>
+<span class="sd">            </span>
+<span class="sd">        :param State: Run state - [&#39;SINGLE&#39;, &#39;OFF&#39;, &#39;ON&#39;, &#39;RUN&#39;, &#39;STOP&#39;]</span>
+<span class="sd">        :type State: str</span>
+<span class="sd">        :param FastAcq: Fast Acquisition Mode - [&#39;ON&#39;, &#39;OFF&#39;]</span>
+<span class="sd">        :type FastAcq: str</span>
+<span class="sd">        :param MagniVu: MagniVu Mode - [&#39;ON&#39;, &#39;OFF&#39;]</span>
+<span class="sd">        :type MagniVu: str</span>
+<span class="sd">        :param Mode: Operating Mode - [&#39;Sample&#39;, &#39;PeakDetect&#39;, &#39;HighResolution&#39;, &#39;Average&#39;, &#39;WaveformDB&#39;, &#39;Envelope&#39;]</span>
+<span class="sd">        :type Mode: str</span>
+<span class="sd">        :param Number: Number of samples when Mode is &#39;Average&#39; or &#39;Envelope&#39;</span>
+<span class="sd">        :type Number: int</span>
+<span class="sd">        :param RollMode: Horizontal Roll Mode - [&#39;AUTO&#39;, &#39;ON&#39;, &#39;OFF&#39;]</span>
+<span class="sd">        :type RollMode: str</span>
+<span class="sd">        :param SamplingMode: Sampling Mode - [&#39;RealTime&#39;, &#39;Equivalent&#39;, &#39;Interpolate&#39;]</span>
+<span class="sd">        :type SamplingMode: str</span>
+<span class="sd">        </span>
+<span class="sd">        Operating Modes::</span>
+<span class="sd">        </span>
+<span class="sd">            &#39;Sample&#39; specifies that the displayed data point value is the first sampled value</span>
+<span class="sd">            that is taken during the acquisition interval. In sample mode, all waveform data</span>
+<span class="sd">            has 8 bits of precision. You can request 16 bit data with a CURVe query but the</span>
+<span class="sd">            lower-order 8 bits of data will be zero. SAMple is the default mode.</span>
+<span class="sd">            </span>
+<span class="sd">            &#39;PeakDetect&#39; specifies the display of high-low range of the samples taken from a</span>
+<span class="sd">            single waveform acquisition. The high-low range is displayed as a vertical column</span>
+<span class="sd">            that extends from the highest to the lowest value sampled during the acquisition</span>
+<span class="sd">            interval. PEAKdetect mode can reveal the presence of aliasing or narrow spikes.</span>
+<span class="sd">            </span>
+<span class="sd">            &#39;HighResolution&#39; specifies Hi Res mode where the displayed data point value is the</span>
+<span class="sd">            average of all the samples taken during the acquisition interval. This is a form</span>
+<span class="sd">            of averaging, where the average comes from a single waveform acquisition. The number </span>
+<span class="sd">            of samples taken during the acquisition interval determines the number of</span>
+<span class="sd">            data values that compose the average.</span>
+<span class="sd">            </span>
+<span class="sd">            &#39;Average&#39; specifies averaging mode, in which the resulting waveform shows an</span>
+<span class="sd">            average of SAMple data points from several separate waveform acquisitions. The</span>
+<span class="sd">            instrument processes the number of waveforms you specify into the acquired</span>
+<span class="sd">            waveform, creating a running exponential average of the input signal. The number</span>
+<span class="sd">            of waveform acquisitions that go into making up the average waveform is set or</span>
+<span class="sd">            queried using the ACQuire:NUMEnv command.</span>
+<span class="sd">            </span>
+<span class="sd">            &#39;WaveformDB&#39; (Waveform Database) mode acquires and displays a waveform pixmap. A</span>
+<span class="sd">            pixmap is the accumulation of one or more acquisitions.</span>
+<span class="sd">            </span>
+<span class="sd">            &#39;Envelope&#39; specifies envelope mode, where the resulting waveform shows the</span>
+<span class="sd">            PeakDetect range of data points from several separate waveform acquisitions.</span>
+<span class="sd">            The number of waveform acquisitions that go into making up the envelope</span>
+<span class="sd">            waveform is set or queried using the ACQuire:NUMEnv command.</span>
+<span class="sd">            </span>
+<span class="sd">            The instrument acquires data after each trigger event using Sample mode; it then</span>
+<span class="sd">            determines the pix map location of each sample point and accumulates it with</span>
+<span class="sd">            stored data from previous acquisitions.</span>
+<span class="sd">            A Pix map is a two dimensional array. The value at each point in the array is</span>
+<span class="sd">            a counter that reflects the hit intensity. Infinite and noninfinite persist display</span>
+<span class="sd">            modes affect how pix maps are accumulated. Zoom, Math, FastAcq, FastFrame,</span>
+<span class="sd">            XY, Roll, and Interpolated Time (IT) Sampling Mode are conflicting features to</span>
+<span class="sd">            WFMDB acqMode. Turning on one of them generally turns the other one off.</span>
+<span class="sd">            Selection of some standard masks (for example, eye masks, which require option</span>
+<span class="sd">            MTM) changes the acquisition mode to WFMDB.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="s">&#39;State&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;State&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;SINGLE&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;ACQ:STOPAFTER SEQUENCE&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;ACQ:STATE 1&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;ACQ:STOPAFTER RUNSTOP&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;ACQ:STATE &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;State&#39;</span><span class="p">]))</span>
+                
+        <span class="k">if</span> <span class="s">&#39;FastAcq&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;FASTACQ:STATE &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;FastAcq&#39;</span><span class="p">]))</span>
+            
+        <span class="k">if</span> <span class="s">&#39;MagniVu&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;ACQ:MAGNIVU &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;MagniVu&#39;</span><span class="p">]))</span>
+        
+        <span class="k">if</span> <span class="s">&#39;Mode&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Mode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;Sample&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;ACQ:MODE SAMPLE&#39;</span><span class="p">)</span>
+                
+            <span class="k">elif</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Mode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;PeakDetect&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;ACQ:MODE PEAK&#39;</span><span class="p">)</span>
+                
+            <span class="k">elif</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Mode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;HighResolution&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;ACQ:MODE HIRES&#39;</span><span class="p">)</span>
+                
+            <span class="k">elif</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Mode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;Average&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;ACQ:MODE AVERAGE&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s">&#39;Number&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;ACQ:NUMAVG &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Number&#39;</span><span class="p">]))</span>
+                
+            <span class="k">elif</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Mode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;WaveformDB&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;ACQ:MODE WFMDB&#39;</span><span class="p">)</span>
+                
+            <span class="k">elif</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Mode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;Envelope&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;ACQ:MODE ENV&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s">&#39;Number&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;ACQ:NUMENV &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Number&#39;</span><span class="p">]))</span>
+                
+        <span class="k">if</span> <span class="s">&#39;RollMode&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;HOR:ROLL &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;RollMode&#39;</span><span class="p">]))</span>
+        
+        <span class="k">if</span> <span class="s">&#39;SamplingMode&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;SamplingMode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;RealTime&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;ACQ::SAMPLINGMODE RT&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;SamplingMode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;Equivalent&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;ACQ::SAMPLINGMODE ET&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;SamplingMode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;Interpolate&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;ACQ::SAMPLINGMODE IT&#39;</span><span class="p">)</span>
+                </div>
+<div class="viewcode-block" id="m_Oscilloscope.setCursorSetup"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.setCursorSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setCursorSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set cursor configuration.</span>
+<span class="sd">        </span>
+<span class="sd">        :param Type: Cursor Type - [&#39;HBARS&#39;, &#39;VBARS&#39;, &#39;SCREEN&#39;, &#39;WAVEFORM&#39;]</span>
+<span class="sd">        :type Type: str</span>
+<span class="sd">        :param Display: Display Cursors - [&#39;ON&#39;, &#39;OFF&#39;]</span>
+<span class="sd">        :type Display: str</span>
+<span class="sd">        :param Mode: Cursor Mode - [&#39;Track&#39;, &#39;Independent&#39;]</span>
+<span class="sd">        :type Mode: str</span>
+<span class="sd">        :param LineStyle: Cursor Line Style - [&#39;DASHED&#39;, &#39;SDASHED&#39;, &#39;SOLID&#39;]</span>
+<span class="sd">        :type LineStyle: str</span>
+<span class="sd">        :param Source1: Waveform for Source1 - [&#39;CH1&#39;, &#39;CH2&#39;, &#39;CH3&#39;, &#39;CH4&#39;, &#39;MATH1&#39;, &#39;MATH2&#39;, &#39;MATH3&#39;, &#39;MATH4&#39;, &#39;REF1&#39;, &#39;REF2&#39;, &#39;REF3&#39;, &#39;REF4&#39;]</span>
+<span class="sd">        :type Source1: str</span>
+<span class="sd">        :param Source2: Waveform for Source2 - [&#39;CH1&#39;, &#39;CH2&#39;, &#39;CH3&#39;, &#39;CH4&#39;, &#39;MATH1&#39;, &#39;MATH2&#39;, &#39;MATH3&#39;, &#39;MATH4&#39;, &#39;REF1&#39;, &#39;REF2&#39;, &#39;REF3&#39;, &#39;REF4&#39;]</span>
+<span class="sd">        :type Source2: str</span>
+<span class="sd">        :param Pos1: Pos1 in &#39;HBARS&#39;, &#39;VBARS&#39; or &#39;WAVEFORM&#39; Mode</span>
+<span class="sd">        :type Pos1: int or float</span>
+<span class="sd">        :param Pos2: Pos2 in &#39;HBARS&#39;, &#39;VBARS&#39; or &#39;WAVEFORM&#39; Mode</span>
+<span class="sd">        :type Pos2: int or float</span>
+<span class="sd">        :param X1: X1 in &#39;SCREEN&#39; Mode</span>
+<span class="sd">        :type X1: int or float</span>
+<span class="sd">        :param X2: X2 in &#39;SCREEN&#39; Mode</span>
+<span class="sd">        :type X2: int or float</span>
+<span class="sd">        :param Y1: Y1 in &#39;SCREEN&#39; Mode</span>
+<span class="sd">        :type Y1: int or float</span>
+<span class="sd">        :param Y2: Y2 in &#39;SCREEN&#39; Mode</span>
+<span class="sd">        :type Y2: int or float</span>
+<span class="sd">        :param Style: Cursor Style in &#39;SCREEN&#39; Mode - [&#39;LINE_X&#39;, &#39;LINES&#39;, &#39;X&#39;]</span>
+<span class="sd">        :type Style: str</span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s">&#39;Type&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">m_OscilloscopeBase</span><span class="o">.</span><span class="n">validCursorTypes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s">&#39;Display&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:STATE &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Display&#39;</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="s">&#39;Mode&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:MODE &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Mode&#39;</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="s">&#39;Type&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:FUNC &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="s">&#39;LineStyle&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:LINESTYLE &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;LineStyle&#39;</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="s">&#39;Source1&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Source1&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">m_OscilloscopeBase</span><span class="o">.</span><span class="n">validWaveforms</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:SOURCE1 &#39;</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Source1&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="s">&#39;Source2&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Source2&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">m_OscilloscopeBase</span><span class="o">.</span><span class="n">validWaveforms</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:SOURCE2 &#39;</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Source2&#39;</span><span class="p">])</span>
+                    
+            <span class="c"># Cursor Types</span>
+            <span class="c"># Horizontal Bars</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;HBARS&#39;</span><span class="p">:</span>  
+                <span class="k">if</span> <span class="s">&#39;Pos1&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:HBARS:POS1 &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Pos1&#39;</span><span class="p">])))</span>
+                <span class="k">if</span> <span class="s">&#39;Pos2&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:HBARS:POS2 &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Pos2&#39;</span><span class="p">])))</span>   
+            <span class="c"># Vertical Bars</span>
+            <span class="k">elif</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;VBARS&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s">&#39;Pos1&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:VBARS:POS1 &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Pos1&#39;</span><span class="p">])))</span>
+                <span class="k">if</span> <span class="s">&#39;Pos2&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:VBARS:POS2 &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Pos2&#39;</span><span class="p">])))</span> 
+            <span class="c"># Screen</span>
+            <span class="k">elif</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;SCREEN&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s">&#39;X1&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:SCREEN:XPOSITION1 &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;X1&#39;</span><span class="p">])))</span>
+                <span class="k">if</span> <span class="s">&#39;X2&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:SCREEN:XPOSITION2 &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;X2&#39;</span><span class="p">])))</span> 
+                <span class="k">if</span> <span class="s">&#39;Y1&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:SCREEN:YPOSITION1 &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Y1&#39;</span><span class="p">])))</span>
+                <span class="k">if</span> <span class="s">&#39;Y2&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:SCREEN:YPOSITION2 &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Y2&#39;</span><span class="p">])))</span> 
+                <span class="k">if</span> <span class="s">&#39;Style&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:SCREEN:STYLE &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Style&#39;</span><span class="p">])))</span>
+            <span class="c"># Waveform</span>
+            <span class="k">elif</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;WAVEFORM&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s">&#39;Pos1&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:WAVE:POS1 &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Pos1&#39;</span><span class="p">])))</span>
+                <span class="k">if</span> <span class="s">&#39;Pos2&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:WAVE:POS2 &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Pos2&#39;</span><span class="p">])))</span>   
+                <span class="k">if</span> <span class="s">&#39;Style&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;CURS:WAVEFORM:STYLE &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Style&#39;</span><span class="p">])))</span>
+            <span class="k">elif</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;XY&#39;</span><span class="p">:</span>
+                <span class="c"># TODO</span>
+                <span class="k">pass</span>
+                    
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Must specify cursor Type&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    
+        <span class="k">return</span> <span class="bp">True</span>
+    
+        <span class="c"># TODO: Make this not a static delay</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="m_Oscilloscope.setHorizontalSetup"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.setHorizontalSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setHorizontalSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set Horizontal configuration</span>
+<span class="sd">        </span>
+<span class="sd">        :param Mode: Horizontal Mode - [&#39;AUTO&#39;, &#39;CONSTANT&#39;, &#39;MANUAL&#39;]</span>
+<span class="sd">        :type Mode: str</span>
+<span class="sd">        :param SampleRate: Samples per second</span>
+<span class="sd">        :type SampleRate: float</span>
+<span class="sd">        :param Scale: Horizontal scale</span>
+<span class="sd">        :type Scale: float</span>
+<span class="sd">        :param Position: Horizontal Position - Percentage of screen</span>
+<span class="sd">        :type Position: int between 0-100</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s">&#39;Mode&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;HOR:MODE &#39;</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Mode&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s">&#39;SampleRate&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;HOR:MODE:SAMPLERATE &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;SampleRate&#39;</span><span class="p">])))</span>
+        <span class="k">if</span> <span class="s">&#39;Scale&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;HOR:MODE:SCALE &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Scale&#39;</span><span class="p">])))</span>
+        <span class="k">if</span> <span class="s">&#39;Position&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;HOR:POS &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Position&#39;</span><span class="p">])))</span>
+        <span class="c"># TODO: Implement:</span>
+        <span class="c"># Units</span>
+        <span class="c"># Delay</span>
+        <span class="c"># Record Length</span>
+        <span class="c"># Roll Mode</span>
+        </div>
+<div class="viewcode-block" id="m_Oscilloscope.setVerticalSetup"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.setVerticalSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setVerticalSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set Vertical Configuration</span>
+<span class="sd">        </span>
+<span class="sd">        :param Waveform: Channel - [&#39;CH1&#39;, &#39;CH2&#39;, &#39;CH3&#39;, &#39;CH4&#39;, &#39;REF1&#39;, &#39;REF2&#39;, &#39;REF3&#39;, &#39;REF4&#39;, &#39;MATH1&#39;, &#39;MATH2&#39;, &#39;MATH3&#39;, &#39;MATH4&#39;]</span>
+<span class="sd">        :type Waveform: str</span>
+<span class="sd">        :param Display: Display Channel - [&#39;ON&#39;, &#39;OFF&#39;]</span>
+<span class="sd">        :type Display: str</span>
+<span class="sd">        :param Label: Channel Label</span>
+<span class="sd">        :type Label: str</span>
+<span class="sd">        :param Position: Vertical Position of channel - divisions above or below center</span>
+<span class="sd">        :type Position: float</span>
+<span class="sd">        :param Scale: Channel Vertical scale</span>
+<span class="sd">        :type Scale: float</span>
+<span class="sd">        :param Coupling: Input Attenuator Coupling Setting - [&#39;AC&#39;, &#39;DC&#39;, &#39;DCREJECT&#39;, &#39;GND&#39;]</span>
+<span class="sd">        :type Coupling: str</span>
+<span class="sd">        :param Deskew: Channel Deskew time (seconds)</span>
+<span class="sd">        :type Deskew: float</span>
+<span class="sd">        :param Bandwidth: Low-Pass Bandwidth Limit Filter (Megahertz) - [&#39;FIVE&#39;, &#39;FULL&#39;, &#39;TWENTY&#39;, &#39;ONEFIFTY&#39;, &#39;TWOFIFTY&#39;]</span>
+<span class="sd">        :type Bandwidth: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s">&#39;Waveform&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Waveform&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">m_OscilloscopeBase</span><span class="o">.</span><span class="n">validWaveforms</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            
+            <span class="c"># Channel Config</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Waveform&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;CH&#39;</span><span class="p">:</span>
+                <span class="n">ch</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Waveform&#39;</span><span class="p">]</span>
+                
+                <span class="k">if</span> <span class="s">&#39;Display&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;SELECT:&#39;</span> <span class="o">+</span> <span class="n">ch</span> <span class="o">+</span> <span class="s">&#39; &#39;</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Display&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="s">&#39;Label&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ch</span> <span class="o">+</span> <span class="s">&#39;:LABEL:NAME &#39;</span> <span class="o">+</span> <span class="s">&#39;&quot;&#39;</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Label&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39;&quot;&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s">&#39;Position&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ch</span> <span class="o">+</span> <span class="s">&#39;:POS &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Position&#39;</span><span class="p">])))</span>
+                <span class="k">if</span> <span class="s">&#39;Scale&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ch</span> <span class="o">+</span> <span class="s">&#39;:SCALE &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Scale&#39;</span><span class="p">])))</span>
+                <span class="k">if</span> <span class="s">&#39;Coupling&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ch</span> <span class="o">+</span> <span class="s">&#39;:COUP &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Coupling&#39;</span><span class="p">]))</span>
+                <span class="k">if</span> <span class="s">&#39;Deskew&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ch</span> <span class="o">+</span> <span class="s">&#39;:DESKEW &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Deskew&#39;</span><span class="p">]))</span>
+                <span class="k">if</span> <span class="s">&#39;Bandwidth&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ch</span> <span class="o">+</span> <span class="s">&#39;:BAND &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Bandwidth&#39;</span><span class="p">]))</span>
+            
+            <span class="c"># Reference Config</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Waveform&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;REF&#39;</span><span class="p">:</span>
+                <span class="k">pass</span>
+            </div>
+<div class="viewcode-block" id="m_Oscilloscope.getProbeInformation"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.getProbeInformation">[docs]</a>    <span class="k">def</span> <span class="nf">getProbeInformation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get Probe Data</span>
+<span class="sd">        </span>
+<span class="sd">        :param Waveform: Channel - [&#39;CH1&#39;, &#39;CH2&#39;, &#39;CH3&#39;, &#39;CH4&#39;]</span>
+<span class="sd">        :type Waveform: str</span>
+<span class="sd">        :returns: dict</span>
+<span class="sd">        </span>
+<span class="sd">        Returned data has the following keys:</span>
+<span class="sd">        </span>
+<span class="sd">            * &#39;Type&#39; - Probe Type</span>
+<span class="sd">            * &#39;Serial&#39; - Serial Number</span>
+<span class="sd">            * &#39;Range&#39; - Attenuation Range</span>
+<span class="sd">            * &#39;Resistance&#39; - Probe Resistance</span>
+<span class="sd">            * &#39;Units&#39; - Measurement Units (Volts or Amps)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="k">if</span> <span class="s">&#39;Channel&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Channel&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">m_OscilloscopeBase</span><span class="o">.</span><span class="n">validWaveforms</span><span class="p">:</span>
+            <span class="n">output</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Channel&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39;:PROBE:ID:TYPE?&#39;</span><span class="p">)</span>
+            <span class="n">output</span><span class="p">[</span><span class="s">&#39;Serial&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Channel&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39;:PROBE:ID:SER?&#39;</span><span class="p">)</span>
+            <span class="n">output</span><span class="p">[</span><span class="s">&#39;Range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Channel&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39;:PROBE:RANGE?&#39;</span><span class="p">)</span>
+            <span class="n">output</span><span class="p">[</span><span class="s">&#39;Resistance&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Channel&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39;:PROBE:RES?&#39;</span><span class="p">)</span>
+            <span class="n">output</span><span class="p">[</span><span class="s">&#39;Units&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Channel&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39;:PROBE:UNITS?&#39;</span><span class="p">)</span>
+            
+        <span class="k">return</span> <span class="n">output</span>
+            </div>
+<div class="viewcode-block" id="m_Oscilloscope.setTriggerSetup"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.setTriggerSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setTriggerSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set Trigger Configuration</span>
+<span class="sd">        </span>
+<span class="sd">        .. note::</span>
+<span class="sd">        </span>
+<span class="sd">            Only a small subset of the trigger types are supported right now.</span>
+<span class="sd">        </span>
+<span class="sd">        :param Type: Trigger Type - [&#39;EDGE&#39;, &#39;TRANSITION&#39;]</span>
+<span class="sd">        :type Type: str</span>
+<span class="sd">        :param Source: Trigger Source - [&#39;CH1&#39;, &#39;CH2&#39;, &#39;CH3&#39;, &#39;CH4&#39;, &#39;REF1&#39;, &#39;REF2&#39;, &#39;REF3&#39;, &#39;REF4&#39;, &#39;MATH1&#39;, &#39;MATH2&#39;, &#39;MATH3&#39;, &#39;MATH4&#39;]</span>
+<span class="sd">        :type Source: str</span>
+<span class="sd">        :param Slope: Edge to trigger on - [&#39;RISE&#39;, &#39;FALL&#39;, &#39;EITHER&#39;]</span>
+<span class="sd">        :type Slope: str</span>
+<span class="sd">        :param Level: Level to trigger on</span>
+<span class="sd">        :type Level: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s">&#39;Type&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">m_OscilloscopeBase</span><span class="o">.</span><span class="n">validTriggerTypes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;EDGE&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s">&#39;Source&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Source&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">m_OscilloscopeBase</span><span class="o">.</span><span class="n">validWaveforms</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;TRIG:A:EDGE:SOURCE &#39;</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Source&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="s">&#39;Slope&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;TRIG:A:EDGE:SLOPE &#39;</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Slope&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="s">&#39;Level&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;TRIG:A:LEVEL:&#39;</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Source&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39; &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Level&#39;</span><span class="p">]))</span>
+        
+                    </div>
+<div class="viewcode-block" id="m_Oscilloscope.setSearchSetup"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.setSearchSetup">[docs]</a>    <span class="k">def</span> <span class="nf">setSearchSetup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set Search configuration</span>
+<span class="sd">        </span>
+<span class="sd">        :param Search: Search slot number</span>
+<span class="sd">        :type Search: int between 1-8</span>
+<span class="sd">        :param Type: Search type - [&#39;TRANSITION&#39;]</span>
+<span class="sd">        :type Type: str</span>
+<span class="sd">        :param Enable: Enable Search - [&#39;OFF&#39;, &#39;ON&#39;]</span>
+<span class="sd">        :type Enable: str</span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
+<span class="sd">        </span>
+<span class="sd">        .. note::</span>
+<span class="sd">        </span>
+<span class="sd">            Only &#39;TRANSITION&#39; Search Type is supported right now. </span>
+<span class="sd">            The full range of possible Search Types are:</span>
+<span class="sd">            [&#39;EDGE&#39;, &#39;RUNT&#39;, &#39;TRANSITION&#39;, &#39;PATTERN&#39;, &#39;GLITCH&#39;, &#39;SETHOLD&#39;, &#39;UNDEFINED&#39;, WIDTH&#39;, &#39;TIMEOUT&#39;, &#39;WINDOW&#39;, &#39;STATE&#39;, &#39;DDRREAD&#39;, &#39;DDRWRITE&#39;, &#39;DDRREADWRITE&#39;]</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters for &#39;TRANSITION&#39; Search Type:</span>
+<span class="sd">        </span>
+<span class="sd">            * &#39;Source&#39; (str) - Channel source to search - [&#39;CH1&#39;, &#39;CH2&#39;, &#39;CH3&#39;, &#39;CH4&#39;, &#39;REF1&#39;, &#39;REF2&#39;, &#39;REF3&#39;, &#39;REF4&#39;, &#39;MATH1&#39;, &#39;MATH2&#39;, &#39;MATH3&#39;, &#39;MATH4&#39;]</span>
+<span class="sd">            * &#39;Delta&#39; (float) - Time delta to limit matches</span>
+<span class="sd">            * &#39;HighThreshold&#39; (float) - High Threshold level</span>
+<span class="sd">            * &#39;LowThreshold&#39; (float) - Low Threshold level</span>
+<span class="sd">            * &#39;Slope&#39; (str) - Polarity setting for mark placement - [&#39;EITHER&#39;, &#39;NEGATIVE&#39;, &#39;POSITIVE&#39;]</span>
+<span class="sd">            * &#39;Transition&#39; (str) - Transition Trigger Condition - [&#39;FASTERTHAN&#39;, &#39;SLOWERTHAN&#39;] </span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s">&#39;Search&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Search&#39;</span><span class="p">])</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">8</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s">&#39;Type&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">m_OscilloscopeBase</span><span class="o">.</span><span class="n">validTriggerTypes</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s">&#39;Enable&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;SEARCH:SEARCH&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Search&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="s">&#39;:STATE &#39;</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Enable&#39;</span><span class="p">])</span>
+                    <span class="c"># TODO: Is this the right place for this?</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;SEARCH:MARKALL ON&quot;</span><span class="p">)</span>
+                
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;SEARCH:SEARCH&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Search&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="s">&#39;:TRIG:A:TYPE &#39;</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">])</span>
+                
+                <span class="c"># Trigger Types</span>
+                <span class="c"># Transition</span>
+                <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;TRANSITION&#39;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s">&#39;Source&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Source&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">m_OscilloscopeBase</span><span class="o">.</span><span class="n">validWaveforms</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;SEARCH:SEARCH&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Search&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="s">&#39;:TRIG:A:PULSE:SOURCE &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Source&#39;</span><span class="p">]))</span>
+                    <span class="k">if</span> <span class="s">&#39;Delta&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;SEARCH:SEARCH&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Search&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="s">&#39;:TRIG:A:TRAN:DELTATIME &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Delta&#39;</span><span class="p">]))</span>
+                    <span class="k">if</span> <span class="s">&#39;HighThreshold&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;SEARCH:SEARCH&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Search&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="s">&#39;:TRIG:A:TRAN:THR:HIGH:&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Source&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="s">&#39; &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;HighThreshold&#39;</span><span class="p">]))</span>
+                    <span class="k">if</span> <span class="s">&#39;LowThreshold&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;SEARCH:SEARCH&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Search&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="s">&#39;:TRIG:A:TRAN:THR:LOW:&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Source&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="s">&#39; &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;LowThreshold&#39;</span><span class="p">]))</span>
+                    <span class="k">if</span> <span class="s">&#39;Slope&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;SEARCH:SEARCH&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Search&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="s">&#39;:TRIG:A:TRAN:POL:&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Source&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="s">&#39; &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Slope&#39;</span><span class="p">]))</span>
+                    <span class="k">if</span> <span class="s">&#39;Transition&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;SEARCH:SEARCH&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Search&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="s">&#39;:TRIG:A:TRAN:WHEN &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Transition&#39;</span><span class="p">]))</span>
+                
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Must specify valid Search Type&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Must specify Search between 1-8&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        
+        <span class="c"># TODO: Make this not a static delay</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">5.0</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="bp">True</span>
+        
+    </div>
+<div class="viewcode-block" id="m_Oscilloscope.getSearchMarks"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.getSearchMarks">[docs]</a>    <span class="k">def</span> <span class="nf">getSearchMarks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a list of all mark locations. Manually iterates through all marks</span>
+<span class="sd">        on the oscilloscope and gets the location.</span>
+<span class="sd">        </span>
+<span class="sd">        .. warning::</span>
+<span class="sd">        </span>
+<span class="sd">            Depending on the number of marks, this function can take some time</span>
+<span class="sd">            to complete</span>
+<span class="sd">            </span>
+<span class="sd">        :param Search: Search slot number</span>
+<span class="sd">        :type Search: int between 1-8</span>
+<span class="sd">        :returns: list of mark times (float)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># TODO: More graceful way of doing this</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">waitUntilReady</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">):</span>
+            
+            <span class="k">if</span> <span class="s">&#39;Search&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Search&#39;</span><span class="p">])</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">8</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Looking for matches&#39;</span><span class="p">)</span>
+                
+                <span class="n">matches</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&#39;SEARCH:SEARCH&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Search&#39;</span><span class="p">]))</span> <span class="o">+</span> <span class="s">&#39;:TOTAL?&#39;</span><span class="p">))</span>
+                <span class="n">total_marks</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&quot;MARK:TOTAL?&quot;</span><span class="p">))</span>
+                
+                <span class="n">hor_scale</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&#39;HOR:MODE:SCALE?&#39;</span><span class="p">))</span>
+                <span class="n">hor_pos</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&#39;HOR:POS?&#39;</span><span class="p">))</span>
+                
+                <span class="n">all_marks</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">search_marks</span> <span class="o">=</span> <span class="p">[]</span>
+                
+                <span class="k">if</span> <span class="n">matches</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Expecting </span><span class="si">%i</span><span class="s"> marks&quot;</span><span class="p">,</span> <span class="n">matches</span><span class="p">)</span>
+                    <span class="c"># Convert the search marks to user marks</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;SEARCH:SEARCH&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Search&#39;</span><span class="p">]))</span>
+                    
+                    <span class="c"># Seek Forward</span>
+                    <span class="k">for</span> <span class="nb">dir</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;NEXT&#39;</span><span class="p">,</span> <span class="s">&#39;PREV&#39;</span><span class="p">]:</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">total_marks</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                            <span class="k">if</span>  <span class="nb">len</span><span class="p">(</span><span class="n">search_marks</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">matches</span><span class="p">:</span>
+                                <span class="n">mark_start</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&#39;MARK:SELECTED:START?&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                                
+                                <span class="k">if</span> <span class="n">mark_start</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">all_marks</span><span class="p">:</span>
+                                    <span class="n">mark_owner</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&#39;MARK:SELECTED:OWNER?&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                                    <span class="n">seek_owner</span> <span class="o">=</span> <span class="s">&#39;SEARCH&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Search&#39;</span><span class="p">])</span>
+                                    <span class="k">if</span> <span class="n">mark_owner</span> <span class="o">==</span> <span class="n">seek_owner</span><span class="p">:</span>
+                                        <span class="c"># Convert from percentage to time</span>
+                                        <span class="n">mark_start</span> <span class="o">=</span> <span class="p">(</span><span class="n">mark_start</span> <span class="o">-</span> <span class="n">hor_pos</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">hor_scale</span> <span class="o">/</span> <span class="mf">10.0</span><span class="p">)</span>
+                                        
+                                        <span class="n">search_marks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mark_start</span><span class="p">)</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Search Mark Found at &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">mark_start</span><span class="p">))</span>
+                                        
+                                <span class="n">all_marks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mark_start</span><span class="p">)</span>
+                                
+                                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Mark Seek &quot;</span> <span class="o">+</span> <span class="nb">dir</span><span class="p">)</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;MARK &#39;</span> <span class="o">+</span> <span class="nb">dir</span><span class="p">)</span>
+                                
+                                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+                                
+                        <span class="c"># Exit out of zoom mode</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;ZOOM:MODE OFF&quot;</span><span class="p">)</span>
+                        
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;No matches found&#39;</span><span class="p">)</span>
+                    
+                <span class="k">return</span> <span class="n">search_marks</span>
+            
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Must specify Search between 1-8&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Unable to get marks while oscilloscope is busy&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        </div>
+<div class="viewcode-block" id="m_Oscilloscope.singleAcquisition"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.singleAcquisition">[docs]</a>    <span class="k">def</span> <span class="nf">singleAcquisition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Put the Oscilloscope into Single Acquisition mode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Entering Single Acquisition Mode&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setAcquisitionSetup</span><span class="p">(</span><span class="n">State</span><span class="o">=</span><span class="s">&#39;SINGLE&#39;</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="m_Oscilloscope.statusBusy"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.statusBusy">[docs]</a>    <span class="k">def</span> <span class="nf">statusBusy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Queries the scope to find out if it is busy</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: bool - True if Busy, False if not Busy</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&#39;BUSY?&#39;</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Instrument is busy&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Instrument is ready&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        </div>
+<div class="viewcode-block" id="m_Oscilloscope.waitUntilReady"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.waitUntilReady">[docs]</a>    <span class="k">def</span> <span class="nf">waitUntilReady</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">10.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Poll the oscilloscope until ready or until `timeout` seconds has passed</span>
+<span class="sd">        </span>
+<span class="sd">        :param interval: Polling interval in seconds</span>
+<span class="sd">        :type interval: float</span>
+<span class="sd">        :param timeout: Seconds until timeout occurs</span>
+<span class="sd">        :type timeout: float</span>
+<span class="sd">        :returns: bool - True if instrument becomes ready, False if timeout occurs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">lapsed</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">while</span> <span class="n">lapsed</span> <span class="o">&lt;</span> <span class="n">timeout</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">statusBusy</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="bp">True</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">interval</span><span class="p">)</span>
+                <span class="n">lapsed</span> <span class="o">+=</span> <span class="n">interval</span>
+                
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Instrument was not ready before timeout occurred&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s">&quot;An error occurred in waitUntilReady()&quot;</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="m_Oscilloscope.getWaveform"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.getWaveform">[docs]</a>    <span class="k">def</span> <span class="nf">getWaveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Refreshes the raw waveform data from the oscilloscope. </span>
+<span class="sd">        </span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">numpy</span>
+            
+        <span class="k">except</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Unable to getWaveform without numpy library&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">waitUntilReady</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Unable to export waveform while oscilloscope is busy&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Starting waveform transfer&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="c"># Get the list of enabled waveforms before we begin</span>
+        <span class="n">enabledWaveforms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getEnabledWaveforms</span><span class="p">()</span>
+        
+        <span class="c"># Get time and trigger data</span>
+        <span class="n">x_scale</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&quot;WFMOUTPRE:XINCR?&quot;</span><span class="p">))</span>
+        <span class="n">hor_scale</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&quot;HOR:MODE:SCALE?&quot;</span><span class="p">))</span>
+        <span class="n">sample_rate</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&quot;HOR:MODE:SAMPLERATE?&quot;</span><span class="p">))</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sample_rate</span> <span class="o">*</span> <span class="n">hor_scale</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="n">trigger_sample</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&quot;WFMOUTPRE:PT_OFF?&quot;</span><span class="p">))</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;Time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">trigger_sample</span><span class="p">,</span> <span class="n">samples</span> <span class="o">-</span> <span class="n">trigger_sample</span><span class="p">)</span> <span class="o">*</span> <span class="n">x_scale</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Time Scale: </span><span class="si">%f</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">x_scale</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Trigger position: </span><span class="si">%i</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">trigger_sample</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Sample Rate: </span><span class="si">%f</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Horizontal Scale: </span><span class="si">%f</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">hor_scale</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Expecting </span><span class="si">%i</span><span class="s"> samples&quot;</span><span class="p">,</span> <span class="n">samples</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">enabledWaveforms</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;DATA:SOURCE </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">ch</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;DATA:ENC SRP&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;DATA:START 1&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;DATA:STOP </span><span class="si">%i</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">samples</span><span class="p">)</span>
+            
+            <span class="c"># Get scale factors for each channel</span>
+            <span class="n">y_scale</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&quot;WFMOUTPRE:YMULT?&quot;</span><span class="p">))</span>
+            <span class="n">y_zero</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&quot;WFMOUTPRE:YZERO?&quot;</span><span class="p">))</span>
+            <span class="n">y_offset</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&quot;WFMOUTPRE:YOFF?&quot;</span><span class="p">))</span>
+            
+            <span class="c"># Get the number of bytes per data point</span>
+            <span class="n">data_width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&quot;WFMOUTPRE:BYT_NR?&quot;</span><span class="p">))</span>
+            
+            <span class="c"># Collect and process data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Processing Data for </span><span class="si">%s</span><span class="s">....&quot;</span><span class="p">,</span> <span class="n">ch</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;CURVE?&quot;</span><span class="p">)</span>
+            <span class="n">data_raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">read_raw</span><span class="p">()</span>
+            
+            <span class="n">headerlen</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">data_raw</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="n">data_raw</span><span class="p">[:</span><span class="n">headerlen</span><span class="p">]</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data_raw</span><span class="p">[</span><span class="n">headerlen</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">elems</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">/</span> <span class="n">data_width</span>
+            
+            <span class="k">if</span> <span class="n">data_width</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">H&#39;</span> <span class="o">%</span> <span class="n">elems</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">data_width</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">B&#39;</span> <span class="o">%</span> <span class="n">elems</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Unhandled data width in getWaveform&#39;</span><span class="p">)</span>
+                
+            <span class="c"># Utilize numpy if possible, its more efficient</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                
+            <span class="n">data_scaled</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">-</span> <span class="n">y_offset</span><span class="p">)</span> <span class="o">*</span> <span class="n">y_scale</span> <span class="o">+</span> <span class="n">y_zero</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_scaled</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            
+        <span class="k">return</span> <span class="bp">True</span>
+    
+    </div>
+<div class="viewcode-block" id="m_Oscilloscope.getPackedWaveform"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.getPackedWaveform">[docs]</a>    <span class="k">def</span> <span class="nf">getPackedWaveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ch</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get packed binary waveform data for a given channel</span>
+<span class="sd">        </span>
+<span class="sd">        :param ch: Channel - [&#39;CH1&#39;, &#39;CH2&#39;, &#39;CH3&#39;, &#39;CH4&#39;]</span>
+<span class="sd">        :type ch: str</span>
+<span class="sd">        :returns: binary data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">validWaveforms</span> <span class="ow">and</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">d_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">d_list</span><span class="p">)</span>
+            
+            <span class="c"># Pack the data</span>
+            <span class="n">packed</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">f&#39;</span> <span class="o">%</span> <span class="n">points</span><span class="p">,</span> <span class="o">*</span><span class="n">d_list</span><span class="p">))</span>
+            
+            <span class="c"># Base64 Encode the data</span>
+            <span class="n">enc</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">packed</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="n">enc</span>
+        </div>
+<div class="viewcode-block" id="m_Oscilloscope.waveformExport"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.waveformExport">[docs]</a>    <span class="k">def</span> <span class="nf">waveformExport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Alias for :func:`m_OscilloscopeBase.exportWaveform`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exportWaveform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="m_Oscilloscope.exportWaveform"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.exportWaveform">[docs]</a>    <span class="k">def</span> <span class="nf">exportWaveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Export the oscilloscope waveform to a .csv file. </span>
+<span class="sd">        </span>
+<span class="sd">        :param Filename: Filename of output file</span>
+<span class="sd">        :type Filename: str</span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c"># Refresh waveform data</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">==</span> <span class="p">{}:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">getWaveform</span><span class="p">()</span>
+        
+        <span class="c"># Write data in columns in the CSV file</span>
+        <span class="k">if</span> <span class="s">&#39;Filename&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Filename&#39;</span><span class="p">]</span>
+            <span class="c"># Verify file extension</span>
+            <span class="k">if</span> <span class="n">filename</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span> <span class="o">!=</span> <span class="s">&quot;csv&quot;</span><span class="p">:</span>
+                <span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="s">&#39;.csv&#39;</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c"># Open Data file</span>
+                <span class="n">f_telem</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span>
+                <span class="n">csvfile</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f_telem</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Opened file: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+                
+                <span class="n">intersect</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">validWaveforms</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+                
+                <span class="c"># Add an extra column for a time index</span>
+                <span class="n">header</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Time&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">intersect</span><span class="p">)</span>
+                <span class="c"># Write header</span>
+                <span class="n">csvfile</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+                
+                <span class="c"># Write each row</span>
+                <span class="n">time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;Time&#39;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">time</span><span class="p">)):</span>
+                    <span class="n">row</span> <span class="o">=</span> <span class="p">[</span><span class="n">time</span><span class="p">[</span><span class="n">index</span><span class="p">]]</span>
+                    <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">intersect</span><span class="p">:</span>
+                        <span class="n">row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">ch</span><span class="p">][</span><span class="n">index</span><span class="p">])</span>
+                    <span class="n">csvfile</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+                <span class="n">f_telem</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s">&quot;Unable to export data to </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+                
+                <span class="k">return</span> <span class="bp">False</span>
+                    
+        <span class="k">return</span> <span class="bp">True</span>
+                </div>
+<div class="viewcode-block" id="m_Oscilloscope.saveScreenshot"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.saveScreenshot">[docs]</a>    <span class="k">def</span> <span class="nf">saveScreenshot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save a screenshot of the oscilloscope display onto the oscilloscope.</span>
+<span class="sd">        </span>
+<span class="sd">        :param Filename: Relative or absolute filename</span>
+<span class="sd">        :type Filename: str</span>
+<span class="sd">        :param Format: File format - [&#39;BMP&#39;, &#39;JPEG&#39;, &#39;PCX&#39;, &#39;PNG&#39;, &#39;TIFF&#39;]</span>
+<span class="sd">        :type Format: str</span>
+<span class="sd">        :param Palette: Color Palette - [&#39;COLOR&#39;, &#39;INKSAVER&#39;, &#39;BLACKANDWHITE&#39;]</span>
+<span class="sd">        :type Palette: str</span>
+<span class="sd">        :returns: bool - True if successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="s">&#39;Filename&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="s">&#39;Format&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            
+            <span class="n">temp_filename</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Filename&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Format&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;EXPORT:FILENAME &quot;</span> <span class="o">+</span> <span class="s">&#39;&quot;&#39;</span> <span class="o">+</span> <span class="n">temp_filename</span> <span class="o">+</span> <span class="s">&#39;&quot;&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;EXPORT:FORMAT &quot;</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Format&#39;</span><span class="p">])</span>
+            
+            <span class="k">if</span> <span class="s">&#39;Palette&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;EXPORT:PALETTE &quot;</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;Palette&#39;</span><span class="p">])</span>
+                
+            <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;EXPORT START&quot;</span><span class="p">)</span>
+            
+            <span class="c"># TODO: Make this not a static delay</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
+            
+            <span class="n">remote_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s">&quot;EXPORT:FILENAME?&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Saved remote screenshot at </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">remote_filename</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="n">remote_filename</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Save Screenshot needs parameters Filename and Format&quot;</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="m_Oscilloscope.lock"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.lock">[docs]</a>    <span class="k">def</span> <span class="nf">lock</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Lock the oscilloscope</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;LOCK ALL&#39;</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="m_Oscilloscope.unlock"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/Tektronix.Oscilloscope.m_Oscilloscope.html#labtronyx.drivers.Tektronix.Oscilloscope.m_Oscilloscope.m_Oscilloscope.unlock">[docs]</a>    <span class="k">def</span> <span class="nf">unlock</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Unlock the oscilloscope</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;UNLOCK ALL&#39;</span><span class="p">)</span>
+    </div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="../../../../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
+          <li><a href="../../../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Kevin Kennedy (Protonyx).
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

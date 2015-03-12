@@ -1,0 +1,595 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>labtronyx.interfaces.i_UPEL &mdash; Labtronyx 0.1dev-150310 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1dev-150310',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="Labtronyx 0.1dev-150310 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="../../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for labtronyx.interfaces.i_UPEL</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">Base_Interface</span> <span class="kn">import</span> <span class="n">Base_Interface</span>
+<span class="kn">from</span> <span class="nn">Base_Resource</span> <span class="kn">import</span> <span class="n">Base_Resource</span>
+
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="kn">from</span> <span class="nn">common.icp</span> <span class="kn">import</span> <span class="n">UPEL_ICP</span>
+
+<div class="viewcode-block" id="i_UPEL"><a class="viewcode-back" href="../../../user_guide/api/resources/upel.html#labtronyx.interfaces.i_UPEL.i_UPEL">[docs]</a><span class="k">class</span> <span class="nc">i_UPEL</span><span class="p">(</span><span class="n">Base_Interface</span><span class="p">):</span>
+    
+    <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="c"># Interface Author</span>
+        <span class="s">&#39;author&#39;</span><span class="p">:</span>               <span class="s">&#39;KKENNEDY&#39;</span><span class="p">,</span>
+        <span class="c"># Interface Version</span>
+        <span class="s">&#39;version&#39;</span><span class="p">:</span>              <span class="s">&#39;1.0&#39;</span><span class="p">,</span>
+        <span class="c"># Revision date</span>
+        <span class="s">&#39;date&#39;</span><span class="p">:</span>                 <span class="s">&#39;2015-03-06&#39;</span>
+    <span class="p">}</span>
+    
+    <span class="c"># Dict: ResID -&gt; (VID, PID)</span>
+    <span class="n">resources</span> <span class="o">=</span> <span class="p">{}</span>
+    
+    <span class="c"># Dict: ResID -&gt; UPEL_ICP_Device Object</span>
+    <span class="n">resourceObjects</span> <span class="o">=</span> <span class="p">{}</span>
+    
+    <span class="c"># UPEL Controller Config</span>
+    <span class="n">broadcastIP</span> <span class="o">=</span> <span class="s">&#39;192.168.1.255&#39;</span>
+    <span class="n">UPELPort</span> <span class="o">=</span> <span class="mi">7968</span>
+
+    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">False</span>
+    
+        <span class="c"># Start the arbiter thread</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">icp_manager</span> <span class="o">=</span> <span class="n">UPEL_ICP</span><span class="p">(</span><span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">icp_manager</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="bp">True</span>
+    
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">icp_manager</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+    
+    <span class="k">def</span> <span class="nf">getResources</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span>
+    
+    <span class="k">def</span> <span class="nf">canEditResources</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    
+    <span class="k">def</span> <span class="nf">openResourceObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resID</span><span class="p">):</span>
+        <span class="n">resource</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resourceObjects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">resID</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">resource</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">resource</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">resource</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">icp_manager</span><span class="o">.</span><span class="n">getDevice</span><span class="p">(</span><span class="n">resID</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">resourceObjects</span><span class="p">[</span><span class="n">resID</span><span class="p">]</span> <span class="o">=</span> <span class="n">resource</span>
+            <span class="k">return</span> <span class="n">resource</span>
+        
+    <span class="k">def</span> <span class="nf">closeResourceObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resID</span><span class="p">):</span>
+        <span class="n">resource</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resourceObjects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">resID</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">resource</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">resource</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">resourceObjects</span><span class="p">[</span><span class="n">resID</span><span class="p">]</span>
+    
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Optional - Automatic Controllers</span>
+    <span class="c">#===========================================================================</span>
+    
+    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">None</span>
+    
+        <span class="bp">self</span><span class="o">.</span><span class="n">icp_manager</span><span class="o">.</span><span class="n">discover</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">broadcastIP</span><span class="p">)</span>
+        
+        <span class="c"># Give the arbiter time to process responses</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">resources</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">icp_manager</span><span class="o">.</span><span class="n">getResources</span><span class="p">()</span>
+
+    <span class="c">#===========================================================================</span>
+    <span class="c"># def _getInstrument(self, resID):</span>
+    <span class="c">#     return self.icp_manager.getDevice(resID)</span>
+    <span class="c">#     </span>
+    <span class="c"># def _getDevice(self, resID):</span>
+    <span class="c">#     return self.icp_manager.getDevice(resID)</span>
+    <span class="c">#===========================================================================</span>
+    
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Optional - Manual Controllers</span>
+    <span class="c">#===========================================================================</span>
+    
+<div class="viewcode-block" id="i_UPEL.addResource"><a class="viewcode-back" href="../../../user_guide/api/resources/upel.html#labtronyx.interfaces.i_UPEL.i_UPEL.addResource">[docs]</a>    <span class="k">def</span> <span class="nf">addResource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ResID</span><span class="p">,</span> <span class="n">VID</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">PID</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Treats an addResource request as a hint that a device exists. Attempts</span>
+<span class="sd">        to send a discovery packet to the device to get more information.</span>
+<span class="sd">        </span>
+<span class="sd">        The ICP thread will automatically handle the creation of an</span>
+<span class="sd">        instrument for the new resource.</span>
+<span class="sd">        </span>
+<span class="sd">        :param ResID: Resource ID (IP Address)</span>
+<span class="sd">        :type ResID: str</span>
+<span class="sd">        :returns: bool. True if successful, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">icp_manager</span><span class="o">.</span><span class="n">discover</span><span class="p">(</span><span class="n">ResID</span><span class="p">)</span>
+    </div>
+    <span class="k">def</span> <span class="nf">destroyResource</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+    </div>
+<span class="k">class</span> <span class="nc">r_UPEL</span><span class="p">(</span><span class="n">Base_Resource</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Instrument class for ICP devices. Used by Models to communicate with ICP</span>
+<span class="sd">    devices over the network. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="nb">type</span> <span class="o">=</span> <span class="s">&quot;UPEL&quot;</span>
+    
+    <span class="n">incomingPackets</span> <span class="o">=</span> <span class="p">{}</span>
+    
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Registers</span>
+    <span class="c">#===========================================================================</span>
+    
+    <span class="n">data_types_pack</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;int8&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;!b&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">)),</span>
+        <span class="s">&#39;int16&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;!h&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">)),</span>
+        <span class="s">&#39;int32&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;!i&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">)),</span>
+        <span class="s">&#39;int64&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;!q&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">)),</span>
+        <span class="s">&#39;float&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;!f&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="p">)),</span>
+        <span class="s">&#39;double&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s">&#39;!d&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="p">))</span> <span class="p">}</span>
+    
+    <span class="n">data_types_unpack</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;int8&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;!b&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="s">&#39;int16&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;!h&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="s">&#39;int32&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;!i&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="s">&#39;int64&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;!q&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="s">&#39;float&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;!f&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="s">&#39;double&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;!d&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="p">}</span>
+    
+    <span class="n">reg_outgoing</span> <span class="o">=</span> <span class="p">{}</span> <span class="c"># { PacketID: (address, subindex) }</span>
+    
+    <span class="n">accumulators</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">acc_config</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">reg_cache</span> <span class="o">=</span> <span class="p">{}</span>
+    
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">packetQueue</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param address: IPv4 Address</span>
+<span class="sd">        :type address: str</span>
+<span class="sd">        :param packetQueue: Outgoing Packet Queue</span>
+<span class="sd">        :type packetQueue: Queue.Queue</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">address</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">packetQueue</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">acc_thread</span> <span class="o">=</span> <span class="bp">None</span>
+        
+    <span class="k">def</span> <span class="nf">_processTimeout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">packetID</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called by the controller thread when a sent packet is considered</span>
+<span class="sd">        expired</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">incomingPackets</span><span class="p">[</span><span class="n">packetID</span><span class="p">]</span><span class="o">=</span> <span class="n">ICP_Timeout</span>
+        
+    <span class="k">def</span> <span class="nf">_processResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pkt</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called by the controller thread when a response packet is</span>
+<span class="sd">        received that originated from this instrument.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">packetID</span> <span class="o">=</span> <span class="n">pkt</span><span class="o">.</span><span class="n">PACKET_ID</span>
+        
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pkt</span><span class="p">,</span> <span class="n">RegisterPacket</span><span class="p">):</span>
+            <span class="c"># Check if the register should be cached or accumulated</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">,</span> <span class="n">data_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg_outgoing</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">packetID</span><span class="p">)</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg_cache</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reg_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">pkt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">data_type</span><span class="p">)</span>
+                    
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">accumulators</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="c"># TODO: add new value to accumulator</span>
+                    <span class="n">acc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accumulators</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                    <span class="n">acc</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">pkt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">data_type</span><span class="p">))</span>
+                    
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">incomingPackets</span><span class="p">[</span><span class="n">packetID</span><span class="p">]</span> <span class="o">=</span> <span class="n">pkt</span>
+        
+    <span class="k">def</span> <span class="nf">_getResponse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">packetID</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a response packet from the incoming packet queue. Non-blocking</span>
+<span class="sd">        unless block is set to True.</span>
+<span class="sd">        </span>
+<span class="sd">        :param packetID: PacketID of desired packet</span>
+<span class="sd">        :type packetID: int</span>
+<span class="sd">        :param block: Block until packet is received or timeout occurs</span>
+<span class="sd">        :type block: bool</span>
+<span class="sd">        :returns: UPEL_ICP_Packet object or None if no response</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">block</span><span class="p">:</span>
+            <span class="k">while</span> <span class="p">(</span><span class="bp">True</span><span class="p">):</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getResponse</span><span class="p">(</span><span class="n">packetID</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">ret</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">ret</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">pkt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">incomingPackets</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">packetID</span><span class="p">)</span>
+            
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pkt</span><span class="p">,</span> <span class="n">ICP_Timeout</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">pkt</span>
+                
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pkt</span><span class="p">,</span> <span class="n">ErrorPacket</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">ICP_DeviceError</span><span class="p">(</span><span class="n">pkt</span><span class="p">)</span>
+                
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">pkt</span>
+                
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">None</span>
+        
+    <span class="c">#===========================================================================</span>
+    <span class="c"># def _getResponse(self, timeout):</span>
+    <span class="c">#     try:</span>
+    <span class="c">#         pkt = self.packetQueue.get(True, timeout)</span>
+    <span class="c">#         </span>
+    <span class="c">#         if isinstance(pkt, ErrorPacket):</span>
+    <span class="c">#             raise ICP_DeviceError(pkt);</span>
+    <span class="c">#         </span>
+    <span class="c">#         return str(pkt.getPayload())</span>
+    <span class="c">#         </span>
+    <span class="c">#     except Queue.Empty:</span>
+    <span class="c">#         raise ICP_Timeout</span>
+    <span class="c">#===========================================================================</span>
+    
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Accumulator Thread</span>
+    <span class="c">#===========================================================================</span>
+    
+    <span class="k">def</span> <span class="nf">__accumulator_thread</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Asynchronous thread that automatically polls registers that are marked</span>
+<span class="sd">        for accumulation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">next_sample</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="k">while</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">acc_config</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">reg</span><span class="p">,</span> <span class="n">acc_config</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">acc_config</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c"># Check if it is time to get a new sample</span>
+                <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">next_sample</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">):</span>
+                    <span class="n">address</span><span class="p">,</span> <span class="n">subindex</span> <span class="o">=</span> <span class="n">reg</span>
+                    <span class="n">_</span><span class="p">,</span> <span class="n">sample_time</span><span class="p">,</span> <span class="n">data_type</span> <span class="o">=</span> <span class="n">acc_config</span>
+                    
+                    <span class="c"># Queue a register read, the ICP thread will handle the data when it comes back</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">register_read_queue</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+                    
+                    <span class="c"># Increment the next sample time</span>
+                    <span class="n">next_sample</span><span class="p">[</span><span class="n">reg</span><span class="p">]</span> <span class="o">=</span> <span class="n">next_sample</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="n">sample_time</span>
+                    
+            <span class="c"># TODO: Calculate the time to the next sample and sleep until then</span>
+        
+        <span class="c"># Clear reference to this thread before exiting</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acc_thread</span> <span class="o">=</span> <span class="bp">None</span>
+        
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Device State</span>
+    <span class="c">#===========================================================================</span>
+    
+    <span class="k">def</span> <span class="nf">getState</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Query the ICP Device for the current state.</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">packet</span> <span class="o">=</span> <span class="n">StateChangePacket</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">packet</span><span class="o">.</span><span class="n">setDestination</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">packetID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">(</span><span class="n">packet</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">)</span>
+            
+            <span class="n">pkt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getResponse</span><span class="p">(</span><span class="n">packetID</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">pkt</span><span class="o">.</span><span class="n">getState</span><span class="p">()</span>
+            
+        <span class="k">except</span> <span class="n">ICP_Timeout</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        
+    <span class="k">def</span> <span class="nf">setState</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_state</span><span class="p">):</span>
+        <span class="n">packet</span> <span class="o">=</span> <span class="n">StateChangePacket</span><span class="p">(</span><span class="n">new_state</span><span class="p">)</span>
+        <span class="n">packet</span><span class="o">.</span><span class="n">setDestination</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">packetID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">(</span><span class="n">packet</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">)</span>
+            
+            <span class="n">pkt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getResponse</span><span class="p">(</span><span class="n">packetID</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">pkt</span><span class="o">.</span><span class="n">getState</span><span class="p">()</span>
+            
+        <span class="k">except</span> <span class="n">ICP_Timeout</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+    
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Register Operations</span>
+    <span class="c">#===========================================================================</span>
+    
+    <span class="k">def</span> <span class="nf">register_config_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Configure a register to reg_cache the value. Used for static values that change infrequently</span>
+<span class="sd">        </span>
+<span class="sd">        :param address: 16-bit address</span>
+<span class="sd">        :type address: int</span>
+<span class="sd">        :param subindex: 8-bit subindex</span>
+<span class="sd">        :type subindex: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reg_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+                
+    <span class="k">def</span> <span class="nf">register_config_accumulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">sample_time</span><span class="p">,</span> <span class="n">data_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Configure a register to accumulate values. Used to get sampled waveforms.</span>
+<span class="sd">        </span>
+<span class="sd">        :param address: 16-bit address</span>
+<span class="sd">        :type address: int</span>
+<span class="sd">        :param subindex: 8-bit subindex</span>
+<span class="sd">        :type subindex: int</span>
+<span class="sd">        :param depth: Number of samples</span>
+<span class="sd">        :type depth: int</span>
+<span class="sd">        :param sample_time: Sample Time (sec)</span>
+<span class="sd">        :type sample_time: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reg_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acc_config</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">depth</span><span class="p">,</span> <span class="n">sample_time</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+        
+        <span class="c"># Create a new accumulator object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accumulators</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">UPEL_ICP_Accumulator</span><span class="p">(</span><span class="n">depth</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+        
+        <span class="c"># Start the accumulator thread</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">acc_thread</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">acc_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__accumulator_thread</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">acc_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        
+    <span class="k">def</span> <span class="nf">register_config_clear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clears register configuration if a register is set to cache or accumulate data.</span>
+<span class="sd">        </span>
+<span class="sd">        :param address: 16-bit address</span>
+<span class="sd">        :type address: int</span>
+<span class="sd">        :param subindex: 8-bit subindex</span>
+<span class="sd">        :type subindex: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accumulators</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">acc_config</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reg_cache</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        
+    <span class="k">def</span> <span class="nf">register_accumulator_get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return accumulated data for registers configured.</span>
+<span class="sd">        </span>
+<span class="sd">        :param address: 16-bit address</span>
+<span class="sd">        :type address: int</span>
+<span class="sd">        :param subindex: 8-bit subindex</span>
+<span class="sd">        :type subindex: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">acc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accumulators</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">))</span>
+        
+            <span class="k">return</span> <span class="n">acc</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+    
+    <span class="k">def</span> <span class="nf">register_write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">data_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write a value to a register. Blocking operation.</span>
+<span class="sd">        </span>
+<span class="sd">        :warning::</span>
+<span class="sd">        </span>
+<span class="sd">            Binary data cannot be encoded for network transmission from a Model.</span>
+<span class="sd">            Models should use the appropriate writeReg function for the desired</span>
+<span class="sd">            data type to avoid raising exceptions or corrupting data.</span>
+<span class="sd">            </span>
+<span class="sd">        :param address: 16-bit address</span>
+<span class="sd">        :type address: int</span>
+<span class="sd">        :param subindex: 8-bit subindex</span>
+<span class="sd">        :type subindex: int</span>
+<span class="sd">        :param data: Data to write</span>
+<span class="sd">        :type data: variable</span>
+<span class="sd">        :param data_type: Data type</span>
+<span class="sd">        :type data_type: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">packetID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">register_write_queue</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+        
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getResponse</span><span class="p">(</span><span class="n">packetID</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                    
+            <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">data_type</span><span class="p">)</span>
+                
+        <span class="k">except</span> <span class="n">ICP_Timeout</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+    
+    <span class="k">def</span> <span class="nf">register_write_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">data_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Queue a write operation to a register. Returns packet ID for the sent</span>
+<span class="sd">        packet. If there are no packet IDs currently available, this call</span>
+<span class="sd">        blocks until one is available. Otherwise, this call returns immediately.</span>
+<span class="sd">        </span>
+<span class="sd">        :param address: 16-bit address</span>
+<span class="sd">        :type address: int</span>
+<span class="sd">        :param subindex: 8-bit subindex</span>
+<span class="sd">        :type subindex: int</span>
+<span class="sd">        :param data: Data to write</span>
+<span class="sd">        :type data: variable</span>
+<span class="sd">        :param data_type: Data type</span>
+<span class="sd">        :type data_type: str</span>
+<span class="sd">        :returns: packetID</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+            
+        <span class="n">packet</span> <span class="o">=</span> <span class="n">RegisterWritePacket</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+        <span class="n">packet</span><span class="o">.</span><span class="n">setDestination</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">packetID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">(</span><span class="n">packet</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">)</span>
+        
+            <span class="bp">self</span><span class="o">.</span><span class="n">reg_outgoing</span><span class="p">[</span><span class="n">packetID</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+        
+            <span class="k">return</span> <span class="n">packetID</span>
+        
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span>
+                
+    <span class="k">def</span> <span class="nf">register_read_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">,</span> <span class="n">data_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Queue a read operation to a register. Returns packet ID for the sent</span>
+<span class="sd">        packet. If there are no packet IDs currently available, this call</span>
+<span class="sd">        blocks until one is available. Otherwise, this call returns immediately.</span>
+<span class="sd">        </span>
+<span class="sd">        :param address: 16-bit address</span>
+<span class="sd">        :type address: int</span>
+<span class="sd">        :param subindex: 8-bit subindex</span>
+<span class="sd">        :type subindex: int</span>
+<span class="sd">        :param data_type: Data type</span>
+<span class="sd">        :type data_type: str</span>
+<span class="sd">        :returns: packetID</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">packet</span> <span class="o">=</span> <span class="n">RegisterReadPacket</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">)</span>
+        <span class="n">packet</span><span class="o">.</span><span class="n">setDestination</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">address</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">packetID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">(</span><span class="n">packet</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">)</span>
+        
+            <span class="bp">self</span><span class="o">.</span><span class="n">reg_outgoing</span><span class="p">[</span><span class="n">packetID</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+        
+            <span class="k">return</span> <span class="n">packetID</span>
+        
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span>
+    
+    <span class="k">def</span> <span class="nf">register_read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">,</span> <span class="n">data_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read a value from a register. Blocks until data returns. If cached data</span>
+<span class="sd">        exists, it will be returned. A cache update can be forced by directly</span>
+<span class="sd">        calling register_read_queue().</span>
+<span class="sd">        </span>
+<span class="sd">        :warning::</span>
+<span class="sd">        </span>
+<span class="sd">            Binary data cannot be encoded for network transmission from a Model.</span>
+<span class="sd">            Models should use the appropriate readReg function for the desired</span>
+<span class="sd">            data type to avoid raising exceptions. </span>
+<span class="sd">        </span>
+<span class="sd">        :param address: 16-bit address</span>
+<span class="sd">        :type address: int</span>
+<span class="sd">        :param subindex: 8-bit subindex</span>
+<span class="sd">        :type subindex: int</span>
+<span class="sd">        :param data_type: Data type</span>
+<span class="sd">        :type data_type: str</span>
+<span class="sd">        :returns: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg_cache</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="c"># Cached &amp; Accumulated registers should get values from the reg_cache</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reg_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">packetID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">register_read_queue</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subindex</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+            
+                <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getResponse</span><span class="p">(</span><span class="n">packetID</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                        
+                <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">data_type</span><span class="p">)</span>
+                    
+            <span class="k">except</span> <span class="n">ICP_Timeout</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">None</span>
+    
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Process Data Operations</span>
+    <span class="c">#===========================================================================</span>
+    
+    <span class="k">def</span> <span class="nf">readProc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+        <span class="k">pass</span>  
+        
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="../../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Kevin Kennedy (Protonyx).
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

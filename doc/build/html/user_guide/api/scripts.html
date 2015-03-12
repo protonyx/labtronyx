@@ -1,0 +1,191 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Developing Scripts &mdash; Labtronyx 0.1dev-150310 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1dev-150310',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Labtronyx 0.1dev-150310 documentation" href="../../index.html" />
+    <link rel="up" title="Labtronyx Python Library" href="index.html" />
+    <link rel="next" title="Advanced Topics" href="advanced.html" />
+    <link rel="prev" title="Introduction" href="intro.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="advanced.html" title="Advanced Topics"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="Introduction"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >User Guide</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Labtronyx Python Library</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="developing-scripts">
+<h1>Developing Scripts<a class="headerlink" href="#developing-scripts" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="script-framework">
+<h2>Script Framework<a class="headerlink" href="#script-framework" title="Permalink to this headline">¶</a></h2>
+<p>Tests are a collection of scripts to test the functionality of a
+device-under-test (DUT). They can be used as unit/regression tests for Models
+under development, or they can automate functional testing of a physical device.</p>
+<p>Programmatically, tests are Python objects that inherit the Test Base class
+contained in <tt class="xref py py-class docutils literal"><span class="pre">tests.t_Base.t_Base</span></tt>. Any class that inherits the Test
+Base class will launch a Tkinter dialog when instantiated. From this dialog,
+individual test functions can be run</p>
+<dl class="class">
+<dt id="labtronyx.Base_Script.Base_Script">
+<em class="property">class </em><tt class="descclassname">labtronyx.Base_Script.</tt><tt class="descname">Base_Script</tt><a class="reference internal" href="../../_modules/labtronyx/Base_Script.html#Base_Script"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.Base_Script.Base_Script" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base object for tests</p>
+<p>Tests are a collection of scripts to test the functionality of a 
+device-under-test (DUT). They are not necessarily limited to regression
+testing for software, but can also be used to test physical devices.</p>
+<dl class="class">
+<dt id="labtronyx.Base_Script.Base_Script.g_ConsoleLoggerHandler">
+<em class="property">class </em><tt class="descname">g_ConsoleLoggerHandler</tt><big>(</big><em>console</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/Base_Script.html#Base_Script.g_ConsoleLoggerHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.Base_Script.Base_Script.g_ConsoleLoggerHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logging handler to direct logging input to a Tkinter Text widget</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.Base_Script.Base_Script.registerTest">
+<tt class="descclassname">Base_Script.</tt><tt class="descname">registerTest</tt><big>(</big><em>name</em>, <em>method_name</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/Base_Script.html#Base_Script.registerTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.Base_Script.Base_Script.registerTest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notify the test framework to register a test function.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Human readable test name</li>
+<li><strong>method_name</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Method name</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.Base_Script.Base_Script.requireInstrument">
+<tt class="descclassname">Base_Script.</tt><tt class="descname">requireInstrument</tt><big>(</big><em>name</em>, <em>attr_name</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/Base_Script.html#Base_Script.requireInstrument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.Base_Script.Base_Script.requireInstrument" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notify the test framework to require an Instrument. Instrument will be
+registered as an attribute during test startup. At least one of the
+optional arguments must be provided to correctly identify an 
+instrument.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Human readable instrument name</li>
+<li><strong>attr_name</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Attribute to register</li>
+<li><strong>serial</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Optional - Serial number to identify instrument</li>
+<li><strong>model</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Optional - Model number to identify instrument</li>
+<li><strong>type</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Optional - Instrument type to identify instrument</li>
+<li><strong>driver</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Optional - Instrument driver (Model) to identify instrument)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Developing Scripts</a><ul>
+<li><a class="reference internal" href="#script-framework">Script Framework</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="intro.html"
+                        title="previous chapter">Introduction</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="advanced.html"
+                        title="next chapter">Advanced Topics</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../_sources/user_guide/api/scripts.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="advanced.html" title="Advanced Topics"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="Introduction"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Labtronyx 0.1dev-150310 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >User Guide</a> &raquo;</li>
+          <li><a href="index.html" >Labtronyx Python Library</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Kevin Kennedy (Protonyx).
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
