@@ -50,6 +50,14 @@ class Base_Resource(object):
         self.__status = new_status
         
         self.rpc_server.notifyClients('event_status_change')
+        
+    def getResourceError(self):
+        return self.__error
+    
+    def setResourceError(self, error):
+        self.__error = error
+        
+        self.rpc_server.notifyClients('event_resource_error')
     
     def getInterfaceName(self):
         """

@@ -6,6 +6,8 @@ import re
 import time
 import visa
 
+import common.resource_status as resource_status
+
 class i_VISA(Base_Interface):
     """
     VISA Controller
@@ -122,10 +124,11 @@ class r_VISA(Base_Resource):
                                                                   open_timeout=0.5)
             
             self.identify()
-            self.status = 'READY'
             
+            # Attempt to automatically load a driver
             self.loadDriver()
             
+            self.setResourceStatus(resource_status.READY)
             
         except visa.VisaIOError as e:
             self.VID = ''
@@ -133,13 +136,20 @@ class r_VISA(Base_Resource):
             self.firmware = ''
             self.serial = ''
             
+            self.setResourceStatus(resource_status.ERROR)
+            
             if e.abbreviation == "VI_ERROR_RSRC_BUSY":
                 self.locked = True
                 self.logger.info("Unable to Identify, resource is busy")
+                self.setResourceError(resource_status.ERROR_BUSY)
+                
             elif e.abbreviation == "VI_ERROR_RSRC_NFOUND":
-                pass
+                self.logger.info("Unable to connect, resource was not found")
+                self.setResourceError(resource_status.ERROR_NOTFOUND)
+                
             else:
                 self.logger.exception("Unknown VISA Exception")
+                self.setResourceError(resource_status.ERROR_UNKNOWN)
         
     #===========================================================================
     # Resource State
@@ -192,11 +202,24 @@ class r_VISA(Base_Resource):
     #===========================================================================
     
     def write(self, data):
-        for attempt in range(2):
-            try:
-                return self.instrument.write(data)
-            except visa.InvalidSession:
-                self.open()
+        """
+        Send data to the instrument. Raises exception if the resource is not
+        ready. To get the error condition, call `getResourceError`
+        
+        :param data: Data to send
+        :type data: str
+        :raises: ResourceNotReady
+        """
+        if self.getResourceStatus() == resource_status.READY:
+            for attempt in range(2):
+                try:
+                    return self.instrument.write(data)
+                except visa.InvalidSession:
+                    self.open()
+                    
+        else:
+            #raise ResourceNotReady()
+            pass
     
     def read(self):
         return self.instrument.read()
