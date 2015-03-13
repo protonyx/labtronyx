@@ -75,7 +75,7 @@ class InstrumentControl(object):
                 
         # Attempt to connect to the local manager
         if not self.addManager('localhost'):
-            self.startManager()
+            self.startManager(kwargs.get('debug', False))
             time.sleep(3.0)
             
         # Check the local Manager version
@@ -151,7 +151,7 @@ class InstrumentControl(object):
     # Local Manager Operations
     #===========================================================================
     
-    def startManager(self):
+    def startManager(self, debug=False):
         """
         Start a local instance of :class:`InstrumentManager` using 
         :func:`subprocess.Popen`.
@@ -172,8 +172,12 @@ class InstrumentControl(object):
         try:
             pyExec = sys.executable
             manPath = os.path.join(self.rootPath, 'InstrumentManager.py')
+            params= [pyExec, manPath]
             
-            subprocess.Popen([pyExec, manPath])
+            if debug:
+                params.append('-d')
+            
+            subprocess.Popen(params)
             
         except Exception as e:
             raise
@@ -404,7 +408,7 @@ class InstrumentControl(object):
             a CAN bus-based Controller, which must know a device address before
             communication can be established.
         
-        :param address: IP Address of manager
+        :param address: IP Address of host
         :type address: str
         :param controller: Name of controller to attach new resource
         :type controller: str
@@ -436,7 +440,7 @@ class InstrumentControl(object):
         """
         Get the list of Models from an InstrumentManager instance
         
-        :param address: IP Address of manager
+        :param address: IP Address of host
         :type address: str
         
         :returns: list
@@ -463,6 +467,35 @@ class InstrumentControl(object):
     def refreshInstrument(self, res_uuid):
         dev = self.getInstrument(res_uuid)
         dev._refresh()
+        
+    def findInstrument(self, **kwargs):
+        """
+        Get a list of instruments that match the parameters specified.
+        
+        :param address: IP Address of host
+        :param hostname: Hostname of host
+        :param uuid: Unique Resource Identifier (UUID)
+        :param interface: Interface
+        :param resourceID: Interface Resource Identifier
+        :param resourceType: Resource Type (Serial, VISA, etc.)
+        :param deviceVendor: Instrument Vendor
+        :param deviceModel: Instrument Model Number
+        :param deviceSerial: Instrument Serial Number
+        """
+        matching_instruments = []
+        
+        for uuid, res_dict in self.properties.items():
+            match = True
+            
+            for key, value in kwargs.items():
+                if res_dict.get(key) != value:
+                    match = False
+                    break
+                
+            if match:
+                matching_instruments.append(self.getInstrument(uuid))
+                
+        return matching_instruments
     
     def getInstrument(self, res_uuid, **kwargs):
         """
@@ -499,6 +532,8 @@ class InstrumentControl(object):
             This function opens a socket to every known instrument with a Model
             loaded. This could use a lot of system resources both locally and
             on remote InstrumentManagers if you don't need them.
+            
+        :deprecated:
         
         :returns: list of :class:`RpcClient` objects
         """
@@ -512,6 +547,8 @@ class InstrumentControl(object):
         .. note::
         
             Only resources that have a model loaded will report a serial number.
+            
+        :deprecated:
         
         :returns: :class:`RpcClient` object
         """
@@ -529,6 +566,8 @@ class InstrumentControl(object):
         .. note::
         
             Only resources that have a model loaded will report a model number.
+            
+        :deprecated:
         
         :returns: list of :class:`RpcClient` objects
         """
@@ -548,6 +587,8 @@ class InstrumentControl(object):
         .. note::
         
             Only resources that have a model loaded will report a device type.
+            
+        :deprecated:
         
         :returns: list of :class:`RpcClient` objects
         """
@@ -567,6 +608,8 @@ class InstrumentControl(object):
         .. note::
         
             Only resources that have a model loaded will report a device type.
+            
+        :deprecated:
         
         :returns: list of :class:`RpcClient` objects
         """
