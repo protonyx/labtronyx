@@ -2,7 +2,7 @@ from Base_Applet import Base_Applet
 
 import Tkinter as Tk
 
-from application.widgets import *
+from widgets import *
 
 # ICP Widgets
 from . import *
@@ -193,13 +193,13 @@ class v_BDPC(Base_Applet):
         # Graphs
         #=======================================================================
         self.graph_input = vw_plots.vw_Plot(self, title="Input")
-        self.graph_input.addPlot(model=self.instr, method='getInputVoltage')
-        self.graph_input.addPlot(model=self.instr, method='getInputCurrent')
+        self.graph_input.addPlot(self.instr, method='getInputVoltage')
+        self.graph_input.addPlot(self.instr, method='getInputCurrent')
         self.graph_input.grid(row=0, column=2)
         
         self.graph_output = vw_plots.vw_Plot(self, title="Output")
-        self.graph_output.addPlot(model=self.instr, method='getOutputVoltage')
-        self.graph_output.addPlot(model=self.instr, method='getOutputCurrent')
+        self.graph_output.addPlot(self.instr, method='getOutputVoltage')
+        self.graph_output.addPlot(self.instr, method='getOutputCurrent')
         self.graph_output.grid(row=1, column=2)
         
     def cb_refreshToggle(self):

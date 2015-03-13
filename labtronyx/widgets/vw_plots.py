@@ -90,16 +90,18 @@ class vw_Plot(vw_Base):
         except ImportError:
             Tk.Label(self, text="Missing Dependencies!").pack()
         
-    def addPlot(self, model, method, **kwargs):
+    def addPlot(self, obj, method, **kwargs):
         """
-        :param model: Model object
-        :type model: object
+        Add an object and method to the plot
+        
+        :param obj: Instrument object
+        :type obj: object
         :param method: Y-Axis data method name
         :type method: str
         """
         ret = {}
         
-        ret['model'] = model
+        ret['object'] = obj
         ret['method'] = method
         ret['dataset'] = self.subplot_1.plot(self.time_axis, self.data)
         ret['data'] = []
@@ -118,10 +120,10 @@ class vw_Plot(vw_Base):
         
     def startSampling(self):
         for plotID, plot_attr in self.plots.items():
-            model = plot_attr.get('model')
+            obj = plot_attr.get('object')
             method = plot_attr.get('method')
             
-            model.startCollector(method, self.sample_time, self.max_samples)
+            obj.startCollector(method, self.sample_time, self.max_samples)
             
         self.sampling = True
         self._schedule_update()
@@ -130,10 +132,10 @@ class vw_Plot(vw_Base):
         self.sampling = False
         
         for plotID, plot_attr in self.plots.items():
-            model = plot_attr.get('model')
+            obj = plot_attr.get('object')
             method = plot_attr.get('method')
             
-            model.stopCollector(method)
+            obj.stopCollector(method)
 
     def cb_run(self):
         if self.sampling == False:
@@ -149,13 +151,13 @@ class vw_Plot(vw_Base):
     def cb_update(self):
         if self.sampling:
             for plotID, plot_attr in self.plots.items():
-                model = plot_attr.get('model')
+                obj = plot_attr.get('object')
                 method = plot_attr.get('method')
                 dataset = plot_attr.get('dataset')
                 data = plot_attr.get('data')
                 last_time = plot_attr.get('time')
                 
-                new_data = self.model.getCollector(method, last_time)
+                new_data = obj.getCollector(method, last_time)
                 
                 try:
                     for timestamp, sample in new_data:
