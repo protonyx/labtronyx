@@ -297,8 +297,11 @@ class RpcServerThread(threading.Thread):
         self.logger.debug('[%s] RPC Server asked to stop', self.name)
         
         for conn in self.server._connections:
-            conn.stop()
-            conn.join()
+            try:
+                conn.stop()
+                #conn.join()
+            except:
+                pass
             
         self.e_alive.clear()
     

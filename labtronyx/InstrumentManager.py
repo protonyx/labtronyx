@@ -35,6 +35,13 @@ class InstrumentManager(object):
                                             logger=self.logger)
             self.rpc_server.registerObject(self)
             
+            # Load Drivers
+            import drivers
+            self.drivers = drivers.getAllDrivers()
+            
+            for driver in self.drivers.keys():
+                self.logger.debug("Found Driver: %s", driver)
+            
             # Load Interfaces
             import interfaces
             interface_info = interfaces.getAllInterfaces()
@@ -43,15 +50,6 @@ class InstrumentManager(object):
                 self.logger.debug("Found Interface: %s", interf)
                 self.enableInterface(interf)
         
-            # Load Drivers
-            import drivers
-            self.drivers = drivers.getAllDrivers()
-            
-            for driver in self.drivers.keys():
-                self.logger.debug("Found Driver: %s", driver)
-            
-            
-            
         except rpc.RpcServerPortInUse:
             self.logger.error("RPC Port in use, shutting down...")
     
@@ -85,8 +83,10 @@ class InstrumentManager(object):
                 res.close()
             except:
                 pass
+            
+        interface_list = self.interfaces.keys()
                 
-        for interface in self.interfaces:
+        for interface in interface_list:
             self.disableInterface(interface)
                 
         # Stop the InstrumentManager RPC Server
@@ -131,11 +131,11 @@ class InstrumentManager(object):
     def disableInterface(self, interface):
         if interface in self.interfaces:
             try:
-                inter = self.interfaces.get(interface)
+                inter = self.interfaces.pop(interface)
                 inter.close()
                 inter.stop()
                 self.logger.info("Stopped Interface: %s" % interface)
-                self.interfaces.remove(inter)
+                
             except:
                 self.logger.exception("Exception during interface close")
                 

@@ -32,6 +32,9 @@ class i_Serial(Base_Interface):
             try:
                 if res.isOpen():
                     res.close()
+                    
+                res.killResource()
+                
             except:
                 pass
             
@@ -103,13 +106,14 @@ class r_Serial(Base_Resource):
             
             self.logger.info("Identified new Serial resource: %s", resID)
             
-        except serial.SerialException:
+            self.setResourceStatus(common.status.ready)
+            
+        except serial.SerialException as e:
             self.setResourceStatus(common.status.error)
-            self.logger.exception("Unable to create resource")
+            self.setResourceError((e.errno, e.message))
+            
         except:
-            pass
-        
-        self.setResourceStatus(common.status.ready)
+            self.logger.exception("Unhandled exception")
         
     #===========================================================================
     # Resource State

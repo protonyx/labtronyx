@@ -11,3 +11,6 @@ ERROR_BAD_DATA = (102, 'Device returned bad data')
 ERROR_DEVICE_ERROR = (200, 'Device reported an internal error')
 
 ERROR_UNKNOWN = (999, 'Unknown Error')
+
+class ResourceNotReady(RuntimeError):
+    pass

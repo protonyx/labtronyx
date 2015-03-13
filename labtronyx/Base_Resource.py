@@ -7,6 +7,8 @@ import sys
 import common
 import common.rpc as rpc
 
+import common.resource_status as resource_status
+
 class Base_Resource(object):
     type = "Generic"
     
@@ -30,6 +32,12 @@ class Base_Resource(object):
         self.rpc_server = rpc.RpcServer(name='%s-%s' % (interface.getInterfaceName(), resID),
                                         logger=self.logger)
         self.rpc_server.registerObject(self)
+        
+    def __del__(self):
+        self.killResource()
+        
+    def killResource(self):
+        self.rpc_server.rpc_stop()
         
     def getUUID(self):
         return self.__uuid
@@ -115,6 +123,17 @@ class Base_Resource(object):
         :returns: True if close was successful, False otherwise
         """
         raise NotImplementedError
+    
+    def checkResourceStatus(self):
+        """
+        Raise an error if the resource is not ready. Used in resources that
+        sub-class Base_Resource to prevent attempted data transfer when the
+        resource is in a bad state.
+        
+        :raises: common.resource_status.ResourceNotReady()
+        """
+        if self.getResourceStatus() != resource_status.READY:
+            raise resource_status.ResourceNotReady()
     
     #===========================================================================
     # Data Transmission

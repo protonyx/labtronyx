@@ -3,6 +3,8 @@ from Base_Resource import Base_Resource
 
 import sys
 
+import common.resource_status as resource_status
+
 class i_Debug(Base_Interface):
     
     info = {
@@ -29,6 +31,11 @@ class i_Debug(Base_Interface):
             return False
         
     def close(self):
+        for resObj in self.resources.values():
+            resObj.killResource()
+                    
+        self.resources.clear()
+        
         return True
     
     def run(self):
@@ -49,10 +56,26 @@ class r_Debug(Base_Resource):
     type = "Debug"
     
     def open(self):
+        self.setResourceStatus(resource_status.READY)
+        
         return True
     
     def close(self):
         return True
+    
+    def write(self, data):
+        self.checkResourceStatus()
+        
+        return True
+    
+    def triggerDisconnect(self):
+        self.setResourceStatus(resource_status.ERROR_UNRESPONSIVE)
+    
+    def triggerError(self):
+        self.setResourceStatus(resource_status.ERROR_DEVICE_ERROR)
+        
+    def triggerReady(self):
+        self.setResourceStatus(resource_status.READY)
     
     def getProperties(self):
         prop = Base_Resource.getProperties(self)

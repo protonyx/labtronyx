@@ -81,7 +81,10 @@ class i_VISA(Base_Interface):
         Stops the VISA Controller. Stops the controller thread and frees all
         resources associated with the controller.
         """
-        # TODO: Free all resources associated with the controller
+        for resObj in self.resources.values():
+            resObj.killResource()
+        
+        self.resources.clear()
         
         return True
     
@@ -210,21 +213,22 @@ class r_VISA(Base_Resource):
         :type data: str
         :raises: ResourceNotReady
         """
-        if self.getResourceStatus() == resource_status.READY:
-            for attempt in range(2):
-                try:
-                    return self.instrument.write(data)
-                except visa.InvalidSession:
-                    self.open()
-                    
-        else:
-            #raise ResourceNotReady()
-            pass
+        self.checkResourceStatus()
+        
+        for attempt in range(2):
+            try:
+                return self.instrument.write(data)
+            except visa.InvalidSession:
+                self.open()
     
     def read(self):
+        self.checkResourceStatus()
+        
         return self.instrument.read()
     
     def query(self, data):
+        self.checkResourceStatus()
+        
         return self.instrument.query(data)
     
     def getProperties(self):
