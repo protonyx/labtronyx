@@ -3,12 +3,84 @@ from Base_Resource import Base_Resource
 
 import struct
 import time
+import socket
+import select
+import threading
+import Queue
+from sets import Set
 
 import numpy
 
-from common.icp import UPEL_ICP
+#===========================================================================
+# data_types_pack = {
+#     'int8': lambda data: struct.pack('!b', int(data)),
+#     'int16': lambda data: struct.pack('!h', int(data)),
+#     'int32': lambda data: struct.pack('!i', int(data)),
+#     'int64': lambda data: struct.pack('!q', int(data)),
+#     'float': lambda data: struct.pack('!f', float(data)),
+#     'double': lambda data: struct.pack('!d', float(data)) }
+# 
+# data_types_unpack = {
+#     'int8': lambda data: struct.unpack('!b', data)[0],
+#     'int16': lambda data: struct.unpack('!h', data)[0],
+#     'int32': lambda data: struct.unpack('!i', data)[0],
+#     'int64': lambda data: struct.unpack('!q', data)[0],
+#     'float': lambda data: struct.unpack('!f', data)[0],
+#     'double': lambda data: struct.unpack('!d', data)[0] }
+#===========================================================================
 
 class i_UPEL(Base_Interface):
+    """
+    The UPEL ICP thread manages communication in and out of the network socket
+    on port 7968.
+    
+    Structure
+    =========
+    
+    Message Queue
+    -------------
+    
+    Packets to send out to remote devices are queued in the message queue and sent
+    one at a time. Queuing a message requires:
+    
+      * IP Address
+      * TTL (Time to Live)
+      * Response Queue
+      * ICP Packet Object
+    
+    The response packet object will be loaded into the response queue.
+    
+    Routing Map
+    -----------
+    
+    When a message is sent, it is assigned an ID within the packet header. If a
+    response is expected from an outgoing packet, an entry is made in the map
+    table to associate the packet ID of the response packet with the object that
+    sent the original packet.
+    
+    The Arbiter will periodically scan the routing map for old entries. If an
+    entry has exceeded the TTL window, a signal is sent to the originating
+    object that a timeout condition has occurred. 
+    
+    The Packet ID is an 8-bit value, so there are 256 possible ID codes. A 
+    Packet ID of 0x00 is reserved for "notification" packet where a response is 
+    not expected, and thus will never create an entry in the routing map, giving 
+    a maximum of 255 possible entries in the routing map.
+    
+    The routing map has the format: { PacketID: Address }
+    
+    Execution Strategy
+    ==================
+    
+    The arbiter will alternate between servicing the message queue, processing 
+    any data in the __socket buffer, and checking the status of entries in the 
+    routing map. If none of those tasks requires attention, the thread will 
+    sleep for a small time interval to limit loading the processor excessively.
+    
+    Conforms to Rev 1.0 of the UPEL Instrument Control Protocol
+
+    :author: Kevin Kennedy
+    """
     
     info = {
         # Interface Author
@@ -27,25 +99,65 @@ class i_UPEL(Base_Interface):
     
     # UPEL Controller Config
     broadcastIP = '192.168.1.255'
-    UPELPort = 7968
+    DEFAULT_PORT = 7968
 
     def open(self):
-        return False
-    
-        # Start the arbiter thread
-        self.icp_manager = UPEL_ICP(logger=self.logger)
-        self.icp_manager.start()
+        self.alive = threading.Event()
         
         return True
     
     def close(self):
-        self.icp_manager.stop()
+        self.alive.clear()
+        
+    def run(self):
+        # Init
+        self.__messageQueue = Queue.Queue()
+        self.__routingMap = {} # { PacketID: ResID }
+        self.__expiration = {} # { PacketID: Expiration time }
+        self.__availableIDs = Set(range(1,255))
+        
+        # Configure Socket
+        # IPv4 UDP
+        try:
+            self.__socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.__socket.bind(('', self.DEFAULT_PORT))
+            self.__socket.setblocking(0)
+            self.__socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            
+            self.logger.debug("ICP Socket Bound to port %i", self.port)
+            
+        except:
+            pass
+        
+        self.alive.set()
+        
+        while (self.alive.is_set()):
+            try:
+                #===================================================================
+                # Service the socket
+                #===================================================================
+                self._serviceSocket()
+                
+                #===================================================================
+                # Service the message queue
+                #===================================================================
+                self._serviceQueue()
+                
+                #===================================================================
+                # Check for dead entries in the routing map
+                #===================================================================
+                self._serviceRoutingMap()
+                
+                # TODO: Do we need to sleep here or run full speed?
+                
+            except:
+                self.logger.exception("UPEL ICP Thread Exception")
+                
+        self.__socket.shutdown(1)
+        self.__socket.close()
     
     def getResources(self):
         return self.resources
-    
-    def canEditResources(self):
-        return True
     
     def openResourceObject(self, resID):
         resource = self.resourceObjects.get(resID, None)
@@ -64,32 +176,13 @@ class i_UPEL(Base_Interface):
             del self.resourceObjects[resID]
     
     #===========================================================================
-    # Optional - Automatic Controllers
+    # Resource Management
     #===========================================================================
     
     def refresh(self):
-        return None
-    
         self.icp_manager.discover(self.config.broadcastIP)
         
-        # Give the arbiter time to process responses
-        time.sleep(2.0)
-        
-        self.resources = self.icp_manager.getResources()
-
-    #===========================================================================
-    # def _getInstrument(self, resID):
-    #     return self.icp_manager.getDevice(resID)
-    #     
-    # def _getDevice(self, resID):
-    #     return self.icp_manager.getDevice(resID)
-    #===========================================================================
-    
-    #===========================================================================
-    # Optional - Manual Controllers
-    #===========================================================================
-    
-    def addResource(self, ResID, VID=None, PID=None):
+    def addResource(self, ResID):
         """
         Treats an addResource request as a hint that a device exists. Attempts
         to send a discovery packet to the device to get more information.
@@ -102,9 +195,203 @@ class i_UPEL(Base_Interface):
         :returns: bool. True if successful, False otherwise
         """
         self.icp_manager.discover(ResID)
+        
+    def discover(self, address='<broadcast>'):
+        """
+        Queues a broadcast discovery packet. The arbiter will automatically
+        update the resource table as responses come in. 
+        
+        :returns: None
+        """
+        packet = DiscoveryPacket()
+        packet.setDestination(address)
+
+        # Queue Discovery Packet
+        self.__messageQueue.put(packet)
+        
+    def getDevice(self, address):
+        return self.devices.get(address, None)
+
+    #===========================================================================
+    # def _getInstrument(self, resID):
+    #     return self.icp_manager.getDevice(resID)
+    #     
+    # def _getDevice(self, resID):
+    #     return self.icp_manager.getDevice(resID)
+    #===========================================================================
     
-    def destroyResource(self):
-        pass
+    def queuePacket(self, packet_obj, ttl):
+        """
+        Insert a packet into the queue. If unable to queue packet, raises Full
+         
+        :param packet_obj: ICP Packet Object
+        :type packet_obj: UPEL_ICP_Packet
+        :param ttl: Time to Live (seconds)
+        :type ttl: int
+        :returns: packetID or none if unable to queue message
+        """
+        if len(self.__availableIDs) > 0:
+            try:
+                 
+                # Assign a PacketID
+                packetID = self.__availableIDs.pop()
+                 
+                packet_obj.PACKET_ID = packetID
+                     
+                self.__messageQueue.put(packet_obj, False)
+                self.__expiration[packetID] = time.time() + ttl
+                 
+                return packetID
+             
+            except KeyError:
+                # No IDs available
+                raise Full
+             
+            except Full:
+                # Failed to add to queue
+                raise
+             
+        else:
+            return None
+        
+    def _serviceSocket(self):
+            read, _, _ = select.select([self.__socket],[],[], 0.1)
+            
+            if self.__socket in read:
+                data, address = self.__socket.recvfrom(4096)
+            
+                try:
+                    resp_pkt = UPEL_ICP_Packet(data)
+                    packetID = resp_pkt.PACKET_ID
+                    packetType = resp_pkt.PACKET_TYPE
+                    
+                    sourceIP, _ = address
+                    resp_pkt.setSource(sourceIP)
+                    
+                    self.logger.debug("ICP RX [ID:%i, TYPE:%X, SIZE:%i] from %s", packetID, packetType, len(resp_pkt.getPayload()), sourceIP)
+                    
+                    # Route Packets
+                    if packetType == 0xF and resp_pkt.isResponse():
+                        # Filter Discovery Packets
+                        ident = resp_pkt.getPayload().split(',')
+                        
+                        # Check if resource exists
+                        resID = address[0]
+                        res = (ident[0], ident[1])
+                        
+                        if resID not in self.devices.keys():
+                            # Create new device
+                            self.devices[resID] = UPEL_ICP_Device(resID, self.queuePacket)
+                            self.resources[resID] = res
+                        
+                            self.logger.info("Found UPEL ICP Device: %s %s" % res)
+                    
+                    elif packetID in self.__routingMap.keys():
+                        destination = self.__routingMap.get(packetID, None)
+                        
+                        if destination in self.devices.keys():
+                            dev = self.devices.get(destination)
+                            
+                            dev._processResponse(resp_pkt)
+                            
+                            # Remove entry from routing map
+                            self.__routingMap.pop(packetID)
+                            
+                            # Remove entry from expiration table
+                            self.__expiration.pop(packetID)
+                            
+                            # Add free ID back into pool
+                            self.__availableIDs.add(packetID)
+                            
+                    else:
+                        self.logger.error("ICP RX [ID:%i] EXPIRED/INVALID PACKET ID", packetID)
+                        
+                except ICP_Invalid_Packet:
+                    pass
+                
+                #except:
+                    # Pass on all errors for the time being
+                    #pass
+                
+    def _serviceQueue(self):
+        """
+        :returns: bool - True if the queue was not empty, False otherwise
+        """
+        if not self.__messageQueue.empty() and len(self.__availableIDs) > 0:
+            try:
+                packet_obj = self.__messageQueue.get_nowait()
+                
+                if issubclass(packet_obj.__class__, UPEL_ICP_Packet):
+                    destination = packet_obj.getDestination()
+                    
+                    # Assign a packet ID
+                    packetID = packet_obj.PACKET_ID
+                    
+                    # Pack for transmission
+                    packet = packet_obj.pack()
+                    
+                    # Override broadcast address if necessary
+                    if destination == "<broadcast>":
+                        #=======================================================
+                        # if self.config.broadcastIP:
+                        #     try:
+                        #         destination = self.config.broadcastIP
+                        #     except:
+                        #         pass
+                        #=======================================================
+                        self.__socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+                            
+                    else:
+                        # Add entry to routing map
+                        self.__routingMap[packetID] = destination
+                        self.__socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 0)
+                    
+                    # Transmit
+                    self.__socket.sendto(packet, (destination, self.port))
+                    
+                    self.logger.debug("ICP TX [ID:%i] to %s", packetID, destination)
+                    
+                else:
+                    return True
+                
+            except KeyError:
+                # No IDs available
+                return True
+            
+            except Queue.Empty:
+                return False
+            
+            except:
+                self.logger.exception("Exception encountered while servicing queue")
+                return True
+            
+        else:
+            return False
+        
+    def _serviceRoutingMap(self):
+        for packetID, ttl in self.__expiration.items():
+            if time.time() > self.__expiration.get(packetID):
+                # packet expired, notify ICP Device
+                try:
+                    destination = self.__routingMap.pop(packetID)
+                    
+                    if destination in self.devices.keys():
+                        dev = self.devices.get(destination)
+                    
+                        dev._processTimeout(packetID)
+                    
+                except KeyError:
+                    # Not in routing map
+                    pass
+                    
+                finally:
+                    # Remove entry from expiration table
+                    self.__expiration.pop(packetID)
+                    # Add free ID back into pool
+                    self.__availableIDs.add(packetID)
+
+    
+
     
 class r_UPEL(Base_Resource):
     """
@@ -114,42 +401,9 @@ class r_UPEL(Base_Resource):
     
     type = "UPEL"
     
-    incomingPackets = {}
-    
-    #===========================================================================
-    # Registers
-    #===========================================================================
-    
-    data_types_pack = {
-        'int8': lambda data: struct.pack('!b', int(data)),
-        'int16': lambda data: struct.pack('!h', int(data)),
-        'int32': lambda data: struct.pack('!i', int(data)),
-        'int64': lambda data: struct.pack('!q', int(data)),
-        'float': lambda data: struct.pack('!f', float(data)),
-        'double': lambda data: struct.pack('!d', float(data)) }
-    
-    data_types_unpack = {
-        'int8': lambda data: struct.unpack('!b', data)[0],
-        'int16': lambda data: struct.unpack('!h', data)[0],
-        'int32': lambda data: struct.unpack('!i', data)[0],
-        'int64': lambda data: struct.unpack('!q', data)[0],
-        'float': lambda data: struct.unpack('!f', data)[0],
-        'double': lambda data: struct.unpack('!d', data)[0] }
-    
-    reg_outgoing = {} # { PacketID: (address, subindex) }
-    
-    accumulators = {}
-    acc_config = {}
-    reg_cache = {}
-    
-    
-    def __init__(self, address, packetQueue):
-        """
-        :param address: IPv4 Address
-        :type address: str
-        :param packetQueue: Outgoing Packet Queue
-        :type packetQueue: Queue.Queue
-        """
+    def __init__(self, resID, interface, **kwargs):
+        Base_Resource.__init__(self, resID, interface, **kwargs)
+        
         self.address = address
         self.queue = packetQueue
         
@@ -236,34 +490,7 @@ class r_UPEL(Base_Resource):
     #         raise ICP_Timeout
     #===========================================================================
     
-    #===========================================================================
-    # Accumulator Thread
-    #===========================================================================
-    
-    def __accumulator_thread(self):
-        """
-        Asynchronous thread that automatically polls registers that are marked
-        for accumulation
-        """
-        next_sample = {}
-        
-        while (len(self.acc_config) > 0):
-            for reg, acc_config in self.acc_config.items():
-                # Check if it is time to get a new sample
-                if time.time() > next_sample.get(reg, 0.0):
-                    address, subindex = reg
-                    _, sample_time, data_type = acc_config
-                    
-                    # Queue a register read, the ICP thread will handle the data when it comes back
-                    self.register_read_queue(address, subindex, data_type)
-                    
-                    # Increment the next sample time
-                    next_sample[reg] = next_sample.get(reg, time.time()) + sample_time
-                    
-            # TODO: Calculate the time to the next sample and sleep until then
-        
-        # Clear reference to this thread before exiting
-        self.acc_thread = None
+
         
     #===========================================================================
     # Device State
@@ -299,81 +526,23 @@ class r_UPEL(Base_Resource):
             
         except ICP_Timeout:
             return None
+        
+    #===========================================================================
+    # Command Operations
+    #===========================================================================
+    
+    def write(self, data):
+        pass
+    
+    def read(self):
+        pass
+    
+    def query(self, data):
+        pass
     
     #===========================================================================
     # Register Operations
     #===========================================================================
-    
-    def register_config_cache(self, address, subindex):
-        """
-        Configure a register to reg_cache the value. Used for static values that change infrequently
-        
-        :param address: 16-bit address
-        :type address: int
-        :param subindex: 8-bit subindex
-        :type subindex: int
-        """
-        key = (address, subindex)
-        self.reg_cache[key] = ''
-                
-    def register_config_accumulate(self, address, subindex, depth, sample_time, data_type):
-        """
-        Configure a register to accumulate values. Used to get sampled waveforms.
-        
-        :param address: 16-bit address
-        :type address: int
-        :param subindex: 8-bit subindex
-        :type subindex: int
-        :param depth: Number of samples
-        :type depth: int
-        :param sample_time: Sample Time (sec)
-        :type sample_time: float
-        """
-        key = (address, subindex)
-        self.reg_cache[key] = ''
-        self.acc_config[key] = (depth, sample_time, data_type)
-        
-        # Create a new accumulator object
-        self.accumulators[key] = UPEL_ICP_Accumulator(depth, data_type)
-        
-        # Start the accumulator thread
-        if self.acc_thread is None:
-            self.acc_thread = threading.Thread(target=self.__accumulator_thread)
-            self.acc_thread.start()
-        
-    def register_config_clear(self, address, subindex):
-        """
-        Clears register configuration if a register is set to cache or accumulate data.
-        
-        :param address: 16-bit address
-        :type address: int
-        :param subindex: 8-bit subindex
-        :type subindex: int
-        """
-        key = (address, subindex)
-        
-        try:
-            self.accumulators.pop(key)
-            self.acc_config.pop(key)
-            self.reg_cache.pop(key)
-        except:
-            pass
-        
-    def register_accumulator_get(self, address, subindex):
-        """
-        Return accumulated data for registers configured.
-        
-        :param address: 16-bit address
-        :type address: int
-        :param subindex: 8-bit subindex
-        :type subindex: int
-        """
-        try:
-            acc = self.accumulators.get((address, subindex))
-        
-            return acc.get()
-        except:
-            return None
     
     def register_write(self, address, subindex, data, data_type):
         """
@@ -499,11 +668,10 @@ class r_UPEL(Base_Resource):
                     
             except ICP_Timeout:
                 return None
-    
-    #===========================================================================
-    # Process Data Operations
-    #===========================================================================
-    
-    def readProc(self, address):
-        pass  
+
         
+class r_UPEL_Serial(Base_Resource):
+    pass
+
+class r_UPEL_CAN(Base_Resource):
+    pass

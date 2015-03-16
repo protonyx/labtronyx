@@ -115,8 +115,8 @@ class r_VISA(Base_Resource):
     
     type = "VISA"
         
-    def __init__(self, resID, controller, **kwargs):
-        Base_Resource.__init__(self, resID, controller, **kwargs)
+    def __init__(self, resID, interface, **kwargs):
+        Base_Resource.__init__(self, resID, interface, **kwargs)
         
         self.resource_manager = visa.ResourceManager()
         self.driver_list = kwargs.get('drivers', {})
