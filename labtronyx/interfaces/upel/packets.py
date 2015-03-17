@@ -1,50 +1,102 @@
 import struct
 import time 
 
-class UPEL_ICP_Packet:
+packet_types = {
+    0x00: DiscoveryPacket,
+    0x01: EnumerationPacket,
+    0x02: HeartbeatPacket,
+    0x03: StateChangePacket,
+    0x0F: ErrorPacket,
+    0x80: ResponsePacket,
+    0x81: CommandPacket,
+    0x82: RegisterReadPacket,
+    0x83: RegisterWritePacket,
+    0x88: SerialDescriptorPacket,
+    0x89: CANDescriptorPacket
+    }
+
+status_codes = {
+    0x00: 'IDLE',
+    0x01: 'RUNNING',
+    0x02: 'STOP',
+    0x80: 'INIT',
+    0x81: 'RESET'
+    }
+
+data_format_codes = {
+    0x00: 'string',
+    0x01: 'int8',
+    0x02: 'int16',
+    0x03: 'int32',
+    0x04: 'int64',
+    0x10: 'float',
+    0x11: 'double'
+    }
+
+data_format_struct = {
+    'string': 's',
+    'int8': 'b',
+    'int16': 'h',
+    'int32': 'i',
+    'int64': 'q',
+    'float': 'f',
+    'double': 'd'}
+
+#===============================================================================
+# Packet Base Class
+#===============================================================================
+
+class ICP_Packet:
     """
     Base class for all ICP packets. Packs header information before transmission
     """
-    SPEC_NUMBER = 0x1
-    CONTROL = 0x0
+    header_format = 'IBBH'
+    header_size = struct.calcsize(header_format)
     
     PACKET_ID = 0x0
     PACKET_TYPE = 0x0
     
     PAYLOAD = bytearray()
     
-    def __init__(self, pkt_data=None):
-        if pkt_data is not None and len(pkt_data) >= 8:
+    def __init__(self, **kwargs):
+        self.args = kwargs
+        
+        self.source = None
+        self.destination = None
+        self.timestamp = time.time()
+        
+        data = kwargs.get('packet_data')
+        if data is not None and len(data) >= self.header_size:
             # Unpack the data
-            header = pkt_data[:8]
-            header_format = 'IBBBB'
-            identifier, pkt_spec_type, pkt_control, pkt_id, pkt_payload_size = struct.unpack(header_format, header)
+            header = data[:self.header_size]
+            header_up = struct.unpack(self.header_format, header)
+            
+            identifier, self.PACKET_TYPE, self.PACKET_ID, pkt_payload_size = header_up
             
             if identifier != 0x4C455055:
                 raise ICP_Invalid_Packet
             
-            self.CONTROL = pkt_control
-            self.PACKET_ID = pkt_id
-            self.PACKET_TYPE = pkt_spec_type & 0xF
-            self.SPEC_NUMBER = (pkt_spec_type >> 4) & 0xF
+            if len(data) > self.header_size:
+                self.PAYLOAD = data[self.header_size:(self.header_size+8)]
+                
+            self._parse()
+                
+        else:
+            self.PACKET_ID = kwargs.get('id', 1)
             
-            if len(pkt_data) > 8:
-                self.PAYLOAD = pkt_data[8:(pkt_payload_size+8)]
-                
-            if self.PACKET_TYPE == 0x0:
-                self.__class__ = StateChangePacket
-            elif self.PACKET_TYPE == 0x1:
-                self.__class__ = ErrorPacket
-            elif self.PACKET_TYPE == 0x8:
-                self.__class__ = RegisterReadPacket
-            elif self.PACKET_TYPE == 0x9:
-                self.__class__ = RegisterWritePacket
-            elif self.PACKET_TYPE == 0xF:
-                self.__class__ = DiscoveryPacket
-                
-        self.source = None
-        self.destination = None
-        self.timestamp = time.time()
+            self._format()
+        
+    def _format(self):
+        """
+        Called when the object was created empty
+        """
+        pass
+        
+    def _parse(self):
+        """
+        Called when the object was created with packet data from the network
+        """
+        pass
                 
     def setSource(self, source):
         self.source = source
@@ -61,95 +113,154 @@ class UPEL_ICP_Packet:
     def getPayload(self):
         return self.PAYLOAD
     
+    def setPayload(self, data):
+        self.PAYLOAD = data
+    
     def getTimestamp(self):
         return self.timestamp
     
-    def isResponse(self):
-        return bool(self.CONTROL & 0x80)
-    
     def pack(self):
         """
-        Pack the header and PAYLOAD
+        Pack the header and payload
         """
-        packetIdentifier = ((self.SPEC_NUMBER<<4) | (self.PACKET_TYPE & 0xF)) & 0xFF
-        
         # Enforce PAYLOAD type as bytearray
         if type(self.PAYLOAD) is not bytearray:
             self.PAYLOAD = bytearray(self.PAYLOAD)
             
         payloadSize = len(self.PAYLOAD)
-        headerFormat = '4sBBBB%is' % (payloadSize)
+        headerFormat = self.header_format + str('%is' % (payloadSize))
             
-        return struct.pack(headerFormat, 'UPEL', packetIdentifier, self.CONTROL, self.PACKET_ID, payloadSize, str(self.PAYLOAD))
+        header = struct.pack(self.header_format, 0x4C455055, self.PACKET_TYPE, self.PACKET_ID, payloadSize) 
+        return header + str(self.PAYLOAD)
     
-class StateChangePacket(UPEL_ICP_Packet):
-    def __init__(self, state):
-        self.PACKET_TYPE = 0x0
-        self.PAYLOAD = struct.pack('B', state)
+#===============================================================================
+# Core Protocol Packet Types
+#===============================================================================
+
+class DiscoveryPacket(ICP_Packet):
+    PACKET_TYPE = 0x00
+    
+class EnumerationPacket(ICP_Packet):
+    PACKET_TYPE = 0x01
+    
+    def _parse(self):
+        # TODO: Should this try to parse as JSON data?
+        self.data = self.getPayload()
+    
+    def getData(self):
+        return self.data
+    
+class HeartbeatPacket(ICP_Packet):
+    PACKET_TYPE = 0x02
+        
+class StateChangePacket(ICP_Packet):
+    PACKET_TYPE = 0x03
+    
+    payload_format = 'xxxB'
+    
+    def _format(self):
+        self.state = self.args.get('state')
+        data = struct.pack(self.payload_format, self.state)
+        self.setPayload(data)
+    
+    def _parse(self):
+        self.state = struct.unpack(self.payload_format, self.getPayload())
         
     def getState(self):
-        # BUG: State should be 8-bits but is being transmitted as 16-bits
-        return struct.unpack('h', self.PAYLOAD)[0]
+        return self.state
 
-class ErrorPacket(UPEL_ICP_Packet):
-    def __init__(self):
-        self.PACKET_TYPE = 0x1
-
-class HeartbeatPacket(UPEL_ICP_Packet):
-    pass
-
-class FirmwareDownloadPacket(UPEL_ICP_Packet):
-    pass
-
-class RegisterPacket(UPEL_ICP_Packet):
+class ErrorPacket(ICP_Packet):
+    PACKET_TYPE = 0x0F
     
-    def __init__(self):
-        self.PACKET_TYPE = 0x1
+    payload_format = 'Is'
     
-    data_types_pack = {
-        'int8': lambda data: struct.pack('b', int(data)),
-        'int16': lambda data: struct.pack('h', int(data)),
-        'int32': lambda data: struct.pack('i', int(data)),
-        'int64': lambda data: struct.pack('q', int(data)),
-        'float': lambda data: struct.pack('f', float(data)),
-        'double': lambda data: struct.pack('d', float(data)) }
+    def _format(self):
+        self.error = int(self.args.get('error'))
+        self.msg = self.args.get('message')
+        data = struct.pack(self.payload_format, self.error, self.msg)
+        self.setPayload(data)
     
-    data_types_unpack = {
-        'int8': lambda data: struct.unpack('b', data)[0],
-        'int16': lambda data: struct.unpack('h', data)[0],
-        'int32': lambda data: struct.unpack('i', data)[0],
-        'int64': lambda data: struct.unpack('q', data)[0],
-        'float': lambda data: struct.unpack('f', data)[0],
-        'double': lambda data: struct.unpack('d', data)[0] }
-    
-    def get(self, data_type):
-        unpacker = self.data_types_unpack.get(data_type, None)
+    def _parse(self):
+        self.error, self.msg = struct.unpack(self.payload_format, self.getPayload())
         
-        if unpacker is not None:
-            return unpacker(self.getPayload())
-        else:
-            return self.getPayload()
+    def getError(self):
+        return self.error
+    
+    def getMessage(self):
+        return self.msg
 
-class RegisterReadPacket(RegisterPacket):
- 
-    def __init__(self, address, subindex):
-        self.PACKET_TYPE = 0x8
-        self.PAYLOAD = str(struct.pack('HxB', address, subindex))
+#===============================================================================
+# Device Packets
+#===============================================================================
 
-class RegisterWritePacket(RegisterPacket):
-    def __init__(self, address, subindex, data, data_type):
-        self.PACKET_TYPE = 0x9
+class ResponsePacket(ICP_Packet):
+    PACKET_TYPE = 0x80
+    
+    payload_format = 'xBxBs'
+    
+    def _parse(self):
+        self.format, elems, data = struct.unpack(self.payload_format, self.getPayload())
+        data_code = data_format_codes.get(self.format, 'string')
+        data_unpack_code = data_format_struct.get(data_code, 's')
         
-        packer = self.data_types_pack.get(data_type, None)
-        if packer is not None:
-            data = packer(data)
+        self.data = struct.unpack(data_unpack_code * elems, data)
+    
+    def getData(self):
+        return self.data
+
+class CommandPacket(ICP_Packet):
+    PACKET_TYPE = 0x81
+    
+    def _format(self):
+        self.setPayload(self.args.get('data'))
+
+class RegisterReadPacket(ICP_Packet):
+    PACKET_TYPE = 0x82
+    
+    payload_format = 'H'
+    
+    def _format(self):
+        data = struct.pack(self.payload_format, self.args.get('address'))
+        self.setPayload(data)
+
+class RegisterWritePacket(ICP_Packet):
+    PACKET_TYPE = 0x83
+    
+    payload_format = 'HxxI'
+    
+    def _format(self):
+        data = struct.pack(self.payload_format, 
+                           self.args.get('address'),
+                           self.args.get('data'))
+        self.setPayload(data)
+
+class SerialDescriptorPacket(ICP_Packet):
+    PACKET_TYPE = 0x88
+    
+    def _format(self):
+        self.setPayload(self.args.get('data'))
         
-        self.PAYLOAD = str(struct.pack('HxB', address, subindex)) + str(data)
-
-class ProcessDataReadPacket(UPEL_ICP_Packet):
-    pass
-
-class DiscoveryPacket(UPEL_ICP_Packet):
-    def __init__(self):
-        self.PACKET_TYPE = 0xF
-        self.PACKET_ID = 0x00
+    def getData(self):
+        return self.getPayload()
+    
+class CANDescriptorPacket(ICP_Packet):
+    PACKET_TYPE = 0x89
+    
+    payload_format = 'IQ'
+    
+    def _format(self):
+        self.message_id = self.args.get('message_id')
+        self.data = self.args.get('data')
+        data = struct.pack(self.payload_format,
+                           self.message_id,
+                           self.data)
+        self.setPayload(data)
+        
+    def _parse(self):
+        self.message_id, self.data = struct.unpack(self.payload_format, self.getPayload())
+        
+    def getMessageID(self):
+        return self.message_id
+    
+    def getData(self):
+        return self.data
