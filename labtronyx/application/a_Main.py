@@ -331,7 +331,7 @@ class a_Main(Tk.Tk):
     def cb_unloadDriver(self, uuid):
         dev = self.ICF.getInstrument(uuid)
         
-        dev.unloadModel()
+        dev.unloadDriver()
         
         self.ICF.refreshInstrument(uuid)
         # addr = self.ICF.getAddressFromUUID(uuid)
