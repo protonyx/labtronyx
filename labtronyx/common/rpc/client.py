@@ -167,11 +167,12 @@ class RpcClient(object):
                 break
                 
             except socket.error as e:
-                if e.errno == errno.ECONNRESET:
-                    self._disconnect()
-                    self._connect()
-                else:
-                    raise
+                # Windows Error #10057 also triggers this
+                #if e.errno == errno.ECONNRESET:
+                self._disconnect()
+                self._connect()
+                #else:
+                    #raise
     
     def _recv(self):
         ready_to_read, _, _ = select.select([self.socket], [], [], self.timeout)
