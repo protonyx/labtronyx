@@ -11,6 +11,8 @@ from sets import Set
 
 import numpy
 
+from interfaces.upel import *
+
 #===========================================================================
 # data_types_pack = {
 #     'int8': lambda data: struct.pack('!b', int(data)),
@@ -100,16 +102,10 @@ class i_UPEL(Base_Interface):
     # UPEL Controller Config
     broadcastIP = '192.168.1.255'
     DEFAULT_PORT = 7968
+    
+    e_conf = threading.Event()
 
     def open(self):
-        self.alive = threading.Event()
-        
-        return True
-    
-    def close(self):
-        self.alive.clear()
-        
-    def run(self):
         # Init
         self.__messageQueue = Queue.Queue()
         self.__routingMap = {} # { PacketID: ResID }
@@ -123,15 +119,27 @@ class i_UPEL(Base_Interface):
             self.__socket.bind(('', self.DEFAULT_PORT))
             self.__socket.setblocking(0)
             self.__socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            _, port = self.__socket.getsockname()
             
-            self.logger.debug("ICP Socket Bound to port %i", self.port)
+            self.logger.debug("ICP Socket Bound to port %i", port)
             
         except:
-            pass
+            self.logger.exception("UPEL ICP Socket Exception")
+            
+        self.e_conf.set()
         
-        self.alive.set()
+        return True
+    
+    def close(self):
+        self.stop()
         
-        while (self.alive.is_set()):
+        self.__socket.shutdown(1)
+        self.__socket.close()
+        
+        self.e_conf.clear()
+        
+    def run(self):
+        while (self.e_conf.isSet() and self.e_alive.isSet()):
             try:
                 #===================================================================
                 # Service the socket
@@ -152,37 +160,29 @@ class i_UPEL(Base_Interface):
                 
             except:
                 self.logger.exception("UPEL ICP Thread Exception")
-                
-        self.__socket.shutdown(1)
-        self.__socket.close()
     
     def getResources(self):
         return self.resources
-    
-    def openResourceObject(self, resID):
-        resource = self.resourceObjects.get(resID, None)
-        if resource is not None:
-            return resource
-        else:
-            resource = self.icp_manager.getDevice(resID)
-            self.resourceObjects[resID] = resource
-            return resource
-        
-    def closeResourceObject(self, resID):
-        resource = self.resourceObjects.get(resID, None)
-        
-        if resource is not None:
-            resource.close()
-            del self.resourceObjects[resID]
     
     #===========================================================================
     # Resource Management
     #===========================================================================
     
     def refresh(self):
-        self.icp_manager.discover(self.config.broadcastIP)
+        """
+        Queues a broadcast discovery packet. The arbiter will automatically
+        update the resource table as responses come in. 
         
-    def addResource(self, ResID):
+        :returns: None
+        """
+        address = self.config.broadcastIP
+        
+        packet = DiscoveryPacket()
+        packet.setDestination(address)
+        
+        self.queuePacket(packet, 10.0)
+        
+    def addResource(self, resID):
         """
         Treats an addResource request as a hint that a device exists. Attempts
         to send a discovery packet to the device to get more information.
@@ -190,27 +190,14 @@ class i_UPEL(Base_Interface):
         The ICP thread will automatically handle the creation of an
         instrument for the new resource.
         
-        :param ResID: Resource ID (IP Address)
-        :type ResID: str
+        :param resID: Resource ID (IP Address)
+        :type resID: str
         :returns: bool. True if successful, False otherwise
         """
-        self.icp_manager.discover(ResID)
-        
-    def discover(self, address='<broadcast>'):
-        """
-        Queues a broadcast discovery packet. The arbiter will automatically
-        update the resource table as responses come in. 
-        
-        :returns: None
-        """
         packet = DiscoveryPacket()
-        packet.setDestination(address)
-
-        # Queue Discovery Packet
-        self.__messageQueue.put(packet)
+        packet.setDestination(resID)
         
-    def getDevice(self, address):
-        return self.devices.get(address, None)
+        self.queuePacket(packet, 10.0)
 
     #===========================================================================
     # def _getInstrument(self, resID):
@@ -227,7 +214,7 @@ class i_UPEL(Base_Interface):
         :param packet_obj: ICP Packet Object
         :type packet_obj: UPEL_ICP_Packet
         :param ttl: Time to Live (seconds)
-        :type ttl: int
+        :type ttl: float
         :returns: packetID or none if unable to queue message
         """
         if len(self.__availableIDs) > 0:
@@ -236,11 +223,11 @@ class i_UPEL(Base_Interface):
                 # Assign a PacketID
                 packetID = self.__availableIDs.pop()
                  
-                packet_obj.PACKET_ID = packetID
+                packet_obj.setPacketID(packetID)
                      
                 self.__messageQueue.put(packet_obj, False)
                 self.__expiration[packetID] = time.time() + ttl
-                 
+                
                 return packetID
              
             except KeyError:
@@ -259,32 +246,30 @@ class i_UPEL(Base_Interface):
             
             if self.__socket in read:
                 data, address = self.__socket.recvfrom(4096)
+                sourceIP, sourcePort = address
             
                 try:
-                    resp_pkt = UPEL_ICP_Packet(data)
-                    packetID = resp_pkt.PACKET_ID
+                    resp_pkt = UPEL_ICP_Packet(packet_data=data,
+                                               source=sourceIP)
+                    
+                    # Debug output
+                    packetID = resp_pkt.getPacketID()
                     packetType = resp_pkt.PACKET_TYPE
-                    
-                    sourceIP, _ = address
-                    resp_pkt.setSource(sourceIP)
-                    
                     self.logger.debug("ICP RX [ID:%i, TYPE:%X, SIZE:%i] from %s", packetID, packetType, len(resp_pkt.getPayload()), sourceIP)
                     
                     # Route Packets
-                    if packetType == 0xF and resp_pkt.isResponse():
+                    if type(resp_pkt) == EnumerationPacket:
+                        # TODO: New format for enumeration packets
                         # Filter Discovery Packets
                         ident = resp_pkt.getPayload().split(',')
                         
                         # Check if resource exists
-                        resID = address[0]
-                        res = (ident[0], ident[1])
-                        
-                        if resID not in self.devices.keys():
+                        # TODO: Resource creation depends on device type
+                        if resID not in self.resources.keys():
                             # Create new device
-                            self.devices[resID] = UPEL_ICP_Device(resID, self.queuePacket)
-                            self.resources[resID] = res
+                            self.resources[resID] = r_UPEL(resID, self)
                         
-                            self.logger.info("Found UPEL ICP Device: %s %s" % res)
+                            self.logger.info("Found UPEL ICP Device: %s" % res)
                     
                     elif packetID in self.__routingMap.keys():
                         destination = self.__routingMap.get(packetID, None)
@@ -670,8 +655,8 @@ class r_UPEL(Base_Resource):
                 return None
 
         
-class r_UPEL_Serial(Base_Resource):
+class r_UPEL_Serial(r_UPEL):
     pass
 
-class r_UPEL_CAN(Base_Resource):
+class r_UPEL_CAN(r_UPEL):
     pass

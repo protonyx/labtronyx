@@ -61,8 +61,8 @@ class ICP_Packet:
     def __init__(self, **kwargs):
         self.args = kwargs
         
-        self.source = None
-        self.destination = None
+        self.source = kwargs.get('source')
+        self.destination = kwargs.get('destination')
         self.timestamp = time.time()
         
         data = kwargs.get('packet_data')
@@ -97,6 +97,12 @@ class ICP_Packet:
         Called when the object was created with packet data from the network
         """
         pass
+    
+    def setPacketID(self, id):
+        self.PACKET_ID = id
+        
+    def getPacketID(self):
+        return self.PACKET_ID
                 
     def setSource(self, source):
         self.source = source
