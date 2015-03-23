@@ -11,7 +11,7 @@ from sets import Set
 
 import numpy
 
-from interfaces.upel import *
+import interfaces.upel as icp
 
 #===========================================================================
 # data_types_pack = {
@@ -93,11 +93,8 @@ class i_UPEL(Base_Interface):
         'date':                 '2015-03-06'
     }
     
-    # Dict: ResID -> (VID, PID)
+    # Dict: ResID -> Resource Object
     resources = {}
-    
-    # Dict: ResID -> UPEL_ICP_Device Object
-    resourceObjects = {}
     
     # UPEL Controller Config
     broadcastIP = '192.168.1.255'
@@ -123,6 +120,8 @@ class i_UPEL(Base_Interface):
             
             self.logger.debug("ICP Socket Bound to port %i", port)
             
+            self.refresh()
+            
         except:
             self.logger.exception("UPEL ICP Socket Exception")
             
@@ -139,7 +138,10 @@ class i_UPEL(Base_Interface):
         self.e_conf.clear()
         
     def run(self):
-        while (self.e_conf.isSet() and self.e_alive.isSet()):
+        while (self.e_alive.isSet()):
+            if not self.e_conf.isSet():
+                continue
+             
             try:
                 #===================================================================
                 # Service the socket
@@ -175,9 +177,9 @@ class i_UPEL(Base_Interface):
         
         :returns: None
         """
-        address = self.config.broadcastIP
+        address = self.broadcastIP
         
-        packet = DiscoveryPacket()
+        packet = icp.packets.DiscoveryPacket()
         packet.setDestination(address)
         
         self.queuePacket(packet, 10.0)
@@ -194,7 +196,7 @@ class i_UPEL(Base_Interface):
         :type resID: str
         :returns: bool. True if successful, False otherwise
         """
-        packet = DiscoveryPacket()
+        packet = icp.packets.DiscoveryPacket()
         packet.setDestination(resID)
         
         self.queuePacket(packet, 10.0)
@@ -249,19 +251,26 @@ class i_UPEL(Base_Interface):
                 sourceIP, sourcePort = address
             
                 try:
-                    resp_pkt = UPEL_ICP_Packet(packet_data=data,
-                                               source=sourceIP)
+                    resp_pkt = icp.packets.ICP_Packet(packet_data=data)
                     
                     # Debug output
                     packetID = resp_pkt.getPacketID()
-                    packetType = resp_pkt.PACKET_TYPE
-                    self.logger.debug("ICP RX [ID:%i, TYPE:%X, SIZE:%i] from %s", packetID, packetType, len(resp_pkt.getPayload()), sourceIP)
+                    packetType = resp_pkt.getPacketType()
+                    self.logger.debug("ICP RX [ID:%i, TYPE:%X, SIZE:%i] from %s", 
+                                      packetID, packetType, len(resp_pkt.getPayload()), 
+                                      sourceIP)
+                    
+                    packetTypeClass = icp.packet_types.get(packetType)
+                    pkt = packetTypeClass(packet_data=data,
+                                          source=sourceIP)
                     
                     # Route Packets
-                    if type(resp_pkt) == EnumerationPacket:
+                    if packetTypeClass == icp.packets.EnumerationPacket:
                         # TODO: New format for enumeration packets
                         # Filter Discovery Packets
-                        ident = resp_pkt.getPayload().split(',')
+                        enum = pkt.getSuuportedPacketTypes()
+                        
+                        self.logger.debug(str(enum))
                         
                         # Check if resource exists
                         # TODO: Resource creation depends on device type
@@ -274,8 +283,8 @@ class i_UPEL(Base_Interface):
                     elif packetID in self.__routingMap.keys():
                         destination = self.__routingMap.get(packetID, None)
                         
-                        if destination in self.devices.keys():
-                            dev = self.devices.get(destination)
+                        if destination in self.resources.keys():
+                            dev = self.resources.get(destination)
                             
                             dev._processResponse(resp_pkt)
                             
@@ -291,8 +300,8 @@ class i_UPEL(Base_Interface):
                     else:
                         self.logger.error("ICP RX [ID:%i] EXPIRED/INVALID PACKET ID", packetID)
                         
-                except ICP_Invalid_Packet:
-                    pass
+                except icp.errors.ICP_Invalid_Packet:
+                    self.logger.error("ICP Invalid Packet")
                 
                 #except:
                     # Pass on all errors for the time being
@@ -306,7 +315,7 @@ class i_UPEL(Base_Interface):
             try:
                 packet_obj = self.__messageQueue.get_nowait()
                 
-                if issubclass(packet_obj.__class__, UPEL_ICP_Packet):
+                if issubclass(packet_obj.__class__, icp.packets.ICP_Packet):
                     destination = packet_obj.getDestination()
                     
                     # Assign a packet ID
@@ -332,7 +341,7 @@ class i_UPEL(Base_Interface):
                         self.__socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 0)
                     
                     # Transmit
-                    self.__socket.sendto(packet, (destination, self.port))
+                    self.__socket.sendto(packet, (destination, self.DEFAULT_PORT))
                     
                     self.logger.debug("ICP TX [ID:%i] to %s", packetID, destination)
                     
@@ -360,8 +369,8 @@ class i_UPEL(Base_Interface):
                 try:
                     destination = self.__routingMap.pop(packetID)
                     
-                    if destination in self.devices.keys():
-                        dev = self.devices.get(destination)
+                    if destination in self.resources.keys():
+                        dev = self.resources.get(destination)
                     
                         dev._processTimeout(packetID)
                     

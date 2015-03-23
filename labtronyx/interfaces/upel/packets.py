@@ -1,19 +1,7 @@
 import struct
 import time 
 
-packet_types = {
-    0x00: DiscoveryPacket,
-    0x01: EnumerationPacket,
-    0x02: HeartbeatPacket,
-    0x03: StateChangePacket,
-    0x0F: ErrorPacket,
-    0x80: ResponsePacket,
-    0x81: CommandPacket,
-    0x82: RegisterReadPacket,
-    0x83: RegisterWritePacket,
-    0x88: SerialDescriptorPacket,
-    0x89: CANDescriptorPacket
-    }
+from . import errors
 
 status_codes = {
     0x00: 'IDLE',
@@ -74,7 +62,7 @@ class ICP_Packet:
             identifier, self.PACKET_TYPE, self.PACKET_ID, pkt_payload_size = header_up
             
             if identifier != 0x4C455055:
-                raise ICP_Invalid_Packet
+                raise errors.ICP_Invalid_Packet
             
             if len(data) > self.header_size:
                 self.PAYLOAD = data[self.header_size:(self.header_size+8)]
@@ -103,6 +91,9 @@ class ICP_Packet:
         
     def getPacketID(self):
         return self.PACKET_ID
+    
+    def getPacketType(self):
+        return self.PACKET_TYPE
                 
     def setSource(self, source):
         self.source = source
@@ -152,9 +143,16 @@ class EnumerationPacket(ICP_Packet):
     def _parse(self):
         # TODO: Should this try to parse as JSON data?
         self.data = self.getPayload()
+        
+        self.vendor = str(enum[0:31]).strip()
+        self.model = str(enum[32:63]).strip()
+        
+        packet_types = enum[64:]
+        packet_types = struct.unpack('h'*32, packet_types)
+        self.packet_types = list(set(packet_types)) # Get unique values
     
-    def getData(self):
-        return self.data
+    def getSuuportedPacketTypes(self):
+        return self.packet_types
     
 class HeartbeatPacket(ICP_Packet):
     PACKET_TYPE = 0x02
@@ -270,3 +268,4 @@ class CANDescriptorPacket(ICP_Packet):
     
     def getData(self):
         return self.data
+

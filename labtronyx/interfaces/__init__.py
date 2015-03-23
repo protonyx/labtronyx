@@ -28,6 +28,9 @@ def getAllInterfaces():
                 continue
         
         for file in filenames:
+            if not file.startswith('i_'):
+                continue
+            
             # Iterate through each file
             filepath = os.path.join(dirpath, file)
             modulepath, fileExtension = os.path.splitext(filepath)
@@ -50,7 +53,7 @@ def getAllInterfaces():
                     interfaces[moduleName] = info
                 
                 except Exception as e:
-                    pass
+                    raise
                 
                 #===========================================================
                 # except AttributeError:
