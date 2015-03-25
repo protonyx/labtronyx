@@ -48,24 +48,19 @@ class m_85XX(Base_Driver):
         self.SetRemoteControl()
     
     def _onUnload(self):
-        pass
+        self.SetLocalControl()
         
     def getProperties(self):
         ret = Base_Driver.getProperties(self)
         
         ret['deviceVendor'] = 'BK Precision'
         
-        prodInfo = self.GetProductInformation()
+        prodInfo = self._GetProductInformation()
         ret['deviceModel'] = prodInfo[0]
         ret['deviceSerial'] = prodInfo[1]
         ret['deviceFirmware'] = prodInfo[2]
             
         return ret
-        
-    def setBaud(self, baudrate):
-        self.instr.close()
-        self.instr.baudrate = baudrate
-        self.instr.open()
         
     def _CommandProperlyFormed(self, cmd):
         '''Return 1 if a command is properly formed; otherwise, return 0.
@@ -245,104 +240,246 @@ class m_85XX(Base_Driver):
         self._PrintCommandAndResponse(cmd, response, msg)
         return self._DecodeInteger(response[3:3 + num_bytes])
     
+    # Returns model number, serial number, and firmware version number
+    def _GetProductInformation(self):
+        """
+        Returns model number, serial number, and firmware version
+        """
+        cmd = self._StartCommand(0x6A)
+        cmd += self._Reserved(3)
+        cmd += chr(self._CalculateChecksum(cmd))
+        assert(self._CommandProperlyFormed(cmd))
+        response = self._SendCommand(cmd)
+        self._PrintCommandAndResponse(cmd, response, "Get product info")
+        model = response[3:8]
+        fw = hex(ord(response[9]))[2:] + "."
+        fw += hex(ord(response[8]))[2:] 
+        serial_number = response[10:20]
+        
+        return (str(model), str(serial_number), str(fw))
+    
     def powerOn(self):
-        "Turns the load on"
+        """
+        Turns the load on
+        """
         msg = "Turn load on"
         on = 1
         return self._SendIntegerToLoad(0x21, on, msg, num_bytes=1)
     
     def powerOff(self):
-        "Turns the load off"
+        """
+        Turns the load off
+        """
         msg = "Turn load off"
         off = 0
         return self._SendIntegerToLoad(0x21, off, msg, num_bytes=1)
     
     def SetRemoteControl(self):
-        "Sets the load to remote control"
+        """
+        Sets the load to remote control
+        """
         msg = "Set remote control"
         remote = 1
         return self._SendIntegerToLoad(0x20, remote, msg, num_bytes=1)
     
     def SetLocalControl(self):
-        "Sets the load to local control"
+        """
+        Sets the load to local control
+        """
         msg = "Set local control"
         local = 0
         return self._SendIntegerToLoad(0x20, local, msg, num_bytes=1)
+    
     def SetMaxCurrent(self, current):
-        "Sets the maximum current the load will sink"
+        """
+        Sets the maximum current the load will sink
+        
+        :param current: Current in Amps
+        :type current: float
+        """
         msg = "Set max current"
         return self._SendIntegerToLoad(0x24, current*self.convert_current, msg, num_bytes=4)
+    
     def GetMaxCurrent(self):
-        "Returns the maximum current the load will sink"
+        """
+        Returns the maximum current the load will sink
+        
+        :returns: float
+        """
         msg = "Set max current"
         return self._GetIntegerFromLoad(0x25, msg, num_bytes=4)/self.convert_current
+    
     def SetMaxVoltage(self, voltage):
-        "Sets the maximum voltage the load will allow"
+        """
+        Sets the maximum voltage the load will allow
+        
+        :param voltage: Voltage in Volts
+        :type voltage: float
+        """
         msg = "Set max voltage"
         return self._SendIntegerToLoad(0x22, voltage*self.convert_voltage, msg, num_bytes=4)
+    
     def GetMaxVoltage(self):
-        "Gets the maximum voltage the load will allow"
+        """
+        Gets the maximum voltage the load will allow
+        
+        :returns: float
+        """
         msg = "Get max voltage"
         return self._GetIntegerFromLoad(0x23, msg, num_bytes=4)/self.convert_voltage
+    
     def SetMaxPower(self, power):
-        "Sets the maximum power the load will allow"
+        """
+        Sets the maximum power the load will allow
+        
+        :param power: Power in Watts
+        :type power: float
+        """
         msg = "Set max power"
         return self._SendIntegerToLoad(0x26, power*self.convert_power, msg, num_bytes=4)
+    
     def GetMaxPower(self):
-        "Gets the maximum power the load will allow"
+        """
+        Gets the maximum power the load will allow
+        
+        :returns: float
+        """
         msg = "Get max power"
         return self._GetIntegerFromLoad(0x27, msg, num_bytes=4)/self.convert_power
+    
     def SetMode(self, mode):
-        "Sets the mode (constant current, constant voltage, etc."
+        """
+        Sets the operating mode
+        
+        Possible values:
+        
+          * `cc`: Constant Current
+          * `cv`: Constant Voltage
+          * `cp`: Constant Power
+          * `cr`: Constant Resistance
+          
+        :param mode: Operating mode
+        :type mode: str
+        :raises: Exception
+        """
         if mode.lower() not in self.modes:
             raise Exception("Unknown mode")
         msg = "Set mode"
         return self._SendIntegerToLoad(0x28, self.modes[mode.lower()], msg, num_bytes=1)
+    
     def GetMode(self):
-        "Gets the mode (constant current, constant voltage, etc."
+        """
+        Gets the operating mode
+        
+        Possible values:
+        
+          * `cc`: Constant Current
+          * `cv`: Constant Voltage
+          * `cw`: Constant Power
+          * `cr`: Constant Resistance
+        
+        :returns: str
+        """
         msg = "Get mode"
         mode = self._GetIntegerFromLoad(0x29, msg, num_bytes=1)
         modes_inv = {0:"cc", 1:"cv", 2:"cw", 3:"cr"}
         return modes_inv[mode]
-    def SetCCCurrent(self, current):
-        "Sets the constant current mode's current level"
+    
+    def SetCurrent(self, current):
+        """
+        Sets the constant current mode's current level
+        
+        :param current: Current in Amps
+        :type current: float
+        """
         msg = "Set CC current"
         return self._SendIntegerToLoad(0x2A, current*self.convert_current, msg, num_bytes=4)
-    def GetCCCurrent(self):
-        "Gets the constant current mode's current level"
+    
+    def GetCurrent(self):
+        """
+        Gets the constant current mode's current level
+        
+        :returns: float
+        """
         msg = "Get CC current"
         return self._GetIntegerFromLoad(0x2B, msg, num_bytes=4)/self.convert_current
-    def SetCVVoltage(self, voltage):
-        "Sets the constant voltage mode's voltage level"
+    
+    def SetVoltage(self, voltage):
+        """
+        Sets the constant voltage mode's voltage level
+        
+        :param voltage: Voltage in Volts
+        :type voltage: float
+        """
         msg = "Set CV voltage"
         return self._SendIntegerToLoad(0x2C, voltage*self.convert_voltage, msg, num_bytes=4)
-    def GetCVVoltage(self):
-        "Gets the constant voltage mode's voltage level"
+    
+    def GetVoltage(self):
+        """
+        Gets the constant voltage mode's voltage level
+        
+        :returns: float
+        """
         msg = "Get CV voltage"
         return self._GetIntegerFromLoad(0x2D, msg, num_bytes=4)/self.convert_voltage
-    def SetCWPower(self, power):
-        "Sets the constant power mode's power level"
+    
+    def SetPower(self, power):
+        """
+        Sets the constant power mode's power level
+        
+        :param power: Power in Watts
+        :type power: float
+        """
         msg = "Set CW power"
         return self._SendIntegerToLoad(0x2E, power*self.convert_power, msg, num_bytes=4)
-    def GetCWPower(self):
-        "Gets the constant power mode's power level"
+    
+    def GetPower(self):
+        """
+        Gets the constant power mode's power level
+        
+        :returns: float
+        """
         msg = "Get CW power"
         return self._GetIntegerFromLoad(0x2F, msg, num_bytes=4)/self.convert_power
-    def SetCRResistance(self, resistance):
-        "Sets the constant resistance mode's resistance level"
+    
+    def SetResistance(self, resistance):
+        """
+        Sets the constant resistance mode's resistance level
+        
+        :param resistance: Resistance in Ohms
+        :type resistance: str
+        """
         msg = "Set CR resistance"
         return self._SendIntegerToLoad(0x30, resistance*self.convert_resistance, msg, num_bytes=4)
-    def GetCRResistance(self):
-        "Gets the constant resistance mode's resistance level"
+    
+    def GetResistance(self):
+        """
+        Gets the constant resistance mode's resistance level
+        
+        :returns: float
+        """
         msg = "Get CR resistance"
         return self._GetIntegerFromLoad(0x31, msg, num_bytes=4)/self.convert_resistance
-    def SetTransient(self, mode, A, A_time_s, B, B_time_s, operation="continuous"):
-        '''Sets up the transient operation mode.  mode is one of 
-        "CC", "CV", "CW", or "CR".
-        '''
+    
+    def SetTransient(self, A, A_time_s, B, B_time_s, operation="continuous"):
+        """
+        Sets up the transient operation mode.  
+        
+        :param A: Amplitude B
+        :type A: float
+        :param A_time_s: Width of A (in seconds)
+        :type A_time_s: float
+        :param B: Amplitude of B
+        :type B: float
+        :param B: Width of B (in seconds)
+        :type B_time_s: float
+        :param operation: Transient Mode (one of "continuous", "pulse", "toggled")
+        :type operation: str
+        """
         if mode.lower() not in self.modes:
             raise Exception("Unknown mode")
         opcodes = {"cc":0x32, "cv":0x34, "cw":0x36, "cr":0x38}
+        mode = self.GetMode()
         if mode.lower() == "cc":
             const = self.convert_current
         elif mode.lower() == "cv":
@@ -357,15 +494,20 @@ class m_85XX(Base_Driver):
         cmd += self._CodeInteger(B*const, num_bytes=4)
         cmd += self._CodeInteger(B_time_s*self.to_ms, num_bytes=2)
         transient_operations = {"continuous":0, "pulse":1, "toggled":2}
-        cmd += self._CodeInteger(transient_operations[operation], num_bytes=1)
+        cmd += self._CodeInteger(transient_operations[operation.lower()], num_bytes=1)
         cmd += self._Reserved(16)
         cmd += chr(self._CalculateChecksum(cmd))
         assert(self._CommandProperlyFormed(cmd))
         response = self._SendCommand(cmd)
         self._PrintCommandAndResponse(cmd, response, "Set %s transient" % mode)
         return self._ResponseStatus(response)
+    
     def GetTransient(self, mode):
-        "Gets the transient mode settings"
+        """
+        Gets the transient mode settings
+        
+        :returns: tuple (Amplitude A, Width A, Amplitude B, Width B, Mode)
+        """
         if mode.lower() not in self.modes:
             raise Exception("Unknown mode")
         opcodes = {"cc":0x33, "cv":0x35, "cw":0x37, "cr":0x39}
@@ -383,95 +525,154 @@ class m_85XX(Base_Driver):
         time_const = 1e3
         transient_operations_inv = {0:"continuous", 1:"pulse", 2:"toggled"}
         if mode.lower() == "cc":
-            return str((A/self.convert_current, A_timer_ms/time_const,
+            return (A/self.convert_current, A_timer_ms/time_const,
                     B/self.convert_current, B_timer_ms/time_const,
-                    transient_operations_inv[operation]))
+                    transient_operations_inv[operation])
         elif mode.lower() == "cv":
-            return str((A/self.convert_voltage, A_timer_ms/time_const,
+            return (A/self.convert_voltage, A_timer_ms/time_const,
                     B/self.convert_voltage, B_timer_ms/time_const,
-                    transient_operations_inv[operation]))
+                    transient_operations_inv[operation])
         elif mode.lower() == "cw":
-            return str((A/self.convert_power, A_timer_ms/time_const,
+            return (A/self.convert_power, A_timer_ms/time_const,
                     B/self.convert_power, B_timer_ms/time_const,
-                    transient_operations_inv[operation]))
+                    transient_operations_inv[operation])
         else:
-            return str((A/self.convert_resistance, A_timer_ms/time_const, 
+            return (A/self.convert_resistance, A_timer_ms/time_const, 
                     B/self.convert_resistance, B_timer_ms/time_const,
-                    transient_operations_inv[operation]))
+                    transient_operations_inv[operation])
+            
     def SetBatteryTestVoltage(self, min_voltage):
-        "Sets the battery test voltage"
+        """
+        Sets the battery test voltage
+        
+        :param min_voltage: Minimum Voltage (volts)
+        :type min_voltage: float
+        """
         msg = "Set battery test voltage"
         return self._SendIntegerToLoad(0x4E, min_voltage*self.convert_voltage, msg, num_bytes=4)
+    
     def GetBatteryTestVoltage(self):
-        "Gets the battery test voltage"
+        """
+        Gets the battery test voltage
+        
+        :returns: float
+        """
         msg = "Get battery test voltage"
         return self._GetIntegerFromLoad(0x4F, msg, num_bytes=4)/self.convert_voltage
+    
     def SetLoadOnTimer(self, time_in_s):
-        "Sets the time in seconds that the load will be on"
+        """
+        Sets the time in seconds that the load will be on
+        
+        :param time_in_s: Time (in seconds)
+        :type time_in_s: int
+        """
         msg = "Set load on timer"
         return self._SendIntegerToLoad(0x50, time_in_s, msg, num_bytes=2)
+    
     def GetLoadOnTimer(self):
-        "Gets the time in seconds that the load will be on"
+        """
+        Gets the time in seconds that the load will be on
+        
+        :returns: int
+        """
         msg = "Get load on timer"
         return self._GetIntegerFromLoad(0x51, msg, num_bytes=2)
+    
     def SetLoadOnTimerState(self, enabled=0):
-        "Enables or disables the load on timer state"
+        """
+        Enables or disables the LOAD ON timer state
+        
+        :param enabled: Timer State (0: Disabled, 1: Enabled)
+        :type enabled: int
+        """
         msg = "Set load on timer state"
         return self._SendIntegerToLoad(0x50, enabled, msg, num_bytes=1)
+    
     def GetLoadOnTimerState(self):
-        "Gets the load on timer state"
+        """
+        Gets the LOAD ON timer state
+        
+        :returns: int
+        """
         msg = "Get load on timer"
         state = self._GetIntegerFromLoad(0x53, msg, num_bytes=1)
-        if state == 0:
-            return "disabled"
-        else:
-            return "enabled"
-    def SetCommunicationAddress(self, address=0):
-        '''Sets the communication address.  Note:  this feature is
-        not currently supported.  The communication address should always
-        be set to 0.
-        '''
-        msg = "Set communication address"
-        return self._SendIntegerToLoad(0x54, address, msg, num_bytes=1)
+        return state
+    
     def EnableLocalControl(self):
-        "Enable local control (i.e., key presses work) of the load"
+        """
+        Enable local control of the load
+        """
         msg = "Enable local control"
         enabled = 1
         return self._SendIntegerToLoad(0x55, enabled, msg, num_bytes=1)
+    
     def DisableLocalControl(self):
-        "Disable local control of the load"
+        """
+        Disable local control of the load. User will be unable to control load
+        functions using the front panel.
+        """
         msg = "Disable local control"
         disabled = 0
         return self._SendIntegerToLoad(0x55, disabled, msg, num_bytes=1)
-    def SetRemoteSense(self, enabled=0):
-        "Enable or disable remote sensing"
+    
+    def EnableRemoteSense(self, enabled=0):
+        """
+        Enable remote sensing
+        """
         msg = "Set remote sense"
-        return self._SendIntegerToLoad(0x56, enabled, msg, num_bytes=1)
+        return self._SendIntegerToLoad(0x56, 1, msg, num_bytes=1)
+    
+    def DisableRemoteSense(self):
+        """
+        Disable remote sensing
+        """
+        msg = "Enable remote sense"
+        return self._SendIntegerToLoad(0x56, 0, msg, num_bytes=1)
+    
     def GetRemoteSense(self):
-        "Get the state of remote sensing"
+        """
+        Get the state of remote sensing
+        
+        :returns: int (0: Disabled, 1: Enabled)
+        """
         msg = "Get remote sense"
         return self._GetIntegerFromLoad(0x57, msg, num_bytes=1)
+    
     def SetTriggerSource(self, source="immediate"):
-        '''Set how the instrument will be triggered.
-        "immediate" means triggered from the front panel.
-        "external" means triggered by a TTL signal on the rear panel.
-        "bus" means a software trigger (see TriggerLoad()).
-        '''
+        """
+        Set how the instrument will be triggered:
+          
+          * "immediate" means triggered from the front panel.
+          * "external" means triggered by a TTL signal on the rear panel.
+          * "bus" means a software trigger (see `Trigger()`).
+        
+        :param source: Source ("immediate", "external" or "bus")
+        :type source: str
+        :raises: Exception
+        """
         trigger = {"immediate":0, "external":1, "bus":2}
         if source not in trigger:
             raise Exception("Trigger type %s not recognized" % source)
         msg = "Set trigger type"
         return self._SendIntegerToLoad(0x54, trigger[source], msg, num_bytes=1)
+    
     def GetTriggerSource(self):
-        "Get how the instrument will be triggered"
+        """
+        Get how the instrument will be triggered
+        
+        :returns: str
+        """
         msg = "Get trigger source"
         t = self._GetIntegerFromLoad(0x59, msg, num_bytes=1)
         trigger_inv = {0:"immediate", 1:"external", 2:"bus"}
         return trigger_inv[t]
-    def TriggerLoad(self):
-        '''Provide a software trigger.  This is only of use when the trigger
+    
+    def Trigger(self):
+        """
+        Provide a software trigger.  This is only of use when the trigger
         mode is set to "bus".
-        '''
+        """
         cmd = self._StartCommand(0x5A)
         cmd += self._Reserved(3)
         cmd += chr(self._CalculateChecksum(cmd))
@@ -479,11 +680,13 @@ class m_85XX(Base_Driver):
         response = self._SendCommand(cmd)
         self._PrintCommandAndResponse(cmd, response, "Trigger load (trigger = bus)")
         return self._ResponseStatus(response)
+    
     def SaveSettings(self, register=0):
         "Save instrument settings to a register"
         assert(self.lowest_register <= register <= self.highest_register)
         msg = "Save to register %d" % register
         return self._SendIntegerToLoad(0x5B, register, msg, num_bytes=1)
+    
     def RecallSettings(self, register=0):
         "Restore instrument settings from a register"
         assert(self.lowest_register <= register <= self.highest_register)
@@ -491,24 +694,36 @@ class m_85XX(Base_Driver):
         response = self._SendCommand(cmd)
         self._PrintCommandAndResponse(cmd, response, "Recall register %d" % register)
         return self._ResponseStatus(response)
+    
     def SetFunction(self, function="fixed"):
-        '''Set the function (type of operation) of the load.
-        function is one of "fixed", "short", "transient", or "battery".
-        Note "list" is intentionally left out for now.
-        '''
+        """
+        Set the function (type of operation) of the load.
+        
+        :param function: Function ("fixed", "short", "transient", "list" or "battery")
+        :type function: str
+        """
         msg = "Set function to %s" % function
-        functions = {"fixed":0, "short":1, "transient":2, "battery":4}
+        functions = {"fixed":0, "short":1, "transient":2, "list":3, "battery":4}
         return self._SendIntegerToLoad(0x5D, functions[function], msg, num_bytes=1)
+    
     def GetFunction(self):
-        "Get the function (type of operation) of the load"
+        """
+        Get the function (type of operation) of the load
+        
+        :returns: str
+        """
         msg = "Get function"
         fn = self._GetIntegerFromLoad(0x5E, msg, num_bytes=1)
-        functions_inv = {0:"fixed", 1:"short", 2:"transient", 4:"battery"}
+        functions_inv = {0:"fixed", 1:"short", 2:"transient", 3:"list", 4:"battery"}
         return functions_inv[fn]
+    
     def GetInputValues(self):
-        '''Returns voltage in V, current in A, and power in W, op_state byte,
+        """
+        Returns voltage in V, current in A, and power in W, op_state byte,
         and demand_state byte.
-        '''
+        
+        :returns: list: [voltage, current, power, op_state, demand_state]
+        """
         cmd = self._StartCommand(0x5F)
         cmd += self._Reserved(3)
         cmd += chr(self._CalculateChecksum(cmd))
@@ -520,22 +735,32 @@ class m_85XX(Base_Driver):
         power   = self._DecodeInteger(response[11:15])/self.convert_power
         op_state = hex(self._DecodeInteger(response[15]))
         demand_state = hex(self._DecodeInteger(response[16:18]))
-        s = [str(voltage) + " V", str(current) + " A", str(power) + " W", str(op_state), str(demand_state)]
+        s = [voltage, current, power, op_state, demand_state]
         return join(s, "\t")
     
-    # Returns model number, serial number, and firmware version number
-    def GetProductInformation(self):
-        "Returns model number, serial number, and firmware version"
-        cmd = self._StartCommand(0x6A)
-        cmd += self._Reserved(3)
-        cmd += chr(self._CalculateChecksum(cmd))
-        assert(self._CommandProperlyFormed(cmd))
-        response = self._SendCommand(cmd)
-        self._PrintCommandAndResponse(cmd, response, "Get product info")
-        model = response[3:8]
-        fw = hex(ord(response[9]))[2:] + "."
-        fw += hex(ord(response[8]))[2:] 
-        serial_number = response[10:20]
+    def GetTerminalVoltage(self):
+        """
+        Returns the terminal voltage in Volts
         
-        return (str(model), str(serial_number), str(fw))
+        :returns: float
+        """
+        return float(self.GetInputValues()[0])
+    
+    def GetTerminalCurrent(self):
+        """
+        Returns the terminal current in Amps
+        
+        :returns: float
+        """
+        return float(self.GetInputValues()[1])
+    
+    def GetTerminalPower(self):
+        """
+        Returns the terminal power in Watts
+        
+        :returns: float
+        """
+        return float(self.GetInputValues()[3])
+    
+
 
