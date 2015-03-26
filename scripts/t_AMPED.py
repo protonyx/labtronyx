@@ -18,12 +18,12 @@ class t_AMPED(Base_Script):
     def open(self):
         # Manually load some instruments
         try:
-            conv_uuid = self.instr.findResource('localhost', 'COM39')[0] # COM15 for the nice RS-485 converters
-            self.instr.loadModel(conv_uuid, 'models.UPEL.AMPED.m_BMS', 'm_BMS')
+            conv = self.instr.findInstrument(resID='COM39')[0] # COM15 for the nice RS-485 converters
+            conv.loadDriver('UPEL.AMPED.m_BMS')
             self.logger.debug("Registered AMPED BMS on COM39")
             
-            load_uuid = self.instr.findResource('localhost', 'COM46')[0]
-            self.instr.loadModel(load_uuid, 'models.BK_Precision.Load.m_85XX', 'm_85XX')
+            load = self.instr.findInstrument(resID='COM46')[0]
+            load.loadDriver('BK_Precision.Load.m_85XX')
             self.logger.debug("Registered BK Load on COM46")
         except:
             pass
