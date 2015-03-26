@@ -8,6 +8,8 @@ import serial
 import serial.tools.list_ports
 # list(serial.tools.list_ports.comports())
 
+import common.resource_status as resource_status
+
 class i_Serial(Base_Interface):
     
     info = {
@@ -102,11 +104,14 @@ class r_Serial(Base_Resource):
         Base_Resource.__init__(self, resID, controller)
         
         try:
-            self.instrument = serial.Serial(resID)
+            self.instrument = serial.Serial(port=resID, timeout=0)
             
             self.logger.info("Identified new Serial resource: %s", resID)
             
-            self.setResourceStatus(common.status.ready)
+            self.setResourceStatus(resource_status.READY)
+            
+            # Serial port is immediately opened on object creation
+            self.instrument.close()
             
         except serial.SerialException as e:
             self.setResourceStatus(common.status.error)
@@ -130,6 +135,19 @@ class r_Serial(Base_Resource):
         
     def unlock(self):
         pass
+    
+    #===========================================================================
+    # Serial Specific
+    #===========================================================================
+    
+    def flush(self):
+        self.instrument.flush()
+        
+    def nonblocking(self):
+        self.instrument.nonblocking()
+        
+    def setTimeout(self, timeout):
+        self.instrument.timeout = timeout
     
     #===========================================================================
     # Serial Configuration
@@ -164,10 +182,11 @@ class r_Serial(Base_Resource):
     def read(self, size=1):
         return self.instrument.read(size)
     
+    def query(self, data, size=255):
+        self.write(data)
+        return self.read(size)
+    
     def inWaiting(self):
         return self.instrument.inWaiting()
-    
-    def query(self, data):
-        return self.instrument.query(data)
     
         
