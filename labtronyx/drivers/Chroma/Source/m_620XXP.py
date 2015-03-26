@@ -38,9 +38,23 @@ class m_620XXP(Base_Driver):
     
     def _onLoad(self):
         self.instr = self.getResource()
+        
+        self.setRemoteControl()
     
     def _onUnload(self):
-        pass
+        self.setLocalControl()
+    
+    def setRemoteControl(self):
+        """
+        Sets the load to remote control
+        """
+        self.instr.write("CONF:REM ON")
+    
+    def setLocalControl(self):
+        """
+        Sets the load to local control
+        """
+        self.instr.write("CONF:REM OFF")
     
     def powerOn(self):
         self.instr.write("CONF:OUTP ON")
@@ -48,6 +62,23 @@ class m_620XXP(Base_Driver):
     def powerOff(self):
         self.instr.write("CONF:OUTP OFF")
         #self.instr.write("ABORT")
+        
+    def setMeasurementSpeed(self, speed):
+        """
+        Set the reading speed of the voltage/current sensor
+        
+        :param speed: Samples per second (one of: 30, 60, 120, 240)
+        :type speed: int
+        """
+        valid_speed = {30: 3,
+                       60: 2,
+                       120: 1,
+                       240: 0}
+        if speed in valid_speed:
+            self.instr.write("CONF:MEAS:SP %i" % valid_speed.get(speed))
+            
+        else:
+            raise ValueError("Invalid parameter")
         
     def setVoltage(self, voltage):
         self.instr.write("SOUR:VOLT %f" % float(voltage))
