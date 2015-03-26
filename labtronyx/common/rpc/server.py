@@ -94,7 +94,10 @@ class RpcServer(object):
         self.rpc_objects.append(reg_obj)
     
     def unregisterObject(self, reg_obj):
-        self.rpc_objects.remove(reg_obj)
+        try:
+            self.rpc_objects.remove(reg_obj)
+        except:
+            pass
         
     #===========================================================================
     # Connection Management and Notifications

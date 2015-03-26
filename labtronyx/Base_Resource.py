@@ -81,6 +81,14 @@ class Base_Resource(object):
             return self.rpc_server.rpc_getPort()
     
     def getProperties(self):
+        driver_prop = {}
+        
+        # Append Driver properties if a Driver is loaded
+        if self.driver is not None:
+            driver_prop = self.driver.getProperties()
+            
+            driver_prop['driver'] = self.driver.getDriverName()
+        
         res_prop = {
             'uuid': self.getUUID(),
             'interface': self.getInterfaceName(),
@@ -91,15 +99,9 @@ class Base_Resource(object):
             'port': self.getPort()
             }
         
-        # Append Model properties if a Model is loaded
-        if self.driver is not None:
-            driver_prop = self.driver.getProperties()
-            
-            driver_prop['driver'] = self.driver.getDriverName()
-            
-            res_prop.update(driver_prop)
+        driver_prop.update(res_prop)
         
-        return res_prop
+        return driver_prop
     
     #===========================================================================
     # Resource State

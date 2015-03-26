@@ -125,13 +125,12 @@ class r_VISA(Base_Resource):
             self.logger.info("Created VISA Resource: %s", resID)
             self.instrument = self.resource_manager.open_resource(resID,
                                                                   open_timeout=0.5)
+            self.setResourceStatus(resource_status.READY)
             
             self.identify()
             
             # Attempt to automatically load a driver
             self.loadDriver()
-            
-            self.setResourceStatus(resource_status.READY)
             
         except visa.VisaIOError as e:
             self.VID = ''
@@ -146,6 +145,10 @@ class r_VISA(Base_Resource):
                 self.logger.info("Unable to Identify, resource is busy")
                 self.setResourceError(resource_status.ERROR_BUSY)
                 
+            elif e.abbreviation == "VI_ERROR_TMO":
+                self.logger.info("Unable to Identify, resource did not respond")
+                self.setResourceError(resource_status.ERROR_NOTFOUND)
+                
             elif e.abbreviation == "VI_ERROR_RSRC_NFOUND":
                 self.logger.info("Unable to connect, resource was not found")
                 self.setResourceError(resource_status.ERROR_NOTFOUND)
@@ -153,9 +156,19 @@ class r_VISA(Base_Resource):
             else:
                 self.logger.exception("Unknown VISA Exception")
                 self.setResourceError(resource_status.ERROR_UNKNOWN)
+                
+    def getProperties(self):
+        def_prop = Base_Resource.getProperties(self)
+        
+        def_prop.setdefault('deviceVendor', self.getVISA_vendor())
+        def_prop.setdefault('deviceModel', self.getVISA_model())
+        def_prop.setdefault('deviceSerial', self.getVISA_serial())
+        def_prop.setdefault('deviceFirmware', self.getVISA_firmware())
+        
+        return def_prop
         
     #===========================================================================
-    # Resource State
+    # VISA Specific
     #===========================================================================
     
     def identify(self):
@@ -187,6 +200,22 @@ class r_VISA(Base_Resource):
             self.logger.error('Unable to identify VISA device: %s', resID)
             
         self.close()
+        
+    def getVISA_vendor(self):
+        return self.VID
+    
+    def getVISA_model(self):
+        return self.PID
+    
+    def getVISA_serial(self):
+        return self.serial
+    
+    def getVISA_firmware(self):
+        return self.firmware
+        
+    #===========================================================================
+    # Resource State
+    #===========================================================================
         
     def open(self):
         self.instrument.open()
@@ -230,20 +259,6 @@ class r_VISA(Base_Resource):
         self.checkResourceStatus()
         
         return self.instrument.query(data)
-    
-    def getProperties(self):
-        def_prop = Base_Resource.getProperties(self)
-        
-        VISA_prop = {'deviceVendor':     self.VID,
-                     'deviceModel':      self.PID,
-                     'deviceSerial':     self.serial,
-                     'deviceFirmware':   self.firmware
-                     }
-        
-        def_prop.update(VISA_prop)
-        
-        return def_prop
-                
     
     #===========================================================================
     # Drivers

@@ -175,9 +175,6 @@ class Base_Driver(object):
     def getProperties(self):
         return { 
             'deviceType':       self.info.get('deviceType', ''),
-            'deviceVendor':     self.info.get('deviceVendor', ''),
-            'deviceModel':      '',
-            'deviceSerial':     '',
-            'deviceFirmware':   ''
+            'deviceVendor':     self.info.get('deviceVendor', '')
         }
         
