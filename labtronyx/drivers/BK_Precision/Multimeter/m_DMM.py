@@ -45,15 +45,26 @@ class m_DMM(Base_Driver):
     
     def _onLoad(self):
         self.instr = self.getResource()
+        self.instr.open()
         
         self.func = self.getFunction()
+        
+        self.logger.debug("Function: [%s]" % self.func)
     
     def _onUnload(self):
-        pass
+        self.instr.close()
+        
+    def getProperties(self):
+        prop = Base_Driver.getProperties(self)
+        
+        prop['deviceVendor'] = self.info.get('deviceVendor')
+        prop['deviceModel'] = self.instr.getVISA_model().split(' ')[0]
+        
+        return prop
     
     def query(self, command):
-        resp = str(self.instr.ask(command))
-        self.logger.debug(resp)
+        resp = str(self.instr.query(command))
+        resp = resp.strip() # Strip whitespace
         
         # Check that the SCPI header was not retuned
         ind = resp.find(command)
@@ -136,6 +147,7 @@ class m_DMM(Base_Driver):
         Alias for `getMode`
         """
         return self.getMode()
+    
     def setRange(self, value):
         """
         Set the range for the measurement. The range is selected by specifying
