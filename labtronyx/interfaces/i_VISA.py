@@ -98,7 +98,7 @@ class r_VISA(Base_Resource):
     Wraps PyVISA Resource Class
     
     All VISA complient devices will adhere to the IEEE 488.2 standard
-    for responses to the *IDN? query. The expected format is:
+    for responses to the '*IDN?' query. The expected format is:
     <Manufacturer>,<Model>,<Serial>,<Firmware>
     
     BK Precision has a non-standard format for some of their instruments:
@@ -107,10 +107,11 @@ class r_VISA(Base_Resource):
     Models derived from a VISA resource do not need to provide values for the
     following property attributes as they are derived from the identification
     string:
-        * deviceVendor
-        * deviceModel
-        * deviceSerial
-        * deviceFirmware
+        
+       * deviceVendor
+       * deviceModel
+       * deviceSerial
+       * deviceFirmware
     """
     
     type = "VISA"
