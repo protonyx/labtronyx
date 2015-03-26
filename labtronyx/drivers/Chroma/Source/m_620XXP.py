@@ -78,7 +78,41 @@ class m_620XXP(Base_Driver):
             self.instr.write("CONF:MEAS:SP %i" % valid_speed.get(speed))
             
         else:
-            raise ValueError("Invalid parameter")
+            raise ValueError("Invalid Parameter")
+        
+    def setMeasurementAverage(self, avg):
+        """
+        Set the number of readings to average.
+        
+        :param avg: Number of times to average (1, 2, 4 or 8)
+        :type avg: int
+        """
+        valid_avg = {1: 0,
+                     2: 1,
+                     4: 2,
+                     8: 3}
+        if avg in valid_avg:
+            self.instr.write("CONF:AVG:TIMES %i" % valid_avg.get(avg))
+            
+        else:
+            raise ValueError("Invalid Parameter")
+        
+    def setMeasurementAverageMethod(self, avg):
+        """
+        Set the number of readings to average.
+        
+        :param avg: Method ('FIX' or 'MOV')
+        :type avg: str
+        """
+        valid_avg = {1: 0,
+                     2: 1,
+                     4: 2,
+                     8: 3}
+        if avg in valid_avg:
+            self.instr.write("CONF:AVG:TIMES %i" % valid_avg.get(avg))
+            
+        else:
+            raise ValueError("Invalid Parameter")
         
     def setVoltage(self, voltage):
         self.instr.write("SOUR:VOLT %f" % float(voltage))
