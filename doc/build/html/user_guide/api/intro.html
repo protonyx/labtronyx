@@ -233,13 +233,38 @@ communication can be established.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>address</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; IP Address of manager</li>
+<li><strong>address</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; IP Address of host</li>
 <li><strong>controller</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Name of controller to attach new resource</li>
 <li><strong>ResID</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Resource Identifier</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">bool - True if success, False otherwise</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.InstrumentControl.InstrumentControl.findInstrument">
+<tt class="descname">findInstrument</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.findInstrument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.findInstrument" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of instruments that match the parameters specified.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>address</strong> &#8211; IP Address of host</li>
+<li><strong>hostname</strong> &#8211; Hostname of host</li>
+<li><strong>uuid</strong> &#8211; Unique Resource Identifier (UUID)</li>
+<li><strong>interface</strong> &#8211; Interface</li>
+<li><strong>resourceID</strong> &#8211; Interface Resource Identifier</li>
+<li><strong>resourceType</strong> &#8211; Resource Type (Serial, VISA, etc.)</li>
+<li><strong>deviceVendor</strong> &#8211; Instrument Vendor</li>
+<li><strong>deviceModel</strong> &#8211; Instrument Model Number</li>
+<li><strong>deviceSerial</strong> &#8211; Instrument Serial Number</li>
+</ul>
 </td>
 </tr>
 </tbody>
@@ -282,7 +307,7 @@ communication can be established.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; IP Address of manager</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; IP Address of host</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list</td>
 </tr>
@@ -336,7 +361,9 @@ device driver (Model).</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects</td>
+<tr class="field-odd field"><th class="field-name">Deprecated:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects</td>
 </tr>
 </tbody>
 </table>
@@ -357,7 +384,9 @@ on remote InstrumentManagers if you don&#8217;t need them.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects</td>
+<tr class="field-odd field"><th class="field-name">Deprecated:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects</td>
 </tr>
 </tbody>
 </table>
@@ -376,7 +405,9 @@ model number.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects</td>
+<tr class="field-odd field"><th class="field-name">Deprecated:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects</td>
 </tr>
 </tbody>
 </table>
@@ -395,7 +426,9 @@ number.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> object</td>
+<tr class="field-odd field"><th class="field-name">Deprecated:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> object</td>
 </tr>
 </tbody>
 </table>
@@ -414,7 +447,9 @@ device type.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects</td>
+<tr class="field-odd field"><th class="field-name">Deprecated:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref py py-class docutils literal"><span class="pre">RpcClient</span></tt> objects</td>
 </tr>
 </tbody>
 </table>
@@ -531,7 +566,7 @@ resources from that host.</p>
 
 <dl class="method">
 <dt id="labtronyx.InstrumentControl.InstrumentControl.startManager">
-<tt class="descname">startManager</tt><big>(</big><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.startManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.startManager" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">startManager</tt><big>(</big><em>debug=False</em><big>)</big><a class="reference internal" href="../../_modules/labtronyx/InstrumentControl.html#InstrumentControl.startManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.InstrumentControl.InstrumentControl.startManager" title="Permalink to this definition">¶</a></dt>
 <dd><p>Start a local instance of <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt> using 
 <tt class="xref py py-func docutils literal"><span class="pre">subprocess.Popen()</span></tt>.</p>
 <p>No attempt is made to check whether an <tt class="xref py py-class docutils literal"><span class="pre">InstrumentManager</span></tt>

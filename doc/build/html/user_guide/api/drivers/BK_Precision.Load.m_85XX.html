@@ -62,49 +62,68 @@
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.DisableLocalControl">
 <tt class="descname">DisableLocalControl</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.DisableLocalControl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.DisableLocalControl" title="Permalink to this definition">¶</a></dt>
-<dd><p>Disable local control of the load</p>
+<dd><p>Disable local control of the load. User will be unable to control load
+functions using the front panel.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.DisableRemoteSense">
+<tt class="descname">DisableRemoteSense</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.DisableRemoteSense"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.DisableRemoteSense" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disable remote sensing</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.EnableLocalControl">
 <tt class="descname">EnableLocalControl</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.EnableLocalControl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.EnableLocalControl" title="Permalink to this definition">¶</a></dt>
-<dd><p>Enable local control (i.e., key presses work) of the load</p>
+<dd><p>Enable local control of the load</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.EnableRemoteSense">
+<tt class="descname">EnableRemoteSense</tt><big>(</big><em>enabled=0</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.EnableRemoteSense"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.EnableRemoteSense" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable remote sensing</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetBatteryTestVoltage">
 <tt class="descname">GetBatteryTestVoltage</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetBatteryTestVoltage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetBatteryTestVoltage" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets the battery test voltage</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetCCCurrent">
-<tt class="descname">GetCCCurrent</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetCCCurrent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetCCCurrent" title="Permalink to this definition">¶</a></dt>
+<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetCurrent">
+<tt class="descname">GetCurrent</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetCurrent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetCurrent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets the constant current mode&#8217;s current level</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetCRResistance">
-<tt class="descname">GetCRResistance</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetCRResistance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetCRResistance" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the constant resistance mode&#8217;s resistance level</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetCVVoltage">
-<tt class="descname">GetCVVoltage</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetCVVoltage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetCVVoltage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the constant voltage mode&#8217;s voltage level</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetCWPower">
-<tt class="descname">GetCWPower</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetCWPower"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetCWPower" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the constant power mode&#8217;s power level</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetFunction">
 <tt class="descname">GetFunction</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetFunction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetFunction" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the function (type of operation) of the load</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -112,66 +131,233 @@
 <tt class="descname">GetInputValues</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetInputValues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetInputValues" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns voltage in V, current in A, and power in W, op_state byte,
 and demand_state byte.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list: [voltage, current, power, op_state, demand_state]</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetLoadOnTimer">
 <tt class="descname">GetLoadOnTimer</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetLoadOnTimer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetLoadOnTimer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets the time in seconds that the load will be on</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetLoadOnTimerState">
 <tt class="descname">GetLoadOnTimerState</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetLoadOnTimerState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetLoadOnTimerState" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the load on timer state</p>
+<dd><p>Gets the LOAD ON timer state</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetMaxCurrent">
 <tt class="descname">GetMaxCurrent</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetMaxCurrent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetMaxCurrent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the maximum current the load will sink</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetMaxPower">
 <tt class="descname">GetMaxPower</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetMaxPower"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetMaxPower" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets the maximum power the load will allow</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetMaxVoltage">
 <tt class="descname">GetMaxVoltage</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetMaxVoltage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetMaxVoltage" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets the maximum voltage the load will allow</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetMode">
 <tt class="descname">GetMode</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetMode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetMode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the mode (constant current, constant voltage, etc.</p>
+<dd><p>Gets the operating mode</p>
+<p>Possible values:</p>
+<blockquote>
+<div><ul class="simple">
+<li><cite>cc</cite>: Constant Current</li>
+<li><cite>cv</cite>: Constant Voltage</li>
+<li><cite>cw</cite>: Constant Power</li>
+<li><cite>cr</cite>: Constant Resistance</li>
+</ul>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetProductInformation">
-<tt class="descname">GetProductInformation</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetProductInformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetProductInformation" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns model number, serial number, and firmware version</p>
+<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetPower">
+<tt class="descname">GetPower</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetPower"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetPower" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the constant power mode&#8217;s power level</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetRemoteSense">
 <tt class="descname">GetRemoteSense</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetRemoteSense"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetRemoteSense" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the state of remote sensing</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">int (0: Disabled, 1: Enabled)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetResistance">
+<tt class="descname">GetResistance</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetResistance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetResistance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the constant resistance mode&#8217;s resistance level</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetTerminalCurrent">
+<tt class="descname">GetTerminalCurrent</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetTerminalCurrent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetTerminalCurrent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the terminal current in Amps</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetTerminalPower">
+<tt class="descname">GetTerminalPower</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetTerminalPower"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetTerminalPower" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the terminal power in Watts</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetTerminalVoltage">
+<tt class="descname">GetTerminalVoltage</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetTerminalVoltage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetTerminalVoltage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the terminal voltage in Volts</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetTransient">
 <tt class="descname">GetTransient</tt><big>(</big><em>mode</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetTransient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetTransient" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets the transient mode settings</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">tuple (Amplitude A, Width A, Amplitude B, Width B, Mode)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetTriggerSource">
 <tt class="descname">GetTriggerSource</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetTriggerSource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetTriggerSource" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get how the instrument will be triggered</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetVoltage">
+<tt class="descname">GetVoltage</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.GetVoltage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetVoltage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the constant voltage mode&#8217;s voltage level</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -190,58 +376,70 @@ and demand_state byte.</p>
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetBatteryTestVoltage">
 <tt class="descname">SetBatteryTestVoltage</tt><big>(</big><em>min_voltage</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetBatteryTestVoltage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetBatteryTestVoltage" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the battery test voltage</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>min_voltage</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Minimum Voltage (volts)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCCCurrent">
-<tt class="descname">SetCCCurrent</tt><big>(</big><em>current</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetCCCurrent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCCCurrent" title="Permalink to this definition">¶</a></dt>
+<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCurrent">
+<tt class="descname">SetCurrent</tt><big>(</big><em>current</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetCurrent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCurrent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the constant current mode&#8217;s current level</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCRResistance">
-<tt class="descname">SetCRResistance</tt><big>(</big><em>resistance</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetCRResistance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCRResistance" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets the constant resistance mode&#8217;s resistance level</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCVVoltage">
-<tt class="descname">SetCVVoltage</tt><big>(</big><em>voltage</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetCVVoltage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCVVoltage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets the constant voltage mode&#8217;s voltage level</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCWPower">
-<tt class="descname">SetCWPower</tt><big>(</big><em>power</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetCWPower"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCWPower" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets the constant power mode&#8217;s power level</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCommunicationAddress">
-<tt class="descname">SetCommunicationAddress</tt><big>(</big><em>address=0</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetCommunicationAddress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCommunicationAddress" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets the communication address.  Note:  this feature is
-not currently supported.  The communication address should always
-be set to 0.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>current</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Current in Amps</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetFunction">
 <tt class="descname">SetFunction</tt><big>(</big><em>function='fixed'</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetFunction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetFunction" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the function (type of operation) of the load.
-function is one of &#8220;fixed&#8221;, &#8220;short&#8221;, &#8220;transient&#8221;, or &#8220;battery&#8221;.
-Note &#8220;list&#8221; is intentionally left out for now.</p>
+<dd><p>Set the function (type of operation) of the load.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>function</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Function (&#8220;fixed&#8221;, &#8220;short&#8221;, &#8220;transient&#8221;, &#8220;list&#8221; or &#8220;battery&#8221;)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetLoadOnTimer">
 <tt class="descname">SetLoadOnTimer</tt><big>(</big><em>time_in_s</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetLoadOnTimer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetLoadOnTimer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the time in seconds that the load will be on</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>time_in_s</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Time (in seconds)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetLoadOnTimerState">
 <tt class="descname">SetLoadOnTimerState</tt><big>(</big><em>enabled=0</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetLoadOnTimerState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetLoadOnTimerState" title="Permalink to this definition">¶</a></dt>
-<dd><p>Enables or disables the load on timer state</p>
+<dd><p>Enables or disables the LOAD ON timer state</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>enabled</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Timer State (0: Disabled, 1: Enabled)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -254,24 +452,81 @@ Note &#8220;list&#8221; is intentionally left out for now.</p>
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetMaxCurrent">
 <tt class="descname">SetMaxCurrent</tt><big>(</big><em>current</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetMaxCurrent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetMaxCurrent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the maximum current the load will sink</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>current</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Current in Amps</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetMaxPower">
 <tt class="descname">SetMaxPower</tt><big>(</big><em>power</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetMaxPower"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetMaxPower" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the maximum power the load will allow</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>power</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Power in Watts</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetMaxVoltage">
 <tt class="descname">SetMaxVoltage</tt><big>(</big><em>voltage</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetMaxVoltage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetMaxVoltage" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the maximum voltage the load will allow</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>voltage</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Voltage in Volts</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetMode">
 <tt class="descname">SetMode</tt><big>(</big><em>mode</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetMode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetMode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets the mode (constant current, constant voltage, etc.</p>
+<dd><p>Sets the operating mode</p>
+<p>Possible values:</p>
+<blockquote>
+<div><ul class="simple">
+<li><cite>cc</cite>: Constant Current</li>
+<li><cite>cv</cite>: Constant Voltage</li>
+<li><cite>cp</cite>: Constant Power</li>
+<li><cite>cr</cite>: Constant Resistance</li>
+</ul>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mode</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Operating mode</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">Exception</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetPower">
+<tt class="descname">SetPower</tt><big>(</big><em>power</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetPower"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetPower" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the constant power mode&#8217;s power level</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>power</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Power in Watts</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -281,30 +536,80 @@ Note &#8220;list&#8221; is intentionally left out for now.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetRemoteSense">
-<tt class="descname">SetRemoteSense</tt><big>(</big><em>enabled=0</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetRemoteSense"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetRemoteSense" title="Permalink to this definition">¶</a></dt>
-<dd><p>Enable or disable remote sensing</p>
+<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetResistance">
+<tt class="descname">SetResistance</tt><big>(</big><em>resistance</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetResistance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetResistance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the constant resistance mode&#8217;s resistance level</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>resistance</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Resistance in Ohms</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetTransient">
-<tt class="descname">SetTransient</tt><big>(</big><em>mode</em>, <em>A</em>, <em>A_time_s</em>, <em>B</em>, <em>B_time_s</em>, <em>operation='continuous'</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetTransient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetTransient" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets up the transient operation mode.  mode is one of 
-&#8220;CC&#8221;, &#8220;CV&#8221;, &#8220;CW&#8221;, or &#8220;CR&#8221;.</p>
+<tt class="descname">SetTransient</tt><big>(</big><em>A</em>, <em>A_time_s</em>, <em>B</em>, <em>B_time_s</em>, <em>operation='continuous'</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetTransient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetTransient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets up the transient operation mode.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>A</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Amplitude B</li>
+<li><strong>A_time_s</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Width of A (in seconds)</li>
+<li><strong>B</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Amplitude of B</li>
+<li><strong>B</strong> &#8211; Width of B (in seconds)</li>
+<li><strong>operation</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Transient Mode (one of &#8220;continuous&#8221;, &#8220;pulse&#8221;, &#8220;toggled&#8221;)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetTriggerSource">
 <tt class="descname">SetTriggerSource</tt><big>(</big><em>source='immediate'</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetTriggerSource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetTriggerSource" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set how the instrument will be triggered.
-&#8220;immediate&#8221; means triggered from the front panel.
-&#8220;external&#8221; means triggered by a TTL signal on the rear panel.
-&#8220;bus&#8221; means a software trigger (see TriggerLoad()).</p>
+<dd><p>Set how the instrument will be triggered:</p>
+<blockquote>
+<div><ul class="simple">
+<li>&#8220;immediate&#8221; means triggered from the front panel.</li>
+<li>&#8220;external&#8221; means triggered by a TTL signal on the rear panel.</li>
+<li>&#8220;bus&#8221; means a software trigger (see <cite>Trigger()</cite>).</li>
+</ul>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>source</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Source (&#8220;immediate&#8221;, &#8220;external&#8221; or &#8220;bus&#8221;)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body">Exception</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.TriggerLoad">
-<tt class="descname">TriggerLoad</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.TriggerLoad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.TriggerLoad" title="Permalink to this definition">¶</a></dt>
+<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetVoltage">
+<tt class="descname">SetVoltage</tt><big>(</big><em>voltage</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.SetVoltage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetVoltage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the constant voltage mode&#8217;s voltage level</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>voltage</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Voltage in Volts</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.Trigger">
+<tt class="descname">Trigger</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/drivers/BK_Precision/Load/m_85XX.html#m_85XX.Trigger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.Trigger" title="Permalink to this definition">¶</a></dt>
 <dd><p>Provide a software trigger.  This is only of use when the trigger
 mode is set to &#8220;bus&#8221;.</p>
 </dd></dl>

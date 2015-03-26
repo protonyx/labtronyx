@@ -213,11 +213,12 @@
                 <span class="k">break</span>
                 
             <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">errno</span> <span class="o">==</span> <span class="n">errno</span><span class="o">.</span><span class="n">ECONNRESET</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_disconnect</span><span class="p">()</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_connect</span><span class="p">()</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="k">raise</span>
+                <span class="c"># Windows Error #10057 also triggers this</span>
+                <span class="c">#if e.errno == errno.ECONNRESET:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_disconnect</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_connect</span><span class="p">()</span>
+                <span class="c">#else:</span>
+                    <span class="c">#raise</span>
     
     <span class="k">def</span> <span class="nf">_recv</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">ready_to_read</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">)</span>

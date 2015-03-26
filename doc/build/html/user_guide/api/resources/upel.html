@@ -64,9 +64,47 @@
 <dl class="class">
 <dt id="labtronyx.interfaces.i_UPEL.i_UPEL">
 <em class="property">class </em><tt class="descclassname">labtronyx.interfaces.i_UPEL.</tt><tt class="descname">i_UPEL</tt><big>(</big><em>manager</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/interfaces/i_UPEL.html#i_UPEL"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.interfaces.i_UPEL.i_UPEL" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><p>The UPEL ICP thread manages communication in and out of the network socket
+on port 7968.</p>
+<p>Packets to send out to remote devices are queued in the message queue and sent
+one at a time. Queuing a message requires:</p>
+<blockquote>
+<div><ul class="simple">
+<li>IP Address</li>
+<li>TTL (Time to Live)</li>
+<li>Response Queue</li>
+<li>ICP Packet Object</li>
+</ul>
+</div></blockquote>
+<p>The response packet object will be loaded into the response queue.</p>
+<p>When a message is sent, it is assigned an ID within the packet header. If a
+response is expected from an outgoing packet, an entry is made in the map
+table to associate the packet ID of the response packet with the object that
+sent the original packet.</p>
+<p>The Arbiter will periodically scan the routing map for old entries. If an
+entry has exceeded the TTL window, a signal is sent to the originating
+object that a timeout condition has occurred.</p>
+<p>The Packet ID is an 8-bit value, so there are 256 possible ID codes. A 
+Packet ID of 0x00 is reserved for &#8220;notification&#8221; packet where a response is 
+not expected, and thus will never create an entry in the routing map, giving 
+a maximum of 255 possible entries in the routing map.</p>
+<p>The routing map has the format: { PacketID: Address }</p>
+<p>The arbiter will alternate between servicing the message queue, processing 
+any data in the __socket buffer, and checking the status of entries in the 
+routing map. If none of those tasks requires attention, the thread will 
+sleep for a small time interval to limit loading the processor excessively.</p>
+<p>Conforms to Rev 1.0 of the UPEL Instrument Control Protocol</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Author:</th><td class="field-body">Kevin Kennedy</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
 <dt id="labtronyx.interfaces.i_UPEL.i_UPEL.addResource">
-<tt class="descname">addResource</tt><big>(</big><em>ResID</em>, <em>VID=None</em>, <em>PID=None</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/interfaces/i_UPEL.html#i_UPEL.addResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.interfaces.i_UPEL.i_UPEL.addResource" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">addResource</tt><big>(</big><em>resID</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/interfaces/i_UPEL.html#i_UPEL.addResource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.interfaces.i_UPEL.i_UPEL.addResource" title="Permalink to this definition">¶</a></dt>
 <dd><p>Treats an addResource request as a hint that a device exists. Attempts
 to send a discovery packet to the device to get more information.</p>
 <p>The ICP thread will automatically handle the creation of an
@@ -75,7 +113,7 @@ instrument for the new resource.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ResID</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Resource ID (IP Address)</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>resID</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Resource ID (IP Address)</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">bool. True if successful, False otherwise</td>
 </tr>
@@ -84,9 +122,55 @@ instrument for the new resource.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="labtronyx.interfaces.i_UPEL.i_UPEL.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#labtronyx.interfaces.i_UPEL.i_UPEL.run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Interface thread</p>
+<dt id="labtronyx.interfaces.i_UPEL.i_UPEL.destroyResource">
+<tt class="descname">destroyResource</tt><big>(</big><em>ResID</em><big>)</big><a class="headerlink" href="#labtronyx.interfaces.i_UPEL.i_UPEL.destroyResource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a manually added resource</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ResID</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Resource Identifier</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">bool - True if successful, False otherwise</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.interfaces.i_UPEL.i_UPEL.queuePacket">
+<tt class="descname">queuePacket</tt><big>(</big><em>packet_obj</em>, <em>ttl</em><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/interfaces/i_UPEL.html#i_UPEL.queuePacket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.interfaces.i_UPEL.i_UPEL.queuePacket" title="Permalink to this definition">¶</a></dt>
+<dd><p>Insert a packet into the queue. If unable to queue packet, raises Full</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>packet_obj</strong> (<em>UPEL_ICP_Packet</em>) &#8211; ICP Packet Object</li>
+<li><strong>ttl</strong> (<a class="reference external" href="http://docs.python.org/2.7/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Time to Live (seconds)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">packetID or none if unable to queue message</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="labtronyx.interfaces.i_UPEL.i_UPEL.refresh">
+<tt class="descname">refresh</tt><big>(</big><big>)</big><a class="reference internal" href="../../../_modules/labtronyx/interfaces/i_UPEL.html#i_UPEL.refresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#labtronyx.interfaces.i_UPEL.i_UPEL.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queues a broadcast discovery packet. The arbiter will automatically
+update the resource table as responses come in.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">None</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>

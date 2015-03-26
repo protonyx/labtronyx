@@ -52,6 +52,8 @@
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">visa</span>
 
+<span class="kn">import</span> <span class="nn">common.resource_status</span> <span class="kn">as</span> <span class="nn">resource_status</span>
+
 <div class="viewcode-block" id="i_VISA"><a class="viewcode-back" href="../../../user_guide/api/resources/visa.html#labtronyx.interfaces.i_VISA.i_VISA">[docs]</a><span class="k">class</span> <span class="nc">i_VISA</span><span class="p">(</span><span class="n">Base_Interface</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    VISA Controller</span>
@@ -125,7 +127,10 @@
 <span class="sd">        Stops the VISA Controller. Stops the controller thread and frees all</span>
 <span class="sd">        resources associated with the controller.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># TODO: Free all resources associated with the controller</span>
+        <span class="k">for</span> <span class="n">resObj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">resObj</span><span class="o">.</span><span class="n">killResource</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
         
         <span class="k">return</span> <span class="bp">True</span>
     </div>
@@ -156,8 +161,8 @@
     
     <span class="nb">type</span> <span class="o">=</span> <span class="s">&quot;VISA&quot;</span>
         
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resID</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">Base_Resource</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resID</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resID</span><span class="p">,</span> <span class="n">interface</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">Base_Resource</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resID</span><span class="p">,</span> <span class="n">interface</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">resource_manager</span> <span class="o">=</span> <span class="n">visa</span><span class="o">.</span><span class="n">ResourceManager</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">driver_list</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;drivers&#39;</span><span class="p">,</span> <span class="p">{})</span>
@@ -166,12 +171,12 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Created VISA Resource: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">resID</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource_manager</span><span class="o">.</span><span class="n">open_resource</span><span class="p">(</span><span class="n">resID</span><span class="p">,</span>
                                                                   <span class="n">open_timeout</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setResourceStatus</span><span class="p">(</span><span class="n">resource_status</span><span class="o">.</span><span class="n">READY</span><span class="p">)</span>
             
             <span class="bp">self</span><span class="o">.</span><span class="n">identify</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;READY&#39;</span>
             
+            <span class="c"># Attempt to automatically load a driver</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">loadDriver</span><span class="p">()</span>
-            
             
         <span class="k">except</span> <span class="n">visa</span><span class="o">.</span><span class="n">VisaIOError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">VID</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
@@ -179,16 +184,37 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">firmware</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">serial</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
             
+            <span class="bp">self</span><span class="o">.</span><span class="n">setResourceStatus</span><span class="p">(</span><span class="n">resource_status</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+            
             <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">abbreviation</span> <span class="o">==</span> <span class="s">&quot;VI_ERROR_RSRC_BUSY&quot;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">locked</span> <span class="o">=</span> <span class="bp">True</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Unable to Identify, resource is busy&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">setResourceError</span><span class="p">(</span><span class="n">resource_status</span><span class="o">.</span><span class="n">ERROR_BUSY</span><span class="p">)</span>
+                
+            <span class="k">elif</span> <span class="n">e</span><span class="o">.</span><span class="n">abbreviation</span> <span class="o">==</span> <span class="s">&quot;VI_ERROR_TMO&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Unable to Identify, resource did not respond&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">setResourceError</span><span class="p">(</span><span class="n">resource_status</span><span class="o">.</span><span class="n">ERROR_NOTFOUND</span><span class="p">)</span>
+                
             <span class="k">elif</span> <span class="n">e</span><span class="o">.</span><span class="n">abbreviation</span> <span class="o">==</span> <span class="s">&quot;VI_ERROR_RSRC_NFOUND&quot;</span><span class="p">:</span>
-                <span class="k">pass</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Unable to connect, resource was not found&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">setResourceError</span><span class="p">(</span><span class="n">resource_status</span><span class="o">.</span><span class="n">ERROR_NOTFOUND</span><span class="p">)</span>
+                
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s">&quot;Unknown VISA Exception&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">setResourceError</span><span class="p">(</span><span class="n">resource_status</span><span class="o">.</span><span class="n">ERROR_UNKNOWN</span><span class="p">)</span>
+                
+    <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">def_prop</span> <span class="o">=</span> <span class="n">Base_Resource</span><span class="o">.</span><span class="n">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        
+        <span class="n">def_prop</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;deviceVendor&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">getVISA_vendor</span><span class="p">())</span>
+        <span class="n">def_prop</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;deviceModel&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">getVISA_model</span><span class="p">())</span>
+        <span class="n">def_prop</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;deviceSerial&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">getVISA_serial</span><span class="p">())</span>
+        <span class="n">def_prop</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;deviceFirmware&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">getVISA_firmware</span><span class="p">())</span>
+        
+        <span class="k">return</span> <span class="n">def_prop</span>
         
     <span class="c">#===========================================================================</span>
-    <span class="c"># Resource State</span>
+    <span class="c"># VISA Specific</span>
     <span class="c">#===========================================================================</span>
     
     <span class="k">def</span> <span class="nf">identify</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -221,6 +247,22 @@
             
         <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         
+    <span class="k">def</span> <span class="nf">getVISA_vendor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">VID</span>
+    
+    <span class="k">def</span> <span class="nf">getVISA_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">PID</span>
+    
+    <span class="k">def</span> <span class="nf">getVISA_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serial</span>
+    
+    <span class="k">def</span> <span class="nf">getVISA_firmware</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">firmware</span>
+        
+    <span class="c">#===========================================================================</span>
+    <span class="c"># Resource State</span>
+    <span class="c">#===========================================================================</span>
+        
     <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
     
@@ -238,6 +280,16 @@
     <span class="c">#===========================================================================</span>
     
     <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Send data to the instrument. Raises exception if the resource is not</span>
+<span class="sd">        ready. To get the error condition, call `getResourceError`</span>
+<span class="sd">        </span>
+<span class="sd">        :param data: Data to send</span>
+<span class="sd">        :type data: str</span>
+<span class="sd">        :raises: ResourceNotReady</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkResourceStatus</span><span class="p">()</span>
+        
         <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
@@ -245,24 +297,14 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
     
     <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkResourceStatus</span><span class="p">()</span>
+        
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
     
     <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkResourceStatus</span><span class="p">()</span>
+        
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-    
-    <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">def_prop</span> <span class="o">=</span> <span class="n">Base_Resource</span><span class="o">.</span><span class="n">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        
-        <span class="n">VISA_prop</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;deviceVendor&#39;</span><span class="p">:</span>     <span class="bp">self</span><span class="o">.</span><span class="n">VID</span><span class="p">,</span>
-                     <span class="s">&#39;deviceModel&#39;</span><span class="p">:</span>      <span class="bp">self</span><span class="o">.</span><span class="n">PID</span><span class="p">,</span>
-                     <span class="s">&#39;deviceSerial&#39;</span><span class="p">:</span>     <span class="bp">self</span><span class="o">.</span><span class="n">serial</span><span class="p">,</span>
-                     <span class="s">&#39;deviceFirmware&#39;</span><span class="p">:</span>   <span class="bp">self</span><span class="o">.</span><span class="n">firmware</span>
-                     <span class="p">}</span>
-        
-        <span class="n">def_prop</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">VISA_prop</span><span class="p">)</span>
-        
-        <span class="k">return</span> <span class="n">def_prop</span>
-                
     
     <span class="c">#===========================================================================</span>
     <span class="c"># Drivers</span>

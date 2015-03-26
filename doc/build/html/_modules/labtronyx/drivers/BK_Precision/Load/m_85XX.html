@@ -94,24 +94,19 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">SetRemoteControl</span><span class="p">()</span>
     
     <span class="k">def</span> <span class="nf">_onUnload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SetLocalControl</span><span class="p">()</span>
         
     <span class="k">def</span> <span class="nf">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">ret</span> <span class="o">=</span> <span class="n">Base_Driver</span><span class="o">.</span><span class="n">getProperties</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         
         <span class="n">ret</span><span class="p">[</span><span class="s">&#39;deviceVendor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;BK Precision&#39;</span>
         
-        <span class="n">prodInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetProductInformation</span><span class="p">()</span>
+        <span class="n">prodInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetProductInformation</span><span class="p">()</span>
         <span class="n">ret</span><span class="p">[</span><span class="s">&#39;deviceModel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prodInfo</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">ret</span><span class="p">[</span><span class="s">&#39;deviceSerial&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prodInfo</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">ret</span><span class="p">[</span><span class="s">&#39;deviceFirmware&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prodInfo</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
             
         <span class="k">return</span> <span class="n">ret</span>
-        
-    <span class="k">def</span> <span class="nf">setBaud</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">baudrate</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">baudrate</span> <span class="o">=</span> <span class="n">baudrate</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
         
     <span class="k">def</span> <span class="nf">_CommandProperlyFormed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Return 1 if a command is properly formed; otherwise, return 0.</span>
@@ -291,104 +286,246 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_PrintCommandAndResponse</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_DecodeInteger</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">3</span> <span class="o">+</span> <span class="n">num_bytes</span><span class="p">])</span>
     
+    <span class="c"># Returns model number, serial number, and firmware version number</span>
+    <span class="k">def</span> <span class="nf">_GetProductInformation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns model number, serial number, and firmware version</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_StartCommand</span><span class="p">(</span><span class="mh">0x6A</span><span class="p">)</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Reserved</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="nb">chr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_CalculateChecksum</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span>
+        <span class="k">assert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_CommandProperlyFormed</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendCommand</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_PrintCommandAndResponse</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="s">&quot;Get product info&quot;</span><span class="p">)</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">8</span><span class="p">]</span>
+        <span class="n">fw</span> <span class="o">=</span> <span class="nb">hex</span><span class="p">(</span><span class="nb">ord</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="mi">9</span><span class="p">]))[</span><span class="mi">2</span><span class="p">:]</span> <span class="o">+</span> <span class="s">&quot;.&quot;</span>
+        <span class="n">fw</span> <span class="o">+=</span> <span class="nb">hex</span><span class="p">(</span><span class="nb">ord</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="mi">8</span><span class="p">]))[</span><span class="mi">2</span><span class="p">:]</span> 
+        <span class="n">serial_number</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="mi">10</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">model</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">serial_number</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">fw</span><span class="p">))</span>
+    
 <div class="viewcode-block" id="m_85XX.powerOn"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.powerOn">[docs]</a>    <span class="k">def</span> <span class="nf">powerOn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Turns the load on&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Turns the load on</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Turn load on&quot;</span>
         <span class="n">on</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x21</span><span class="p">,</span> <span class="n">on</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     </div>
 <div class="viewcode-block" id="m_85XX.powerOff"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.powerOff">[docs]</a>    <span class="k">def</span> <span class="nf">powerOff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Turns the load off&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Turns the load off</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Turn load off&quot;</span>
         <span class="n">off</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x21</span><span class="p">,</span> <span class="n">off</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     </div>
 <div class="viewcode-block" id="m_85XX.SetRemoteControl"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetRemoteControl">[docs]</a>    <span class="k">def</span> <span class="nf">SetRemoteControl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Sets the load to remote control&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the load to remote control</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set remote control&quot;</span>
         <span class="n">remote</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x20</span><span class="p">,</span> <span class="n">remote</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     </div>
 <div class="viewcode-block" id="m_85XX.SetLocalControl"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetLocalControl">[docs]</a>    <span class="k">def</span> <span class="nf">SetLocalControl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Sets the load to local control&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the load to local control</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set local control&quot;</span>
         <span class="n">local</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x20</span><span class="p">,</span> <span class="n">local</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x20</span><span class="p">,</span> <span class="n">local</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.SetMaxCurrent"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetMaxCurrent">[docs]</a>    <span class="k">def</span> <span class="nf">SetMaxCurrent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current</span><span class="p">):</span>
-        <span class="s">&quot;Sets the maximum current the load will sink&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the maximum current the load will sink</span>
+<span class="sd">        </span>
+<span class="sd">        :param current: Current in Amps</span>
+<span class="sd">        :type current: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set max current&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x24</span><span class="p">,</span> <span class="n">current</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_current</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x24</span><span class="p">,</span> <span class="n">current</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_current</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.GetMaxCurrent"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetMaxCurrent">[docs]</a>    <span class="k">def</span> <span class="nf">GetMaxCurrent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Returns the maximum current the load will sink&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the maximum current the load will sink</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set max current&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x25</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_current</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x25</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_current</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.SetMaxVoltage"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetMaxVoltage">[docs]</a>    <span class="k">def</span> <span class="nf">SetMaxVoltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">voltage</span><span class="p">):</span>
-        <span class="s">&quot;Sets the maximum voltage the load will allow&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the maximum voltage the load will allow</span>
+<span class="sd">        </span>
+<span class="sd">        :param voltage: Voltage in Volts</span>
+<span class="sd">        :type voltage: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set max voltage&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x22</span><span class="p">,</span> <span class="n">voltage</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_voltage</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x22</span><span class="p">,</span> <span class="n">voltage</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_voltage</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.GetMaxVoltage"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetMaxVoltage">[docs]</a>    <span class="k">def</span> <span class="nf">GetMaxVoltage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Gets the maximum voltage the load will allow&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the maximum voltage the load will allow</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Get max voltage&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x23</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_voltage</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x23</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_voltage</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.SetMaxPower"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetMaxPower">[docs]</a>    <span class="k">def</span> <span class="nf">SetMaxPower</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">power</span><span class="p">):</span>
-        <span class="s">&quot;Sets the maximum power the load will allow&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the maximum power the load will allow</span>
+<span class="sd">        </span>
+<span class="sd">        :param power: Power in Watts</span>
+<span class="sd">        :type power: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set max power&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x26</span><span class="p">,</span> <span class="n">power</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_power</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x26</span><span class="p">,</span> <span class="n">power</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_power</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.GetMaxPower"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetMaxPower">[docs]</a>    <span class="k">def</span> <span class="nf">GetMaxPower</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Gets the maximum power the load will allow&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the maximum power the load will allow</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Get max power&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x27</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_power</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x27</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_power</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.SetMode"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetMode">[docs]</a>    <span class="k">def</span> <span class="nf">SetMode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
-        <span class="s">&quot;Sets the mode (constant current, constant voltage, etc.&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the operating mode</span>
+<span class="sd">        </span>
+<span class="sd">        Possible values:</span>
+<span class="sd">        </span>
+<span class="sd">          * `cc`: Constant Current</span>
+<span class="sd">          * `cv`: Constant Voltage</span>
+<span class="sd">          * `cp`: Constant Power</span>
+<span class="sd">          * `cr`: Constant Resistance</span>
+<span class="sd">          </span>
+<span class="sd">        :param mode: Operating mode</span>
+<span class="sd">        :type mode: str</span>
+<span class="sd">        :raises: Exception</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modes</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Unknown mode&quot;</span><span class="p">)</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set mode&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modes</span><span class="p">[</span><span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">()],</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x28</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modes</span><span class="p">[</span><span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">()],</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.GetMode"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetMode">[docs]</a>    <span class="k">def</span> <span class="nf">GetMode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Gets the mode (constant current, constant voltage, etc.&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the operating mode</span>
+<span class="sd">        </span>
+<span class="sd">        Possible values:</span>
+<span class="sd">        </span>
+<span class="sd">          * `cc`: Constant Current</span>
+<span class="sd">          * `cv`: Constant Voltage</span>
+<span class="sd">          * `cw`: Constant Power</span>
+<span class="sd">          * `cr`: Constant Resistance</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Get mode&quot;</span>
         <span class="n">mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x29</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">modes_inv</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span><span class="s">&quot;cc&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="s">&quot;cv&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span><span class="s">&quot;cw&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span><span class="s">&quot;cr&quot;</span><span class="p">}</span>
-        <span class="k">return</span> <span class="n">modes_inv</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span></div>
-<div class="viewcode-block" id="m_85XX.SetCCCurrent"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCCCurrent">[docs]</a>    <span class="k">def</span> <span class="nf">SetCCCurrent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current</span><span class="p">):</span>
-        <span class="s">&quot;Sets the constant current mode&#39;s current level&quot;</span>
+        <span class="k">return</span> <span class="n">modes_inv</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span>
+    </div>
+<div class="viewcode-block" id="m_85XX.SetCurrent"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCurrent">[docs]</a>    <span class="k">def</span> <span class="nf">SetCurrent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the constant current mode&#39;s current level</span>
+<span class="sd">        </span>
+<span class="sd">        :param current: Current in Amps</span>
+<span class="sd">        :type current: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set CC current&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x2A</span><span class="p">,</span> <span class="n">current</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_current</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
-<div class="viewcode-block" id="m_85XX.GetCCCurrent"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetCCCurrent">[docs]</a>    <span class="k">def</span> <span class="nf">GetCCCurrent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Gets the constant current mode&#39;s current level&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x2A</span><span class="p">,</span> <span class="n">current</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_current</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="m_85XX.GetCurrent"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetCurrent">[docs]</a>    <span class="k">def</span> <span class="nf">GetCurrent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the constant current mode&#39;s current level</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Get CC current&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x2B</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_current</span></div>
-<div class="viewcode-block" id="m_85XX.SetCVVoltage"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCVVoltage">[docs]</a>    <span class="k">def</span> <span class="nf">SetCVVoltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">voltage</span><span class="p">):</span>
-        <span class="s">&quot;Sets the constant voltage mode&#39;s voltage level&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x2B</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_current</span>
+    </div>
+<div class="viewcode-block" id="m_85XX.SetVoltage"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetVoltage">[docs]</a>    <span class="k">def</span> <span class="nf">SetVoltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">voltage</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the constant voltage mode&#39;s voltage level</span>
+<span class="sd">        </span>
+<span class="sd">        :param voltage: Voltage in Volts</span>
+<span class="sd">        :type voltage: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set CV voltage&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x2C</span><span class="p">,</span> <span class="n">voltage</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_voltage</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
-<div class="viewcode-block" id="m_85XX.GetCVVoltage"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetCVVoltage">[docs]</a>    <span class="k">def</span> <span class="nf">GetCVVoltage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Gets the constant voltage mode&#39;s voltage level&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x2C</span><span class="p">,</span> <span class="n">voltage</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_voltage</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="m_85XX.GetVoltage"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetVoltage">[docs]</a>    <span class="k">def</span> <span class="nf">GetVoltage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the constant voltage mode&#39;s voltage level</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Get CV voltage&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x2D</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_voltage</span></div>
-<div class="viewcode-block" id="m_85XX.SetCWPower"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCWPower">[docs]</a>    <span class="k">def</span> <span class="nf">SetCWPower</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">power</span><span class="p">):</span>
-        <span class="s">&quot;Sets the constant power mode&#39;s power level&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x2D</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_voltage</span>
+    </div>
+<div class="viewcode-block" id="m_85XX.SetPower"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetPower">[docs]</a>    <span class="k">def</span> <span class="nf">SetPower</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">power</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the constant power mode&#39;s power level</span>
+<span class="sd">        </span>
+<span class="sd">        :param power: Power in Watts</span>
+<span class="sd">        :type power: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set CW power&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x2E</span><span class="p">,</span> <span class="n">power</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_power</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
-<div class="viewcode-block" id="m_85XX.GetCWPower"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetCWPower">[docs]</a>    <span class="k">def</span> <span class="nf">GetCWPower</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Gets the constant power mode&#39;s power level&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x2E</span><span class="p">,</span> <span class="n">power</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_power</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="m_85XX.GetPower"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetPower">[docs]</a>    <span class="k">def</span> <span class="nf">GetPower</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the constant power mode&#39;s power level</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Get CW power&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x2F</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_power</span></div>
-<div class="viewcode-block" id="m_85XX.SetCRResistance"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCRResistance">[docs]</a>    <span class="k">def</span> <span class="nf">SetCRResistance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resistance</span><span class="p">):</span>
-        <span class="s">&quot;Sets the constant resistance mode&#39;s resistance level&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x2F</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_power</span>
+    </div>
+<div class="viewcode-block" id="m_85XX.SetResistance"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetResistance">[docs]</a>    <span class="k">def</span> <span class="nf">SetResistance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resistance</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the constant resistance mode&#39;s resistance level</span>
+<span class="sd">        </span>
+<span class="sd">        :param resistance: Resistance in Ohms</span>
+<span class="sd">        :type resistance: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set CR resistance&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x30</span><span class="p">,</span> <span class="n">resistance</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_resistance</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
-<div class="viewcode-block" id="m_85XX.GetCRResistance"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetCRResistance">[docs]</a>    <span class="k">def</span> <span class="nf">GetCRResistance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Gets the constant resistance mode&#39;s resistance level&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x30</span><span class="p">,</span> <span class="n">resistance</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_resistance</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="m_85XX.GetResistance"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetResistance">[docs]</a>    <span class="k">def</span> <span class="nf">GetResistance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the constant resistance mode&#39;s resistance level</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Get CR resistance&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x31</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_resistance</span></div>
-<div class="viewcode-block" id="m_85XX.SetTransient"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetTransient">[docs]</a>    <span class="k">def</span> <span class="nf">SetTransient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">A_time_s</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">B_time_s</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="s">&quot;continuous&quot;</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Sets up the transient operation mode.  mode is one of </span>
-<span class="sd">        &quot;CC&quot;, &quot;CV&quot;, &quot;CW&quot;, or &quot;CR&quot;.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x31</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_resistance</span>
+    </div>
+<div class="viewcode-block" id="m_85XX.SetTransient"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetTransient">[docs]</a>    <span class="k">def</span> <span class="nf">SetTransient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">A_time_s</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">B_time_s</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="s">&quot;continuous&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets up the transient operation mode.  </span>
+<span class="sd">        </span>
+<span class="sd">        :param A: Amplitude B</span>
+<span class="sd">        :type A: float</span>
+<span class="sd">        :param A_time_s: Width of A (in seconds)</span>
+<span class="sd">        :type A_time_s: float</span>
+<span class="sd">        :param B: Amplitude of B</span>
+<span class="sd">        :type B: float</span>
+<span class="sd">        :param B: Width of B (in seconds)</span>
+<span class="sd">        :type B_time_s: float</span>
+<span class="sd">        :param operation: Transient Mode (one of &quot;continuous&quot;, &quot;pulse&quot;, &quot;toggled&quot;)</span>
+<span class="sd">        :type operation: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modes</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Unknown mode&quot;</span><span class="p">)</span>
         <span class="n">opcodes</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;cc&quot;</span><span class="p">:</span><span class="mh">0x32</span><span class="p">,</span> <span class="s">&quot;cv&quot;</span><span class="p">:</span><span class="mh">0x34</span><span class="p">,</span> <span class="s">&quot;cw&quot;</span><span class="p">:</span><span class="mh">0x36</span><span class="p">,</span> <span class="s">&quot;cr&quot;</span><span class="p">:</span><span class="mh">0x38</span><span class="p">}</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetMode</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;cc&quot;</span><span class="p">:</span>
             <span class="n">const</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_current</span>
         <span class="k">elif</span> <span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;cv&quot;</span><span class="p">:</span>
@@ -403,15 +540,20 @@
         <span class="n">cmd</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CodeInteger</span><span class="p">(</span><span class="n">B</span><span class="o">*</span><span class="n">const</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
         <span class="n">cmd</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CodeInteger</span><span class="p">(</span><span class="n">B_time_s</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">to_ms</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">transient_operations</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;continuous&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s">&quot;pulse&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;toggled&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">}</span>
-        <span class="n">cmd</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CodeInteger</span><span class="p">(</span><span class="n">transient_operations</span><span class="p">[</span><span class="n">operation</span><span class="p">],</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CodeInteger</span><span class="p">(</span><span class="n">transient_operations</span><span class="p">[</span><span class="n">operation</span><span class="o">.</span><span class="n">lower</span><span class="p">()],</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">cmd</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Reserved</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
         <span class="n">cmd</span> <span class="o">+=</span> <span class="nb">chr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_CalculateChecksum</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span>
         <span class="k">assert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_CommandProperlyFormed</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span>
         <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendCommand</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_PrintCommandAndResponse</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="s">&quot;Set </span><span class="si">%s</span><span class="s"> transient&quot;</span> <span class="o">%</span> <span class="n">mode</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResponseStatus</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResponseStatus</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.GetTransient"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetTransient">[docs]</a>    <span class="k">def</span> <span class="nf">GetTransient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
-        <span class="s">&quot;Gets the transient mode settings&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the transient mode settings</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: tuple (Amplitude A, Width A, Amplitude B, Width B, Mode)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modes</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Unknown mode&quot;</span><span class="p">)</span>
         <span class="n">opcodes</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;cc&quot;</span><span class="p">:</span><span class="mh">0x33</span><span class="p">,</span> <span class="s">&quot;cv&quot;</span><span class="p">:</span><span class="mh">0x35</span><span class="p">,</span> <span class="s">&quot;cw&quot;</span><span class="p">:</span><span class="mh">0x37</span><span class="p">,</span> <span class="s">&quot;cr&quot;</span><span class="p">:</span><span class="mh">0x39</span><span class="p">}</span>
@@ -429,132 +571,205 @@
         <span class="n">time_const</span> <span class="o">=</span> <span class="mf">1e3</span>
         <span class="n">transient_operations_inv</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span><span class="s">&quot;continuous&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="s">&quot;pulse&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span><span class="s">&quot;toggled&quot;</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;cc&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">str</span><span class="p">((</span><span class="n">A</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_current</span><span class="p">,</span> <span class="n">A_timer_ms</span><span class="o">/</span><span class="n">time_const</span><span class="p">,</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">A</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_current</span><span class="p">,</span> <span class="n">A_timer_ms</span><span class="o">/</span><span class="n">time_const</span><span class="p">,</span>
                     <span class="n">B</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_current</span><span class="p">,</span> <span class="n">B_timer_ms</span><span class="o">/</span><span class="n">time_const</span><span class="p">,</span>
-                    <span class="n">transient_operations_inv</span><span class="p">[</span><span class="n">operation</span><span class="p">]))</span>
+                    <span class="n">transient_operations_inv</span><span class="p">[</span><span class="n">operation</span><span class="p">])</span>
         <span class="k">elif</span> <span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;cv&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">str</span><span class="p">((</span><span class="n">A</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_voltage</span><span class="p">,</span> <span class="n">A_timer_ms</span><span class="o">/</span><span class="n">time_const</span><span class="p">,</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">A</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_voltage</span><span class="p">,</span> <span class="n">A_timer_ms</span><span class="o">/</span><span class="n">time_const</span><span class="p">,</span>
                     <span class="n">B</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_voltage</span><span class="p">,</span> <span class="n">B_timer_ms</span><span class="o">/</span><span class="n">time_const</span><span class="p">,</span>
-                    <span class="n">transient_operations_inv</span><span class="p">[</span><span class="n">operation</span><span class="p">]))</span>
+                    <span class="n">transient_operations_inv</span><span class="p">[</span><span class="n">operation</span><span class="p">])</span>
         <span class="k">elif</span> <span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;cw&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">str</span><span class="p">((</span><span class="n">A</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_power</span><span class="p">,</span> <span class="n">A_timer_ms</span><span class="o">/</span><span class="n">time_const</span><span class="p">,</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">A</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_power</span><span class="p">,</span> <span class="n">A_timer_ms</span><span class="o">/</span><span class="n">time_const</span><span class="p">,</span>
                     <span class="n">B</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_power</span><span class="p">,</span> <span class="n">B_timer_ms</span><span class="o">/</span><span class="n">time_const</span><span class="p">,</span>
-                    <span class="n">transient_operations_inv</span><span class="p">[</span><span class="n">operation</span><span class="p">]))</span>
+                    <span class="n">transient_operations_inv</span><span class="p">[</span><span class="n">operation</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">str</span><span class="p">((</span><span class="n">A</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_resistance</span><span class="p">,</span> <span class="n">A_timer_ms</span><span class="o">/</span><span class="n">time_const</span><span class="p">,</span> 
+            <span class="k">return</span> <span class="p">(</span><span class="n">A</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_resistance</span><span class="p">,</span> <span class="n">A_timer_ms</span><span class="o">/</span><span class="n">time_const</span><span class="p">,</span> 
                     <span class="n">B</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_resistance</span><span class="p">,</span> <span class="n">B_timer_ms</span><span class="o">/</span><span class="n">time_const</span><span class="p">,</span>
-                    <span class="n">transient_operations_inv</span><span class="p">[</span><span class="n">operation</span><span class="p">]))</span></div>
+                    <span class="n">transient_operations_inv</span><span class="p">[</span><span class="n">operation</span><span class="p">])</span>
+            </div>
 <div class="viewcode-block" id="m_85XX.SetBatteryTestVoltage"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetBatteryTestVoltage">[docs]</a>    <span class="k">def</span> <span class="nf">SetBatteryTestVoltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">min_voltage</span><span class="p">):</span>
-        <span class="s">&quot;Sets the battery test voltage&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the battery test voltage</span>
+<span class="sd">        </span>
+<span class="sd">        :param min_voltage: Minimum Voltage (volts)</span>
+<span class="sd">        :type min_voltage: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set battery test voltage&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x4E</span><span class="p">,</span> <span class="n">min_voltage</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_voltage</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x4E</span><span class="p">,</span> <span class="n">min_voltage</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_voltage</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.GetBatteryTestVoltage"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetBatteryTestVoltage">[docs]</a>    <span class="k">def</span> <span class="nf">GetBatteryTestVoltage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Gets the battery test voltage&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the battery test voltage</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Get battery test voltage&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x4F</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_voltage</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x4F</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_voltage</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.SetLoadOnTimer"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetLoadOnTimer">[docs]</a>    <span class="k">def</span> <span class="nf">SetLoadOnTimer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_in_s</span><span class="p">):</span>
-        <span class="s">&quot;Sets the time in seconds that the load will be on&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the time in seconds that the load will be on</span>
+<span class="sd">        </span>
+<span class="sd">        :param time_in_s: Time (in seconds)</span>
+<span class="sd">        :type time_in_s: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set load on timer&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x50</span><span class="p">,</span> <span class="n">time_in_s</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x50</span><span class="p">,</span> <span class="n">time_in_s</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.GetLoadOnTimer"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetLoadOnTimer">[docs]</a>    <span class="k">def</span> <span class="nf">GetLoadOnTimer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Gets the time in seconds that the load will be on&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the time in seconds that the load will be on</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Get load on timer&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x51</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x51</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.SetLoadOnTimerState"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetLoadOnTimerState">[docs]</a>    <span class="k">def</span> <span class="nf">SetLoadOnTimerState</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="s">&quot;Enables or disables the load on timer state&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enables or disables the LOAD ON timer state</span>
+<span class="sd">        </span>
+<span class="sd">        :param enabled: Timer State (0: Disabled, 1: Enabled)</span>
+<span class="sd">        :type enabled: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set load on timer state&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x50</span><span class="p">,</span> <span class="n">enabled</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x50</span><span class="p">,</span> <span class="n">enabled</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.GetLoadOnTimerState"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetLoadOnTimerState">[docs]</a>    <span class="k">def</span> <span class="nf">GetLoadOnTimerState</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Gets the load on timer state&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the LOAD ON timer state</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Get load on timer&quot;</span>
         <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x53</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s">&quot;disabled&quot;</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s">&quot;enabled&quot;</span></div>
-<div class="viewcode-block" id="m_85XX.SetCommunicationAddress"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetCommunicationAddress">[docs]</a>    <span class="k">def</span> <span class="nf">SetCommunicationAddress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Sets the communication address.  Note:  this feature is</span>
-<span class="sd">        not currently supported.  The communication address should always</span>
-<span class="sd">        be set to 0.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set communication address&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x54</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">state</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.EnableLocalControl"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.EnableLocalControl">[docs]</a>    <span class="k">def</span> <span class="nf">EnableLocalControl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Enable local control (i.e., key presses work) of the load&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enable local control of the load</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Enable local control&quot;</span>
         <span class="n">enabled</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x55</span><span class="p">,</span> <span class="n">enabled</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x55</span><span class="p">,</span> <span class="n">enabled</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.DisableLocalControl"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.DisableLocalControl">[docs]</a>    <span class="k">def</span> <span class="nf">DisableLocalControl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Disable local control of the load&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Disable local control of the load. User will be unable to control load</span>
+<span class="sd">        functions using the front panel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Disable local control&quot;</span>
         <span class="n">disabled</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x55</span><span class="p">,</span> <span class="n">disabled</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
-<div class="viewcode-block" id="m_85XX.SetRemoteSense"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetRemoteSense">[docs]</a>    <span class="k">def</span> <span class="nf">SetRemoteSense</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="s">&quot;Enable or disable remote sensing&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x55</span><span class="p">,</span> <span class="n">disabled</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="m_85XX.EnableRemoteSense"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.EnableRemoteSense">[docs]</a>    <span class="k">def</span> <span class="nf">EnableRemoteSense</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enable remote sensing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set remote sense&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x56</span><span class="p">,</span> <span class="n">enabled</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x56</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="m_85XX.DisableRemoteSense"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.DisableRemoteSense">[docs]</a>    <span class="k">def</span> <span class="nf">DisableRemoteSense</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Disable remote sensing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Enable remote sense&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x56</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.GetRemoteSense"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetRemoteSense">[docs]</a>    <span class="k">def</span> <span class="nf">GetRemoteSense</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Get the state of remote sensing&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the state of remote sensing</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: int (0: Disabled, 1: Enabled)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Get remote sense&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x57</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x57</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.SetTriggerSource"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetTriggerSource">[docs]</a>    <span class="k">def</span> <span class="nf">SetTriggerSource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s">&quot;immediate&quot;</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Set how the instrument will be triggered.</span>
-<span class="sd">        &quot;immediate&quot; means triggered from the front panel.</span>
-<span class="sd">        &quot;external&quot; means triggered by a TTL signal on the rear panel.</span>
-<span class="sd">        &quot;bus&quot; means a software trigger (see TriggerLoad()).</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set how the instrument will be triggered:</span>
+<span class="sd">          </span>
+<span class="sd">          * &quot;immediate&quot; means triggered from the front panel.</span>
+<span class="sd">          * &quot;external&quot; means triggered by a TTL signal on the rear panel.</span>
+<span class="sd">          * &quot;bus&quot; means a software trigger (see `Trigger()`).</span>
+<span class="sd">        </span>
+<span class="sd">        :param source: Source (&quot;immediate&quot;, &quot;external&quot; or &quot;bus&quot;)</span>
+<span class="sd">        :type source: str</span>
+<span class="sd">        :raises: Exception</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">trigger</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;immediate&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s">&quot;external&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;bus&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">source</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">trigger</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Trigger type </span><span class="si">%s</span><span class="s"> not recognized&quot;</span> <span class="o">%</span> <span class="n">source</span><span class="p">)</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set trigger type&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x54</span><span class="p">,</span> <span class="n">trigger</span><span class="p">[</span><span class="n">source</span><span class="p">],</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x54</span><span class="p">,</span> <span class="n">trigger</span><span class="p">[</span><span class="n">source</span><span class="p">],</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.GetTriggerSource"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetTriggerSource">[docs]</a>    <span class="k">def</span> <span class="nf">GetTriggerSource</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Get how the instrument will be triggered&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get how the instrument will be triggered</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Get trigger source&quot;</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x59</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">trigger_inv</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span><span class="s">&quot;immediate&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="s">&quot;external&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span><span class="s">&quot;bus&quot;</span><span class="p">}</span>
-        <span class="k">return</span> <span class="n">trigger_inv</span><span class="p">[</span><span class="n">t</span><span class="p">]</span></div>
-<div class="viewcode-block" id="m_85XX.TriggerLoad"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.TriggerLoad">[docs]</a>    <span class="k">def</span> <span class="nf">TriggerLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Provide a software trigger.  This is only of use when the trigger</span>
+        <span class="k">return</span> <span class="n">trigger_inv</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+    </div>
+<div class="viewcode-block" id="m_85XX.Trigger"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.Trigger">[docs]</a>    <span class="k">def</span> <span class="nf">Trigger</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Provide a software trigger.  This is only of use when the trigger</span>
 <span class="sd">        mode is set to &quot;bus&quot;.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_StartCommand</span><span class="p">(</span><span class="mh">0x5A</span><span class="p">)</span>
         <span class="n">cmd</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Reserved</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
         <span class="n">cmd</span> <span class="o">+=</span> <span class="nb">chr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_CalculateChecksum</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span>
         <span class="k">assert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_CommandProperlyFormed</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span>
         <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendCommand</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_PrintCommandAndResponse</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="s">&quot;Trigger load (trigger = bus)&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResponseStatus</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResponseStatus</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.SaveSettings"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SaveSettings">[docs]</a>    <span class="k">def</span> <span class="nf">SaveSettings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">register</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="s">&quot;Save instrument settings to a register&quot;</span>
         <span class="k">assert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lowest_register</span> <span class="o">&lt;=</span> <span class="n">register</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">highest_register</span><span class="p">)</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Save to register </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">register</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x5B</span><span class="p">,</span> <span class="n">register</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x5B</span><span class="p">,</span> <span class="n">register</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.RecallSettings"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.RecallSettings">[docs]</a>    <span class="k">def</span> <span class="nf">RecallSettings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">register</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="s">&quot;Restore instrument settings from a register&quot;</span>
         <span class="k">assert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lowest_register</span> <span class="o">&lt;=</span> <span class="n">register</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">highest_register</span><span class="p">)</span>
         <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetCommand</span><span class="p">(</span><span class="mh">0x5C</span><span class="p">,</span> <span class="n">register</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendCommand</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_PrintCommandAndResponse</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="s">&quot;Recall register </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">register</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResponseStatus</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ResponseStatus</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.SetFunction"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.SetFunction">[docs]</a>    <span class="k">def</span> <span class="nf">SetFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">function</span><span class="o">=</span><span class="s">&quot;fixed&quot;</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Set the function (type of operation) of the load.</span>
-<span class="sd">        function is one of &quot;fixed&quot;, &quot;short&quot;, &quot;transient&quot;, or &quot;battery&quot;.</span>
-<span class="sd">        Note &quot;list&quot; is intentionally left out for now.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the function (type of operation) of the load.</span>
+<span class="sd">        </span>
+<span class="sd">        :param function: Function (&quot;fixed&quot;, &quot;short&quot;, &quot;transient&quot;, &quot;list&quot; or &quot;battery&quot;)</span>
+<span class="sd">        :type function: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Set function to </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">function</span>
-        <span class="n">functions</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;fixed&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s">&quot;short&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;transient&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s">&quot;battery&quot;</span><span class="p">:</span><span class="mi">4</span><span class="p">}</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x5D</span><span class="p">,</span> <span class="n">functions</span><span class="p">[</span><span class="n">function</span><span class="p">],</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+        <span class="n">functions</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;fixed&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s">&quot;short&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;transient&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s">&quot;list&quot;</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="s">&quot;battery&quot;</span><span class="p">:</span><span class="mi">4</span><span class="p">}</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendIntegerToLoad</span><span class="p">(</span><span class="mh">0x5D</span><span class="p">,</span> <span class="n">functions</span><span class="p">[</span><span class="n">function</span><span class="p">],</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.GetFunction"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetFunction">[docs]</a>    <span class="k">def</span> <span class="nf">GetFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Get the function (type of operation) of the load&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the function (type of operation) of the load</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Get function&quot;</span>
         <span class="n">fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GetIntegerFromLoad</span><span class="p">(</span><span class="mh">0x5E</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">num_bytes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">functions_inv</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span><span class="s">&quot;fixed&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="s">&quot;short&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span><span class="s">&quot;transient&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span><span class="s">&quot;battery&quot;</span><span class="p">}</span>
-        <span class="k">return</span> <span class="n">functions_inv</span><span class="p">[</span><span class="n">fn</span><span class="p">]</span></div>
+        <span class="n">functions_inv</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span><span class="s">&quot;fixed&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="s">&quot;short&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span><span class="s">&quot;transient&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span><span class="s">&quot;list&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span><span class="s">&quot;battery&quot;</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">functions_inv</span><span class="p">[</span><span class="n">fn</span><span class="p">]</span>
+    </div>
 <div class="viewcode-block" id="m_85XX.GetInputValues"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetInputValues">[docs]</a>    <span class="k">def</span> <span class="nf">GetInputValues</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Returns voltage in V, current in A, and power in W, op_state byte,</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns voltage in V, current in A, and power in W, op_state byte,</span>
 <span class="sd">        and demand_state byte.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: list: [voltage, current, power, op_state, demand_state]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_StartCommand</span><span class="p">(</span><span class="mh">0x5F</span><span class="p">)</span>
         <span class="n">cmd</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Reserved</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
         <span class="n">cmd</span> <span class="o">+=</span> <span class="nb">chr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_CalculateChecksum</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span>
@@ -566,24 +781,33 @@
         <span class="n">power</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_DecodeInteger</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="mi">11</span><span class="p">:</span><span class="mi">15</span><span class="p">])</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">convert_power</span>
         <span class="n">op_state</span> <span class="o">=</span> <span class="nb">hex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_DecodeInteger</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="mi">15</span><span class="p">]))</span>
         <span class="n">demand_state</span> <span class="o">=</span> <span class="nb">hex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_DecodeInteger</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="mi">16</span><span class="p">:</span><span class="mi">18</span><span class="p">]))</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">voltage</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; V&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">current</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; A&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">power</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; W&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">op_state</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">demand_state</span><span class="p">)]</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="p">[</span><span class="n">voltage</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">power</span><span class="p">,</span> <span class="n">op_state</span><span class="p">,</span> <span class="n">demand_state</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">join</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\t</span><span class="s">&quot;</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="m_85XX.GetTerminalVoltage"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetTerminalVoltage">[docs]</a>    <span class="k">def</span> <span class="nf">GetTerminalVoltage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the terminal voltage in Volts</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">GetInputValues</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+    </div>
+<div class="viewcode-block" id="m_85XX.GetTerminalCurrent"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetTerminalCurrent">[docs]</a>    <span class="k">def</span> <span class="nf">GetTerminalCurrent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the terminal current in Amps</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">GetInputValues</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+    </div>
+<div class="viewcode-block" id="m_85XX.GetTerminalPower"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetTerminalPower">[docs]</a>    <span class="k">def</span> <span class="nf">GetTerminalPower</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the terminal power in Watts</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">GetInputValues</span><span class="p">()[</span><span class="mi">3</span><span class="p">])</span>
     
-    <span class="c"># Returns model number, serial number, and firmware version number</span></div>
-<div class="viewcode-block" id="m_85XX.GetProductInformation"><a class="viewcode-back" href="../../../../../user_guide/api/drivers/BK_Precision.Load.m_85XX.html#labtronyx.drivers.BK_Precision.Load.m_85XX.m_85XX.GetProductInformation">[docs]</a>    <span class="k">def</span> <span class="nf">GetProductInformation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&quot;Returns model number, serial number, and firmware version&quot;</span>
-        <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_StartCommand</span><span class="p">(</span><span class="mh">0x6A</span><span class="p">)</span>
-        <span class="n">cmd</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Reserved</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
-        <span class="n">cmd</span> <span class="o">+=</span> <span class="nb">chr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_CalculateChecksum</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span>
-        <span class="k">assert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_CommandProperlyFormed</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span>
-        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_SendCommand</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_PrintCommandAndResponse</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="s">&quot;Get product info&quot;</span><span class="p">)</span>
-        <span class="n">model</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">8</span><span class="p">]</span>
-        <span class="n">fw</span> <span class="o">=</span> <span class="nb">hex</span><span class="p">(</span><span class="nb">ord</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="mi">9</span><span class="p">]))[</span><span class="mi">2</span><span class="p">:]</span> <span class="o">+</span> <span class="s">&quot;.&quot;</span>
-        <span class="n">fw</span> <span class="o">+=</span> <span class="nb">hex</span><span class="p">(</span><span class="nb">ord</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="mi">8</span><span class="p">]))[</span><span class="mi">2</span><span class="p">:]</span> 
-        <span class="n">serial_number</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="mi">10</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span>
-        
-        <span class="k">return</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">model</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">serial_number</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">fw</span><span class="p">))</span>
 </pre></div></div></div>
 
           </div>

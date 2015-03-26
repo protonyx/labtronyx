@@ -140,7 +140,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">rpc_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reg_obj</span><span class="p">)</span>
     
     <span class="k">def</span> <span class="nf">unregisterObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reg_obj</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rpc_objects</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">reg_obj</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rpc_objects</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">reg_obj</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
         
     <span class="c">#===========================================================================</span>
     <span class="c"># Connection Management and Notifications</span>
@@ -343,8 +346,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;[</span><span class="si">%s</span><span class="s">] RPC Server asked to stop&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         
         <span class="k">for</span> <span class="n">conn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">_connections</span><span class="p">:</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">conn</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+                <span class="c">#conn.join()</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
             
         <span class="bp">self</span><span class="o">.</span><span class="n">e_alive</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
     

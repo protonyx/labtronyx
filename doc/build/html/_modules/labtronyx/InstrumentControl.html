@@ -121,7 +121,7 @@
                 
         <span class="c"># Attempt to connect to the local manager</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">addManager</span><span class="p">(</span><span class="s">&#39;localhost&#39;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">startManager</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">startManager</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;debug&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">))</span>
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">3.0</span><span class="p">)</span>
             
         <span class="c"># Check the local Manager version</span>
@@ -197,7 +197,7 @@
     <span class="c"># Local Manager Operations</span>
     <span class="c">#===========================================================================</span>
     </div>
-<div class="viewcode-block" id="InstrumentControl.startManager"><a class="viewcode-back" href="../../user_guide/api/intro.html#labtronyx.InstrumentControl.InstrumentControl.startManager">[docs]</a>    <span class="k">def</span> <span class="nf">startManager</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="InstrumentControl.startManager"><a class="viewcode-back" href="../../user_guide/api/intro.html#labtronyx.InstrumentControl.InstrumentControl.startManager">[docs]</a>    <span class="k">def</span> <span class="nf">startManager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Start a local instance of :class:`InstrumentManager` using </span>
 <span class="sd">        :func:`subprocess.Popen`.</span>
@@ -218,8 +218,12 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">pyExec</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">executable</span>
             <span class="n">manPath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rootPath</span><span class="p">,</span> <span class="s">&#39;InstrumentManager.py&#39;</span><span class="p">)</span>
+            <span class="n">params</span><span class="o">=</span> <span class="p">[</span><span class="n">pyExec</span><span class="p">,</span> <span class="n">manPath</span><span class="p">]</span>
             
-            <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="n">pyExec</span><span class="p">,</span> <span class="n">manPath</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
+                <span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;-d&#39;</span><span class="p">)</span>
+            
+            <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
             
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">raise</span>
@@ -450,7 +454,7 @@
 <span class="sd">            a CAN bus-based Controller, which must know a device address before</span>
 <span class="sd">            communication can be established.</span>
 <span class="sd">        </span>
-<span class="sd">        :param address: IP Address of manager</span>
+<span class="sd">        :param address: IP Address of host</span>
 <span class="sd">        :type address: str</span>
 <span class="sd">        :param controller: Name of controller to attach new resource</span>
 <span class="sd">        :type controller: str</span>
@@ -482,7 +486,7 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the list of Models from an InstrumentManager instance</span>
 <span class="sd">        </span>
-<span class="sd">        :param address: IP Address of manager</span>
+<span class="sd">        :param address: IP Address of host</span>
 <span class="sd">        :type address: str</span>
 <span class="sd">        </span>
 <span class="sd">        :returns: list</span>
@@ -509,7 +513,36 @@
     <span class="k">def</span> <span class="nf">refreshInstrument</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">):</span>
         <span class="n">dev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getInstrument</span><span class="p">(</span><span class="n">res_uuid</span><span class="p">)</span>
         <span class="n">dev</span><span class="o">.</span><span class="n">_refresh</span><span class="p">()</span>
-    
+        
+<div class="viewcode-block" id="InstrumentControl.findInstrument"><a class="viewcode-back" href="../../user_guide/api/intro.html#labtronyx.InstrumentControl.InstrumentControl.findInstrument">[docs]</a>    <span class="k">def</span> <span class="nf">findInstrument</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a list of instruments that match the parameters specified.</span>
+<span class="sd">        </span>
+<span class="sd">        :param address: IP Address of host</span>
+<span class="sd">        :param hostname: Hostname of host</span>
+<span class="sd">        :param uuid: Unique Resource Identifier (UUID)</span>
+<span class="sd">        :param interface: Interface</span>
+<span class="sd">        :param resourceID: Interface Resource Identifier</span>
+<span class="sd">        :param resourceType: Resource Type (Serial, VISA, etc.)</span>
+<span class="sd">        :param deviceVendor: Instrument Vendor</span>
+<span class="sd">        :param deviceModel: Instrument Model Number</span>
+<span class="sd">        :param deviceSerial: Instrument Serial Number</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">matching_instruments</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">res_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="bp">True</span>
+            
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">res_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">!=</span> <span class="n">value</span><span class="p">:</span>
+                    <span class="n">match</span> <span class="o">=</span> <span class="bp">False</span>
+                    <span class="k">break</span>
+                
+            <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                <span class="n">matching_instruments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getInstrument</span><span class="p">(</span><span class="n">uuid</span><span class="p">))</span>
+                
+        <span class="k">return</span> <span class="n">matching_instruments</span>
+    </div>
 <div class="viewcode-block" id="InstrumentControl.getInstrument"><a class="viewcode-back" href="../../user_guide/api/intro.html#labtronyx.InstrumentControl.InstrumentControl.getInstrument">[docs]</a>    <span class="k">def</span> <span class="nf">getInstrument</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_uuid</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a :class:`RpcClient` instance that is linked to a resource on a</span>
@@ -545,6 +578,8 @@
 <span class="sd">            This function opens a socket to every known instrument with a Model</span>
 <span class="sd">            loaded. This could use a lot of system resources both locally and</span>
 <span class="sd">            on remote InstrumentManagers if you don&#39;t need them.</span>
+<span class="sd">            </span>
+<span class="sd">        :deprecated:</span>
 <span class="sd">        </span>
 <span class="sd">        :returns: list of :class:`RpcClient` objects</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -558,6 +593,8 @@
 <span class="sd">        .. note::</span>
 <span class="sd">        </span>
 <span class="sd">            Only resources that have a model loaded will report a serial number.</span>
+<span class="sd">            </span>
+<span class="sd">        :deprecated:</span>
 <span class="sd">        </span>
 <span class="sd">        :returns: :class:`RpcClient` object</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -575,6 +612,8 @@
 <span class="sd">        .. note::</span>
 <span class="sd">        </span>
 <span class="sd">            Only resources that have a model loaded will report a model number.</span>
+<span class="sd">            </span>
+<span class="sd">        :deprecated:</span>
 <span class="sd">        </span>
 <span class="sd">        :returns: list of :class:`RpcClient` objects</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -594,6 +633,8 @@
 <span class="sd">        .. note::</span>
 <span class="sd">        </span>
 <span class="sd">            Only resources that have a model loaded will report a device type.</span>
+<span class="sd">            </span>
+<span class="sd">        :deprecated:</span>
 <span class="sd">        </span>
 <span class="sd">        :returns: list of :class:`RpcClient` objects</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -613,6 +654,8 @@
 <span class="sd">        .. note::</span>
 <span class="sd">        </span>
 <span class="sd">            Only resources that have a model loaded will report a device type.</span>
+<span class="sd">            </span>
+<span class="sd">        :deprecated:</span>
 <span class="sd">        </span>
 <span class="sd">        :returns: list of :class:`RpcClient` objects</span>
 <span class="sd">        &quot;&quot;&quot;</span>
