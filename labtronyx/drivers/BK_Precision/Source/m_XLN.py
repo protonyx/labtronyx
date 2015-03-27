@@ -40,6 +40,9 @@ class m_XLN(Base_Driver):
         pass
     
     def setRemoteControl(self):
+        """
+        Enable Remote Control Mode
+        """
         self.instr.write("SYST:REM")
         
     def disableFrontPanel(self):
@@ -184,7 +187,7 @@ class m_XLN(Base_Driver):
         self.instr.write("VOLT:LIM %f" % float(lower))
         self.instr.write("VOLT:RANG %f" % float(upper))
         
-    def setProtection(self, voltage=0.0, current=0.0, power=0.0):
+    def setProtection(self, voltage=None, current=None, power=None):
         """
         Enable the protection circuitry. If any of the parameters is zero, that
         protection is disabled.
@@ -197,25 +200,28 @@ class m_XLN(Base_Driver):
         :type power: float
         """
         # Voltage
-        if voltage > 0.0:
-            self.instr.write("PROT:OVP:LEV %f" % float(voltage))
-            self.instr.write("PROT:OVP 1")
-        else:
-            self.instr.write("PROT:OVP 0")
+        if voltage is not None:
+            if voltage > 0.0:
+                self.instr.write("PROT:OVP:LEV %f" % float(voltage))
+                self.instr.write("PROT:OVP 1")
+            else:
+                self.instr.write("PROT:OVP 0")
         
         # Current
-        if current > 0.0:
-            self.instr.write("PROT:OCP:LEV %f" % float(current))
-            self.instr.write("PROT:OCP 1")
-        else:
-            self.instr.write("PROT:OCP 0")
+        if current is not None:
+            if current > 0.0:
+                self.instr.write("PROT:OCP:LEV %f" % float(current))
+                self.instr.write("PROT:OCP 1")
+            else:
+                self.instr.write("PROT:OCP 0")
             
         # Power
-        if power > 0.0:
-            self.instr.write("PROT:OPP:LEV %f" % float(power))
-            self.instr.write("PROT:OPP 1")
-        else:
-            self.instr.write("PROT:OPP 0")
+        if power is not None:
+            if power > 0.0:
+                self.instr.write("PROT:OPP:LEV %f" % float(power))
+                self.instr.write("PROT:OPP 1")
+            else:
+                self.instr.write("PROT:OPP 0")
         
     def disableProtection(self):
         """

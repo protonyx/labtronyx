@@ -1,6 +1,11 @@
 from Base_Driver import Base_Driver
 
 class m_620XXP(Base_Driver):
+    """
+    This driver does not include any of the device programming functionality,
+    it is assumed that an automated program would be designed in a script that
+    uses this driver.
+    """
     
     info = {
         # Model revision author
@@ -57,11 +62,38 @@ class m_620XXP(Base_Driver):
         self.instr.write("CONF:REM OFF")
     
     def powerOn(self):
+        """
+        Enables the instrument to power the output
+        """
         self.instr.write("CONF:OUTP ON")
         
     def powerOff(self):
+        """
+        Disables the output power connections.
+        """
         self.instr.write("CONF:OUTP OFF")
         #self.instr.write("ABORT")
+        
+    def getError(self):
+        """
+        Returns the error message and code of the last error
+        
+        :returns str
+        """
+        return self.instr.query("SYST:ERR?")
+    
+    def enableRemoteInhibit(self):
+        """
+        Enables the remote inhibit pin. This behaves as an external ON/OFF
+        control.
+        """
+        self.instr.write("CONF:INH LIVE")
+        
+    def disableRemoteInhibit(self):
+        """
+        Disables the remote inhibit pin.
+        """
+        self.instr.write("CONF:INH OFF")
         
     def setMeasurementSpeed(self, speed):
         """
@@ -115,22 +147,152 @@ class m_620XXP(Base_Driver):
             raise ValueError("Invalid Parameter")
         
     def setVoltage(self, voltage):
-        self.instr.write("SOUR:VOLT %f" % float(voltage))
-    
-    def setVoltageLimit(self, voltage):
-        self.instr.write("SOUR:VOLT:LIM:HIGH %f" % float(voltage))
+        """
+        Set the programmed output voltage level
         
-    def measureVoltage(self):
-        return self.instr.ask("FETC:VOLT?")
+        :param voltage: Voltage (in Volts)
+        :type voltage: float
+        """
+        self.instr.write("SOUR:VOLT %f" % float(voltage))
+        
+    def setMaxVoltage(self, voltage):
+        """
+        Set the maximum output voltage
+        
+        :param voltage: Voltage (in Volts)
+        :type voltage: float
+        """
+        self.setVoltageRange(0, voltage)
+    
+    def setVoltageRange(self, lower, upper):
+        """
+        Set the output voltage range.
+        
+        :param lower: Minimum Voltage (in Volts)
+        :type lower: float
+        :param upper: Maximum Voltage (in Volts)
+        :type upper: float
+        """
+        self.instr.write("SOUR:VOLT:LIM:LOW %f" % float(lower))
+        self.instr.write("SOUR:VOLT:LIM:HIGH %f" % float(upper))
+    
+    def getVoltageRange(self):
+        """
+        Get the configured output voltage range
+        
+        :returns: tuple (lower, upper)
+        """
+        lower = self.instr.query("SOUR:VOLT:LIM:LOW?")
+        upper = self.instr.query("SOUR:VOLT:LIM:HIGH?")
+        return (lower, upper)
     
     def setCurrent(self, current):
+        """
+        Set the output current level in Amps
+        
+        :param current: Current (in Amps)
+        :type current: float
+        """
         self.instr.write("SOUR:CURR %f" % float(current))
+           
+    def setMaxCurrent(self, current):
+        """
+        Set the maximum output current
         
-    def setCurrentLimit(self, current):
-        self.instr.write("SOUR:CURR:PROT:HIGH %f" % float(current))
+        :param current: Current (in Amps)
+        :type current: float
+        """
+        self.setCurrentRange(0, current)
         
-    def measureCurrent(self):
-        return self.instr.ask("FETC:CURR?")
+    def setCurrentRange(self, lower, upper):
+        """
+        Set the output current range
+        
+        :param lower: Minimum Current (in Amps)
+        :type lower: float
+        :param upper: Maximum Current (in Amps)
+        :type upper: float
+        """
+        self.instr.write("SOUR:CURR:LIM:LOW %f" % float(lower))
+        self.instr.write("SOUR:CURR:LIM:HIGH %f" % float(upper))
+        
+    def getVoltageRange(self):
+        """
+        Get the configured output current range
+        
+        :returns: tuple (lower, upper)
+        """
+        lower = self.instr.query("SOUR:CURR:LIM:LOW?")
+        upper = self.instr.query("SOUR:CURR:LIM:HIGH?")
+        return (lower, upper)
     
-    def measurePower(self):
-        return self.instr.ask("FETC:POW?")
+    def getTerminalVoltage(self):
+        """
+        Get the measured voltage from the terminals of the instrument
+        
+        :returns: float
+        """
+        return float(self.instr.ask("FETC:VOLT?"))
+    
+    def getTerminalCurrent(self):
+        """
+        Get the measured current from the terminals of the instrument
+        
+        :returns: float
+        """
+        return float(self.instr.ask("FETC:CURR?"))
+    
+    def getTerminalPower(self):
+        """
+        Get the measured power from the terminals of the instrument
+        
+        :returns: float
+        """
+        return float(self.instr.ask("FETC:POW?"))
+    
+    def setSlewRate(self, voltage=None, current=None):
+        """
+        Set the voltage and current rise/fall time of the power supply. Units are 
+        Volts per milliseconds.
+        
+        :param voltage: Voltage Slew rate (in V/ms)
+        :type voltage: float
+        :param current: Current Slew rate (in V/ms)
+        :type current: float
+        """
+        if voltage is not None:
+            self.instr.write("SOUR:VOLT:SLEW %f" % float(voltage))
+        else:
+            self.instr.write("SOU")
+            
+        if current is not None:
+            self.instr.write("SOUR:CURR:SLEWINF DISABLE")
+            self.instr.write("SOUR:CURR:SLEW %f" % float(current))
+        else:
+            self.instr.write("SOUR:CURR:SLEWINF ENABLE")
+    
+    def setProtection(self, voltage=None, current=None, power=None):
+        """
+        Enable the protection circuitry. If any of the parameters is zero, that
+        protection is disabled.
+        
+        :param voltage: OVP Setting (in Volts)
+        :type voltage: float
+        :param current: OCP Setting (in Amps)
+        :type current: float
+        :param power: OPP Setting (in Watts)
+        :type power: float
+        """
+        
+        # Voltage
+        if voltage is not None:
+            self.instr.write("SOUR:VOLT:PROT:HIGH %f" % float(voltage))
+                
+        # Current
+        if current is not None:
+            self.instr.write("SOUR:CURR:PROT:HIGH %f" % float(current))
+    
+        # Power
+        if power is not None:
+            self.instr.write("SOUR:POW:PROT:HIGH %f" % float(power))
+    
