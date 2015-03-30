@@ -2,7 +2,7 @@ from Base_Driver import Base_Driver
 
 import time
 
-class m_DMM(Base_Driver):
+class m_5492(Base_Driver):
     
     info = {
         # Model revision author
@@ -10,11 +10,11 @@ class m_DMM(Base_Driver):
         # Model version
         'version':              '1.0',
         # Revision date of Model version
-        'date':                 '2015-01-31',
+        'date':                 '2015-03-30',
         # Device Manufacturer
         'deviceVendor':         'BK Precision',
         # List of compatible device models
-        'deviceModel':          ['2831E', '5491B', '5492BGPIB', '5492B'],
+        'deviceModel':          ['5492BGPIB', '5492B'],
         # Device type    
         'deviceType':           'Multimeter',      
         
@@ -27,15 +27,14 @@ class m_DMM(Base_Driver):
         # Compatible VISA Manufacturers
         'VISA_compatibleManufacturers': [''],
         # Compatible VISA Models
-        'VISA_compatibleModels':        ['2831E  Multimeter', 
-                                         '5491B Digital Multimeter',
-                                         '5492B Digital Multimeter']
+        'VISA_compatibleModels':        ['5492B Digital Multimeter']
     }
     
     modes = {
         'AC Voltage': 'VOLT:AC',
         'DC Voltage': 'VOLT:DC',
         'Resistance': 'RES',
+        '4-wire Resistance': 'FRES',
         'AC Current': 'CURR:AC',
         'DC Current': 'CURR:DC',
         'Frequency': 'FREQ',
@@ -115,6 +114,7 @@ class m_DMM(Base_Driver):
           * 'AC Voltage'
           * 'DC Voltage'
           * 'Resistance'
+          * '4-wire Resistance'
           * 'AC Current'
           * 'DC Current'
           * 'Frequency'
@@ -134,6 +134,11 @@ class m_DMM(Base_Driver):
             raise RuntimeError("Invalid Function")
         
     def getMode(self):
+        """
+        Get the configuration mode
+        
+        :returns: str
+        """
         return self.query("FUNC?")
     
     def setFunction(self, value):
@@ -215,7 +220,7 @@ class m_DMM(Base_Driver):
         """
         return float(self.query(":%s:NPLC?" % (self.func)))
     
-    def setMeasurementOffset(self, value):
+    def setMeasurementOffset(self, value=None):
         """
         Establish a reference value for the measurement. When the offset is
         set, the result of a measurement will be the algebraic difference
@@ -250,7 +255,7 @@ class m_DMM(Base_Driver):
         """
         Reads the current measurement and set it as the offset.
         """
-        self.setMeasurementOffset()
+        self.setMeasurementOffset(None)
         
     def setTriggerSource(self, value):
         """
