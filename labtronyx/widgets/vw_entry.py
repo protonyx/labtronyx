@@ -8,9 +8,13 @@ class vw_GetSetValue(vw_Base):
     """
     Widget to get and set values        
     """
+    
     def __init__(self, master, get_cb, set_cb, **kwargs):
         """
-        :param label: String L
+        :param get_cb: Callback function for get
+        :type get_gb: method
+        :param set_cb: Callback function for set
+        :type set_cb: method
         """
         vw_Base.__init__(self, master, 8, 1)
         

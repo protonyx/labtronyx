@@ -1,4 +1,5 @@
 from Base_Applet import Base_Applet
+from widgets import *
 
 import Tkinter as Tk
 import tkMessageBox
@@ -30,8 +31,12 @@ class MethodTest(Base_Applet):
         #=======================================================================
         # GUI Elements
         #=======================================================================
+        # Driver info
+        self.w_info = vw_info.vw_DriverInfo(self, self.instr)
+        self.w_info.grid(row=0, column=0, columnspan=2)
+        
         # Select Method
-        Tk.Label(self, text='Method').grid(row=0, column=0)
+        Tk.Label(self, text='Method').grid(row=1, column=0)
         
         self.frameMethods = Tk.Frame(self)
         
@@ -41,28 +46,28 @@ class MethodTest(Base_Applet):
         self.scrollbar.pack(side=Tk.RIGHT, fill=Tk.Y)
         self.methodList.pack(side=Tk.LEFT, fill=Tk.BOTH, expand=1)
         
-        self.frameMethods.grid(row=0,column=1, 
+        self.frameMethods.grid(row=1,column=1, 
                                sticky=Tk.N+Tk.E+Tk.S+Tk.W, padx=5, pady=5)
         
         self.methodList.bind('<<ListboxSelect>>', self.e_ListBoxClick)
         
         # Eval Box
-        Tk.Label(self, text='Command').grid(row=1, column=0)
+        Tk.Label(self, text='Command').grid(row=2, column=0)
         self.str_eval = Tk.StringVar()
         self.txtMethod = Tk.Entry(self, textvariable=self.str_eval, width=50)
-        self.txtMethod.grid(row=1, column=1, 
+        self.txtMethod.grid(row=2, column=1, 
                             sticky=Tk.N+Tk.E+Tk.S+Tk.W, padx=5, pady=5)
         
         # Return Box
-        Tk.Label(self, text='Return').grid(row=2, column=0)
+        Tk.Label(self, text='Return').grid(row=3, column=0)
         self.str_return = Tk.StringVar()
         self.txtReturn = Tk.Entry(self, textvariable=self.str_return, width=50)
-        self.txtReturn.grid(row=2, column=1,
+        self.txtReturn.grid(row=3, column=1,
                             sticky=Tk.N+Tk.E+Tk.S+Tk.W, padx=5, pady=5)
         
         # Execute Button
         self.btnSend = Tk.Button(self, text="Execute", command=self.cb_Send)
-        self.btnSend.grid(row=3, column=0, columnspan=2,
+        self.btnSend.grid(row=4, column=0, columnspan=2,
                           padx=5, pady=5)
         
         self.cb_refresh()

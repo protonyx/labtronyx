@@ -117,6 +117,10 @@ class r_Serial(Base_Resource):
             self.setResourceStatus(common.status.error)
             self.setResourceError((e.errno, e.message))
             
+        except OSError as e:
+            self.setResourceStatus(common.status.error)
+            self.setResourceError((e.errno, e.message))
+            
         except:
             self.logger.exception("Unhandled exception")
         
