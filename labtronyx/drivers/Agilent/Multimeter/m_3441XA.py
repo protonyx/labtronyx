@@ -57,6 +57,9 @@ class m_3441XA(Base_Driver):
         Reset the instrument
         """
         self.instr.write("*RST")
+        
+    def getError(self):
+        return self.instr.query("SYST:ERR?")
 
     def getMode(self):
         """
@@ -150,25 +153,34 @@ class m_3441XA(Base_Driver):
         else:
             raise ValueError('Invalid Mode')
 
-    def set_Aperture(self, mode, time):
-        # Set the aperture for different modes
-        possiblemodes = ['CURR', 'FREQ', 'FRES', 'PER', 'RES', 'TEMP', 'VOLT']
-
-        if mode in possiblemodes:
-            self.instr.write("%s:APER %s" % (mode,time))
-        else:
-            raise ValueError
-
-    def showError(self):
-        return self.instr.query("SYST:ERR?")
-
-    def CalculateMath(self, function):
-        possibleMath = ['NULL', 'DB', 'DBM', 'AVER', 'LIM']
-
-        if function in possibleMath:
-            return self.instr.query("CALC:FUNC %s" % function)
-        else:
-            raise ValueError
+    def setIntegrationRate(self, value):
+        """
+        Set the integration period (measurement speed) for the basic measurement
+        functions (except frequency and period). Expressed as a factor of the 
+        power line frequency (PLC = Power Line Cycles).
+        
+        Valid values: 0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100
+        
+        Value of 'DEF' sets the integration rate to 1 PLC
+        
+        .. note:
+           
+           A rate of 1 would result in 16.67 ms integration period (Assuming
+           60 hz power line frequency.
+           
+        :param value: Integration rate
+        :type value: 
+        """
+        self.instr.write("SENS:%s:NPLC %s" % (self.func, str(value)))
+    
+    def getIntegrationRate(self):
+        """
+        Get the integration period (measurement speed). Expressed as a factor
+        of the power line frequency.
+        
+        :returns: float
+        """
+        return float(self.query(":%s:NPLC?" % (self.func)))
         
     def setTriggerCount(self, count):
         """
