@@ -18,7 +18,7 @@ class m_XLN(Base_Driver):
         'deviceType':           'DC Power Supply',      
         
         # List of compatible resource types
-        'validResourceTypes':   ['VISA'],  
+        'validResourceTypes':   ['VISA', 'Serial'],  
         
         #=======================================================================
         # VISA Attributes        
@@ -33,6 +33,11 @@ class m_XLN(Base_Driver):
     
     def _onLoad(self):
         self.instr = self.getResource()
+        
+        self.instr.configure(baudrate=57600,
+                             bytesize=8,
+                             parity='N',
+                             stopbits=1)
         
         self.setRemoteControl()
     

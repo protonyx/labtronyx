@@ -23,7 +23,7 @@ class m_911X(Base_Driver):
         # VISA Attributes        
         #=======================================================================
         # Compatible VISA Manufacturers
-        'VISA_compatibleManufacturers': ['BK Precision'],
+        'VISA_compatibleManufacturers': ['BK Precision', 'BK PRECISION'],
         # Compatible VISA Models
         'VISA_compatibleModels':        ['BK9115', 'BK9116']
     }
@@ -37,9 +37,15 @@ class m_911X(Base_Driver):
         self.setLocalControl()
     
     def setRemoteControl(self):
+        """
+        Sets the instrument in remote control mode
+        """
         self.instr.write("SYST:REM")
         
     def setLocalControl(self):
+        """
+        Sets the instrument in local control mode
+        """
         self.instr.write("SYST:LOC")
         
     def disableFrontPanel(self):
@@ -126,22 +132,21 @@ class m_911X(Base_Driver):
         Set the voltage rising and falling time of the power supply. Units are 
         seconds.
         
+        Parameters must be between 0 - 65.535 seconds
+        
+        note::
+        
+           This command is not supported by the device
+        
         :param rise: Rise time (in seconds)
         :type rise: float
         :param fall: Fall time (in seconds)
         :type fall: float
         """
+        # TODO: This doesn't work
         self.instr.write("RISE %f" % float(rise))
         self.instr.write("FALL %f" % float(fall))
         
-    def getTerminalVoltage(self):
-        """
-        Get the measured voltage from the terminals of the instrument
-        
-        :returns: float
-        """
-        return float(self.instr.ask("MEAS:VOLT?"))
-    
     def setCurrent(self, current):
         """
         Set the output current level
@@ -175,6 +180,14 @@ class m_911X(Base_Driver):
         :returns: float
         """
         return float(self.instr.query("CURR:TRIG?"))
+    
+    def getTerminalVoltage(self):
+        """
+        Get the measured voltage from the terminals of the instrument
+        
+        :returns: float
+        """
+        return float(self.instr.query("MEAS:VOLT?"))
         
     def getTerminalCurrent(self):
         """
@@ -182,7 +195,7 @@ class m_911X(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.ask("MEAS:CURR?"))
+        return float(self.instr.query("MEAS:CURR?"))
     
     def getTerminalPower(self):
         """
@@ -190,7 +203,7 @@ class m_911X(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.ask("MEAS:POW?"))
+        return float(self.instr.query("MEAS:POW?"))
     
     def setVoltageRange(self, lower, upper):
         """
@@ -204,38 +217,55 @@ class m_911X(Base_Driver):
         self.instr.write("VOLT:LIM %f" % float(lower))
         self.instr.write("VOLT:RANG %f" % float(upper))
         
-    def enableOVP(self, voltage, delay):
+    def setProtection(self, voltage=None):
         """
-        Enable the OVP (Over-Voltage Protection) circuitry. `delay` can be used
-        to set the delay (in seconds) before the OVP kicks in.
+        Enable the protection circuitry. If any of the parameters is zero, that
+        protection is disabled.
         
         :param voltage: OVP Setting (in Volts)
         :type voltage: float
+        """
+        # Voltage
+        if voltage is not None:
+            self.instr.write("VOLT:PROT:STAT ON")
+            self.instr.write("VOLT:PROT %f" % float(voltage))
+            
+        else:
+            self.instr.write("VOLT:PROT:STAT OFF")
+            
+    def setProtectionDelay(self, delay):
+        """
+        Set the OVP (Over-Voltage Protection) circuitry delay. Can be used
+        to set the delay (in seconds) before the OVP kicks in.
+        
+        Delay must be between 0.001 - 0.6
+        
         :param delay: OVP delay (in seconds)
         :type delay: float
         """
-        self.instr.write("VOLT:PROT %f" % float(voltage))
-        self.instr.write("VOLT:PROT:DELAY %f" % float(delay))
-        self.instr.write("VOLT:PROT:STAT ON")
-        
-    def disableOVP(self):
-        """
-        Disable the OVP (Over-Voltage Protection) circuitry.
-        """
-        self.instr.write("VOLT:PROT:STAT OFF")
-        
-    def getOVPState(self):
+        if delay >= 0.001 and delay < 0.6:
+            self.instr.write("VOLT:PROT:DELAY %f" % float(delay))
+            
+        else:
+            ValueError("Value not in range")
+    
+    def getProtectionState(self):
         """
         This command is used to query the executing state of OVP (Over-Voltage
         Protection). If 1, this indicates the OVP circuit has been triggered
-        and must be cleared using `clearOVP` before normal operation can
-        continue.
+        and must be cleared using `clearProtectionState` before normal operation 
+        can continue.
+        
+        note..
+        
+           This operation is not supported by the device
         
         :returns: int
         """
+        # TODO: This doesn't work
         return int(self.instr.query("VOLT:PROT:TRIG?"))
         
-    def clearOVP(self):
+    def clearProtectionState(self):
         """
         This command is used to clear the OVP (Over-Voltage Protection) state.
         Before sending this command, please increase the upper limitation of

@@ -65,7 +65,7 @@ class multimeter(Base_Applet):
         #=======================================================================
         # Data
         #=======================================================================
-        self.f_data = Tk.Frame(self)
+        self.f_data = Tk.LabelFrame(self, text="Data")
         
         # Current Value
         self.w_data = vw_data.vw_DataLCD(self.f_data, 
@@ -73,10 +73,14 @@ class multimeter(Base_Applet):
                                          update_interval=1000)
         self.w_data.grid(row=0, column=0)
         
-        # Plot
-        self.w_graph = vw_plots.vw_Plot(self.f_data, title="Measurement")
-        self.w_graph.addPlot(self.instr, method='getMeasurement')
-        self.w_graph.grid(row=1, column=0)
+        self.f_data.grid(row=2, column=0)
         
-        self.f_data.grid(row=1, column=1)
+        #=======================================================================
+        # Plot
+        #=======================================================================
+        self.w_graph = vw_plots.vw_Plot(self, title="Measurement")
+        self.w_graph.addPlot(self.instr, method='getMeasurement')
+        self.w_graph.grid(row=1, column=1)
+        
+        
         

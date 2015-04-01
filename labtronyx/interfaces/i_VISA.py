@@ -148,7 +148,8 @@ class r_VISA(Base_Resource):
                 
             elif e.abbreviation == "VI_ERROR_TMO":
                 self.logger.info("Unable to Identify, resource did not respond")
-                self.setResourceError(resource_status.ERROR_NOTFOUND)
+                #self.setResourceError(resource_status.ERROR_NOTFOUND)
+                # This could indicate incorrect settings in the case of serial devices
                 
             elif e.abbreviation == "VI_ERROR_RSRC_NFOUND":
                 self.logger.info("Unable to connect, resource was not found")
@@ -198,7 +199,7 @@ class r_VISA(Base_Resource):
             self.PID = ''
             self.firmware = ''
             self.serial = ''
-            self.logger.error('Unable to identify VISA device: %s', resID)
+            self.logger.error('Unable to identify VISA device')
             
         self.close()
         
@@ -213,6 +214,23 @@ class r_VISA(Base_Resource):
     
     def getVISA_firmware(self):
         return self.firmware
+    
+    #===========================================================================
+    # Serial
+    #===========================================================================
+    
+    def configure(self, **kwargs):
+        if 'baudrate' in kwargs:
+            self.instrument.baud_rate = int(kwargs.get('baudrate'))
+            
+        if 'bytesize' in kwargs:
+            self.instrument.data_bits = int(kwargs.get('bytesize'))
+            
+        if 'parity' in kwargs:
+            self.instrument.parity =  kwargs.get('parity')
+            
+        if 'stopbits' in kwargs:
+            self.instrument.stopbits = int(kwargs.get('stopbits'))
         
     #===========================================================================
     # Resource State

@@ -14,6 +14,14 @@ DC Load
 XLN30052 DC Source
 ------------------
 
+Driver
+^^^^^^
+
+The XLN Series DC Sources use a Silicon Labs `CP210x USB to UART Bridge` instead
+of the USB Test and Measurement profile. This requires a third party driver
+that must be downloaded from the BK Precision website before connecting the
+device.
+
 Remote Interface
 ^^^^^^^^^^^^^^^^
 

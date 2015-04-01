@@ -51,13 +51,13 @@ class m_620XXP(Base_Driver):
     
     def setRemoteControl(self):
         """
-        Sets the load to remote control
+        Sets the instrument in remote control mode
         """
         self.instr.write("CONF:REM ON")
     
     def setLocalControl(self):
         """
-        Sets the load to local control
+        Sets the instrument in local control mode
         """
         self.instr.write("CONF:REM OFF")
     
@@ -222,8 +222,8 @@ class m_620XXP(Base_Driver):
         
         :returns: tuple (lower, upper)
         """
-        lower = self.instr.query("SOUR:CURR:LIM:LOW?")
-        upper = self.instr.query("SOUR:CURR:LIM:HIGH?")
+        lower = float(self.instr.query("SOUR:CURR:LIM:LOW?"))
+        upper = float(self.instr.query("SOUR:CURR:LIM:HIGH?"))
         return (lower, upper)
     
     def getTerminalVoltage(self):
@@ -232,7 +232,7 @@ class m_620XXP(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.ask("FETC:VOLT?"))
+        return float(self.instr.query("FETC:VOLT?"))
     
     def getTerminalCurrent(self):
         """
@@ -240,7 +240,7 @@ class m_620XXP(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.ask("FETC:CURR?"))
+        return float(self.instr.query("FETC:CURR?"))
     
     def getTerminalPower(self):
         """
@@ -248,7 +248,7 @@ class m_620XXP(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.ask("FETC:POW?"))
+        return float(self.instr.query("FETC:POW?"))
     
     def setSlewRate(self, voltage=None, current=None):
         """

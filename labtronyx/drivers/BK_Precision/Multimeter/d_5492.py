@@ -135,6 +135,7 @@ class d_5492(Base_Driver):
         if func in self.modes:
             value = self.modes.get(func)
             self.instr.write(":FUNC %s" % str(value))
+            self.func = value
         else:
             raise RuntimeError("Invalid Function")
         
@@ -148,6 +149,7 @@ class d_5492(Base_Driver):
         
         for desc, code in self.modes.items():
             if self.mode == code:
+                self.func = code
                 return desc
             
         return 'Unknown'
@@ -191,7 +193,7 @@ class d_5492(Base_Driver):
         :param value: Measurement Range
         :type value: str
         """
-        if self.func in ['freq', 'per']:
+        if self.func.upper() in ['FREQ', 'PER']:
             self.instr.write(":%s:THR:VOLT:RANG %s" % (self.func, value))
         else:
             if value in ['auto', 'AUTO']:
@@ -206,7 +208,9 @@ class d_5492(Base_Driver):
         
         :returns: float
         """
-        return float(self.query(self.func + ":RANG?"))
+        data = self.query(self.func + ":RANG?")
+        self.logger.debug("5492 RX: %s" % data)
+        return float(data)
     
     def setIntegrationRate(self, value):
         """
