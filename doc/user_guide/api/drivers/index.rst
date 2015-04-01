@@ -6,13 +6,15 @@ Drivers
    Agilent.Multimeter.m_3441XA
    Agilent.SMU.m_SMU
    BK_Precision.Load.m_85XX
-   BK_Precision.Multimeter.m_DMM
+   BK_Precision.Multimeter.d_2831
+   BK_Precision.Multimeter.d_5492
    BK_Precision.Source.m_911X
    BK_Precision.Source.m_912X
    BK_Precision.Source.m_XLN
    Chroma.Source.m_620XXP
    Debug.m_debug
-   Regatron.m_GSS
+   Regatron.d_TopCon
+   Sorensen.d_XFR
    TDI.d_XBL
    Tektronix.Oscilloscope.m_MixedSignal
    Tektronix.Oscilloscope.m_Oscilloscope

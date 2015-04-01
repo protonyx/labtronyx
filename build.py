@@ -7,14 +7,14 @@ import importlib
 #===============================================================================
 SPHINXBUILD = "sphinx-build"
 
-DOC_SOURCE_DIR = "doc/source"
+DOC_SOURCE_DIR = "doc"
 DOC_BUILD_DIR = "doc-build"
 
 LIB_ROOT = "labtronyx"
 
 # Drivers
 DRIVER_SRC = "labtronyx.drivers"
-DRIVER_DOC = "doc/source/user_guide/api/drivers"
+DRIVER_DOC = "doc/user_guide/api/drivers"
 DRIVER_TEMPLATE = "template.tmpl"
 
 #===============================================================================
