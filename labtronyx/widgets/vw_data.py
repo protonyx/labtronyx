@@ -29,7 +29,8 @@ class vw_DataLCD(vw_Base):
         self.l_units.pack(side=Tk.LEFT)
         self.f_data.pack()
     
-        self.cb_update()
+        self.update_interval = kwargs.get('update_interval', None)
+        self._schedule_update()
         
     def cb_update(self):
         data = self.get_cb()

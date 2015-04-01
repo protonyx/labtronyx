@@ -247,6 +247,7 @@ class r_VISA(Base_Resource):
         
         for attempt in range(2):
             try:
+                self.logger.debug("VISA Write: %s" % data)
                 return self.instrument.write(data)
             except visa.InvalidSession:
                 self.open()
@@ -259,7 +260,12 @@ class r_VISA(Base_Resource):
     def query(self, data):
         self.checkResourceStatus()
         
-        return self.instrument.query(data)
+        for attempt in range(2):
+            try:
+                self.logger.debug("VISA Query: %s" % data)
+                return self.instrument.query(data)
+            except visa.InvalidSession:
+                self.open()
     
     #===========================================================================
     # Drivers

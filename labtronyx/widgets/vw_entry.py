@@ -55,7 +55,7 @@ class vw_Text(vw_Base_Entry):
         
         # Units
         self.l_units = Tk.Label(self.f_middle, width=2, text=kwargs.get('units', ''))
-        self.l_units.pack(side=Tk.RIGHT)
+        self.l_units.grid(row=0, column=1)
             
         #=======================================================================
         # Right

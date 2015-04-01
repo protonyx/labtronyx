@@ -147,6 +147,7 @@ class d_2831(Base_Driver):
         
         for desc, code in self.modes.items():
             if self.mode == code:
+                self.func = code
                 return desc
             
         return 'Unknown'
@@ -188,10 +189,10 @@ class d_2831(Base_Driver):
         :param value: Measurement Range
         :type value: str
         """
-        if self.func in ['freq', 'per']:
+        if self.func.upper() in ['FREQ', 'PER']:
             self.instr.write(":%s:THR:VOLT:RANG %s" % (self.func, value))
         else:
-            if value in ['auto', 'AUTO']:
+            if str(value).upper() == 'AUTO':
                 self.instr.write(":%s:RANG:AUTO ON" % self.func)
             else:
                 self.instr.write(":%s:RANG:AUTO OFF" % self.func)

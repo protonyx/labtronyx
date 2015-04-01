@@ -69,7 +69,8 @@ class multimeter(Base_Applet):
         
         # Current Value
         self.w_data = vw_data.vw_DataLCD(self.f_data, 
-                                         get_cb=self.instr.getMeasurement)
+                                         get_cb=self.instr.getMeasurement,
+                                         update_interval=1000)
         self.w_data.grid(row=0, column=0)
         
         # Plot
