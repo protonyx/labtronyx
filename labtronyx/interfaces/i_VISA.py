@@ -139,11 +139,10 @@ class r_VISA(Base_Resource):
             self.firmware = ''
             self.serial = ''
             
-            self.setResourceStatus(resource_status.ERROR)
-            
             if e.abbreviation == "VI_ERROR_RSRC_BUSY":
                 self.locked = True
                 self.logger.info("Unable to Identify, resource is busy")
+                self.setResourceStatus(resource_status.ERROR)
                 self.setResourceError(resource_status.ERROR_BUSY)
                 
             elif e.abbreviation == "VI_ERROR_TMO":
@@ -153,10 +152,12 @@ class r_VISA(Base_Resource):
                 
             elif e.abbreviation == "VI_ERROR_RSRC_NFOUND":
                 self.logger.info("Unable to connect, resource was not found")
+                self.setResourceStatus(resource_status.ERROR)
                 self.setResourceError(resource_status.ERROR_NOTFOUND)
                 
             else:
                 self.logger.exception("Unknown VISA Exception")
+                self.setResourceStatus(resource_status.ERROR)
                 self.setResourceError(resource_status.ERROR_UNKNOWN)
                 
     def getProperties(self):
@@ -176,10 +177,13 @@ class r_VISA(Base_Resource):
     def identify(self):
         self.open()
         
-        self.identity = self.instrument.query("*IDN?").strip().split(',')
+        try:
+            self.identity = self.query("*IDN?").strip().split(',')
+        except:
+            self.identity = []
             
-        if len(self.identity) == 4:
-            self.VID, self.PID, self.serial, self.firmware = self.identity
+        if len(self.identity) >= 4:
+            self.VID, self.PID, self.serial, self.firmware = self.identity[0:4]
             self.logger.info("Vendor: %s", self.VID)
             self.logger.info("Model:  %s", self.PID)
             self.logger.info("Serial: %s", self.serial)
@@ -227,7 +231,14 @@ class r_VISA(Base_Resource):
             self.instrument.data_bits = int(kwargs.get('bytesize'))
             
         if 'parity' in kwargs:
-            self.instrument.parity =  kwargs.get('parity')
+            import pyvisa.constants as pvc
+            parity_convert = {
+                'N': pvc.Parity.none,
+                'E': pvc.Parity.even,
+                'M': pvc.Parity.mark,
+                'O': pvc.Parity.odd,
+                'S': pvc.Parity.space}
+            self.instrument.parity = parity_convert.get(kwargs.get('parity'))
             
         if 'stopbits' in kwargs:
             self.instrument.stopbits = int(kwargs.get('stopbits'))

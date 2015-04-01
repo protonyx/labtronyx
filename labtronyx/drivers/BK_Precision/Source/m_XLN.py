@@ -18,13 +18,13 @@ class m_XLN(Base_Driver):
         'deviceType':           'DC Power Supply',      
         
         # List of compatible resource types
-        'validResourceTypes':   ['VISA', 'Serial'],  
+        'validResourceTypes':   ['VISA'],  
         
         #=======================================================================
         # VISA Attributes        
         #=======================================================================
         # Compatible VISA Manufacturers
-        'VISA_compatibleManufacturers': ['B&K Precision'],
+        'VISA_compatibleManufacturers': ['B&K Precision', 'B&K PRECISION'],
         # Compatible VISA Models
         'VISA_compatibleModels':        ['XLN3640', 'XLN6024', 'XLN8018', 
                                          'XLN10014', 'XLN15010', 'XLN30052', 
@@ -33,6 +33,7 @@ class m_XLN(Base_Driver):
     
     def _onLoad(self):
         self.instr = self.getResource()
+        self.instr.open()
         
         self.instr.configure(baudrate=57600,
                              bytesize=8,
@@ -40,15 +41,25 @@ class m_XLN(Base_Driver):
                              stopbits=1)
         
         self.setRemoteControl()
+        
+        self.instr.identify()
     
     def _onUnload(self):
-        pass
+        self.instr.close()
+    
+    def getProperties(self):
+        prop = Base_Driver.getProperties(self)
+        
+        #prop['validModes'] = self.modes
+        #prop['validTriggerSources'] = self.trigger_sources
+        
+        return prop
     
     def setRemoteControl(self):
         """
         Enable Remote Control Mode
         """
-        self.instr.write("SYST:REM")
+        self.instr.write("SYS:REM USB")
         
     def disableFrontPanel(self):
         """
@@ -67,13 +78,13 @@ class m_XLN(Base_Driver):
         """
         Enables the instrument to power the output
         """
-        self.instr.write("OUTP ON")
+        self.instr.write("OUT ON")
         
     def powerOff(self):
         """
         Disables the output power connections.
         """
-        self.instr.write("OUTP OFF")
+        self.instr.write("OUT OFF")
         
     def getError(self):
         """
@@ -136,7 +147,7 @@ class m_XLN(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.ask("MEAS:VOLT?"))
+        return float(self.instr.query("MEAS:VOLT?"))
     
     def setCurrent(self, current):
         """
@@ -170,7 +181,7 @@ class m_XLN(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.ask("MEAS:CURR?"))
+        return float(self.instr.query("MEAS:CURR?"))
     
     def getTerminalPower(self):
         """
@@ -178,7 +189,7 @@ class m_XLN(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.ask("MEAS:POW?"))
+        return float(self.instr.query("MEAS:POW?"))
     
     def setVoltageRange(self, lower, upper):
         """
