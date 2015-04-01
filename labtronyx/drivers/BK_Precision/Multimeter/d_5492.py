@@ -42,6 +42,11 @@ class d_5492(Base_Driver):
         'Diode': 'DIOD',
         'Continuity': 'CONT' }
     
+    trigger_sources = {
+        'Continual': 'IMMEDIATE', 
+        'Bus': 'BUS', 
+        'External': 'MANUAL'}
+    
     def _onLoad(self):
         self.instr = self.getResource()
         self.instr.open()
@@ -58,6 +63,8 @@ class d_5492(Base_Driver):
         
         prop['deviceVendor'] = self.info.get('deviceVendor')
         prop['deviceModel'] = self.instr.getVISA_model().split(' ')[0]
+        prop['validModes'] = self.modes
+        prop['validTriggerSources'] = self.trigger_sources
         
         return prop
     
@@ -144,6 +151,8 @@ class d_5492(Base_Driver):
                 return desc
             
         return 'Unknown'
+    
+    
     
     def setFunction(self, value):
         """
@@ -267,17 +276,16 @@ class d_5492(Base_Driver):
         
         Valid values:
         
-          * `IMMEDIATE`: Internal continuous trigger
-          * `BUS`: Triggered via USB/RS-232 Interface
-          * `MANUAL`: Triggered via the `Trig` button on the front panel
+          * `Continual`: Internal continuous trigger
+          * `Bus`: Triggered via USB/RS-232 Interface
+          * `External`: Triggered via the `Trig` button on the front panel
           
         :param value: Trigger source
         :type value: str
         """
-        validSources = ['IMMEDIATE', 'BUS', 'MANUAL']
         
-        if value in validSources:
-            self.instr.write(":TRIG:SOUR %s" % value)
+        if value in self.trigger_sources:
+            self.instr.write(":TRIG:SOUR %s" % self.trigger_sources.get('value'))
         else:
             raise ValueError('Invalid trigger source')
     
@@ -285,15 +293,15 @@ class d_5492(Base_Driver):
         """
         Get the trigger source for a measurement.
         
-        Valid values:
-        
-          * `IMMEDIATE`: Internal continuous trigger
-          * `BUS`: Triggered via USB/RS-232 Interface
-          * `MANUAL`: Triggered via the `Trig` button on the front panel
-          
         :returns: str
         """
-        return str(self.query("TRIG:SOUR?"))
+        trig = str(self.query("TRIG:SOUR?"))
+        
+        for key, value in self.trigger_sources.items():
+            if trig == value:
+                return key
+            
+        return 'Unknown'
     
     def trigger(self):
         """

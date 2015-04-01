@@ -91,19 +91,19 @@ class v_BDPC(Base_Applet):
         # Parameters
         #=======================================================================
         self.frame_param = Tk.LabelFrame(self.frame_left, text="Parameters", padx=5, pady=5)
-        self.param_v = vw_entry.vw_GetSetValue(self.frame_param,
+        self.param_v = vw_entry.vw_Text(self.frame_param,
                                            get_cb=self.methodWrapper(self.instr, 'getVoltageReference'), 
                                            set_cb=self.methodWrapper(self.instr, 'setVoltageReference'),
                                            label="Voltage", units="V")
         self.param_v.pack()
         
-        self.param_i = vw_entry.vw_GetSetValue(self.frame_param,
+        self.param_i = vw_entry.vw_Text(self.frame_param,
                                         get_cb=self.methodWrapper(self.instr, 'getCurrentReference'), 
                                         set_cb=self.methodWrapper(self.instr, 'setCurrentReference'),
                                         label="Current", units="A")
         self.param_i.pack()
         
-        self.param_p = vw_entry.vw_GetSetValue(self.frame_param,
+        self.param_p = vw_entry.vw_Text(self.frame_param,
                                         get_cb=self.methodWrapper(self.instr, 'getPowerReference'), 
                                         set_cb=self.methodWrapper(self.instr, 'setPowerReference'),
                                         label="Power", units="W")
@@ -164,24 +164,24 @@ class v_BDPC(Base_Applet):
         # Diagnostics
         #=======================================================================
         self.frame_diag = Tk.LabelFrame(self.frame_middle, text="Diagnostics", padx=5, pady=5)
-        self.pri_power = vw_entry.vw_GetValue(self.frame_diag, 
+        self.pri_power = vw_entry.vw_Text(self.frame_diag, 
                                         label="Input Power", units="W", 
                                         get_cb=self.methodWrapper(self.instr, 'getPrimaryPower'))
         self.pri_power.pack()
-        self.sec_power = vw_entry.vw_GetValue(self.frame_diag, 
+        self.sec_power = vw_entry.vw_Text(self.frame_diag, 
                                         label="Output Power", units="W", 
                                         get_cb=self.methodWrapper(self.instr, 'getSecondaryPower'))
         self.sec_power.pack()
-        self.diag_efficiency = vw_entry.vw_GetValue(self.frame_diag,
+        self.diag_efficiency = vw_entry.vw_Text(self.frame_diag,
                                         get_cb=self.methodWrapper(self.instr, 'getEfficiency'),
                                         label="Efficiency", units="%",
                                         )#update_interval=5000)
         self.diag_efficiency.pack()
-        self.diag_convRatio = vw_entry.vw_GetValue(self.frame_diag,
+        self.diag_convRatio = vw_entry.vw_Text(self.frame_diag,
                                         get_cb=self.methodWrapper(self.instr, 'getConversionRatioCalc'),
                                         label="Conversion Ratio", units="")
         self.diag_convRatio.pack()
-        self.diag_pcmd = vw_entry.vw_GetValue(self.frame_diag,
+        self.diag_pcmd = vw_entry.vw_Text(self.frame_diag,
                                         get_cb=self.methodWrapper(self.instr, 'getPowerCommand'),
                                         label="Power Command", units="%")
         self.diag_pcmd.pack()

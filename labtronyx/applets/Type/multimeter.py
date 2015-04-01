@@ -28,6 +28,7 @@ class multimeter(Base_Applet):
         self.wm_title("Multimeter")
         
         self.instr = self.getInstrument()
+        prop = self.instr.getProperties()
         
         # Driver info
         self.w_info = vw_info.vw_DriverInfo(self, self.instr)
@@ -38,15 +39,27 @@ class multimeter(Base_Applet):
         #=======================================================================
         # Mode
         self.f_conf = Tk.LabelFrame(self, text="Configuration")
-        self.w_mode = vw_entry.vw_List(self.f_conf, values=self.instr.getModes(),
+        self.w_mode = vw_entry.vw_List(self.f_conf, 
+                                       values=prop.get('validModes', []),
                                        get_cb=self.instr.getMode,
                                        set_cb=self.instr.setMode,
                                        label='Mode')
         self.w_mode.pack()
         
         # Range
+        self.w_range = vw_entry.vw_Text(self.f_conf,
+                                       get_cb=self.instr.getRange,
+                                       set_cb=self.instr.setRange,
+                                       label='Range')
+        self.w_range.pack()
         
         # Trigger
+        self.w_trig = vw_entry.vw_List(self.f_conf, 
+                                       values=prop.get('validTriggerSources', []),
+                                       get_cb=self.instr.getTriggerSource,
+                                       set_cb=self.instr.setTriggerSource,
+                                       label='Trigger Source')
+        self.w_trig.pack()
         
         self.f_conf.grid(row=1, column=0)
         #=======================================================================
@@ -54,10 +67,15 @@ class multimeter(Base_Applet):
         #=======================================================================
         self.f_data = Tk.Frame(self)
         
-        self.w_data = vw_data.vw_DataLCD(self, get_cb=lambda: self.instr.getMeasurement())
-        self.w_data.grid(row=1, column=1)
+        # Current Value
+        self.w_data = vw_data.vw_DataLCD(self.f_data, 
+                                         get_cb=self.instr.getMeasurement)
+        self.w_data.grid(row=0, column=0)
         
         # Plot
+        self.w_graph = vw_plots.vw_Plot(self.f_data, title="Measurement")
+        self.w_graph.addPlot(self.instr, method='getMeasurement')
+        self.w_graph.grid(row=1, column=0)
         
         self.f_data.grid(row=1, column=1)
         

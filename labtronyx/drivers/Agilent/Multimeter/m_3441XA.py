@@ -125,6 +125,9 @@ class m_3441XA(Base_Driver):
         """
         return self.getMode()
     
+    def getRange(self):
+        return self.instr.query("SENS:VOLT:DC:RANGE?")
+    
     def setRange(self, new_range):
         # Set to autorange no matter what is passed
         self.instr.write('SENS:VOLT:DC:RANGE:AUTO ON')
