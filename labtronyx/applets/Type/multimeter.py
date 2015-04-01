@@ -31,8 +31,33 @@ class multimeter(Base_Applet):
         
         # Driver info
         self.w_info = vw_info.vw_DriverInfo(self, self.instr)
-        self.w_info.pack()
+        self.w_info.grid(row=0, column=0, columnspan=2)
         
-        self.w_data = vw_data.vw_DataLCD(self, get_cb=lambda: self.test())
-        self.w_data.pack()
+        #=======================================================================
+        # Configuration
+        #=======================================================================
+        # Mode
+        self.f_conf = Tk.LabelFrame(self, text="Configuration")
+        self.w_mode = vw_entry.vw_List(self.f_conf, values=self.instr.getModes(),
+                                       get_cb=self.instr.getMode,
+                                       set_cb=self.instr.setMode,
+                                       label='Mode')
+        self.w_mode.pack()
+        
+        # Range
+        
+        # Trigger
+        
+        self.f_conf.grid(row=1, column=0)
+        #=======================================================================
+        # Data
+        #=======================================================================
+        self.f_data = Tk.Frame(self)
+        
+        self.w_data = vw_data.vw_DataLCD(self, get_cb=lambda: self.instr.getMeasurement())
+        self.w_data.grid(row=1, column=1)
+        
+        # Plot
+        
+        self.f_data.grid(row=1, column=1)
         

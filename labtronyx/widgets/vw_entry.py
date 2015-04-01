@@ -24,7 +24,7 @@ class vw_GetSetValue(vw_Base):
         # Label
         if 'label' in kwargs:
             label = kwargs.get('label')
-            self.l_name = Tk.Label(self, width=10, font=("Purisa", 12), text=label, anchor=Tk.W, justify=Tk.LEFT)
+            self.l_name = Tk.Label(self, width=10, text=label, anchor=Tk.W, justify=Tk.LEFT)
             self.l_name.pack(side=Tk.LEFT)
         
         # Set Button
@@ -39,7 +39,7 @@ class vw_GetSetValue(vw_Base):
         # Units
         if 'units' in kwargs:
             units = kwargs.get('units')
-            self.l_units = Tk.Label(self, width=2, font=("Purisa", 12), text=units)
+            self.l_units = Tk.Label(self, width=2, text=units)
             self.l_units.pack(side=Tk.RIGHT)
         
         # Data
@@ -125,3 +125,79 @@ class vw_GetValue(vw_Base):
             
         except:
             self.l_data.config(bg="red")
+            
+class vw_List(vw_Base):
+    def __init__(self, master, values, get_cb, set_cb, **kwargs):
+        vw_Base.__init__(self, master, 12, 1)
+        
+        self.get_cb = get_cb
+        self.set_cb = set_cb
+        
+        self.f_left = Tk.Frame(self, width=3*self.PIXELS_PER_X, height=1*self.PIXELS_PER_Y)
+        self.f_middle = Tk.Frame(self, width=6*self.PIXELS_PER_X, height=1*self.PIXELS_PER_Y)
+        self.f_right = Tk.Frame(self, width=3*self.PIXELS_PER_X, height=1*self.PIXELS_PER_Y)
+        self.f_left.grid_propagate(0)
+        self.f_middle.grid_propagate(0)
+        self.f_right.grid_propagate(0)
+        
+        #=======================================================================
+        # Left
+        #=======================================================================
+        # Label
+        self.l_name = Tk.Label(self.f_left, width=10, 
+                               text=kwargs.get('label', ''), 
+                               anchor=Tk.W, justify=Tk.LEFT)
+        self.l_name.grid(row=0, column=0, sticky=Tk.W)
+        
+        #=======================================================================
+        # Middle
+        #=======================================================================
+        # Data
+        self.val = Tk.StringVar()
+        self.l_data = Tk.OptionMenu(self.f_middle, self.val, *values)
+        self.l_data.grid(row=0, column=0, sticky=Tk.W)
+            
+        #=======================================================================
+        # Right
+        #=======================================================================
+        # Get Button
+        self.b_set = Tk.Button(self.f_right, text="Get", width=3, 
+                               command=self.cb_get)
+        self.b_set.grid(row=0, column=0, padx=3)
+        
+        # Set Button
+        self.b_set = Tk.Button(self.f_right, text="Set", width=3, 
+                               command=self.cb_set)
+        self.b_set.grid(row=0, column=1, padx=3)
+        
+        #=======================================================================
+        
+        self.f_left.pack(side=Tk.LEFT)
+        self.f_middle.pack(side=Tk.LEFT)
+        self.f_right.pack(side=Tk.LEFT)
+        
+        self.update_interval = kwargs.get('update_interval', None)
+        self._schedule_update()
+        
+    def cb_update(self):
+        self.cb_get()
+        
+    def cb_get(self):
+        try:
+            val = self.get_cb()
+            
+            self.val.set(val)
+            
+        except:
+            pass
+        
+    def cb_set(self):
+        try:
+            self.set_cb(self.val.get())
+            
+        except:
+            pass
+        
+    def get(self):
+        return self.val.get()
+            

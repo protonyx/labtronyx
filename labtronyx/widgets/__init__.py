@@ -4,10 +4,10 @@ __all__ = ["vw_entry", "vw_info", "vw_plots", "vw_state", "vw_data"]
 
 class vw_Base(Tk.Frame):
     PIXELS_PER_X = 30
-    PIXELS_PER_Y = 30
+    PIXELS_PER_Y = 40
     
     def __init__(self, master, units_x=8, units_y=1):
-        Tk.Frame.__init__(self, master, padx=2, pady=2)
+        Tk.Frame.__init__(self, master, padx=2, pady=2, bd=1)
         
         width = units_x * self.PIXELS_PER_X
         height = units_y * self.PIXELS_PER_Y

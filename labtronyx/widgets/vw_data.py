@@ -20,9 +20,12 @@ class vw_DataLCD(vw_Base):
         self.units.set(kwargs.get('units', ''))
         
         self.f_data = Tk.Frame(self, bg='black', padx=5, pady=5)
-        self.l_data = Tk.Label(self.f_data, bg='black', fg='green')
+        self.l_data = Tk.Label(self.f_data, textvariable=self.data,
+                               font=('Courier New', '12'),
+                               bg='black', fg='green')
         self.l_data.pack(side=Tk.LEFT)
-        self.l_units = Tk.Label(self.f_data, bg='black', fg='green')
+        self.l_units = Tk.Label(self.f_data, textvariable=self.units,
+                                bg='black', fg='green')
         self.l_units.pack(side=Tk.LEFT)
         self.f_data.pack()
     
