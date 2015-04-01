@@ -5,7 +5,6 @@ Developer Guide
    
    intro
    interfaces
-   resources
    drivers
    applets
    common

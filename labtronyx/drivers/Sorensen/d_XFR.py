@@ -1,6 +1,6 @@
 from Base_Driver import Base_Driver
 
-class m_XLN(Base_Driver):
+class d_XFR(Base_Driver):
     
     info = {
         # Model revision author

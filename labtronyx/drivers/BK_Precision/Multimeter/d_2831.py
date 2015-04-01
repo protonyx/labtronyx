@@ -2,7 +2,7 @@ from Base_Driver import Base_Driver
 
 import time
 
-class m_2831(Base_Driver):
+class d_2831(Base_Driver):
     
     info = {
         # Model revision author
@@ -126,14 +126,31 @@ class m_2831(Base_Driver):
         """
         if func in self.modes:
             value = self.modes.get(func)
-            self.instr.write(":FUNC %s" % self.value)
-            
-            self.func = self.getMode()
+            self.instr.write(":FUNC %s" % str(value))
         else:
             raise RuntimeError("Invalid Function")
         
     def getMode(self):
-        return self.query("FUNC?")
+        """
+        Get the current operating mode
+        
+        :returns: str
+        """
+        self.mode = str(self.query("FUNC?")).upper()
+        
+        for desc, code in self.modes.items():
+            if self.mode == code:
+                return desc
+            
+        return 'Unknown'
+    
+    def getModes(self):
+        """
+        Get all of the available operating modes
+        
+        :returns: list
+        """
+        return self.modes
     
     def setFunction(self, value):
         """

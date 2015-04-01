@@ -173,7 +173,7 @@ class d_TopCon(Base_Driver):
         * 1-63: Slave
         * 64: System
         
-        The slave number (1 … 63) required for the ModuleSelectIndex depends on 
+        The slave number (1 ... 63) required for the ModuleSelectIndex depends on 
         the multi-unit operating mode and can be calculated with the values of 
         the multi-unit ID selectors on the front panel according to the 
         following formula:

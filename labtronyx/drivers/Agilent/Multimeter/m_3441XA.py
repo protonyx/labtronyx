@@ -60,14 +60,20 @@ class m_3441XA(Base_Driver):
         
     def getError(self):
         return self.instr.query("SYST:ERR?")
-
+    
     def getMode(self):
         """
-        Get the configuration mode
+        Get the current operating mode
         
         :returns: str
         """
-        return self.instr.query("CONF?")
+        self.mode = str(self.query("CONF?")).upper()
+        
+        for desc, code in self.modes.items():
+            if self.mode == code:
+                return desc
+            
+        return 'Unknown'
     
     def getModes(self):
         """
