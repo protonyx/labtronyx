@@ -289,13 +289,13 @@ class Base_Resource(object):
         if self.driver is not None:
             try:
                 self.driver._onUnload()
-                # RPC unregister object
-                
-                self.rpc_server.unregisterObject(self.driver)
-                self.rpc_server.notifyClients('event_driver_unloaded')
                 
             except:
                 self.logger.exception('Exception while unloading driver')
+                
+            # RPC unregister object    
+            self.rpc_server.unregisterObject(self.driver)
+            self.rpc_server.notifyClients('event_driver_unloaded')
                 
             del self.driver
             self.driver = None
