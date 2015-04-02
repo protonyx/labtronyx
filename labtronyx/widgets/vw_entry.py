@@ -5,19 +5,26 @@ import Tkinter as Tk
 #__all__ = ['vm_GetSetValue', 'vw_GetValue']
 
 class vw_Base_Entry(vw_Base):
-    def __init__(self, master):
+    def __init__(self, master, **kwargs):
         vw_Base.__init__(self, master, 12, 1)
         
-        self.f_left = Tk.Frame(self, width=3*self.PIXELS_PER_X, height=1*self.PIXELS_PER_Y)
-        self.f_middle = Tk.Frame(self, width=6*self.PIXELS_PER_X, height=1*self.PIXELS_PER_Y)
-        self.f_right = Tk.Frame(self, width=3*self.PIXELS_PER_X, height=1*self.PIXELS_PER_Y)
-        self.f_left.grid_propagate(0)
-        self.f_middle.grid_propagate(0)
-        self.f_right.grid_propagate(0)
+        self.f_left = Tk.Frame(self)
+        self.f_middle = Tk.Frame(self)
+        self.f_right = Tk.Frame(self)
+        
+        #=======================================================================
+        # Left
+        #=======================================================================
+        # Label
+        self.l_name = Tk.Label(self.f_left, width=15, 
+                               text=kwargs.get('label', ''), 
+                               fg='black',
+                               anchor=Tk.W, justify=Tk.LEFT)
+        self.l_name.pack()
     
         self.f_left.pack(side=Tk.LEFT)
         self.f_middle.pack(side=Tk.LEFT)
-        self.f_right.pack(side=Tk.LEFT)
+        self.f_right.pack(side=Tk.RIGHT)
 
 class vw_Text(vw_Base_Entry):
     """
@@ -31,19 +38,10 @@ class vw_Text(vw_Base_Entry):
         :param set_cb: Callback function for set
         :type set_cb: method
         """
-        vw_Base_Entry.__init__(self, master)
+        vw_Base_Entry.__init__(self, master, **kwargs)
         
         self.get_cb = get_cb
         self.set_cb = set_cb
-        
-        #=======================================================================
-        # Left
-        #=======================================================================
-        # Label
-        self.l_name = Tk.Label(self.f_left, width=10, 
-                               text=kwargs.get('label', ''), 
-                               anchor=Tk.W, justify=Tk.LEFT)
-        self.l_name.grid(row=0, column=0, sticky=Tk.W)
         
         #=======================================================================
         # Middle
@@ -111,19 +109,10 @@ class vw_Text(vw_Base_Entry):
             
 class vw_List(vw_Base_Entry):
     def __init__(self, master, values, get_cb, set_cb, **kwargs):
-        vw_Base_Entry.__init__(self, master)
+        vw_Base_Entry.__init__(self, master, **kwargs)
         
         self.get_cb = get_cb
         self.set_cb = set_cb
-        
-        #=======================================================================
-        # Left
-        #=======================================================================
-        # Label
-        self.l_name = Tk.Label(self.f_left, width=10, 
-                               text=kwargs.get('label', ''), 
-                               anchor=Tk.W, justify=Tk.LEFT)
-        self.l_name.grid(row=0, column=0, sticky=Tk.W)
         
         #=======================================================================
         # Middle
@@ -181,3 +170,47 @@ class vw_List(vw_Base_Entry):
         except:
             pass
             
+class vw_LCD(vw_Base_Entry):
+    
+    def __init__(self, master, get_cb, **kwargs):
+        """
+        :param get_cb: Callback function for get
+        :type get_gb: method
+        :param units: Units
+        :type units: str
+        """
+        vw_Base_Entry.__init__(self, master, **kwargs)
+        
+        self.get_cb = get_cb
+        
+        self.data = Tk.StringVar(self)
+        self.units = Tk.StringVar(self)
+        self.units.set(kwargs.get('units', ''))
+        
+        #=======================================================================
+        # Middle
+        #=======================================================================
+        # Data
+        self.f_data = Tk.Frame(self.f_middle, bg='black', padx=5, pady=5)
+        self.l_data = Tk.Label(self.f_data, textvariable=self.data,
+                               font=('Courier New', '14'),
+                               width=15,
+                               bg='black', fg='green')
+        self.l_data.pack(side=Tk.LEFT)
+        self.l_units = Tk.Label(self.f_data, textvariable=self.units,
+                                bg='black', fg='green')
+        self.l_units.pack(side=Tk.LEFT)
+        self.f_data.pack()
+        
+        #=======================================================================
+    
+        self.update_interval = kwargs.get('update_interval', None)
+        self._schedule_update()
+        
+    def setUnits(self, units):
+        self.units.set(units)
+        
+    def cb_update(self):
+        data = self.get_cb()
+        
+        self.data.set(data)

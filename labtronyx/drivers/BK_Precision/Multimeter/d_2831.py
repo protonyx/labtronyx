@@ -283,7 +283,7 @@ class d_2831(Base_Driver):
         """
         
         if value in self.trigger_sources:
-            self.instr.write(":TRIG:SOUR %s" % self.trigger_sources.get('value'))
+            self.instr.write(":TRIG:SOUR %s" % self.trigger_sources.get(value))
         else:
             raise ValueError('Invalid trigger source')
     
@@ -293,7 +293,7 @@ class d_2831(Base_Driver):
         
         :returns: str
         """
-        trig = str(self.query("TRIG:SOUR?"))
+        trig = str(self.query("TRIG:SOUR?")).upper()
         
         for key, value in self.trigger_sources.items():
             if trig == value:

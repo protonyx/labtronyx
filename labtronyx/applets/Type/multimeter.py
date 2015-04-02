@@ -17,8 +17,7 @@ class multimeter(Base_Applet):
         # List of compatible models
         'validDrivers':          ['Agilent.Multimeter.m_3441XA', 
                                   'BK_Precision.Multimeter.d_2831',
-                                  'BK_Precision.Multimeter.d_5492',
-                                  'Debug.m_debug']
+                                  'BK_Precision.Multimeter.d_5492']
     }
     
     def test(self):
@@ -53,12 +52,19 @@ class multimeter(Base_Applet):
                                        label='Range')
         self.w_range.pack()
         
-        # Trigger
-        self.w_trig = vw_entry.vw_List(self.f_conf, 
+        # Trigger Source
+        self.w_trig_source = vw_entry.vw_List(self.f_conf, 
                                        values=prop.get('validTriggerSources', []),
                                        get_cb=self.instr.getTriggerSource,
                                        set_cb=self.instr.setTriggerSource,
                                        label='Trigger Source')
+        self.w_trig_source.pack()
+        
+        # Trigger
+        self.w_trig = vw_state.vw_Trigger(self.f_conf,
+                                          cb_func=self.instr.trigger,
+                                          label="Bus Trigger",
+                                          button_label="Trigger")
         self.w_trig.pack()
         
         self.f_conf.grid(row=1, column=0)
@@ -68,9 +74,10 @@ class multimeter(Base_Applet):
         self.f_data = Tk.LabelFrame(self, text="Data")
         
         # Current Value
-        self.w_data = vw_data.vw_DataLCD(self.f_data, 
-                                         get_cb=self.instr.getMeasurement,
-                                         update_interval=1000)
+        self.w_data = vw_entry.vw_LCD(self.f_data, 
+                                      get_cb=self.instr.getMeasurement,
+                                      label="Measurement",
+                                      update_interval=10000)
         self.w_data.grid(row=0, column=0)
         
         self.f_data.grid(row=2, column=0)
@@ -80,7 +87,7 @@ class multimeter(Base_Applet):
         #=======================================================================
         self.w_graph = vw_plots.vw_Plot(self, title="Measurement")
         self.w_graph.addPlot(self.instr, method='getMeasurement')
-        self.w_graph.grid(row=1, column=1)
+        self.w_graph.grid(row=1, column=1, rowspan=2)
         
         
         
