@@ -30,11 +30,22 @@ class m_911X(Base_Driver):
     
     def _onLoad(self):
         self.instr = self.getResource()
+        self.instr.open()
         
         self.setRemoteControl()
     
     def _onUnload(self):
         self.setLocalControl()
+        
+        self.instr.close()
+        
+    def getProperties(self):
+        prop = Base_Driver.getProperties(self)
+        
+        prop['protectionModes'] = ['Voltage']
+        prop['terminalSense'] = ['Voltage', 'Current', 'Power']
+        
+        return prop
     
     def setRemoteControl(self):
         """
@@ -232,6 +243,18 @@ class m_911X(Base_Driver):
             
         else:
             self.instr.write("VOLT:PROT:STAT OFF")
+            
+    def getProtection(self):
+        """
+        Get the protection set points
+        
+        :returns: dict with keys ['Voltage']
+        """
+        ret = {}
+        
+        ret['Voltage'] = self.instr.query('VOLT:PROT?')
+        
+        return ret
             
     def setProtectionDelay(self, delay):
         """

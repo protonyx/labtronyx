@@ -4,18 +4,27 @@ import Tkinter as Tk
 
 class vw_Trigger(vw_Base):
     def __init__(self, master, cb_func, **kwargs):
-        vw_Base.__init__(self, master, 8, 1)
+        """
+        :param cb_func: Callback function
+        :type cb_func: method
+        :param label: Widget label
+        :type label: str
+        :param button_label: Button Label
+        :type button_label: str
+        """
+        vw_Base.__init__(self, master, 12, 1)
         
         # Label
         if 'label' in kwargs:
-            label = kwargs.get('label')
-            self.l_name = Tk.Label(self, width=15, font=("Purisa", 12), text=label, anchor=Tk.W, justify=Tk.LEFT)
+            self.l_name = Tk.Label(self, width=15, 
+                                   text=kwargs.get('label'), 
+                                   anchor=Tk.W, justify=Tk.LEFT)
             self.l_name.pack(side=Tk.LEFT)
 
         # Button
-        button_label = kwargs.get('button_label', 'Execute')
-        self.b_button = Tk.Button(self, text=button_label, command=cb_func)
-        self.b_button.pack(side=Tk.RIGHT)
+        self.b_button = Tk.Button(self, text=kwargs.get('button_label', 'Execute'), 
+                                  command=cb_func)
+        self.b_button.pack(side=Tk.LEFT)
         
 class vw_Toggle(vw_Base):
     """

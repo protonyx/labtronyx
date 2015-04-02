@@ -43,9 +43,9 @@ class d_5492(Base_Driver):
         'Continuity': 'CONT' }
     
     trigger_sources = {
-        'Continual': 'IMMEDIATE', 
+        'Continual': 'IMM', 
         'Bus': 'BUS', 
-        'External': 'MANUAL'}
+        'External': 'MAN'}
     
     def _onLoad(self):
         self.instr = self.getResource()
@@ -289,7 +289,7 @@ class d_5492(Base_Driver):
         """
         
         if value in self.trigger_sources:
-            self.instr.write(":TRIG:SOUR %s" % self.trigger_sources.get('value'))
+            self.instr.write(":TRIG:SOUR %s" % self.trigger_sources.get(value))
         else:
             raise ValueError('Invalid trigger source')
     
@@ -299,10 +299,12 @@ class d_5492(Base_Driver):
         
         :returns: str
         """
-        trig = str(self.query("TRIG:SOUR?"))
+        trig = str(self.query("TRIG:SOUR?")).upper()
+        self.logger.debug(trig)
         
         for key, value in self.trigger_sources.items():
             if trig == value:
+                self.logger.debug(value)
                 return key
             
         return 'Unknown'
