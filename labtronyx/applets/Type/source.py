@@ -2,8 +2,7 @@ from Base_Applet import Base_Applet
 
 import Tkinter as Tk
 
-import matplotlib
-import pylab
+from widgets import *
 
 class source(Base_Applet):
     
@@ -49,34 +48,29 @@ class source(Base_Applet):
                                           button_label="Power Off")
         self.w_power_off.pack()
         
-        # Mode
-        self.w_mode = vw_entry.vw_List(self.f_conf, 
-                                       values=prop.get('validModes', []),
-                                       get_cb=self.instr.getMode,
-                                       set_cb=self.instr.setMode,
-                                       label='Mode')
-        self.w_mode.pack()
-        
         # Voltage
-        self.w_voltage = vw_entry.vw_Text(self.f_conf,
-                                       get_cb=self.instr.getVoltage,
-                                       set_cb=self.instr.setVoltage,
-                                       label='Voltage')
-        self.w_voltage.pack()
+        if 'Voltage' in prop.get('controlModes', []):
+            self.w_voltage = vw_entry.vw_Text(self.f_conf,
+                                           get_cb=self.instr.getVoltage,
+                                           set_cb=self.instr.setVoltage,
+                                           label='Voltage')
+            self.w_voltage.pack()
         
         # Current
-        self.w_current = vw_entry.vw_Text(self.f_conf,
-                                       get_cb=self.instr.getCurrent,
-                                       set_cb=self.instr.setCurrent,
-                                       label='Current')
-        self.w_current.pack()
+        if 'Current' in prop.get('controlModes', []):
+            self.w_current = vw_entry.vw_Text(self.f_conf,
+                                           get_cb=self.instr.getCurrent,
+                                           set_cb=self.instr.setCurrent,
+                                           label='Current')
+            self.w_current.pack()
         
         # Power
-        self.w_power = vw_entry.vw_Text(self.f_conf,
-                                       get_cb=self.instr.getPower,
-                                       set_cb=self.instr.setPower,
-                                       label='Power')
-        self.w_power.pack()
+        if 'Power' in prop.get('controlModes', []):
+            self.w_power = vw_entry.vw_Text(self.f_conf,
+                                           get_cb=self.instr.getPower,
+                                           set_cb=self.instr.setPower,
+                                           label='Power')
+            self.w_power.pack()
         
         self.f_conf.grid(row=1, column=0)
         
@@ -87,7 +81,7 @@ class source(Base_Applet):
         
         # Over Voltage
         if 'Voltage' in prop.get('protectionModes', []):
-            self.w_prot_v = vw_entry.vw_Text(self.f_data, 
+            self.w_prot_v = vw_entry.vw_Text(self.f_prot, 
                                           get_cb=lambda: self.instr.getProtection().get('Voltage'),
                                           set_cb=lambda voltage: self.instr.setProtection(voltage=voltage),
                                           label="Voltage")
@@ -95,7 +89,7 @@ class source(Base_Applet):
             
         # Over Current
         if 'Current' in prop.get('protectionModes', []):
-            self.w_prot_i = vw_entry.vw_Text(self.f_data, 
+            self.w_prot_i = vw_entry.vw_Text(self.f_prot, 
                                           get_cb=lambda: self.instr.getProtection().get('Current'),
                                           set_cb=lambda current: self.instr.setProtection(current=current),
                                           label="Current")
@@ -103,7 +97,7 @@ class source(Base_Applet):
             
         # Over Current
         if 'Power' in prop.get('protectionModes', []):
-            self.w_prot_p = vw_entry.vw_Text(self.f_data, 
+            self.w_prot_p = vw_entry.vw_Text(self.f_prot, 
                                           get_cb=lambda: self.instr.getProtection().get('Power'),
                                           set_cb=lambda power: self.instr.setProtection(power=power),
                                           label="Power")

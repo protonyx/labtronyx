@@ -48,7 +48,7 @@ class vw_Text(vw_Base_Entry):
         #=======================================================================
         # Data
         self.val = Tk.StringVar()
-        self.l_data = Tk.Entry(self.f_middle, width=6, textvariable=self.val)
+        self.l_data = Tk.Entry(self.f_middle, width=12, textvariable=self.val)
         self.l_data.grid(row=0, column=0, sticky=Tk.W)
         
         # Units
@@ -98,14 +98,14 @@ class vw_Text(vw_Base_Entry):
             self.val.set(val)
             
         except:
-            self.txt_data.config(bg='red')
+            self.l_data.config(bg='red')
         
     def cb_set(self):
         try:
             self.set_cb(self.val.get())
             
         except:
-            self.txt_data.config(bg='red')
+            self.l_data.config(bg='red')
             
 class vw_List(vw_Base_Entry):
     def __init__(self, master, values, get_cb, set_cb, **kwargs):

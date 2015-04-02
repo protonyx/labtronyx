@@ -54,6 +54,7 @@ class m_620XXP(Base_Driver):
         
         prop['protectionModes'] = ['Voltage', 'Current', 'Power']
         prop['terminalSense'] = ['Voltage', 'Current', 'Power']
+        prop['controlModes'] = ['Voltage', 'Current']
         
         return prop
     
@@ -163,6 +164,14 @@ class m_620XXP(Base_Driver):
         """
         self.instr.write("SOUR:VOLT %f" % float(voltage))
         
+    def getVoltage(self):
+        """
+        Get the output voltage level
+        
+        :returns: float
+        """
+        return float(self.instr.query("SOUR:VOLT?"))
+    
     def setMaxVoltage(self, voltage):
         """
         Set the maximum output voltage
@@ -202,6 +211,14 @@ class m_620XXP(Base_Driver):
         :type current: float
         """
         self.instr.write("SOUR:CURR %f" % float(current))
+        
+    def getCurrent(self):
+        """
+        Get the output current level
+        
+        :returns: float
+        """
+        return float(self.instr.query("SOUR:CURR?"))
            
     def setMaxCurrent(self, current):
         """
@@ -303,4 +320,18 @@ class m_620XXP(Base_Driver):
         # Power
         if power is not None:
             self.instr.write("SOUR:POW:PROT:HIGH %f" % float(power))
+    
+    def getProtection(self):
+        """
+        Get the protection set points
+        
+        :returns: dict with keys ['Voltage', 'Current', 'Power']
+        """
+        ret = {}
+        
+        ret['Voltage'] = self.instr.query('SOUR:VOLT:PROT:HIGH?')
+        ret['Current'] = self.instr.query('SOUR:CURR:PROT:HIGH?')
+        ret['Power']   = self.instr.query('SOUR:POW:PROT:HIGH?')
+        
+        return ret
     

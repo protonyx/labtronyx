@@ -52,8 +52,6 @@ class d_2831(Base_Driver):
         self.instr.open()
         
         self.func = self.getFunction()
-        
-        self.logger.debug("Function: [%s]" % self.func)
     
     def _onUnload(self):
         self.instr.close()

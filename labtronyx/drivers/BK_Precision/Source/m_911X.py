@@ -44,6 +44,7 @@ class m_911X(Base_Driver):
         
         prop['protectionModes'] = ['Voltage']
         prop['terminalSense'] = ['Voltage', 'Current', 'Power']
+        prop['controlModes'] = ['Voltage', 'Current']
         
         return prop
     

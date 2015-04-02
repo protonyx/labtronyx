@@ -52,8 +52,6 @@ class d_5492(Base_Driver):
         self.instr.open()
         
         self.func = self.getFunction()
-        
-        self.logger.debug("Function: [%s]" % self.func)
     
     def _onUnload(self):
         self.instr.close()
@@ -209,7 +207,6 @@ class d_5492(Base_Driver):
         :returns: float
         """
         data = self.query(self.func + ":RANG?")
-        self.logger.debug("5492 RX: %s" % data)
         return float(data)
     
     def setIntegrationRate(self, value):
@@ -300,11 +297,9 @@ class d_5492(Base_Driver):
         :returns: str
         """
         trig = str(self.query("TRIG:SOUR?")).upper()
-        self.logger.debug(trig)
         
         for key, value in self.trigger_sources.items():
             if trig == value:
-                self.logger.debug(value)
                 return key
             
         return 'Unknown'

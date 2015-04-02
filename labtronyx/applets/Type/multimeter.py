@@ -74,7 +74,7 @@ class multimeter(Base_Applet):
         self.w_data = vw_entry.vw_LCD(self.f_data, 
                                       get_cb=self.instr.getMeasurement,
                                       label="Measurement",
-                                      update_interval=10000)
+                                      update_interval=1000)
         self.w_data.grid(row=0, column=0)
         
         self.f_data.grid(row=2, column=0)
