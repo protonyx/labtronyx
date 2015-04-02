@@ -48,6 +48,14 @@ class m_620XXP(Base_Driver):
     
     def _onUnload(self):
         self.setLocalControl()
+        
+    def getProperties(self):
+        prop = Base_Driver.getProperties(self)
+        
+        prop['protectionModes'] = ['Voltage', 'Current', 'Power']
+        prop['terminalSense'] = ['Voltage', 'Current', 'Power']
+        
+        return prop
     
     def setRemoteControl(self):
         """

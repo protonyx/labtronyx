@@ -20,9 +20,6 @@ class multimeter(Base_Applet):
                                   'BK_Precision.Multimeter.d_5492']
     }
     
-    def test(self):
-        return "1.0"
-    
     def run(self):
         self.wm_title("Multimeter")
         

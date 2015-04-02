@@ -50,8 +50,8 @@ class m_XLN(Base_Driver):
     def getProperties(self):
         prop = Base_Driver.getProperties(self)
         
-        #prop['validModes'] = self.modes
-        #prop['validTriggerSources'] = self.trigger_sources
+        prop['protectionModes'] = ['Voltage', 'Current', 'Power']
+        prop['terminalSense'] = ['Voltage', 'Current', 'Power']
         
         return prop
     
@@ -140,14 +140,6 @@ class m_XLN(Base_Driver):
         """
         self.instr.write("OUT:SR:VOLT %f" % float(voltage))
         self.instr.write("OUT:SR:CURR %f" % float(current))
-        
-    def getTerminalVoltage(self):
-        """
-        Get the measured voltage from the terminals of the instrument
-        
-        :returns: float
-        """
-        return float(self.instr.query("MEAS:VOLT?"))
     
     def setCurrent(self, current):
         """
@@ -174,6 +166,14 @@ class m_XLN(Base_Driver):
         :type current: float
         """
         self.instr.write("OUT:LIM:CURR %f" % float(current))
+        
+    def getTerminalVoltage(self):
+        """
+        Get the measured voltage from the terminals of the instrument
+        
+        :returns: float
+        """
+        return float(self.instr.query("MEAS:VOLT?"))
         
     def getTerminalCurrent(self):
         """
@@ -238,6 +238,20 @@ class m_XLN(Base_Driver):
                 self.instr.write("PROT:OPP 1")
             else:
                 self.instr.write("PROT:OPP 0")
+                
+    def getProtection(self):
+        """
+        Get the protection set points
+        
+        :returns: dict with keys ['Voltage', 'Current', 'Power']
+        """
+        ret = {}
+        
+        ret['Voltage'] = self.instr.query('PROT:OVP:LEV?')
+        ret['Current'] = self.instr.query('PROT:OCP:LEV?')
+        ret['Power']   = self.instr.query('PROT:OPP:LEV?')
+        
+        return ret
         
     def disableProtection(self):
         """

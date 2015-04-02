@@ -5,7 +5,7 @@ import Tkinter as Tk
 import matplotlib
 import pylab
 
-class function_generator(Base_Applet):
+class load(Base_Applet):
     
     info = {
         # View revision author
@@ -16,6 +16,5 @@ class function_generator(Base_Applet):
         'date':                 '2015-03-11',    
         
         # List of compatible models
-        'validDrivers':          ['Agilent.FunctionGenerator.m_335XX'
-                                  'BK_Precision.FunctionGenerator.m_406X']
+        'validDrivers':          []
     }
