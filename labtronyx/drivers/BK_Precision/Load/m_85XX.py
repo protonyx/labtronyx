@@ -12,8 +12,9 @@ class m_85XX(Base_Driver):
         # Device Manufacturer
         'deviceVendor':         'BK Precision',
         # List of compatible device models
-        'deviceModel':          ['8510', '8512', '8514', '8518', '8520', '8522', 
-                                 '8524', '8526'],
+        'deviceModel':          ['8500', '8502', 
+                                 '8510', '8512', '8514', '8518', 
+                                 '8520', '8522', '8524', '8526'],
         # Device type    
         'deviceType':           'DC Electronic Load',      
         
@@ -35,33 +36,46 @@ class m_85XX(Base_Driver):
     # Values for setting modes of CC, CV, CW, or CR
     modes = {"cc":0, "cv":1, "cw":2, "cr":3}
     
+    trigger_sources = {
+        "IMMEDIATE":0, 
+        "EXTERNAL":1, 
+        "BUS":2}
+    
     def _onLoad(self):
         self.instr = self.getResource()
         
-        # Configure the COM Port
-        # TODO: Serial Resource need a way to configure serial params
-        self.instr.timeout = 0.5
-        self.instr.bytesize = 8
-        self.instr.parity = 'N'
-        self.instr.stopbits = 1
+        self.instr.open()
         
-        self.SetRemoteControl()
+        # Configure the COM Port
+        self.instr.configure(bytesize=8,
+                             parity='N',
+                             stopbits=1,
+                             timeout=0.5)
+        
+        self.setRemoteControl()
     
     def _onUnload(self):
-        self.SetLocalControl()
+        self.setLocalControl()
+        
+        self.instr.close()
         
     def getProperties(self):
-        ret = Base_Driver.getProperties(self)
+        prop = Base_Driver.getProperties(self)
         
-        ret['deviceVendor'] = 'BK Precision'
+        prop['deviceVendor'] = 'BK Precision'
         
         prodInfo = self._GetProductInformation()
-        ret['deviceModel'] = prodInfo[0]
-        ret['deviceSerial'] = prodInfo[1]
-        ret['deviceFirmware'] = prodInfo[2]
-            
-        return ret
+        prop['deviceModel'] = prodInfo[0]
+        prop['deviceSerial'] = prodInfo[1]
+        prop['deviceFirmware'] = prodInfo[2]
         
+        prop['validModes'] = self.modes
+        prop['validTriggerSources'] = self.trigger_sources
+        prop['controlModes'] = ['Voltage', 'Current', 'Power', 'Resistance']
+        prop['terminalSense'] = ['Voltage', 'Current', 'Power']
+            
+        return prop
+    
     def _CommandProperlyFormed(self, cmd):
         '''Return 1 if a command is properly formed; otherwise, return 0.
         '''
@@ -118,8 +132,14 @@ class m_85XX(Base_Driver):
         response.
         '''
         assert(len(command) == self.length_packet)
-        self.instr.write(command)
-        response = self.instr.read(self.length_packet)
+        
+        if self.instr.getResourceType() == 'VISA':
+            self.instr.write_raw(command)
+            response = self.instr.read_raw(self.length_packet)
+        else:
+            self.instr.write(command)
+            response = self.instr.read(self.length_packet)
+        
         assert(len(response) == self.length_packet)
         return response
     
@@ -220,7 +240,7 @@ class m_85XX(Base_Driver):
         '''Send the indicated command along with value encoded as an integer
         of the specified size.  Return the instrument's response status.
         '''
-        cmd = self._GetCommand(byte, value, num_bytes)
+        cmd = self._GetCommand(byte, int(value), num_bytes)
         response = self._SendCommand(cmd)
         self._PrintCommandAndResponse(cmd, response, msg)
         return self._ResponseStatus(response)
@@ -274,7 +294,7 @@ class m_85XX(Base_Driver):
         off = 0
         return self._SendIntegerToLoad(0x21, off, msg, num_bytes=1)
     
-    def SetRemoteControl(self):
+    def setRemoteControl(self):
         """
         Sets the load to remote control
         """
@@ -282,7 +302,7 @@ class m_85XX(Base_Driver):
         remote = 1
         return self._SendIntegerToLoad(0x20, remote, msg, num_bytes=1)
     
-    def SetLocalControl(self):
+    def setLocalControl(self):
         """
         Sets the load to local control
         """
@@ -290,7 +310,7 @@ class m_85XX(Base_Driver):
         local = 0
         return self._SendIntegerToLoad(0x20, local, msg, num_bytes=1)
     
-    def SetMaxCurrent(self, current):
+    def setMaxCurrent(self, current):
         """
         Sets the maximum current the load will sink
         
@@ -300,7 +320,7 @@ class m_85XX(Base_Driver):
         msg = "Set max current"
         return self._SendIntegerToLoad(0x24, current*self.convert_current, msg, num_bytes=4)
     
-    def GetMaxCurrent(self):
+    def getMaxCurrent(self):
         """
         Returns the maximum current the load will sink
         
@@ -309,7 +329,7 @@ class m_85XX(Base_Driver):
         msg = "Set max current"
         return self._GetIntegerFromLoad(0x25, msg, num_bytes=4)/self.convert_current
     
-    def SetMaxVoltage(self, voltage):
+    def setMaxVoltage(self, voltage):
         """
         Sets the maximum voltage the load will allow
         
@@ -319,7 +339,7 @@ class m_85XX(Base_Driver):
         msg = "Set max voltage"
         return self._SendIntegerToLoad(0x22, voltage*self.convert_voltage, msg, num_bytes=4)
     
-    def GetMaxVoltage(self):
+    def getMaxVoltage(self):
         """
         Gets the maximum voltage the load will allow
         
@@ -328,7 +348,7 @@ class m_85XX(Base_Driver):
         msg = "Get max voltage"
         return self._GetIntegerFromLoad(0x23, msg, num_bytes=4)/self.convert_voltage
     
-    def SetMaxPower(self, power):
+    def setMaxPower(self, power):
         """
         Sets the maximum power the load will allow
         
@@ -338,7 +358,7 @@ class m_85XX(Base_Driver):
         msg = "Set max power"
         return self._SendIntegerToLoad(0x26, power*self.convert_power, msg, num_bytes=4)
     
-    def GetMaxPower(self):
+    def getMaxPower(self):
         """
         Gets the maximum power the load will allow
         
@@ -347,7 +367,7 @@ class m_85XX(Base_Driver):
         msg = "Get max power"
         return self._GetIntegerFromLoad(0x27, msg, num_bytes=4)/self.convert_power
     
-    def SetMode(self, mode):
+    def setMode(self, mode):
         """
         Sets the operating mode
         
@@ -367,7 +387,7 @@ class m_85XX(Base_Driver):
         msg = "Set mode"
         return self._SendIntegerToLoad(0x28, self.modes[mode.lower()], msg, num_bytes=1)
     
-    def GetMode(self):
+    def getMode(self):
         """
         Gets the operating mode
         
@@ -385,7 +405,7 @@ class m_85XX(Base_Driver):
         modes_inv = {0:"cc", 1:"cv", 2:"cw", 3:"cr"}
         return modes_inv[mode]
     
-    def SetCurrent(self, current):
+    def setCurrent(self, current):
         """
         Sets the constant current mode's current level
         
@@ -393,9 +413,9 @@ class m_85XX(Base_Driver):
         :type current: float
         """
         msg = "Set CC current"
-        return self._SendIntegerToLoad(0x2A, current*self.convert_current, msg, num_bytes=4)
+        return self._SendIntegerToLoad(0x2A, float(current)*self.convert_current, msg, num_bytes=4)
     
-    def GetCurrent(self):
+    def getCurrent(self):
         """
         Gets the constant current mode's current level
         
@@ -404,7 +424,7 @@ class m_85XX(Base_Driver):
         msg = "Get CC current"
         return self._GetIntegerFromLoad(0x2B, msg, num_bytes=4)/self.convert_current
     
-    def SetVoltage(self, voltage):
+    def setVoltage(self, voltage):
         """
         Sets the constant voltage mode's voltage level
         
@@ -412,9 +432,9 @@ class m_85XX(Base_Driver):
         :type voltage: float
         """
         msg = "Set CV voltage"
-        return self._SendIntegerToLoad(0x2C, voltage*self.convert_voltage, msg, num_bytes=4)
+        return self._SendIntegerToLoad(0x2C, float(voltage)*self.convert_voltage, msg, num_bytes=4)
     
-    def GetVoltage(self):
+    def getVoltage(self):
         """
         Gets the constant voltage mode's voltage level
         
@@ -423,7 +443,7 @@ class m_85XX(Base_Driver):
         msg = "Get CV voltage"
         return self._GetIntegerFromLoad(0x2D, msg, num_bytes=4)/self.convert_voltage
     
-    def SetPower(self, power):
+    def setPower(self, power):
         """
         Sets the constant power mode's power level
         
@@ -431,9 +451,9 @@ class m_85XX(Base_Driver):
         :type power: float
         """
         msg = "Set CW power"
-        return self._SendIntegerToLoad(0x2E, power*self.convert_power, msg, num_bytes=4)
+        return self._SendIntegerToLoad(0x2E, float(power)*self.convert_power, msg, num_bytes=4)
     
-    def GetPower(self):
+    def getPower(self):
         """
         Gets the constant power mode's power level
         
@@ -442,7 +462,7 @@ class m_85XX(Base_Driver):
         msg = "Get CW power"
         return self._GetIntegerFromLoad(0x2F, msg, num_bytes=4)/self.convert_power
     
-    def SetResistance(self, resistance):
+    def setResistance(self, resistance):
         """
         Sets the constant resistance mode's resistance level
         
@@ -450,9 +470,9 @@ class m_85XX(Base_Driver):
         :type resistance: str
         """
         msg = "Set CR resistance"
-        return self._SendIntegerToLoad(0x30, resistance*self.convert_resistance, msg, num_bytes=4)
+        return self._SendIntegerToLoad(0x30, float(resistance)*self.convert_resistance, msg, num_bytes=4)
     
-    def GetResistance(self):
+    def getResistance(self):
         """
         Gets the constant resistance mode's resistance level
         
@@ -461,7 +481,7 @@ class m_85XX(Base_Driver):
         msg = "Get CR resistance"
         return self._GetIntegerFromLoad(0x31, msg, num_bytes=4)/self.convert_resistance
     
-    def SetTransient(self, A, A_time_s, B, B_time_s, operation="continuous"):
+    def setTransient(self, A, A_time_s, B, B_time_s, operation="continuous"):
         """
         Sets up the transient operation mode.  
         
@@ -502,7 +522,7 @@ class m_85XX(Base_Driver):
         self._PrintCommandAndResponse(cmd, response, "Set %s transient" % mode)
         return self._ResponseStatus(response)
     
-    def GetTransient(self, mode):
+    def getTransient(self, mode):
         """
         Gets the transient mode settings
         
@@ -541,7 +561,7 @@ class m_85XX(Base_Driver):
                     B/self.convert_resistance, B_timer_ms/time_const,
                     transient_operations_inv[operation])
             
-    def SetBatteryTestVoltage(self, min_voltage):
+    def setBatteryTestVoltage(self, min_voltage):
         """
         Sets the battery test voltage
         
@@ -551,7 +571,7 @@ class m_85XX(Base_Driver):
         msg = "Set battery test voltage"
         return self._SendIntegerToLoad(0x4E, min_voltage*self.convert_voltage, msg, num_bytes=4)
     
-    def GetBatteryTestVoltage(self):
+    def getBatteryTestVoltage(self):
         """
         Gets the battery test voltage
         
@@ -560,7 +580,7 @@ class m_85XX(Base_Driver):
         msg = "Get battery test voltage"
         return self._GetIntegerFromLoad(0x4F, msg, num_bytes=4)/self.convert_voltage
     
-    def SetLoadOnTimer(self, time_in_s):
+    def setLoadOnTimer(self, time_in_s):
         """
         Sets the time in seconds that the load will be on
         
@@ -570,7 +590,7 @@ class m_85XX(Base_Driver):
         msg = "Set load on timer"
         return self._SendIntegerToLoad(0x50, time_in_s, msg, num_bytes=2)
     
-    def GetLoadOnTimer(self):
+    def getLoadOnTimer(self):
         """
         Gets the time in seconds that the load will be on
         
@@ -579,7 +599,7 @@ class m_85XX(Base_Driver):
         msg = "Get load on timer"
         return self._GetIntegerFromLoad(0x51, msg, num_bytes=2)
     
-    def SetLoadOnTimerState(self, enabled=0):
+    def setLoadOnTimerState(self, enabled=0):
         """
         Enables or disables the LOAD ON timer state
         
@@ -589,7 +609,7 @@ class m_85XX(Base_Driver):
         msg = "Set load on timer state"
         return self._SendIntegerToLoad(0x50, enabled, msg, num_bytes=1)
     
-    def GetLoadOnTimerState(self):
+    def getLoadOnTimerState(self):
         """
         Gets the LOAD ON timer state
         
@@ -599,7 +619,7 @@ class m_85XX(Base_Driver):
         state = self._GetIntegerFromLoad(0x53, msg, num_bytes=1)
         return state
     
-    def EnableLocalControl(self):
+    def enableLocalControl(self):
         """
         Enable local control of the load
         """
@@ -607,7 +627,7 @@ class m_85XX(Base_Driver):
         enabled = 1
         return self._SendIntegerToLoad(0x55, enabled, msg, num_bytes=1)
     
-    def DisableLocalControl(self):
+    def disableLocalControl(self):
         """
         Disable local control of the load. User will be unable to control load
         functions using the front panel.
@@ -616,21 +636,21 @@ class m_85XX(Base_Driver):
         disabled = 0
         return self._SendIntegerToLoad(0x55, disabled, msg, num_bytes=1)
     
-    def EnableRemoteSense(self, enabled=0):
+    def enableRemoteSense(self, enabled=0):
         """
         Enable remote sensing
         """
         msg = "Set remote sense"
         return self._SendIntegerToLoad(0x56, 1, msg, num_bytes=1)
     
-    def DisableRemoteSense(self):
+    def disableRemoteSense(self):
         """
         Disable remote sensing
         """
         msg = "Enable remote sense"
         return self._SendIntegerToLoad(0x56, 0, msg, num_bytes=1)
     
-    def GetRemoteSense(self):
+    def getRemoteSense(self):
         """
         Get the state of remote sensing
         
@@ -639,36 +659,41 @@ class m_85XX(Base_Driver):
         msg = "Get remote sense"
         return self._GetIntegerFromLoad(0x57, msg, num_bytes=1)
     
-    def SetTriggerSource(self, source="immediate"):
+    def setTriggerSource(self, source="IMMEDIATE"):
         """
         Set how the instrument will be triggered:
           
-          * "immediate" means triggered from the front panel.
-          * "external" means triggered by a TTL signal on the rear panel.
-          * "bus" means a software trigger (see `Trigger()`).
+          * "IMMEDIATE" means triggered from the front panel.
+          * "EXTERNAL" means triggered by a TTL signal on the rear panel.
+          * "BUS" means a software trigger (see `Trigger()`).
         
         :param source: Source ("immediate", "external" or "bus")
         :type source: str
-        :raises: Exception
+        :raises: ValueError
         """
-        trigger = {"immediate":0, "external":1, "bus":2}
-        if source not in trigger:
-            raise Exception("Trigger type %s not recognized" % source)
-        msg = "Set trigger type"
-        return self._SendIntegerToLoad(0x54, trigger[source], msg, num_bytes=1)
+        if source in self.trigger_sources:
+            msg = "Set trigger type"
+            return self._SendIntegerToLoad(0x54, self.trigger_sources.get(source), msg, num_bytes=1)
+        else:
+            raise ValueError("Trigger type %s not recognized" % source)
+        
     
-    def GetTriggerSource(self):
+    def getTriggerSource(self):
         """
         Get how the instrument will be triggered
         
         :returns: str
         """
         msg = "Get trigger source"
-        t = self._GetIntegerFromLoad(0x59, msg, num_bytes=1)
-        trigger_inv = {0:"immediate", 1:"external", 2:"bus"}
-        return trigger_inv[t]
+        trig = self._GetIntegerFromLoad(0x59, msg, num_bytes=1)
+        
+        for key, value in self.trigger_sources.items():
+            if trig == value:
+                return key
+            
+        return 'Unknown'
     
-    def Trigger(self):
+    def trigger(self):
         """
         Provide a software trigger.  This is only of use when the trigger
         mode is set to "bus".
@@ -681,13 +706,13 @@ class m_85XX(Base_Driver):
         self._PrintCommandAndResponse(cmd, response, "Trigger load (trigger = bus)")
         return self._ResponseStatus(response)
     
-    def SaveSettings(self, register=0):
+    def saveSettings(self, register=0):
         "Save instrument settings to a register"
         assert(self.lowest_register <= register <= self.highest_register)
         msg = "Save to register %d" % register
         return self._SendIntegerToLoad(0x5B, register, msg, num_bytes=1)
     
-    def RecallSettings(self, register=0):
+    def recallSettings(self, register=0):
         "Restore instrument settings from a register"
         assert(self.lowest_register <= register <= self.highest_register)
         cmd = self._GetCommand(0x5C, register, num_bytes=1)
@@ -695,7 +720,7 @@ class m_85XX(Base_Driver):
         self._PrintCommandAndResponse(cmd, response, "Recall register %d" % register)
         return self._ResponseStatus(response)
     
-    def SetFunction(self, function="fixed"):
+    def setFunction(self, function="fixed"):
         """
         Set the function (type of operation) of the load.
         
@@ -706,7 +731,7 @@ class m_85XX(Base_Driver):
         functions = {"fixed":0, "short":1, "transient":2, "list":3, "battery":4}
         return self._SendIntegerToLoad(0x5D, functions[function], msg, num_bytes=1)
     
-    def GetFunction(self):
+    def getFunction(self):
         """
         Get the function (type of operation) of the load
         
@@ -717,7 +742,7 @@ class m_85XX(Base_Driver):
         functions_inv = {0:"fixed", 1:"short", 2:"transient", 3:"list", 4:"battery"}
         return functions_inv[fn]
     
-    def GetInputValues(self):
+    def getInputValues(self):
         """
         Returns voltage in V, current in A, and power in W, op_state byte,
         and demand_state byte.
@@ -735,32 +760,31 @@ class m_85XX(Base_Driver):
         power   = self._DecodeInteger(response[11:15])/self.convert_power
         op_state = hex(self._DecodeInteger(response[15]))
         demand_state = hex(self._DecodeInteger(response[16:18]))
-        s = [voltage, current, power, op_state, demand_state]
-        return join(s, "\t")
+        return [voltage, current, power, op_state, demand_state]
     
-    def GetTerminalVoltage(self):
+    def getTerminalVoltage(self):
         """
         Returns the terminal voltage in Volts
         
         :returns: float
         """
-        return float(self.GetInputValues()[0])
+        return float(self.getInputValues()[0])
     
-    def GetTerminalCurrent(self):
+    def getTerminalCurrent(self):
         """
         Returns the terminal current in Amps
         
         :returns: float
         """
-        return float(self.GetInputValues()[1])
+        return float(self.getInputValues()[1])
     
-    def GetTerminalPower(self):
+    def getTerminalPower(self):
         """
         Returns the terminal power in Watts
         
         :returns: float
         """
-        return float(self.GetInputValues()[3])
+        return float(self.getInputValues()[2])
     
 
 

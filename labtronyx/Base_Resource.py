@@ -276,8 +276,10 @@ class Base_Resource(object):
             return True
 
         except:
-
             self.logger.exception('Failed to load driver: %s', driverName)
+            
+            self.unloadDriver()
+            
             return False
     
     def unloadDriver(self):
@@ -299,6 +301,11 @@ class Base_Resource(object):
                 
             del self.driver
             self.driver = None
+            
+            try:
+                self.close()
+            except:
+                pass
                 
             return True
         

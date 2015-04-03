@@ -130,6 +130,8 @@ class r_VISA(Base_Resource):
             
             self.identify()
             
+            self.close()
+            
             # Attempt to automatically load a driver
             self.loadDriver()
             
@@ -175,7 +177,7 @@ class r_VISA(Base_Resource):
     #===========================================================================
     
     def identify(self):
-        self.open()
+        start_state = self.isOpen()
         
         try:
             self.identity = self.query("*IDN?").strip().split(',')
@@ -205,8 +207,9 @@ class r_VISA(Base_Resource):
             self.serial = ''
             self.logger.error('Unable to identify VISA device')
             
-        self.close()
-        
+        if start_state == False:
+            self.close()
+            
     def getVISA_vendor(self):
         return self.VID
     
@@ -249,6 +252,16 @@ class r_VISA(Base_Resource):
         
     def open(self):
         self.instrument.open()
+        
+    def isOpen(self):
+        import pyvisa
+        
+        try:
+            sess = self.instrument.session
+            return True
+        
+        except pyvisa.errors.InvalidSession:
+            return False
     
     def close(self):
         self.instrument.close()
@@ -277,9 +290,15 @@ class r_VISA(Base_Resource):
         for attempt in range(2):
             try:
                 self.logger.debug("VISA Write: %s" % data)
-                return self.instrument.write(data)
+                self.instrument.write(data)
             except visa.InvalidSession:
                 self.open()
+                
+    def write_raw(self, data):
+        self.instrument.write_raw(data)
+        
+    def read_raw(self, size=None):
+        return self.instrument.read_raw(size)
     
     def read(self):
         self.checkResourceStatus()

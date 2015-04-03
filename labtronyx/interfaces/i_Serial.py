@@ -9,6 +9,7 @@ import serial.tools.list_ports
 # list(serial.tools.list_ports.comports())
 
 import common.resource_status as resource_status
+from serial.serialutil import portNotOpenError
 
 class i_Serial(Base_Interface):
     
@@ -104,6 +105,7 @@ class r_Serial(Base_Resource):
         Base_Resource.__init__(self, resID, controller)
         
         try:
+            #conn = "\\.\%s" % resID
             self.instrument = serial.Serial(port=resID, timeout=0)
             
             self.logger.info("Identified new Serial resource: %s", resID)
@@ -116,10 +118,12 @@ class r_Serial(Base_Resource):
         except serial.SerialException as e:
             self.setResourceStatus(common.status.error)
             self.setResourceError((e.errno, e.message))
+            self.logger.exception("Serial exception")
             
         except OSError as e:
             self.setResourceStatus(common.status.error)
             self.setResourceError((e.errno, e.message))
+            self.logger.exception("OS Error")
             
         except:
             self.logger.exception("Unhandled exception")
@@ -181,14 +185,28 @@ class r_Serial(Base_Resource):
     #===========================================================================
     
     def write(self, data):
-        return self.instrument.write(data)
+        self.checkResourceStatus()
+        
+        for attempt in range(2):
+            try:
+                return self.instrument.write(data)
+            except portNotOpenError:
+                self.open()
     
     def read(self, size=1):
+        self.checkResourceStatus()
+        
         return self.instrument.read(size)
     
     def query(self, data, size=255):
-        self.write(data)
-        return self.read(size)
+        self.checkResourceStatus()
+        
+        for attempt in range(2):
+            try:
+                self.write(data)
+                return self.read(size)
+            except portNotOpenError:
+                self.open()
     
     def inWaiting(self):
         return self.instrument.inWaiting()
