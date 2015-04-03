@@ -8,7 +8,7 @@ import sys
 
 import numpy
 
-class m_Oscilloscope(Base_Driver):
+class d_5XXX7XXX(Base_Driver):
     
     info = {
         # Model revision author
@@ -104,7 +104,7 @@ class m_Oscilloscope(Base_Driver):
         """
         en_ch = []
         
-        for ch in m_OscilloscopeBase.validWaveforms:
+        for ch in self.validWaveforms:
             resp = self.instr.query('SELECT:' + ch + '?')
             if int(resp):
                 en_ch.append(ch)
