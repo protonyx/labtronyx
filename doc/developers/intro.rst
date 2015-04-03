@@ -1,6 +1,18 @@
 Introduction
 ============
 
+Contributing
+------------
+
+This project is a work in progress. Due to the nature of lab instruments, 
+drivers must be developed to fully utilize the features unique to each 
+instrument. Therefore, this framework cannot possibly hope to have a 
+comprehensive collection of drivers for every device on the market. This 
+documentation includes everything a developer would need to write drivers for 
+new instruments. 
+
+Developers are encouraged to contribute their drivers to the project.
+
 Style Guidelines
 ----------------
 

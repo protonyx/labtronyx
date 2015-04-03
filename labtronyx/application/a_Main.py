@@ -394,7 +394,7 @@ class a_Main(Tk.Tk):
             # -Refresh
             # -Load Device
             # -Get log?
-            menu.add_command(label='Add Resource', command=lambda: self.cb_addResource(elem))
+            menu.add_command(label='Add Resource...', command=lambda: self.cb_addResource(elem))
             menu.add_command(label='Refresh', command=lambda: self.cb_refreshTree(elem))
             menu.add_command(label='Disconnect', command=lambda: self.cb_managerDisconnect(elem))
             menu.add_command(label='Shutdown', command=lambda: self.cb_managerShutdown(elem))
@@ -407,17 +407,18 @@ class a_Main(Tk.Tk):
             # -Control Instrument (Launch View/GUI)
             res_props = resources.get(elem)
             
-            menu.add_command(label='Control Device', command=lambda: self.cb_loadApplet(elem))
+            menu.add_command(label='Control Device...', command=lambda: self.cb_loadApplet(elem))
             
             if res_props.get('driver', None) == None:
-                menu.add_command(label='Load Driver', command=lambda: self.cb_loadDriver(elem))
+                menu.add_command(label='Load Driver...', command=lambda: self.cb_loadDriver(elem))
             else:
                 menu.add_command(label='Unload Driver', command=lambda: self.cb_unloadDriver(elem))
                 
             type = res_props.get('resourceType')
             if hasattr(ConfigPages, 'config_%s' % type):
-                menu.add_command(label='Configure', command=lambda: self.cb_configResource(elem))
+                menu.add_command(label='Configure...', command=lambda: self.cb_configResource(elem))
             
+            menu.add_separator()
             menu.add_command(label='Properties...', command=lambda: self.cb_ResourceProperties(elem))
         
         else:

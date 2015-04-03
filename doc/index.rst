@@ -1,42 +1,64 @@
-Contents
-========
+Labtronyx
+=========
 
-The InstrumentControl project is a comprehensive solution for lab instrument 
-control and automation. With an easy-to-use and fully documented API, 
-InstrumentControl is all you need to develop robust scripts and applications 
-to automate testing involving lab instruments. With this framework, you will 
-no longer have to worry about interfaces and protocols. Instruments are 
-abstracted as simple Python objects, no matter where they are on the network.
+The Labtronyx project is a instrument control and automation framework. It
+features a robust core for simplifying communication with laboratory instruments
+and provides users with a powerful interface for controlling and automating
+tests and experiments. Labtronyx is developed in Python to take advantage of the
+powerful and vast collection of libraries, as well as to provide an easy to
+learn environment in which to develop.
 
-This project is a work in progress. Due to the nature of lab instruments, 
-drivers must be developed to fully utilize the features unique to each 
-instrument. Therefore, this framework cannot possibly hope to have a 
-comprehensive list of drivers for every device on the market. This 
-documentation includes everything a developer would need to write drivers for 
-new instruments. Developers are encouraged to contribute their drivers to the 
-project.
+The goals of the Labtronyx project are:
 
+   - Provide a framework for instrumentation that is easier to use (and cheaper)
+     than MATLAB or LabVIEW.
+     
+   - Compatibility with any instrument from any vendor using any protocol.
+   
+   - Compatibility with Windows, Mac and Linux.
+   
+   - Powerful, object-oriented architecture that is flexible and easy to develop
+   
+Labtronyx is all you need to develop robust scripts and applications for
+automation. With this framework, you will no longer have to worry about 
+interfaces and protocols.
 
 User Guide
-==========
+----------
 
-.. toctree::
-   :maxdepth: 2
-   
-   user_guide/index
-   
-Developer Guide
-===============
-
-.. toctree::
-   :maxdepth: 2
-   
-   developers/index
+    | :doc:`installation`
+    | Instructions for installing Labtronyx and the associated dependencies
+    |
+    | :doc:`application/index`
+    | Step-by-step guide for using the Labtronyx Application
+    |
+    | :doc:`api/index`
+    | Developing scripts using the Labtronyx Python Library and API
+    |
+    | :doc:`instruments/index`
+    | See which instruments are currently supported
+    |
+    | :doc:`developers/index`
+    | Develop new drivers or interfaces for new instruments
 
 Indices and tables
-==================
+------------------
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+    | :ref:`genindex`
+    | Lists all sections and subsections.
+    |
+    | :ref:`modindex`
+    | All functions, classes, terms.
+    |
+    | :ref:`search`
+    | Search this documentation.
 
+.. toctree::
+   :hidden:
+   
+   installation
+   application/index
+   api/index
+   instruments/index
+   developers/index
+   

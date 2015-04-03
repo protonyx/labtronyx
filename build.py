@@ -14,7 +14,7 @@ LIB_ROOT = "labtronyx"
 
 # Drivers
 DRIVER_SRC = "labtronyx.drivers"
-DRIVER_DOC = "doc/user_guide/api/drivers"
+DRIVER_DOC = "doc/api/drivers"
 DRIVER_TEMPLATE = "template.tmpl"
 
 #===============================================================================

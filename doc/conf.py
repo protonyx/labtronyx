@@ -43,6 +43,13 @@ extensions = [
     'sphinx.ext.viewcode',
 ]
 
+# Autodoc
+autodoc_member_order = 'groupwise'
+autoclass_content = 'both'
+
+# Intersphinx
+intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None)}
+
 # Add root project path for autodoc
 #sys.path.append('..')
 
@@ -92,11 +99,11 @@ exclude_patterns = []
 #default_role = None
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
-#add_function_parentheses = True
+add_function_parentheses = True
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
-#add_module_names = True
+add_module_names = True
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
@@ -106,7 +113,7 @@ show_authors = True
 pygments_style = 'sphinx'
 
 # A list of ignored prefixes for module index sorting.
-#modindex_common_prefix = []
+modindex_common_prefix = ['labtronyx.']
 
 # If true, keep warnings as "system message" paragraphs in the built documents.
 #keep_warnings = False
@@ -119,7 +126,12 @@ intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None)}
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+try:
+    import sphinx_rtd_theme
+    html_theme = 'sphinx_rtd_theme'
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+except:
+    html_theme = 'default'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
