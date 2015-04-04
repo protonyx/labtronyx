@@ -708,7 +708,7 @@ class d_5XXX7XXX(Base_Driver):
             
             self.data[ch] = data_scaled.tolist()
             
-        return True
+        return self.data
     
     
     def getPackedWaveform(self, ch):

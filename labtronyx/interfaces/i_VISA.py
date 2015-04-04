@@ -291,6 +291,8 @@ class r_VISA(Base_Resource):
             try:
                 self.logger.debug("VISA Write: %s" % data)
                 self.instrument.write(data)
+                break
+            
             except visa.InvalidSession:
                 self.open()
                 
@@ -312,6 +314,7 @@ class r_VISA(Base_Resource):
             try:
                 self.logger.debug("VISA Query: %s" % data)
                 return self.instrument.query(data)
+            
             except visa.InvalidSession:
                 self.open()
     

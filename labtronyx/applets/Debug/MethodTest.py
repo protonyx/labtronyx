@@ -27,6 +27,7 @@ class MethodTest(Base_Applet):
         self.wm_title("Method Tester")
         
         self.instr = self.getInstrument()
+        self.instr._setTimeout(30.0)
         
         #=======================================================================
         # GUI Elements
@@ -85,7 +86,11 @@ class MethodTest(Base_Applet):
         try:
             res = eval('self.instr.' + self.str_eval.get())
             
-            self.str_return.set(res)
+            if len(str(res)) < 1024:
+                self.str_return.set(res)
+            else:
+                self.str_return.set("DATA TOO BIG")
+                
         except Exception as e:
             tkMessageBox.showerror('Exception', str(e))
         
