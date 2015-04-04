@@ -31,12 +31,6 @@ class m_XLN(Base_Driver):
     """
     
     info = {
-        # Model revision author
-        'author':               'KKENNEDY',
-        # Model version
-        'version':              '1.0',
-        # Revision date of Model version
-        'date':                 '2015-03-24',
         # Device Manufacturer
         'deviceVendor':         'BK Precision',
         # List of compatible device models

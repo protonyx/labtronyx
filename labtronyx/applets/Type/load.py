@@ -7,12 +7,8 @@ from widgets import *
 class load(Base_Applet):
     
     info = {
-        # View revision author
-        'author':               'KKENNEDY',
-        # View version
-        'version':              '1.0',
-        # Revision date of View version
-        'date':                 '2015-03-11',    
+        # Description
+        'description':          'Generic view for DC Loads',   
         
         # List of compatible models
         'validDrivers':          ['BK_Precision.Load.m_85XX',
