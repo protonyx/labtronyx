@@ -26,6 +26,9 @@ DC Power Supply
   * :doc:`XLN30052 <../../api/drivers/BK_Precision.Source.m_XLN>`
   * :doc:`XLN60026 <../../api/drivers/BK_Precision.Source.m_XLN>`
 
+  * :doc:`9115 <../../api/drivers/BK_Precision.Source.m_911X>`
+  * :doc:`9116 <../../api/drivers/BK_Precision.Source.m_911X>`
+
 Multimeter
 ----------
 
@@ -34,10 +37,4 @@ Multimeter
 
   * :doc:`5492BGPIB <../../api/drivers/BK_Precision.Multimeter.d_5492>`
   * :doc:`5492B <../../api/drivers/BK_Precision.Multimeter.d_5492>`
-
-Power Supply
-------------
-
-  * :doc:`9115 <../../api/drivers/BK_Precision.Source.m_911X>`
-  * :doc:`9116 <../../api/drivers/BK_Precision.Source.m_911X>`
 

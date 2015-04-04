@@ -1,6 +1,12 @@
 """
 .. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
 
+Supported Interfaces
+--------------------
+
+* USB
+* Ethernet (With DPO2CONN Module)
+
 Ethernet Interface
 ------------------
   
@@ -22,14 +28,11 @@ import sys
 import numpy
 
 class d_2XXX(Base_Driver):
+    """
+    Driver for Tektronix 2000 Series Oscilloscopes
+    """
     
     info = {
-        # Model revision author
-        'author':               'KKENNEDY',
-        # Model version
-        'version':              '1.0',
-        # Revision date of Model version
-        'date':                 '2015-01-31',
         # Device Manufacturer
         'deviceVendor':         'Tektronix',
         # List of compatible device models

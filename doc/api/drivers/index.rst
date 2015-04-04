@@ -17,7 +17,6 @@ Drivers
    TDI.d_XBL
    Tektronix.Oscilloscope.d_2XXX
    Tektronix.Oscilloscope.d_5XXX7XXX
-   Tektronix.Oscilloscope.m_MixedSignal
    UPEL.AMPED.m_BMS
    UPEL.BDPC.Base_ICP
    UPEL.BDPC.Base_Serial

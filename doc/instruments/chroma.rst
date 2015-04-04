@@ -1,8 +1,8 @@
 Chroma
 ======
 
-Power Supply
-------------
+DC Power Supply
+---------------
 
   * :doc:`62006P-30-80 <../../api/drivers/Chroma.Source.m_620XXP>`
   * :doc:`62006P-100-25 <../../api/drivers/Chroma.Source.m_620XXP>`

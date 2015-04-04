@@ -1,3 +1,17 @@
+"""
+.. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
+
+Limitations
+-----------
+
+The oscilloscopes supported by this driver all run Windows and do not support
+the HARD COPY command to get screenshot data from the oscilloscope application.
+Screenshots can be saved to the oscilloscope hard drive and must be retrieved
+using other means.
+
+API
+---
+"""
 from Base_Driver import Base_Driver
 
 import time
@@ -9,32 +23,30 @@ import sys
 import numpy
 
 class d_5XXX7XXX(Base_Driver):
+    """
+    Driver for Tektronix 5000, 7000 and 70000 Series Oscilloscopes
+    """
     
     info = {
-        # Model revision author
-        'author':               'KKENNEDY',
-        # Model version
-        'version':              '1.0',
-        # Revision date of Model version
-        'date':                 '2015-01-31',
         # Device Manufacturer
         'deviceVendor':         'Tektronix',
         # List of compatible device models
-        'deviceModel':          [ # DPO2XXX Series
-                    
-                                # DPO3XXX Series
-                                "DPO2024", # TODO: Verify this driver works for this model
-                                # DPO4XXX Series
-                                
-                                # DPO5XXX Series
+        'deviceModel':          [# DPO5XXX Series
                                 "DPO5054", "DPO5054B", "DPO5104", "DPO5104B", 
                                 "DPO5204", "DPO5204B", "DPO5034", "DPO5034B",
+                                # MSO5XXX Series
+                                "MSO5034", "MSO5034B", "MSO5054", "MSO5054B", 
+                                "MSO5104", "MSO5104B", "MSO5204", "MSO5204B",
                                 # DPO7XXX Series
                                 "DPO7054C", "DPO7104C", "DPO7254C", "DPO7354C",
                                 # DPO7XXXX Series
                                 "DPO70404C", "DPO70604C", "DPO70804C", 
                                 "DPO71254C", "DPO71604C", "DPO72004C", 
-                                "DPO72304DX", "DPO72504DX", "DPO73304DX"],
+                                "DPO72304DX", "DPO72504DX", "DPO73304DX",
+                                # MSO7XXXX Series
+                                "MSO70404C", "MSO70604C", "MSO70804C", 
+                                "MSO71254C", "MSO71604C", "MSO72004C", 
+                                "MSO72304DX", "MSO72504DX", "MSO73304DX"],
         # Device type    
         'deviceType':           'Oscilloscope',      
         
@@ -47,14 +59,19 @@ class d_5XXX7XXX(Base_Driver):
         # Compatible VISA Manufacturers
         'VISA_compatibleManufacturers': ['TEKTRONIX', 'Tektronix'],
         # Compatible VISA Models
-        'VISA_compatibleModels':        ["DPO2024"
-                                         "DPO5054", "DPO5054B", "DPO5104", 
+        'VISA_compatibleModels':        ["DPO5054", "DPO5054B", "DPO5104", 
                                          "DPO5104B", "DPO5204", "DPO5204B", 
                                          "DPO5034", "DPO5034B", "DPO7054C", 
                                          "DPO7104C", "DPO7254C", "DPO7354C", 
                                          "DPO70404C", "DPO70604C", "DPO70804C", 
                                          "DPO71254C", "DPO71604C", "DPO72004C", 
-                                         "DPO72304DX", "DPO72504DX", "DPO73304DX"
+                                         "DPO72304DX", "DPO72504DX", "DPO73304DX",
+                                         "MSO5034", "MSO5034B", "MSO5054", 
+                                         "MSO5054B", "MSO5104", "MSO5104B", 
+                                         "MSO5204", "MSO5204B", "MSO70404C", 
+                                         "MSO70604C", "MSO70804C", "MSO71254C", 
+                                         "MSO71604C", "MSO72004C", "MSO72304DX", 
+                                         "MSO72504DX", "MSO73304DX"
                                          ]
     }
     
