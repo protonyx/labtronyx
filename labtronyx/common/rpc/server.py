@@ -408,21 +408,22 @@ class RpcConnection(threading.Thread):
                         
                         # Encode the outputs of the RPC requests
                         out_str = out_packet.export()
+                        self.logger.debug("RPC Send %i bytes" % len(out_str))
                         self.conn_socket.send(out_str)
                         
             except socket.error as e:
                 # Socket closed poorly from client
                 if e.errno == errno.ECONNABORTED:
                     self.logger.error('[%s] Client socket closed before data could be sent', self.name)
-                    break
+                    self.stop()
                 else:
                     self.logger.error('[%s] Socket closed with error: %s', self.name, e.errno)
-                    break
+                    self.stop()
     
             except:
                 # Log an exception, close the connection
                 self.logger.exception('[%s] Unhandled Exception', self.name)
-                break
+                self.stop()
             
         self.server._connections.remove(self)
             

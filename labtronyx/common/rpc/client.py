@@ -178,7 +178,11 @@ class RpcClient(object):
         ready_to_read, _, _ = select.select([self.socket], [], [], self.timeout)
         
         if self.socket in ready_to_read:
-            data = self.socket.recv(self.RPC_MAX_PACKET_SIZE)
+            data = ''
+            
+            # Continue reading from the socket until all data is received
+            while self.socket in select.select([self.socket], [], [], 0.0)[0]:
+                data += self.socket.recv(self.RPC_MAX_PACKET_SIZE)
             
             return data
         
@@ -285,11 +289,11 @@ class RpcClient(object):
                         return resp.getResult()
                 
                     else:
-                        raise RpcInvalidPacket()
+                        raise RpcInvalidPacket("An incorrectly formatted packet was recieved")
                     
                 else:
                     # Timeout
-                    raise RpcTimeout()
+                    raise RpcTimeout("The operation timed out")
                     
             except socket.error as e:
                 raise
@@ -298,7 +302,7 @@ class RpcClient(object):
                 print data # DEBUG
                 self.logger.exception("Invalid RPC Packet")
                     
-        raise RpcTimeout()
+        raise RpcTimeout("The operation timed out")
     
     def __str__(self):
         return '<RPC Instance of %s:%s>' % (self.address, self.port)
