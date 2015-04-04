@@ -121,6 +121,10 @@ modindex_common_prefix = ['labtronyx.']
 # Intersphinx configuration
 intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None)}
 
+# -- Build driver documentation -------------------------------------------
+
+import build
+build.build_driver_docs()
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -209,7 +213,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'InstrumentControldoc'
+htmlhelp_basename = 'Labtronyxdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -259,8 +263,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'instrumentcontrol', u'InstrumentControl Documentation',
-     [u'KKENNEDY'], 1)
+    ('index', 'labtronyx', u'Labtronyx Documentation',
+     [u'protonyx'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -273,8 +277,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'InstrumentControl', u'InstrumentControl Documentation',
-   u'KKENNEDY', 'InstrumentControl', 'One line description of project.',
+  ('index', 'labtronyx', u'Labtronyx Documentation',
+   u'protonyx', 'labtronyx', 'One line description of project.',
    'Miscellaneous'),
 ]
 

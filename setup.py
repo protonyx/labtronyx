@@ -15,7 +15,15 @@ setup(
     author_email="kennedy.kevin@gmail.com",
 
     # Packages
-    packages=["labtronyx"],
+    packages=["labtronyx",
+              "labtronyx.applets",
+              "labtronyx.application",
+              "labtronyx.common",
+              "labtronyx.common.rpc",
+              "labtronyx.config",
+              "labtronyx.drivers",
+              "labtronyx.interfaces",
+              "labtronyx.widgets"],
 
     # Include additional files into the package
     include_package_data=True,
@@ -37,4 +45,7 @@ setup(
         "numpy",
         "matplotlib",
     ],
+      
+    # Unit tests
+    test_suite="tests.test_suite"
 )

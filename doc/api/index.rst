@@ -1,5 +1,5 @@
-Labtronyx Python Library
-========================
+Using the Labtronyx Python Library
+==================================
 
 .. toctree::
 
