@@ -1,3 +1,17 @@
+"""
+.. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
+
+Remote Interface
+----------------
+
+These loads feature a Ethernet connection that hosts a web-based interface from
+which you can control the load much like you would if you were sitting in front
+of it.
+
+API
+---
+"""
+
 from Base_Driver import Base_Driver
 
 class d_XBL(Base_Driver):

@@ -3,8 +3,13 @@ Supported Instruments
 
 .. toctree::
 
-   agilent
-   bk_precision
-   chroma
-   tdi
-   tektronix
+   Agilent
+   BK Precision
+   Chroma
+   Debug
+   Regatron
+   Sorensen
+   TDI
+   Tektronix
+   UPEL
+

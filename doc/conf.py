@@ -20,6 +20,7 @@ import os
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(1, os.path.abspath('../labtronyx'))
+sys.path.insert(2, os.path.abspath('.'))
 
 import labtronyx.config.default as config
 proj_conf = config.Config()
@@ -35,7 +36,7 @@ proj_conf = config.Config()
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
-	'sphinx.ext.intersphinx',
+	  'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.pngmath',
@@ -125,6 +126,9 @@ intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None)}
 
 import build
 build.build_driver_docs()
+
+# Build Supported Instruments List
+build.build_instrument_docs()
 
 # -- Options for HTML output ----------------------------------------------
 

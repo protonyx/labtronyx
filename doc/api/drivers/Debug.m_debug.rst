@@ -1,6 +1,7 @@
 Debug.m_debug
 =============
 
-.. autoclass:: labtronyx.drivers.Debug.m_debug.m_debug
+.. automodule:: Debug.m_debug
    :show-inheritance:
    :members:
+

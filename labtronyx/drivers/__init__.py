@@ -50,7 +50,6 @@ def getAllDrivers():
                     drivers[moduleName] = info
                     
                 except Exception as e:
-                    print testModule
                     raise
                 
                 #===========================================================

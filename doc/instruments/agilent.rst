@@ -1,18 +1,16 @@
 Agilent
 =======
 
-Function Generator
-------------------
-
-* 33521A
-
 Multimeter
 ----------
 
-* 34411A
+  * :doc:`34410A <../../api/drivers/Agilent.Multimeter.m_3441XA>`
+  * :doc:`34411A <../../api/drivers/Agilent.Multimeter.m_3441XA>`
+  * :doc:`L4411A <../../api/drivers/Agilent.Multimeter.m_3441XA>`
 
-Source-Measurement Unit (SMU)
------------------------------
+Source Measurement Unit
+-----------------------
 
-* B2901A
-* B2902A
+  * :doc:`B2901A <../../api/drivers/Agilent.SMU.m_SMU>`
+  * :doc:`B2902A <../../api/drivers/Agilent.SMU.m_SMU>`
+
