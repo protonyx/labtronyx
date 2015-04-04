@@ -1,14 +1,17 @@
+"""
+.. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
+
+API
+---
+"""
 from Base_Driver import Base_Driver
 
 class m_85XX(Base_Driver):
+    """
+    Driver for BK Precision 8500 Series DC Loads
+    """
     
     info = {
-        # Model revision author
-        'author':               'KKENNEDY',
-        # Model version
-        'version':              '1.0',
-        # Revision date of Model version
-        'date':                 '2015-01-31',
         # Device Manufacturer
         'deviceVendor':         'BK Precision',
         # List of compatible device models

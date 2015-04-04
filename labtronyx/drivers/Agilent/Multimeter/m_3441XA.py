@@ -1,16 +1,19 @@
+"""
+.. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
+
+API
+---
+"""
 from Base_Driver import Base_Driver
 
 import time
 
 class m_3441XA(Base_Driver):
+    """
+    Driver for Agilent 34410A and 34411A Digital Multimeter
+    """
     
     info = {
-        # Model revision author
-        'author':               'KKENNEDY',
-        # Model version
-        'version':              '1.0',
-        # Revision date of Model version
-        'date':                 '2015-01-31',
         # Device Manufacturer
         'deviceVendor':         'Agilent',
         # List of compatible device models

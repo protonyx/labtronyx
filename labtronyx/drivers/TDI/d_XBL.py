@@ -11,18 +11,14 @@ of it.
 API
 ---
 """
-
 from Base_Driver import Base_Driver
 
 class d_XBL(Base_Driver):
+    """
+    Driver for TDI XBL Series DC Electronic Loads
+    """
     
     info = {
-        # Model revision author
-        'author':               'KKENNEDY',
-        # Model version
-        'version':              '1.0',
-        # Revision date of Model version
-        'date':                 '2015-03-24',
         # Device Manufacturer
         'deviceVendor':         'TDI',
         # List of compatible device models

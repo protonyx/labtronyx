@@ -8,25 +8,27 @@ Installing Python
 ^^^^^^^^^^^^^^^^^
 
 1. Download the latest version of Python 2.7 from the
-`official Python website <http://python.org>`_ . The Python installer for
-Windows is an MSI package. 
+   `official Python website <http://python.org>`_ . The Python installer for
+   Windows is an MSI package. 
 
 2. To run the installer, double-click on the downloaded file.
 
+   .. image:: media/install_win_step1.png
+      :width: 500px
+
 3. Check the option for `Install for all users` and click `Next`.
 
-.. image:: media/install_win_step1.png
-
 4. Select a destination directory to install Python. The default location at 
-`C:\\Python27\\` is sufficient. Click `Next`.
+   `C:\\Python27\\` is sufficient. Click `Next`.
+
+   .. image:: media/install_win_step2.png
+      :width: 500px
 
 5. Install all features by clicking on the icon next to **Python** and selecting
-**Entire feature will be installed on the local hard drive**. Click `Next`.
-
-.. image:: media/install_win_step2.png
+   **Entire feature will be installed on the local hard drive**. Click `Next`.
 
 6. Wait while the installer finished. You may be prompted by Windows UAC to
-allow the installer Administrator access. Click `Yes` to this prompt.
+   allow the installer Administrator access. Click `Yes` to this prompt.
 
 Additional instructions and help can be found at http://python.org
 
@@ -40,17 +42,50 @@ TODO: Add more instructions here
 Mac OSX
 -------
 
-Instructions to be added later
+Installing Python
+^^^^^^^^^^^^^^^^^
 
-Ubuntu Linux
-------------
+1. Download the latest version of Python 2.7 from the
+   `official Python website <http://python.org>`_ . The Python installer for
+   Mac is a .pkg file. 
 
-Instructions to be added later
+2. To run the installer, double-click on the downloaded file.
+
+   .. image:: media/install_mac_step1.png
+      :width: 500px
+
+3. The Python installer windows will appear. Click `Continue`.
+
+4. Read the information and warnings, then click `Continue`. 
+
+5. Accept the licensing agreement by clicking `Continue` and then `Agree`.
+
+   .. image:: media/install_mac_step2.png
+      :width: 500px
+
+6. Select a destination to install Python, then click `Continue`
+
+7. Click `Install`. You will be prompted to enter your password.
 
 Installing Labtronyx
 ^^^^^^^^^^^^^^^^^^^^
 
-For all other operating systems, Labtronyx is installed using Python setuptools:
+TODO: Add instructions here
+
+Ubuntu Linux
+------------
+
+Python is included with Ubuntu Linux. To install manually, open a terminal
+window and execute the following:
+
+.. code-block:: console
+
+   sudo apt-get install python
+
+Installing Labtronyx
+^^^^^^^^^^^^^^^^^^^^
+
+Labtronyx is installed using Python setuptools:
 
 1. Open a terminal window and browse to the location of the zip archive.
 

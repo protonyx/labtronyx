@@ -1,16 +1,19 @@
+"""
+.. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
+
+API
+---
+"""
 from Base_Driver import Base_Driver
 
 import time
 
 class d_5492(Base_Driver):
+    """
+    Driver for BK Precision 5492B Multimeters
+    """
     
     info = {
-        # Model revision author
-        'author':               'KKENNEDY',
-        # Model version
-        'version':              '1.0',
-        # Revision date of Model version
-        'date':                 '2015-03-30',
         # Device Manufacturer
         'deviceVendor':         'BK Precision',
         # List of compatible device models

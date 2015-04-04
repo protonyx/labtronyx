@@ -1,20 +1,23 @@
+"""
+.. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
+
+API
+---
+"""
 from Base_Driver import Base_Driver
 
 class m_911X(Base_Driver):
+    """
+    Driver for BK Precision 9110 Series DC Power Sources
+    """
     
     info = {
-        # Model revision author
-        'author':               'KKENNEDY',
-        # Model version
-        'version':              '1.0',
-        # Revision date of Model version
-        'date':                 '2015-01-31',
         # Device Manufacturer
         'deviceVendor':         'BK Precision',
         # List of compatible device models
         'deviceModel':          ['9115', '9116'],
         # Device type    
-        'deviceType':           'Power Supply',      
+        'deviceType':           'DC Power Supply',      
         
         # List of compatible resource types
         'validResourceTypes':   ['VISA'],  

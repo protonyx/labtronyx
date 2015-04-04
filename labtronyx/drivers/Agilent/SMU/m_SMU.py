@@ -1,16 +1,19 @@
+"""
+.. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
+
+API
+---
+"""
 from Base_Driver import Base_Driver
 
 import time
 
 class m_SMU(Base_Driver):
+    """
+    Driver for Agilent B2901A and B2902A Source Measurement Units
+    """
     
     info = {
-        # Model revision author
-        'author':               'KKENNEDY',
-        # Model version
-        'version':              '1.0',
-        # Revision date of Model version
-        'date':                 '2015-01-31',
         # Device Manufacturer
         'deviceVendor':         'Agilent',
         # List of compatible device models

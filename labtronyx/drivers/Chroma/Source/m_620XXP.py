@@ -1,19 +1,24 @@
+"""
+.. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
+
+Limitations
+-----------
+
+This driver does not include any of the device programming functionality,
+it is assumed that an automated program would be designed in a script that
+uses this driver.
+
+API
+---
+"""
 from Base_Driver import Base_Driver
 
 class m_620XXP(Base_Driver):
     """
-    This driver does not include any of the device programming functionality,
-    it is assumed that an automated program would be designed in a script that
-    uses this driver.
+    Driver for Chroma 6200P Series DC Power Supplies
     """
     
     info = {
-        # Model revision author
-        'author':               'KKENNEDY',
-        # Model version
-        'version':              '1.0',
-        # Revision date of Model version
-        'date':                 '2015-01-31',
         # Device Manufacturer
         'deviceVendor':         'Chroma',
         # List of compatible device models
@@ -22,7 +27,7 @@ class m_620XXP(Base_Driver):
                                  '62024P-40-120', '62024P-80-60', '62024P-100-50', '62024P-600-8',
                                  '62052P-100-100'],
         # Device type    
-        'deviceType':           'Power Supply',      
+        'deviceType':           'DC Power Supply',      
         
         # List of compatible resource types
         'validResourceTypes':   ['VISA'],  
