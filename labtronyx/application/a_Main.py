@@ -12,7 +12,8 @@ import tkMessageBox
 # from PIL import Image
 
 sys.path.append("..")
-from labtronyx import InstrumentManager, LabManager
+from InstrumentManager import InstrumentManager
+from LabManager import LabManager
 
 from include import *
 
@@ -42,18 +43,18 @@ class a_Main(Tk.Tk):
         self.logFormatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
         self.logger.setLevel(logging.DEBUG)
         # TODO: Log to console?
-        # console = logging.StreamHandler(stream=sys.stdout)
-        # self.logger.addHandler(console)
+        console = logging.StreamHandler(stream=sys.stdout)
+        self.logger.addHandler(console)
         # TODO: Log to file?
-        
-        # Instantiate a local InstrumentManager object
-        instr = InstrumentManager(Logger=self.logger)
-        instr.start()
         
         # Instantiate a LabManager
         self.lab = LabManager()
-        self.lab.addManager('localhost')
-            
+        if not self.lab.addManager('localhost'):
+            # Instantiate a local InstrumentManager object
+            self.local_manager = InstrumentManager(Logger=self.logger)
+            self.local_manager.start()
+            self.lab.addManager('localhost')
+        
         # GUI Startup
         self.rebuild()
         self.rebind()
@@ -141,7 +142,7 @@ class a_Main(Tk.Tk):
         #     Treeview Frame
         #     Min size: 400px
         #=======================================================================
-        self.treeFrame = ResourceTree(self.HPane, self.ICF)  # , highlightcolor='green', highlightthickness=2)
+        self.treeFrame = ResourceTree(self.HPane, self.lab)  # , highlightcolor='green', highlightthickness=2)
         # self.VPane.add(self.treeFrame, width=800, minsize=400)
         self.HPane.add(self.treeFrame, width=600, minsize=400)
         
@@ -201,8 +202,10 @@ class a_Main(Tk.Tk):
     def cb_exitWindow(self):
         try:
             if tkMessageBox.askokcancel("Quit", "Do you really wish to quit?"):
+                if hasattr(self, 'local_manager'):
+                    self.local_manager.stop()
                 self.destroy()
-        
+                
         except:
             self.destroy()
             
@@ -328,7 +331,6 @@ class a_Main(Tk.Tk):
         
         # Spawn a window to select the driver to load
         
-        # TODO: Pass the resource instead of ICF
         # Create the child window
         w_DriverSelector = ResourcePages.a_LoadDriver(self, self.lab, uuid)
         
@@ -341,9 +343,7 @@ class a_Main(Tk.Tk):
         
         dev.unloadDriver()
         
-        self.ICF.refreshResource(uuid)
-        # addr = self.ICF.getAddressFromUUID(uuid)
-        # self.ICF.refresh
+        self.lab.refreshResource(uuid)
         self.treeFrame.refresh()
         
     def cb_configResource(self, uuid):
@@ -361,8 +361,7 @@ class a_Main(Tk.Tk):
         
     def cb_ResourceProperties(self, uuid):
         res = self.lab.getResource(uuid)
-        # TODO: Pass the resource instead of ICF
-        w_ResourceProperties = ResourcePages.a_PropertyWindow(self, self.ICF, uuid)
+        w_ResourceProperties = ResourcePages.a_PropertyWindow(self, res)
     
     #===========================================================================
     # Notification Event Handlers
@@ -394,7 +393,7 @@ class a_Main(Tk.Tk):
         # Create a context menu
         menu = Tk.Menu(self)
         
-        resources = self.lab.findResources()
+        resources = self.lab.getProperties()
         hosts = self.lab.getConnectedHosts()
         
         # Populate menu based on context
@@ -405,10 +404,14 @@ class a_Main(Tk.Tk):
             # -Refresh
             # -Load Device
             # -Get log?
-            menu.add_command(label='Add Resource...', command=lambda: self.cb_addResource(elem))
-            menu.add_command(label='Refresh', command=lambda: self.cb_refreshTree(elem))
-            menu.add_command(label='Disconnect', command=lambda: self.cb_managerDisconnect(elem))
-            menu.add_command(label='Shutdown', command=lambda: self.cb_managerShutdown(elem))
+            menu.add_command(label='Add Resource...', 
+                             command=lambda: self.cb_addResource(elem))
+            menu.add_command(label='Refresh', 
+                             command=lambda: self.cb_refreshTree(elem))
+            menu.add_command(label='Disconnect', 
+                             command=lambda: self.cb_managerDisconnect(elem))
+            menu.add_command(label='Shutdown', 
+                             command=lambda: self.cb_managerShutdown(elem))
             
         elif elem in resources.keys():
             # Context is Resource, elem is the UUID
@@ -480,10 +483,10 @@ class ResourceTree(Tk.Frame):
     treeGroup = 'hostname'
     treeSort = 'deviceModel'
     
-    def __init__(self, master, ICF):
+    def __init__(self, master, labManager):
         Tk.Frame.__init__(self, master)
         
-        self.ICF = ICF
+        self.labManager = labManager
         
         Tk.Label(self, text='Instruments').pack(side=Tk.TOP)
         self.tree = ttk.Treeview(self, height=20)
@@ -519,7 +522,7 @@ class ResourceTree(Tk.Frame):
         # Build a list of group values
         if self.treeGroup is 'hostname':
             # Fixes a bug where hosts were not added if no resources were present
-            for gval in self.ICF.getConnectedHosts():
+            for gval in self.labManager.getConnectedHosts():
                 self.tree.insert('', Tk.END, gval, text=gval, open=True)  # , image=img_host)
                 
         elif self.treeGroup in self.validGroups:
@@ -548,10 +551,10 @@ class ResourceTree(Tk.Frame):
         # img_host = ImageTk.PhotoImage(img_host)
         # img_device = Image.open('assets/drive.png')
         # img_device = ImageTk.PhotoImage(img_device)
-        #self._refreshResources()
-        self.lab.refreshResources()
         
-        self.resources = self.ICF.findResources()
+        self.labManager.refresh()
+        
+        self.resources = self.labManager.getProperties()
 
         # Get a flat list of resources and sort
         resources = self.resources
@@ -578,11 +581,6 @@ class ResourceTree(Tk.Frame):
             if res_uuid not in resources:
                 self.nodes.remove(res_uuid)
                 self.tree.delete(res_uuid)
-    
-    def _refreshResources(self):
-        self.ICF.refreshResources()
-        
-        self.resources = self.ICF.getResources()
     
     def _clear(self):
         treenodes = self.tree.get_children()

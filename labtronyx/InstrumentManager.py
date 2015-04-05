@@ -140,6 +140,12 @@ class InstrumentManager(object):
         """
         return self.config.version
     
+    def getAddress(self):
+        """
+        Get the local IP Address
+        """
+        return socket.gethostbyname(self.getHostname())
+    
     def getHostname(self):
         """
         Get the local hostname
@@ -230,24 +236,45 @@ class InstrumentManager(object):
         return ret
     
     def getResource(self, res_uuid):
-        return self.properties.get(res_uuid)
-    
-    def getInstrument(self, res_uuid):
         """
-        Returns a resource object given the resource UUID
+        Returns a resource object given the Resource UUID
                 
-        Alias for :func:`getResource`
-        
         :param res_uuid: Unique Resource Identifier (UUID)
         :type res_uuid: str
         :returns: object
         """
+        # NON-SERIALIZABLE
+        return self.resources.get(res_uuid)
+    
+    def getInstrument(self, res_uuid):
+        """
+        Alias for :func:`getResource`
+        """
+        # NON-SERIALIZABLE
         return self.getResource(res_uuid)
     
     def findResources(self, **kwargs):
+        """
+        Get a list of instruments that match the parameters specified.
+        Parameters can be any key found in the resource property dictionary.
+
+        :param address: IP Address of host
+        :param hostname: Hostname of host
+        :param uuid: Unique Resource Identifier (UUID)
+        :param interface: Interface
+        :param resourceID: Interface Resource Identifier (Port, Address, etc.)
+        :param resourceType: Resource Type (Serial, VISA, etc.)
+        :param deviceVendor: Instrument Vendor
+        :param deviceModel: Instrument Model Number
+        :param deviceSerial: Instrument Serial Number
+        :returns: list
+        """
+        # NON-SERIALIZABLE
         matching_instruments = []
         
-        for uuid, res_dict in self.properties.items():
+        prop = self.getProperties()
+        
+        for uuid, res_dict in prop.items():
             match = True
             
             for key, value in kwargs.items():
@@ -262,20 +289,9 @@ class InstrumentManager(object):
     
     def findInstruments(self, **kwargs):
         """
-        Get a list of instruments that match the parameters specified.
-        
         Alias for :func:`findResources`
-        
-        :param address: IP Address of host
-        :param hostname: Hostname of host
-        :param uuid: Unique Resource Identifier (UUID)
-        :param interface: Interface
-        :param resourceID: Interface Resource Identifier (Port, Address, etc.)
-        :param resourceType: Resource Type (Serial, VISA, etc.)
-        :param deviceVendor: Instrument Vendor
-        :param deviceModel: Instrument Model Number
-        :param deviceSerial: Instrument Serial Number
         """
+        # NON-SERIALIZABLE
         return self.findResources(**kwargs)
     
     def addResource(self, interface, ResID):

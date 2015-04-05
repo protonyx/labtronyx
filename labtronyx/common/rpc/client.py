@@ -52,8 +52,6 @@ class RpcClient(object):
         # Update the hostname
         self.hostname = self._rpcCall('rpc_getHostname')
             
-        self._refresh()
-            
         self._setTimeout() # Default
         
     def _resolveAddress(self, address):
@@ -185,38 +183,6 @@ class RpcClient(object):
                 data += self.socket.recv(self.RPC_MAX_PACKET_SIZE)
             
             return data
-        
-    def _refresh(self):
-        """
-        Get a list of methods from the RPC server and dynamically fill the
-        object
-        """
-        # Clear out old aliases
-        for proc in self.methods:
-            self._removeAlias(proc)
-            
-        # Request a list of methods
-        self._setTimeout(2.0)
-        self.methods = self._rpcCall('rpc_getMethods')
-        
-        for proc in self.methods:
-            self._addAlias(proc)
-            
-    def _addAlias(self, methodName):
-        """
-        Dynamically create a method internal to the RpcClient object that will
-        invoke an RPC method call when called.
-        
-        :param methodName: Name of method
-        :type methodName: str
-        """
-        dynFunc = lambda *args, **kwargs: self._rpcCall(methodName, *args, **kwargs)
-        setattr(self, methodName, dynFunc)
-        
-    def _removeAlias(self, methodName):
-        
-        if hasattr(self, methodName):
-            delattr(self, methodName)
             
     def _setTimeout(self, new_to=None):
         """
@@ -229,7 +195,6 @@ class RpcClient(object):
             self.timeout = float(new_to)
         else:
             self.timeout = self.RPC_TIMEOUT
-        
             
     def _getHostname(self):
         return self.hostname
@@ -240,8 +205,9 @@ class RpcClient(object):
     def _ready(self):
         return self.ready
     
-    def _close(self):
-        pass
+    def __getattr__(self, name):
+        print "RPC Call %s" % name
+        return lambda *args, **kwargs: self._rpcCall(name, *args, **kwargs)
     
     def _rpcCall(self, remote_method, *args, **kwargs):
         """

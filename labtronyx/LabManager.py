@@ -8,7 +8,7 @@ import logging
 import logging.handlers
 import socket
 
-from RemoteManager import RemoteManager, RemoteInstrument
+from RemoteManager import RemoteManager
 
 class LabManager(object):
     """
@@ -21,11 +21,11 @@ class LabManager(object):
     :param configFile: Configuration file to load
     :type configFile: str
     """
-    managers = {} # IP Address -> Manager RPC Client object
+    managers = {} # IP Address -> RemoteManager object
     hostnames = {} # Hostname => IP Address [Lookup table]
     
     # Resources
-    resources = {}  # { Resource UUID -> RemoteInstrument objects }
+    resources = {}  # { Resource UUID -> RemoteResource objects }
     properties = {} # { Resource UUID -> Properties (dict) }
     
     #instruments = {} # { Resource UUID -> RpcClient objects }
@@ -71,28 +71,22 @@ class LabManager(object):
     # Manager Operations    
     #===========================================================================
     
-    def _resolveAddress(self, input):
+    def _resolveAddress(self, address):
         """
         Verify a IPv4 address from the input. Always returns an IPv4 Address or
         None
         
-        :param input: IP Address or Hostname
-        :type input: str
+        :param address: IP Address or Hostname
+        :type address: str
         :returns: str -- IPv4 Address
         """
-        if input in self.hostnames:
-            return self.hostnames.get(input)
-        
-        elif common.is_valid_ipv4_address(input):
-            return input
-        
-        else:
-            try:
-                host = socket.gethostbyname(input)
-            except:
-                host = None
-            finally:
-                return host
+        try:
+            socket.inet_aton(address)
+            return address
+            
+        except socket.error:
+            # Invalid address
+            return socket.gethostbyname(address)
     
     def getHostname(self, address):
         """
@@ -156,7 +150,7 @@ class LabManager(object):
                 
                 return True
                 
-            except:
+            except Exception as e:
                 return False
         
         else:
@@ -173,17 +167,25 @@ class LabManager(object):
         address = self._resolveAddress(address)
         
         man = self.managers.get(address)
+        man.refreshResources()
         
-        # Clear out all cached properties from this manager
-        dev_list = [x.get('uuid') for x in self.resources]
+        # Refresh properties
+        prop = man.getProperties()
+        self.properties.update(prop)
         
-        for uuid in dev_list:
-            self.properties.pop(uuid, None)
+        # Purge properties
+        for res_uuid, res_dict in self.properties.items():
+            if res_dict.get('address') == address and res_uuid not in prop:
+                self.properties.pop(res_uuid)
         
-        # Get the property dictionaries for the manager
-        man_resources = man.getProperties()
+        # Get resource objects
+        for res_uuid in prop:
+            self.resources[res_uuid] = man.getResource(res_uuid)
         
-        self.properties.update(man_resources)
+        # Purge resources that are no longer in remote
+        for res_uuid in self.resources:
+            if res_uuid not in self.properties:
+                self.resources.pop(res_uuid)
     
     def removeManager(self, address):
         """
@@ -196,16 +198,21 @@ class LabManager(object):
         """
         address = self._resolveAddress(address)
         
-        if address in self.managers.keys():
+        if address in self.managers:
             # Clear out all cached properties from this manager
-            dev_list = [x.get('uuid') for x in self.resources]
+            dev_list = [x.get('uuid') for x in self.properties if x.get('address') == address]
             
-            for uuid in dev_list:
-                self.properties.pop(uuid, None)
-                self.resources.pop(uuid, None)
+            try:
+                for uuid in dev_list:
+                    self.properties.pop(uuid, None)
+                    self.resources.pop(uuid, None)
+                    
+                # Remove host
+                man = self.managers.pop(address, None)
+                man.disconnect()
                 
-            # Remove host
-            self.managers.pop(address, None)
+            except:
+                pass
             
             return True
         
@@ -215,7 +222,7 @@ class LabManager(object):
     def getManager(self, address=None):
         """
         Get an InstrumentManager object for the host at `address`. Object
-        returned is an :class:`common.rpc.RpcClient` object that is linked to
+        returned is an :class:`RemoteManager` object that is linked to
         a remote InstrumentManager instance.
         
         .. note::
@@ -235,6 +242,13 @@ class LabManager(object):
             address = self._resolveAddress(address)
                 
             return self.managers.get(address, None)
+        
+    def refresh(self):
+        """
+        Refresh all managers and resources
+        """
+        for address, man in self.managers.items():
+            self.refreshManager(address)
 
     #===========================================================================
     # Resource Operations
@@ -242,9 +256,8 @@ class LabManager(object):
     
     def getResource(self, res_uuid):
         """
-        Create a :class:`RemoteInstrument` instance that is linked to a resource on a
-        local or remote machine.
-        
+        Create a :class:`RemoteResource` instance that is linked to a resource 
+        on a local or remote machine.
         
         Get a listing of all resources from all InstrumentManager instances.
         
@@ -252,21 +265,7 @@ class LabManager(object):
         :type res_uuid: str
         :returns: RpcClient object or None if UUID does not match a valid resource
         """
-        instr = self.resources.get(res_uuid)
-        
-        if instr is not None:
-            return instr
-        
-        else:
-            # Create an RPC Client if one does not already exist
-            res_dict = self.getResources().get(res_uuid)
-            address = res_dict.get('address')
-            port = res_dict.get('port')
-            testInstrument = RpcClient(address=address, port=port)
-            self.resources[res_uuid] = testInstrument
-                
-            return self.resources.get(res_uuid)
-        pass
+        return self.resources.get(res_uuid)
     
     def getInstrument(self, res_uuid):
         """
@@ -277,6 +276,7 @@ class LabManager(object):
     def findResources(self, **kwargs):
         """
         Get a list of instruments that match the parameters specified.
+        Parameters can be any key found in the resource property dictionary.
         
         :param address: IP Address of host
         :param hostname: Hostname of host
@@ -287,10 +287,11 @@ class LabManager(object):
         :param deviceVendor: Instrument Vendor
         :param deviceModel: Instrument Model Number
         :param deviceSerial: Instrument Serial Number
+        :returns: list
         """
         matching_instruments = []
         
-        for uuid, res_dict in self.properties.items():
+        for res_uuid, res_dict in self.properties.items():
             match = True
             
             for key, value in kwargs.items():
@@ -299,7 +300,7 @@ class LabManager(object):
                     break
                 
             if match:
-                matching_instruments.append(self.getInstrument(uuid))
+                matching_instruments.append(self.getInstrument(res_uuid))
                 
         return matching_instruments
     
@@ -311,12 +312,13 @@ class LabManager(object):
     
     def refreshResource(self, res_uuid):
         """
-        Refresh the properties dictionary for all resources.
+        Refresh the properties dictionary for a given resource.
         
-        :returns: True if successful, False if an error occured
+        :returns: True if successful, False otherwise
         """
         if res_uuid in self.resources:
-            self.properties[res_uuid] = self.resources.get(res_uuid).getProperties()
+            prop = self.resources.get(res_uuid).getProperties()
+            self.properties[res_uuid] = prop
 
             return True
         
@@ -328,16 +330,6 @@ class LabManager(object):
         Alias for :func:`refreshResource`
         """
         return self.refreshResource(res_uuid)
-    
-    def pruneResources(self):
-        """
-        TODO
-        """
-        # Purge resources that are no longer in remote
-        for res_uuid, res_dict in self.properties.items():
-            if res_dict.get('address') == address:
-                if res_uuid not in remote_resources:
-                    self.properties.pop(res_uuid)
         
     #===========================================================================
     # Properties
@@ -345,8 +337,11 @@ class LabManager(object):
     
     def getProperties(self, res_uuid=None):
         """
-        Get information about all resources. If Resource UUID is provided, a
-        dictionary with all resources will be returned, nested by UUID
+        Get property dictionaries for all known resources, nested by Resource
+        UUID.
+        
+        If Resource UUID is provided, the property dictionary for that resource
+        will be returned.
         
         :param res_uuid: Unique Resource Identifier (UUID) (Optional)
         :type res_uuid: str
@@ -357,9 +352,4 @@ class LabManager(object):
         
         else:
             return self.properties.get(res_uuid, {})
-        
-
-    
-
-    
  

@@ -3,6 +3,7 @@ import time
 import threading
 import importlib
 import sys
+import socket
 
 import common
 import common.rpc as rpc
@@ -98,10 +99,10 @@ class Base_Resource(object):
             }
         
         if self.rpc_server.rpc_isRunning():
-            res_prop['address'] = self.rpc_server.rpc_getAddress()
-            res_prop['hostname'] = self.rpc_server.rpc_getHostname()
+            res_prop['address'] = socket.gethostbyname(socket.gethostname())
+            res_prop['hostname'] = socket.gethostname()
             res_prop['port'] = self.rpc_server.rpc_getPort()
-        
+          
         driver_prop.update(res_prop)
         
         return driver_prop

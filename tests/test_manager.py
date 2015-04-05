@@ -3,18 +3,19 @@ import unittest
 import sys
 sys.path.append("..")
 
+from labtronyx import InstrumentManager
+
 class InstrumentManager_Tests(unittest.TestCase):
     
     def setUp(self):
-        from InstrumentControl import InstrumentControl
-        self.instr = InstrumentControl()
+        self.instr = InstrumentManager()
         
     def tearDown(self):
-        self.instr.stopManager('localhost')
+        self.instr.stop()
         
-    def test_get_resources(self):
+    def test_get_properties(self):
         
-        resources = self.instr.getResources()
+        resources = self.instr.getProperties()
         self.assertEqual(type(resources), dict)
         
         for resID, res in resources.items():

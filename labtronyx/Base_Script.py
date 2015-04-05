@@ -1,4 +1,4 @@
-from InstrumentControl import InstrumentControl
+from InstrumentManager import InstrumentManager
 
 import threading
 import logging
@@ -39,7 +39,7 @@ class Base_Script(object):
         # Instantiate a logger
         self.logger = logging.getLogger(__name__)
         
-        self.instr = InstrumentControl(logger=self.logger)
+        self.instr = InstrumentManager(logger=self.logger)
         
         # Get a list of class attributes, identify test methods
         # Test methods must be prefixed by 'test_'

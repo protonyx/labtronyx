@@ -37,19 +37,19 @@ class a_LoadDriver(Tk.Toplevel):
     
     instructions = "A driver could not automatically be loaded for this instrument, please provide the vendor and model to load the proper driver."
     
-    def __init__(self, master, ICF, uuid):
+    def __init__(self, master, labManager, uuid):
         Tk.Toplevel.__init__(self, master, padx=2, pady=2)
         
-        self.ICF = ICF
+        self.labManager = labManager
         self.uuid = uuid
         
-        self.res = self.ICF.getInstrument(self.uuid)
-        self.resInfo = self.ICF.getResources().get(self.uuid)
+        self.res = self.labManager.getInstrument(self.uuid)
+        self.resInfo = self.labManager.getResources().get(self.uuid)
         self.resType = self.resInfo.get('resourceType')
         self.address = self.resInfo.get('address')
         
         # Find valid drivers for this resource type
-        allDrivers = self.ICF.getDrivers(self.address)
+        allDrivers = self.labManager.getDrivers(self.address)
         self.validDrivers = {}
         for driverModule, driverInfo in allDrivers.items():
             if self.resType in driverInfo.get('validResourceTypes', []):
@@ -165,12 +165,10 @@ class a_LoadDriver(Tk.Toplevel):
         self.destroy()
         
 class a_PropertyWindow(Tk.Toplevel):
-    def __init__(self, master, ICF, uuid):
+    def __init__(self, master, resource):
         Tk.Toplevel.__init__(self, master, padx=2, pady=2)
         
-        self.ICF = ICF
-        
-        res_dict = self.ICF.getResourceProperties(uuid)
+        res_dict = resource.getProperties()
         
         row = 0
         for key, value in res_dict.items():
