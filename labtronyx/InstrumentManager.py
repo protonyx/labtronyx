@@ -7,53 +7,152 @@ import importlib, inspect
 import logging, logging.handlers
 
 class InstrumentManager(object):
+    """
+    Labtronyx Instrument Manager
+
+    Facilitates communication with instruments using all available interfaces.
     
+    :param Logger: Logger instance if you wish to override the internal instance
+    :type Logger: Logging.logger
+    :param configFile: Configuration file to load
+    :type configFile: str
+    """
     drivers = {} # Module name -> Model info
 
-    interfaces = {} # Controller name -> controller object
+    interfaces = {} # Interface name -> interface object
+
     resources = {} # UUID -> Resource Object
     properties = {} # UUID -> Property Dictionary
     
-    def __init__(self):
+    def __init__(self, **kwargs):
+        # Ensure library is present in PYTHONPATH
         self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
         
         if not self.rootPath in sys.path:
             sys.path.append(self.rootPath)
         
-        import common
-        common_globals = common.ICF_Common()
-        self.config = common_globals.getConfig()
-        self.logger = common_globals.getLogger()
+        # Load Config
+        configFile = kwargs.get('configFile', 'default')
+        try:
+            cFile = importlib.import_module('config.%s' % configFile)
+            self.config = cFile.Config()
+            
+        except Exception as e:
+            print("FATAL ERROR: Unable to import config file")
+            sys.exit()
         
+        # Configure logger
+        if 'Logger' in kwargs or 'logger' in kwargs:
+            self.logger = kwargs.get('Logger') or kwargs.get('logger')
+        
+        else:
+            self.logger = logging.getLogger(__name__)
+            formatter = logging.Formatter(self.config.logFormat)
+                    
+             # Configure logging level
+            self.logger.setLevel(self.config.logLevel_console)
+                
+            # File Log Handler
+            if self.config.logToFile:
+                if not os.path.exists(self.config.logPath):
+                    os.makedirs(self.config.logPath)
+                
+                self.logFilename = os.path.normpath(os.path.join(self.config.logPath, 'InstrControl_Manager.log'))
+                #===============================================================
+                # if self.config.logFilename == None:
+                #     self.logFilename = os.path.normpath(os.path.join(self.config.logPath, 'InstrControl_Manager.log'))
+                # else:
+                #     self.logFilename = os.path.normpath(os.path.join(self.config.logPath, self.config.logFilename))
+                #===============================================================
+                try:
+                    fh = logging.handlers.RotatingFileHandler(self.logFilename, backupCount=self.config.logBackups)
+                    fh.setLevel(self.config.logLevel_file)
+                    fh.setFormatter(formatter)
+                    self.logger.addHandler(fh)  
+                    fh.doRollover()
+                except Exception as e:
+                    self.logger.error("Unable to open log file for writing: %s", str(e))
+    
+        # Announce Version
         self.logger.info(self.config.longname)
-        self.logger.info("InstrumentManager, Version: %s", self.config.version)
+        self.logger.info("Instrument Manager, Version: %s", self.config.version)
         
+        # Load Drivers
+        import drivers
+        self.drivers = drivers.getAllDrivers()
+        
+        for driver in self.drivers.keys():
+            self.logger.debug("Found Driver: %s", driver)
+        
+        # Load Interfaces
+        import interfaces
+        interface_info = interfaces.getAllInterfaces()
+        
+        for interf in interface_info.keys():
+            self.logger.debug("Found Interface: %s", interf)
+            self.enableInterface(interf)
+    
+    def __del__(self):
+        self.stop()
+
+    def start(self):
+        """
+        Start the RPC Server and being listening for remote connections.
+
+        :returns: True if successful, False otherwise
+        """
         try:
             import common.rpc as rpc
-            self.rpc_server = rpc.RpcServer(name='InstrumentManager-RPC-Server', 
+            self.rpc_server = rpc.RpcServer(name='Labtronyx-Server', 
                                             port=self.config.managerPort,
                                             logger=self.logger)
             self.rpc_server.registerObject(self)
-            
-            # Load Drivers
-            import drivers
-            self.drivers = drivers.getAllDrivers()
-            
-            for driver in self.drivers.keys():
-                self.logger.debug("Found Driver: %s", driver)
-            
-            # Load Interfaces
-            import interfaces
-            interface_info = interfaces.getAllInterfaces()
-            
-            for interf in interface_info.keys():
-                self.logger.debug("Found Interface: %s", interf)
-                self.enableInterface(interf)
-        
+
         except rpc.RpcServerPortInUse:
             self.logger.error("RPC Port in use, shutting down...")
-    
 
+    def stop(self):
+        """
+        Stop the RPC Server. Attempts to shutdown and free
+        all resources.
+        """
+        self.logger.debug("Server stopping...")
+
+        # Close all resources
+        for res in self.resources:
+            try:
+                res.close()
+            except:
+                pass
+            
+        # Close all interfaces
+        for interface in self.interfaces.keys():
+            self.disableInterface(interface)
+                
+        # Stop the InstrumentManager RPC Server
+        try:
+            self.rpc_server.rpc_stop()
+        except:
+            pass
+            
+    def getVersion(self):
+        """
+        Get the Labtronyx version
+        
+        :returns: str
+        """
+        return self.config.version
+    
+    def getHostname(self):
+        """
+        Get the local hostname
+        """
+        return socket.gethostname()
+        
+    #===========================================================================
+    # Interface Operations
+    #===========================================================================
+    
     def _cb_new_resource(self):
         """
         Notify InstrumentManager of the creation of a new resource. Called by
@@ -72,38 +171,6 @@ class InstrumentManager(object):
                     
         self.rpc_server.notifyClients('event_new_resource')
 
-    def stop(self):
-        """
-        Stop the InstrumentManager instance. Attempts to shutdown and free
-        all resources.
-        """
-        self.logger.debug("InstrumentManager asked to stop")
-        for res in self.resources:
-            try:
-                res.close()
-            except:
-                pass
-            
-        interface_list = self.interfaces.keys()
-                
-        for interface in interface_list:
-            self.disableInterface(interface)
-                
-        # Stop the InstrumentManager RPC Server
-        self.rpc_server.rpc_stop()
-            
-    def getVersion(self):
-        """
-        Get the InstrumentManager version
-        
-        :returns: str
-        """
-        return self.config.version
-        
-    #===========================================================================
-    # Interface Operations
-    #===========================================================================
-    
     def getInterfaces(self):
         """
         Get a list of controllers known to InstrumentManager
@@ -118,7 +185,8 @@ class InstrumentManager(object):
                 interfaceModule = importlib.import_module(interface)
                 className = interface.split('.')[-1]
                 interfaceClass = getattr(interfaceModule, className)
-                inter = interfaceClass(self)
+                inter = interfaceClass(self, logger=self.logger,
+                                             config=self.config)
                 inter.open()
                 self.logger.info("Started Interface: %s" % interface)
                 self.interfaces[interface] = inter
@@ -146,20 +214,24 @@ class InstrumentManager(object):
     # Resource Operations
     #===========================================================================
     
-    def getResources(self, res_uuid=None):
-        """
-        Get information about all resources. If Resource UUID is provided, a
-        dictionary with all resources will be returned, nested by UUID
+    def getResource(self, res_uuid):
+        return self.properties.get(res_uuid)
+    
+    def findResources(self, **kwargs):
+        matching_instruments = []
         
-        :param res_uuid: Unique Resource Identifier (UUID) (Optional)
-        :type res_uuid: str
-        :returns: dict
-        """
-        if res_uuid is None:
-            return self.properties
-        
-        else:
-            return self.properties.get(res_uuid, {})
+        for uuid, res_dict in self.properties.items():
+            match = True
+            
+            for key, value in kwargs.items():
+                if res_dict.get(key) != value:
+                    match = False
+                    break
+                
+            if match:
+                matching_instruments.append(self.getResource(uuid))
+                
+        return matching_instruments
     
     def refreshResources(self):
         """
@@ -190,8 +262,6 @@ class InstrumentManager(object):
         .. note::
         
             This will return False if manually adding resources is not supported.
-            To check if the controller supports manual resource management,
-            use :func:`InstrumentManager.canEditResources`
         
         :param controller: Controller name
         :type controller: str
@@ -211,6 +281,59 @@ class InstrumentManager(object):
                 return False
         
         return False
+    
+    #===========================================================================
+    # Instruments
+    #===========================================================================
+    
+    def getInstrument(self, res_uuid):
+        """
+        Returns a resource object given the resource UUID
+                
+        Alias for :func:`getResource`
+        
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: object
+        """
+        return self.getResource(res_uuid)
+
+    def findInstruments(self, **kwargs):
+        """
+        Get a list of instruments that match the parameters specified.
+        
+        Alias for :func:`findResources`
+        
+        :param address: IP Address of host
+        :param hostname: Hostname of host
+        :param uuid: Unique Resource Identifier (UUID)
+        :param interface: Interface
+        :param resourceID: Interface Resource Identifier (Port, Address, etc.)
+        :param resourceType: Resource Type (Serial, VISA, etc.)
+        :param deviceVendor: Instrument Vendor
+        :param deviceModel: Instrument Model Number
+        :param deviceSerial: Instrument Serial Number
+        """
+        return self.findResources(**kwargs)
+
+    #===========================================================================
+    # Properties
+    #===========================================================================
+    
+    def getProperties(self, res_uuid=None):
+        """
+        Get information about all resources. If Resource UUID is provided, a
+        dictionary with all resources will be returned, nested by UUID
+        
+        :param res_uuid: Unique Resource Identifier (UUID) (Optional)
+        :type res_uuid: str
+        :returns: dict
+        """
+        if res_uuid is None:
+            return self.properties
+        
+        else:
+            return self.properties.get(res_uuid, {})
 
     #===========================================================================
     # Driver Operations
@@ -220,5 +343,29 @@ class InstrumentManager(object):
         return self.drivers
     
 if __name__ == "__main__":
-    # If InstrumentManager is run in interactive mode, just call run
-    man = InstrumentManager()
+    # Interactive Mode
+    # Configure Logger
+    logFormat = '%(asctime)s %(levelname)-8s %(module)s - %(message)s'
+    logger = logging.getLogger(__name__)
+    formatter = logging.Formatter(logFormat)
+            
+     # Configure logging level
+    logger.setLevel(logging.DEBUG)
+        
+    # Logging Handler configuration, only done once
+    if logger.handlers == []:
+        # Console Log Handler
+        lh_console = logging.StreamHandler(sys.stdout)
+        lh_console.setFormatter(formatter)
+        logger.addHandler(lh_console)
+    
+    man = InstrumentManager(logger=logger)
+    # Start RPC Server
+    man.start()
+    
+    # Keep the main thread alive
+    try:
+        while(1):
+            time.sleep(1.0)
+    except KeyboardInterrupt:
+        man.stop()

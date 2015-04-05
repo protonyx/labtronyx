@@ -12,7 +12,7 @@ import tkMessageBox
 # from PIL import Image
 
 sys.path.append("..")
-from InstrumentControl import InstrumentControl
+from labtronyx import InstrumentManager, LabManager
 
 from include import *
 
@@ -46,14 +46,17 @@ class a_Main(Tk.Tk):
         # self.logger.addHandler(console)
         # TODO: Log to file?
         
-        # Instantiate an InstrumentControl object
-        self.ICF = InstrumentControl(Logger=self.logger)
+        # Instantiate a local InstrumentManager object
+        instr = InstrumentManager(Logger=self.logger)
+        instr.start()
+        
+        # Instantiate a LabManager
+        self.lab = LabManager()
+        self.lab.addManager('localhost')
             
         # GUI Startup
         self.rebuild()
         self.rebind()
-        
-        self.cb_addManager('localhost')
         
         # Load applets
         import applets
@@ -63,8 +66,6 @@ class a_Main(Tk.Tk):
             self.logger.debug("Found Applet: %s", applet)
         
         # TODO: Persistent Settings
-        
-        self.logger.info('Application start')
         
         self.process_notifications()
     
@@ -76,7 +77,7 @@ class a_Main(Tk.Tk):
         +-----------------------------------+
         |                                   |
         |                                   |
-        |           tree frame              |
+        |            tree frame             |
         |                                   |
         |                                   |
         +-----------------------------------+
@@ -85,8 +86,7 @@ class a_Main(Tk.Tk):
         |                                   |
         +-----------------------------------+
         """
-        # ttk.Style().theme_use('vista')
-        self.wm_title("Instrument Control and Automation")
+        self.wm_title("Labtronyx Instrument Control and Automation")
         self.minsize(500, 500)
         self.geometry("800x600")
         
@@ -219,27 +219,30 @@ class a_Main(Tk.Tk):
         
     def cb_addManager(self, address, port=None):
         # Attempt a connection to the manager
-        self.ICF.addManager(address, port)
-        
-        man = self.ICF.getManager(address)
-        man._enableNotifications()
-        man._registerCallback('event_new_resource', lambda: self.cb_event_new_resource())
+        if not self.lab.addManager(address, port):
+            tkMessageBox.showwarning('Operation Failed', 
+                                     'Unable to connect to InstrumentManager')
         
         self.cb_refreshTree()
     
     def cb_managerDisconnect(self, address):
-        self.ICF.removeManager(address)
+        self.lab.removeManager(address)
+        
         self.cb_refreshTree()
         
     def cb_managerShutdown(self, address):
-        self.ICF.stopManager(address)
+        man = self.lab.getManager(address)
+        man.stop()
+        self.lab.removeManager(address)
+        
         self.cb_refreshTree()
         
     def cb_addResource(self, address):
-        interfaces = self.ICF.getControllers(address)
+        man = self.lab.getManager(address)
+        interfaces = man.getInterfaces()
             
         # Create the child window
-        w_addResource = ManagerPages.a_AddResource(self, self, interfaces, lambda interface, resID: self.ICF.addResource(address, interface, resID))
+        w_addResource = ManagerPages.a_AddResource(self, self, interfaces, lambda interface, resID: man.addResource(interface, resID))
         
         # Make the child modal
         w_addResource.focus_set()
@@ -258,7 +261,7 @@ class a_Main(Tk.Tk):
                 className = applet.split('.')[-1]
                 testClass = getattr(testModule, className)
                 
-                instrument = self.ICF.getInstrument(uuid)
+                instrument = self.lab.getInstrument(uuid)
                 
                 if instrument is not None:
                     appletInst = testClass(self, instrument)
@@ -289,8 +292,8 @@ class a_Main(Tk.Tk):
                     pass
                 
             # Find compatible views
-            instrument = self.ICF.getInstrument(uuid)
-            properties = instrument.getProperties()
+            res = self.lab.getResource(uuid)
+            properties = res.getProperties()
             
             driverName = properties.get('driver')
             validApplets = []
@@ -321,36 +324,44 @@ class a_Main(Tk.Tk):
                 tkMessageBox.showwarning('Unable to load applet', 'No suitable applets could be found for this resource')
         
     def cb_loadDriver(self, uuid):
+        dev = self.lab.getResource(uuid)
+        
         # Spawn a window to select the driver to load
         
+        # TODO: Pass the resource instead of ICF
         # Create the child window
-        w_DriverSelector = ResourcePages.a_LoadDriver(self, self.ICF, uuid)
+        w_DriverSelector = ResourcePages.a_LoadDriver(self, self.lab, uuid)
+        
+        self.lab.refreshResource(uuid)
         
         self.treeFrame.refresh()
             
     def cb_unloadDriver(self, uuid):
-        dev = self.ICF.getInstrument(uuid)
+        dev = self.lab.getResource(uuid)
         
         dev.unloadDriver()
         
-        self.ICF.refreshInstrument(uuid)
+        self.ICF.refreshResource(uuid)
         # addr = self.ICF.getAddressFromUUID(uuid)
         # self.ICF.refresh
         self.treeFrame.refresh()
         
     def cb_configResource(self, uuid):
-        res = self.ICF.getResources().get(uuid)
-        instr = self.ICF.getInstrument(uuid)
-        type = res.get('resourceType')
+        res = self.lab.getResource(uuid)
+        
+        prop = res.getProperties()
+        type = prop.get('resourceType')
         
         if hasattr(ConfigPages, 'config_%s' % type):
             config_class = getattr(ConfigPages, 'config_%s' % type)
-            w_ConfigWindow = config_class(self, instr)
+            w_ConfigWindow = config_class(self, res)
             
         else:
             tkMessageBox.showwarning('Resource Error', 'This resource has no configuration options')
         
     def cb_ResourceProperties(self, uuid):
+        res = self.lab.getResource(uuid)
+        # TODO: Pass the resource instead of ICF
         w_ResourceProperties = ResourcePages.a_PropertyWindow(self, self.ICF, uuid)
     
     #===========================================================================
@@ -358,7 +369,7 @@ class a_Main(Tk.Tk):
     #===========================================================================
     
     def process_notifications(self):
-        managers = self.ICF.getManager()
+        managers = self.lab.getManager()
         
         for addresss, man in managers.items():
             man._checkNotifications()
@@ -383,8 +394,8 @@ class a_Main(Tk.Tk):
         # Create a context menu
         menu = Tk.Menu(self)
         
-        resources = self.ICF.getResources()
-        hosts = self.ICF.getConnectedHosts()
+        resources = self.lab.findResources()
+        hosts = self.lab.getConnectedHosts()
         
         # Populate menu based on context
         if elem in hosts:
@@ -537,7 +548,10 @@ class ResourceTree(Tk.Frame):
         # img_host = ImageTk.PhotoImage(img_host)
         # img_device = Image.open('assets/drive.png')
         # img_device = ImageTk.PhotoImage(img_device)
-        self._refreshResources()
+        #self._refreshResources()
+        self.lab.refreshResources()
+        
+        self.resources = self.ICF.findResources()
 
         # Get a flat list of resources and sort
         resources = self.resources

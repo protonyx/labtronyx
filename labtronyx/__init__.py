@@ -1,1 +1,2 @@
-from InstrumentControl import InstrumentControl
+from InstrumentManager import InstrumentManager
+from RemoteManager import RemoteManager

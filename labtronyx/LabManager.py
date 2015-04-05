@@ -8,27 +8,11 @@ import logging
 import logging.handlers
 import socket
 
-import common
-from common.rpc import RpcClient
 
-class InstrumentControl(object):
+class LabManager(object):
     """
-    :param Logger: Logger instance if you wish to override the internal instance
-    :type Logger: Logging.logger
-    
-    InstrumentControl is a helper class that provides functionality to 
-    communicate with any number of local or remote InstrumentManager instances.
-    
-    InstrumentControl simplifies the process of writing test instrument
-    automation and control scripts. This is accomplished by abstracting the
-    communication with :class:`InstrumentManager` instances that contain the device
-    interface code. 
-    
-    .. note::
-        InstrumentManager must be running on the local or remote machine that you
-        are trying to connect to. :func:`InstrumentControl.startManager` can be
-        used to spawn a new process of InstrumentManager.
-        
+    LabManager is a helper class that provides functionality to 
+    communicate with any number of local or remote InstrumentManager instances.  
     """
     managers = {} # IP Address -> Manager RPC Client object
     hostnames = {} # Hostname => IP Address [Lookup table]
@@ -151,66 +135,6 @@ class InstrumentControl(object):
     # Local Manager Operations
     #===========================================================================
     
-    def startManager(self, debug=False):
-        """
-        Start a local instance of :class:`InstrumentManager` using 
-        :func:`subprocess.Popen`.
-        
-        No attempt is made to check whether an :class:`InstrumentManager`
-        process is already running. The default behavior for :class:'InstrumentManager'
-        is to exit when the port is already in use.
-        
-        See :class:'InstrumentManager' documentation for more information. 
-        
-        .. note:: 
-           This function does not block! If the :class:`InstrumentManager`
-           instance is not fully initialized before attempting to connect to it,
-           timeouts will occur. 
-        """
-        local = self._resolveAddress('localhost')
-        
-        try:
-            pyExec = sys.executable
-            manPath = os.path.join(self.rootPath, 'InstrumentManager.py')
-            params= [pyExec, manPath]
-            
-            if debug:
-                params.append('-d')
-            
-            subprocess.Popen(params)
-            
-        except Exception as e:
-            raise
-    
-    def stopManager(self, address, port=None):
-        """
-        Send a stop signal to a manager instance running on a local or remote
-        machine.
-        
-        .. note::
-           :class:`InstrumentManager` cannot be restarted once it is stopped
-           
-        :param address: IP Address or Hostname
-        :type address: str
-        :param port: Port
-        :type port: int
-        :returns: Nothing
-        """
-        address = self._resolveAddress(address)
-        
-        man = self.getManager(address)
-        if man is not None:
-            man.stop()
-            self.removeManager(address)
-        else:
-            if self.addManager(address, port):
-                man = self.getManager(address)
-                man.stop()
-                self.removeManager(address)
-            else:
-                # No manager could be found at the address:port
-                pass
-    
     def addManager(self, address, port=None):
         """
         Connect to a manager instance at the given address and port. If the
@@ -300,24 +224,6 @@ class InstrumentControl(object):
             address = self._resolveAddress(address)
                 
             return self.managers.get(address, None)
-    
-    #===========================================================================
-    # Interface Operations
-    #===========================================================================
-    
-    def getInterfaces(self, address):
-        """
-        Get a list of controllers from a given InstrumentManager instance.
-        
-        :param address: IP Address
-        :type address: str - IPv4
-        :returns: dict
-        """
-        address = self._resolveAddress(address)
-        
-        if address in self.managers.keys():
-            man = self.managers.get(address)
-            return man.getInterfaces()
 
     #===========================================================================
     # Resource Operations
@@ -386,77 +292,6 @@ class InstrumentControl(object):
         :returns: dict
         """
         return self.properties.get(res_uuid, {})
-    
-    #===========================================================================
-    # Resource Management
-    #===========================================================================
-    
-    def addResource(self, address, controller, ResID):
-        """
-        Create a managed resource within a controller object
-        
-        If `controller` is not a valid controller on the remote manager instance,
-        or if the controller does not support manually adding resources, this 
-        function will return False. 
-        
-        .. note::
-        
-            Controllers that rely on system resources such as VISA or serial
-            can only communicate with devices that are known to the system.
-            Controllers that have no way to scan or enumerate devices depend on
-            this function to make it aware of the device. An example of this is
-            a CAN bus-based Controller, which must know a device address before
-            communication can be established.
-        
-        :param address: IP Address of host
-        :type address: str
-        :param controller: Name of controller to attach new resource
-        :type controller: str
-        :param ResID: Resource Identifier
-        :type ResID: str
-        
-        :returns: bool - True if success, False otherwise
-        """
-        address = self._resolveAddress(address)
-            
-        if address in self.managers:
-            man = self.managers.get(address)
-            
-            res = man.addResource(controller, ResID)
-            
-            # Update the local resource cache
-            self.refreshResources(address)
-            
-            return res
-        
-        else:
-            return False
-    
-    #===========================================================================
-    # Drivers
-    #===========================================================================
-    
-    def getDrivers(self, address):
-        """
-        Get the list of Models from an InstrumentManager instance
-        
-        :param address: IP Address of host
-        :type address: str
-        
-        :returns: list
-        """
-        address = self._resolveAddress(address)
-            
-        if address in self.managers:
-            man = self.managers.get(address, None)
-            
-            if man is not None:
-                return man.getDrivers()
-            
-            else:
-                return []
-            
-        return []
 
     #===========================================================================
     # Instrument Operations
@@ -522,116 +357,4 @@ class InstrumentControl(object):
                 
             return self.resources.get(res_uuid)
     
-    def getInstrument_list(self):
-        """
-        Get a list of :class:`RpcClient` objects for all resources with models
-        loaded
-        
-        .. note::
-        
-            This function opens a socket to every known instrument with a Model
-            loaded. This could use a lot of system resources both locally and
-            on remote InstrumentManagers if you don't need them.
-            
-        :deprecated:
-        
-        :returns: list of :class:`RpcClient` objects
-        """
-        return self.resources.values()
-    
-    def getInstrument_serial(self, serial_number):
-        """
-        Get a :class:`RpcClient` object for the resource with the given serial
-        number.
-        
-        .. note::
-        
-            Only resources that have a model loaded will report a serial number.
-            
-        :deprecated:
-        
-        :returns: :class:`RpcClient` object
-        """
-        for res_uuid, prop_dict in self.getProperties().items():
-            if prop_dict.get('deviceSerial', None) == serial_number:
-                return self.getInstrument(res_uuid)
-        
-        return None
-    
-    def getInstrument_model(self, model_number):
-        """
-        Get a list of :class:`RpcClient` objects for resources with the given 
-        model number.
-        
-        .. note::
-        
-            Only resources that have a model loaded will report a model number.
-            
-        :deprecated:
-        
-        :returns: list of :class:`RpcClient` objects
-        """
-        ret = []
-        
-        for res_uuid, prop_dict in self.getProperties().items():
-            if prop_dict.get('deviceModel', None) == model_number:
-                ret.append(self.getInstrument(res_uuid))
-                
-        return ret
-    
-    def getInstrument_type(self, d_type):
-        """
-        Get a list of :class:`RpcClient` objects for resources with the given 
-        device type.
-        
-        .. note::
-        
-            Only resources that have a model loaded will report a device type.
-            
-        :deprecated:
-        
-        :returns: list of :class:`RpcClient` objects
-        """
-        ret = []
-        
-        for res_uuid, prop_dict in self.getProperties().items():
-            if prop_dict.get('deviceType', None) == d_type:
-                ret.append(self.getInstrument(res_uuid))
-                
-        return ret
-    
-    def getInstrument_driver(self, d_driver):
-        """
-        Get a list of :class:`RpcClient` objects for resources with the given 
-        device driver (Model).
-        
-        .. note::
-        
-            Only resources that have a model loaded will report a device type.
-            
-        :deprecated:
-        
-        :returns: list of :class:`RpcClient` objects
-        """
-        ret = []
-        
-        for res_uuid, prop_dict in self.getProperties().items():
-            if prop_dict.get('modelName', None) == d_driver:
-                ret.append(self.getInstrument(res_uuid))
-                
-        return ret
-    
-# Load GUI in interactive mode
-if __name__ == "__main__":
-    # Load Application GUI
-    
-    try:
-        #sys.path.append("..")
-        from application.a_Main import a_Main
-        main_gui = a_Main()
-        main_gui.mainloop()
-         
-    except Exception as e:
-        print "Unable to load main application"
-        raise
-        sys.exit()
+ 
