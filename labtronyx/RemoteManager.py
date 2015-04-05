@@ -1,5 +1,4 @@
 
-import common
 from common.rpc import RpcClient
 
 class RemoteManager(RpcClient):
@@ -25,14 +24,17 @@ class RemoteManager(RpcClient):
     def disconnect(self):
         pass
     
-    def getAddress(self):
-        return self._getAddress()
-    
-    def getInstrument(self):
-        pass
-    
     def getResource(self):
         pass
+    
+    def getInstrument(self):
+        return self.getResource()
+    
+    def findResources(self):
+        pass
+    
+    def findInstruments(self):
+        return self.findResources()
     
 class RemoteInstrument(RpcClient):
     pass

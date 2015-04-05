@@ -94,9 +94,13 @@ class Base_Resource(object):
             'resourceID': self.getResourceID(),
             'resourceType': self.getResourceType(),
             'groupTag': self.getGroupTag(),
-            'status': self.getResourceStatus(),
-            'port': self.getPort()
+            'status': self.getResourceStatus()
             }
+        
+        if self.rpc_server.rpc_isRunning():
+            res_prop['address'] = self.rpc_server.rpc_getAddress()
+            res_prop['hostname'] = self.rpc_server.rpc_getHostname()
+            res_prop['port'] = self.rpc_server.rpc_getPort()
         
         driver_prop.update(res_prop)
         

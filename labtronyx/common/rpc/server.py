@@ -66,7 +66,7 @@ class RpcServer(object):
                 raise RuntimeError('Must provide a server type')
             
             # Update port if randomly assigned
-            _, self.port = self.srv_socket.getsockname()
+            self.address, self.port = self.srv_socket.getsockname()
             
         except socket.error as e:
             if e.errno == errno.EADDRINUSE:
@@ -236,6 +236,14 @@ class RpcServer(object):
         :returns: int - Port
         """
         return self.port
+    
+    def rpc_getAddress(self):
+        """
+        Get the IP Address of the RpcServer host.
+        
+        :returns: str - IP Address
+        """
+        return self.address
         
     def rpc_getHostname(self):
         """

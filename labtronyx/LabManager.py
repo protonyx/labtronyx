@@ -8,73 +8,64 @@ import logging
 import logging.handlers
 import socket
 
+from RemoteManager import RemoteManager, RemoteInstrument
 
 class LabManager(object):
     """
     LabManager is a helper class that provides functionality to 
     communicate with any number of local or remote InstrumentManager instances.  
+    
+    - Tracks multiple connected InstrumentManagers
+    - Local cache of all resources from connected InstrumentManagers
+    
+    :param configFile: Configuration file to load
+    :type configFile: str
     """
     managers = {} # IP Address -> Manager RPC Client object
     hostnames = {} # Hostname => IP Address [Lookup table]
     
     # Resources
-    resources = {}  # { Resource UUID -> RpcClient objects }
+    resources = {}  # { Resource UUID -> RemoteInstrument objects }
     properties = {} # { Resource UUID -> Properties (dict) }
     
     #instruments = {} # { Resource UUID -> RpcClient objects }
     
     def __init__(self, **kwargs):
-        # Get the root path
+        # Ensure library is present in PYTHONPATH
         self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
         
         if not self.rootPath in sys.path:
             sys.path.append(self.rootPath)
-            
-        common_globals = common.ICF_Common()
-        self.config = common_globals.getConfig()
-
-         # Setup Logger
-        if 'Logger' in kwargs or 'logger' in kwargs:
-            self.logger = kwargs.get('Logger') or kwargs.get('logger')
         
-        else:
-            #loggerList = logging.Logger.manager.loggerDict
-            # Attach to the MTB/MIST logger if inside a test environment
-            #if '__main__' in loggerList:
-            #self.logger = logging.getLogger('__main__')
-            
-            self.logger = logging.getLogger(__name__)
-            formatter = logging.Formatter(self.config.logFormat)
-                    
-             # Configure logging level
-            self.logger.setLevel(self.config.logLevel_console)
-                
-            # Logging Handler configuration, only done once
-            if self.logger.handlers == []:
-                # Console Log Handler
-                lh_console = logging.StreamHandler(sys.stdout)
-                lh_console.setFormatter(formatter)
-                lh_console.setLevel(self.config.logLevel_console)
-                self.logger.addHandler(lh_console)
-                
-        # Attempt to connect to the local manager
-        if not self.addManager('localhost'):
-            self.startManager(kwargs.get('debug', False))
-            time.sleep(3.0)
-            
-        # Check the local Manager version
-        localMan = self.getManager('localhost')
-        
+        # Load Config
+        configFile = kwargs.get('configFile', 'default')
         try:
-            localVer = localMan.getVersion()
-            if localVer != self.config.version:
-                # Version doesn't match, restart with new code from this release
-                localMan.stop()
-                time.sleep(1.0)
-                self.startManager()
-                time.sleep(2.0)
-        except:
-            pass
+            cFile = importlib.import_module('config.%s' % configFile)
+            self.config = cFile.Config()
+        except Exception as e:
+            print("FATAL ERROR: Unable to import config file")
+            sys.exit()
+                
+        #=======================================================================
+        # # Attempt to connect to the local manager
+        # if not self.addManager('localhost'):
+        #     self.startManager(kwargs.get('debug', False))
+        #     time.sleep(3.0)
+        #     
+        # # Check the local Manager version
+        # localMan = self.getManager('localhost')
+        # 
+        # try:
+        #     localVer = localMan.getVersion()
+        #     if localVer != self.config.version:
+        #         # Version doesn't match, restart with new code from this release
+        #         localMan.stop()
+        #         time.sleep(1.0)
+        #         self.startManager()
+        #         time.sleep(2.0)
+        # except:
+        #     pass
+        #=======================================================================
     
     #===========================================================================
     # Manager Operations    
@@ -130,22 +121,19 @@ class LabManager(object):
         :returns: List of connected hostnames
         """
         return self.hostnames.keys()
-    
-    #===========================================================================
-    # Local Manager Operations
-    #===========================================================================
-    
+
     def addManager(self, address, port=None):
         """
-        Connect to a manager instance at the given address and port. If the
-        connection is successful, the remote resources are automatically
-        added to the pool of resources using :func:`refreshResources`
+        Connect to a InstrumentManager instance at the given address and port. 
+        If the connection is successful, the remote resources are automatically
+        added to the pool of resources and their property dictionaries are
+        cached.
         
-        :param address: IP Address or Hostname
+        :param address: IP Address or Hostname of InstrumentManager
         :type address: str
         :param port: Port
         :type port: int
-        :returns: True if manager found, False if connection failed
+        :returns: True if successful, False otherwise
         """
         address = self._resolveAddress(address)
         
@@ -154,42 +142,65 @@ class LabManager(object):
         if address not in self.managers.keys():
             # Attempt a connection
             try:
-                testManager = RpcClient(address=address, port=seekPort)
+                testManager = RemoteManager(address=address, port=seekPort)
                 
                 ver = testManager.getVersion()
-                host = testManager._getHostname()
+                host = testManager.getHostname()
+                address = testManager.getAddress()
                 
                 self.hostnames[host] = address 
                 self.managers[address] = testManager
                 
-                self.logger.info('Connected to InstrumentManager @ %s, version %s', address, ver)
-                
                 # Update the resource cache
-                self.refreshResources(address)
+                self.refreshManager(address)
                 
                 return True
                 
             except:
-                pass
+                return False
         
-        return False
+        else:
+            return False
+    
+    def refreshManager(self, address):
+        """
+        Refresh the property cache for all resources from the Instrument
+        Manager at the given address
+        
+        :param address: IP Address of InstrumentManager
+        :type address: str
+        """
+        address = self._resolveAddress(address)
+        
+        man = self.managers.get(address)
+        
+        # Clear out all cached properties from this manager
+        dev_list = [x.get('uuid') for x in self.resources]
+        
+        for uuid in dev_list:
+            self.properties.pop(uuid, None)
+        
+        # Get the property dictionaries for the manager
+        man_resources = man.getProperties()
+        
+        self.properties.update(man_resources)
     
     def removeManager(self, address):
         """
-        Disconnect from the manager instance at `address` and purge all cached
-        resources from that host.
+        Disconnect from the InstrumentManager at the given address and purge all 
+        resources and cached properties from that host.
         
-        :param address: IP Address of manger
+        :param address: IP Address of InstrumentManager
         :type address: str
-        :returns: True unless there is no existing connection to `address`
+        :returns: True if successful, False otherwise
         """
         address = self._resolveAddress(address)
         
         if address in self.managers.keys():
-            # Remove all resources from that host
-            cached_resources = self.resources.pop(address, {})
+            # Clear out all cached properties from this manager
+            dev_list = [x.get('uuid') for x in self.resources]
             
-            for uuid, res in self.properties.items():
+            for uuid in dev_list:
                 self.properties.pop(uuid, None)
                 self.resources.pop(uuid, None)
                 
@@ -209,12 +220,12 @@ class LabManager(object):
         
         .. note::
            
-           This will always return an :class:`common.rpc.RpcClient` object, even
+           This will always return an :class:`RemoteManager` object, even
            if the InstrumentManager instance is on the local machine.
            
         :param address: IP Address of manger
         :type address: str
-        :returns: :class:`common.rpc.RpcClient` object or None if there is no \
+        :returns: :class:`RemoteManager` object or None if there is no \
         existing connection to `address`
         """
         if address is None:
@@ -228,82 +239,42 @@ class LabManager(object):
     #===========================================================================
     # Resource Operations
     #===========================================================================
-        
-    def refreshResources(self, address=None):
-        """
-        Refresh the local resource cache of all connected InstrumentManager
-        instances. If an address is provided, only the specified cache will be
-        refreshed.
-        
-        .. note::
-           Use :func:`addManager` to establish a connection to a manager
-           before calling this function.
-        
-        :param address: IP Address or Hostname
-        :type address: str
-        :returns: True unless there is no existing connection to `address`
-        """
-        if address is None:
-            for addr in self.managers:
-                self.refreshResources(addr)
-                
-            return True
-                
-        else:
-            try:
-                man = self.getManager(address)
-                
-                # Force a resource refresh
-                man.refreshResources()
-                remote_resources = man.getResources()
-                
-                for res_uuid, res_dict in remote_resources.items():
-                    res_dict['address'] = address
-                    res_dict['hostname'] = self.getHostname(address)
-                    
-                    self.properties[res_uuid] = res_dict
-                        
-                # Purge resources that are no longer in remote
-                for res_uuid, res_dict in self.properties.items():
-                    if res_dict.get('address') == address:
-                        if res_uuid not in remote_resources:
-                            self.properties.pop(res_uuid)
     
-                return True
-            
-            except:
-                self.logger.exception("Exception during refreshResource")
-                return False
-  
-    def getResources(self):
+    def getResource(self, res_uuid):
         """
+        Create a :class:`RemoteInstrument` instance that is linked to a resource on a
+        local or remote machine.
+        
+        
         Get a listing of all resources from all InstrumentManager instances.
-        
-        :returns: dict (Resource UUID as key)
-        """
-        return self.properties
-    
-    def getResourceProperties(self, res_uuid):
-        """
-        Get the resource property dictionary for a given UUID
         
         :param res_uuid: Unique Resource Identifier (UUID)
         :type res_uuid: str
-        :returns: dict
+        :returns: RpcClient object or None if UUID does not match a valid resource
         """
-        return self.properties.get(res_uuid, {})
-
-    #===========================================================================
-    # Instrument Operations
-    #
-    # Instruments are RPC Client objects to resources
-    #===========================================================================
-    
-    def refreshInstrument(self, res_uuid):
-        dev = self.getInstrument(res_uuid)
-        dev._refresh()
+        instr = self.resources.get(res_uuid)
         
-    def findInstrument(self, **kwargs):
+        if instr is not None:
+            return instr
+        
+        else:
+            # Create an RPC Client if one does not already exist
+            res_dict = self.getResources().get(res_uuid)
+            address = res_dict.get('address')
+            port = res_dict.get('port')
+            testInstrument = RpcClient(address=address, port=port)
+            self.resources[res_uuid] = testInstrument
+                
+            return self.resources.get(res_uuid)
+        pass
+    
+    def getInstrument(self, res_uuid):
+        """
+        Alias for :func:`getResource`
+        """
+        return self.getResource(res_uuid)
+    
+    def findResources(self, **kwargs):
         """
         Get a list of instruments that match the parameters specified.
         
@@ -332,29 +303,63 @@ class LabManager(object):
                 
         return matching_instruments
     
-    def getInstrument(self, res_uuid, **kwargs):
+    def findInstruments(self, **kwargs):
         """
-        Create a :class:`RpcClient` instance that is linked to a resource on a
-        local or remote machine.
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: RpcClient object or None if UUID does not match a valid resource
+        Alias for :func:`findResources`
         """
-        # Does an instrument already exist?
-        instr = self.resources.get(res_uuid)
+        return self.findResources(**kwargs)
+    
+    def refreshResource(self, res_uuid):
+        """
+        Refresh the properties dictionary for all resources.
         
-        if instr is not None:
-            return instr
+        :returns: True if successful, False if an error occured
+        """
+        if res_uuid in self.resources:
+            self.properties[res_uuid] = self.resources.get(res_uuid).getProperties()
+
+            return True
         
         else:
-            # Create an RPC Client if one does not already exist
-            res_dict = self.getResources().get(res_uuid)
-            address = res_dict.get('address')
-            port = res_dict.get('port')
-            testInstrument = RpcClient(address=address, port=port)
-            self.resources[res_uuid] = testInstrument
-                
-            return self.resources.get(res_uuid)
+            return False
+        
+    def refreshInstrument(self, res_uuid):
+        """
+        Alias for :func:`refreshResource`
+        """
+        return self.refreshResource(res_uuid)
+    
+    def pruneResources(self):
+        """
+        TODO
+        """
+        # Purge resources that are no longer in remote
+        for res_uuid, res_dict in self.properties.items():
+            if res_dict.get('address') == address:
+                if res_uuid not in remote_resources:
+                    self.properties.pop(res_uuid)
+        
+    #===========================================================================
+    # Properties
+    #===========================================================================
+    
+    def getProperties(self, res_uuid=None):
+        """
+        Get information about all resources. If Resource UUID is provided, a
+        dictionary with all resources will be returned, nested by UUID
+        
+        :param res_uuid: Unique Resource Identifier (UUID) (Optional)
+        :type res_uuid: str
+        :returns: dict
+        """
+        if res_uuid is None:
+            return self.properties
+        
+        else:
+            return self.properties.get(res_uuid, {})
+        
+
+    
+
     
  

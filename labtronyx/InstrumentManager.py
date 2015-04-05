@@ -18,11 +18,8 @@ class InstrumentManager(object):
     :type configFile: str
     """
     drivers = {} # Module name -> Model info
-
     interfaces = {} # Interface name -> interface object
-
     resources = {} # UUID -> Resource Object
-    properties = {} # UUID -> Property Dictionary
     
     def __init__(self, **kwargs):
         # Ensure library is present in PYTHONPATH
@@ -214,8 +211,38 @@ class InstrumentManager(object):
     # Resource Operations
     #===========================================================================
     
+    def getProperties(self):
+        """
+        Returns the property dictionaries for all resources
+        
+        :returns: dict
+        """
+        ret = {}
+        for uuid, res in self.resources.items():
+            ret[uuid] = res.getProperties()
+            
+            ret[uuid].setdefault('deviceType', '')
+            ret[uuid].setdefault('deviceVendor', '')
+            ret[uuid].setdefault('deviceModel', '')
+            ret[uuid].setdefault('deviceSerial', '')
+            ret[uuid].setdefault('deviceFirmware', '')
+        
+        return ret
+    
     def getResource(self, res_uuid):
         return self.properties.get(res_uuid)
+    
+    def getInstrument(self, res_uuid):
+        """
+        Returns a resource object given the resource UUID
+                
+        Alias for :func:`getResource`
+        
+        :param res_uuid: Unique Resource Identifier (UUID)
+        :type res_uuid: str
+        :returns: object
+        """
+        return self.getResource(res_uuid)
     
     def findResources(self, **kwargs):
         matching_instruments = []
@@ -233,71 +260,6 @@ class InstrumentManager(object):
                 
         return matching_instruments
     
-    def refreshResources(self):
-        """
-        Refresh the properties dictionary for all resources.
-        
-        :returns: True if successful, False if an error occured
-        """
-        try:
-            for res_uuid, res in self.resources.items():
-                self.properties[res_uuid] = res.getProperties()
-                
-                self.properties[res_uuid].setdefault('deviceType', '')
-                self.properties[res_uuid].setdefault('deviceVendor', '')
-                self.properties[res_uuid].setdefault('deviceModel', '')
-                self.properties[res_uuid].setdefault('deviceSerial', '')
-                self.properties[res_uuid].setdefault('deviceFirmware', '')
-                
-            return True
-        
-        except:
-            self.logger.exception("Unhandled exception while refreshing resources")
-            return False
-    
-    def addResource(self, controller, ResID):
-        """
-        Manually add a resource to a controller. Not supported by all controllers
-        
-        .. note::
-        
-            This will return False if manually adding resources is not supported.
-        
-        :param controller: Controller name
-        :type controller: str
-        :param ResID: Resource Identifier
-        :type ResID: str
-        :returns: bool - True if successful, False otherwise
-        """
-        if interface in self.interfaces:
-            try:
-                int_obj = self.interfaces.get(interface)
-                return int_obj.addResource(ResID)
-            
-            except NotImplementedError:
-                return False
-            
-            except AttributeError:
-                return False
-        
-        return False
-    
-    #===========================================================================
-    # Instruments
-    #===========================================================================
-    
-    def getInstrument(self, res_uuid):
-        """
-        Returns a resource object given the resource UUID
-                
-        Alias for :func:`getResource`
-        
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: object
-        """
-        return self.getResource(res_uuid)
-
     def findInstruments(self, **kwargs):
         """
         Get a list of instruments that match the parameters specified.
@@ -315,25 +277,33 @@ class InstrumentManager(object):
         :param deviceSerial: Instrument Serial Number
         """
         return self.findResources(**kwargs)
-
-    #===========================================================================
-    # Properties
-    #===========================================================================
     
-    def getProperties(self, res_uuid=None):
+    def addResource(self, interface, ResID):
         """
-        Get information about all resources. If Resource UUID is provided, a
-        dictionary with all resources will be returned, nested by UUID
+        Manually add a resource to a controller. Not supported by all controllers
         
-        :param res_uuid: Unique Resource Identifier (UUID) (Optional)
-        :type res_uuid: str
-        :returns: dict
+        .. note::
+        
+            This will return False if manually adding resources is not supported.
+        
+        :param interface: Interface name
+        :type interface: str
+        :param ResID: Resource Identifier
+        :type ResID: str
+        :returns: bool - True if successful, False otherwise
         """
-        if res_uuid is None:
-            return self.properties
+        if interface in self.interfaces:
+            try:
+                int_obj = self.interfaces.get(interface)
+                return int_obj.addResource(ResID)
+            
+            except NotImplementedError:
+                return False
+            
+            except AttributeError:
+                return False
         
-        else:
-            return self.properties.get(res_uuid, {})
+        return False
 
     #===========================================================================
     # Driver Operations
