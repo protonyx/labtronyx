@@ -73,10 +73,13 @@ def build_driver_docs():
             print e
     
     # Create RST file for each driver
+    toc_list = []
     for driver_module, driver_info in driver_dict.items():
         if driver_info == {}:
             continue
 
+        toc_list.append(driver_module)
+        
         print "Processing: {0}".format(driver_module)
         driver_filename = os.path.join(driver_folder, str(driver_module) + ".rst")
 
@@ -88,13 +91,12 @@ def build_driver_docs():
     print "Generating driver toctree..."
     
     # Create index with TOCtree
-    toc_list = driver_dict.keys()
     toc_list.sort()
-    
+     
     toc_filename = os.path.realpath(os.path.join(canpath, DRIVER_DOC, 'index.rst'))
     with file(toc_filename, "w+") as f:
         f.write(gen_sphinx_header("Drivers", "="))
-        
+         
         f.write(gen_sphinx_toctree(toc_list))
     
 def build_instrument_docs():

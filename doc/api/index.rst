@@ -1,18 +1,11 @@
 Using the Labtronyx Python Library
 ==================================
 
-
-Scripting Guide
----------------
-
     | :doc:`intro`
     | First steps to connecting to and controlling instruments
     |
     | :doc:`resources`
     | API Documentation for each resource type
-    |
-    | :doc:`manager`
-    | InstrumentManager API
     |
     | :doc:`remote`
     | Interacting with instruments on other computers
@@ -22,15 +15,17 @@ Scripting Guide
     |
     | :doc:`examples`
     | A collection of example scripts
-
+    |
+    | :doc:`drivers/index`
+    | API documentation for all drivers
 
 .. toctree::
    :hidden:
 
    intro
    resources
-   manager
    remote
    scripts
    examples
+   drivers/index
    

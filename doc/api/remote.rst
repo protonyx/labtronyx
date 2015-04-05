@@ -4,47 +4,33 @@ Remote Control
 Listening for Remote Connections
 --------------------------------
 
-The Labtronyx Server runs locally by default. To listen for remote connections,
-the server should be started by executing `Server.py` in a separate process,
-or by calling:
+The Labtronyx InstrumentManager runs locally by default. To listen for remote 
+connections, call::
 
    import labtronyx
-   server = labtronyx.Server()
-   server.start()
+   
+   manager = labtronyx.InstrumentManager()
+   manager.start()
 
-Connect to a Remote Server
---------------------------
+Connect to a Remote InstrumentManager
+-------------------------------------
 
-On instantiation, InstrumentControl will attempt to connect to a local
-InstrumentManager instance. Connections to InstrumentManager instances on remote
-machines can be added or removed using :func:`InstrumentControl.addManager` and
-:func:`InstrumentControl.removeManager`, respectively. 
+Connections to remote InstrumentManager instances is done using the
+:class:`RemoteManager` class::
 
-When an InstrumentManager is added using :func:`InstrumentControl.addManager`,
-all of the remote resources are cached by an internal call to 
-:func:`InstrumentControl.refreshManager`. Cached resources are indexed by their
-Unique Resource Identifier (UUID). 
-
-If an :class:`InstrumentManager` instance is not already running, you can start
-one using :func:`startWaitManager` or :func:`startManager`::
-
-	instr.startWaitManager()
-	
-By default, InstrumentControl will attempt to connect to a local instance of
-InstrumentManager. To connect to an InstrumentManager instance on another host::
-
-	instr.addManager('192.168.0.1')
-	
-InstrumentControl can also resolve hostnames::
-
-	instr.addManager('kkennedy')
+   import labtronyx
+   
+   remote = labtronyx.RemoteManager(address='192.168.0.1')
+   
+Transmission of data is over UDP ports with JSON-RPC formatted data.
 
 API Documentation
 -----------------
 
 The RemoteManager object is the primary interface to communicating with
-instruments on other computers. It simplifies script development by 
-abstracting nstruments as simple Python objects.
+instruments on other computers. It simplifies script development by wrapping
+communication with a JSON-RPC server inside a Python object that can be used
+as if the remote InstrumentManager object was a local Python object.
 
 .. autoclass:: labtronyx.RemoteManager.RemoteManager
    :members:

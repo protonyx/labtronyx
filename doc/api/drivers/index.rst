@@ -18,8 +18,6 @@ Drivers
    Tektronix.Oscilloscope.d_2XXX
    Tektronix.Oscilloscope.d_5XXX7XXX
    UPEL.AMPED.m_BMS
-   UPEL.BDPC.Base_ICP
-   UPEL.BDPC.Base_Serial
    UPEL.BDPC.m_BDPC_BR2
    UPEL.BDPC.m_BDPC_BR32
    UPEL.BDPC.m_BDPC_SRC6

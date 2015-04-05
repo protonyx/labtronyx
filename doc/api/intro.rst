@@ -108,7 +108,15 @@ both the user and the developer, some things are limited:
 see :doc:`Driver APIs <drivers/index>` for further documentation on each 
 driver.
 
+API Documentation
+-----------------
 
+The InstrumentManager object is the primary interface to communicating with
+instruments. It simplifies script development by abstracting nstruments as 
+simple Python objects.
+
+.. autoclass:: labtronyx.InstrumentManager.InstrumentManager
+   :members:
 
 
 	
