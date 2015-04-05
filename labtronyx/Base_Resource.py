@@ -14,9 +14,8 @@ class Base_Resource(object):
     
     def __init__(self, resID, interface, **kwargs):
         
-        common_globals = common.ICF_Common()
-        self.config = common_globals.getConfig()
-        self.logger = common_globals.getLogger()
+        self.config = kwargs.get('config')
+        self.logger = kwargs.get('logger')
         
         self.__uuid = str(uuid.uuid4())
         self.__resID = resID

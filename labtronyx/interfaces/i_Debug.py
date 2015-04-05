@@ -44,7 +44,9 @@ class i_Debug(Base_Interface):
     def refresh(self):
         if "-d" in sys.argv[1:]:
             if 'DEBUG' not in self.resources:
-                new_res = r_Debug('DEBUG', self)
+                new_res = r_Debug('DEBUG', self,
+                                  logger=self.logger,
+                                  config=self.config)
                 self.resources['DEBUG'] = new_res
                 
                 self.manager._cb_new_resource()

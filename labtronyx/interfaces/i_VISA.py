@@ -41,7 +41,9 @@ class i_VISA(Base_Interface):
                     if res not in self.resources.keys():
                         try:
                             new_resource = r_VISA(res, self, 
-                                                  drivers=self.manager.getDrivers())
+                                                  drivers=self.manager.getDrivers(),
+                                                  logger=self.logger,
+                                                  config=self.config)
                             
                             self.resources[res] = new_resource
                             

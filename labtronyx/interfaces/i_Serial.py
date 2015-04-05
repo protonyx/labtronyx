@@ -62,7 +62,9 @@ class i_Serial(Base_Interface):
                 resID, _, _ = res
                     
                 if resID not in self.resources:
-                    new_resource = r_Serial(resID, self)
+                    new_resource = r_Serial(resID, self,
+                                            logger=self.logger,
+                                            config=self.config)
                     self.resources[resID] = new_resource
                     
                     self.manager._cb_new_resource()

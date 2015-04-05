@@ -6,16 +6,16 @@ Scripting Guide
 ---------------
 
     | :doc:`intro`
-    | First steps to controlling an instrument
-    |
-    | :doc:`instruments`
-    | Interacting with instruments and loading drivers
+    | First steps to connecting to and controlling instruments
     |
     | :doc:`resources`
     | API Documentation for each resource type
     |
-    | :doc:`instrumentcontrol`
-    | InstrumentControl API
+    | :doc:`manager`
+    | InstrumentManager API
+    |
+    | :doc:`remote`
+    | Interacting with instruments on other computers
     |
     | :doc:`scripts`
     | Utilize the Labtronyx Scripting Framework to launch ready-made GUIs
@@ -28,9 +28,9 @@ Scripting Guide
    :hidden:
 
    intro
-   instruments
    resources
-   instrumentcontrol
+   manager
+   remote
    scripts
    examples
    

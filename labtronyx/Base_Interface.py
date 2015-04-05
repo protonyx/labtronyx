@@ -17,14 +17,13 @@ class Base_Interface(object):
     # TODO: Interface will have hooks into the persistence config to "remember" how
     #       a particular device is configured when the program is run in the future.
     
-    def __init__(self, manager):
+    def __init__(self, manager, **kwargs):
         """
         :param manager: Reference to the InstrumentManager instance
         :type manager: InstrumentManager object
         """
-        common_globals = common.ICF_Common()
-        self.config = common_globals.getConfig()
-        self.logger = common_globals.getLogger()
+        self.config = kwargs.get('config')
+        self.logger = kwargs.get('logger')
         
         self.resources = {}
         self.manager = manager
