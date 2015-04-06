@@ -1,5 +1,3 @@
-from labtronyx.Base_Script import Base_Script
-
 import sys
 import time
 import struct
@@ -7,6 +5,9 @@ import csv
 
 import serial
 import numpy as np
+
+sys.path.append('..')
+from labtronyx import Base_Script
 
 class t_AMPED(Base_Script):
     

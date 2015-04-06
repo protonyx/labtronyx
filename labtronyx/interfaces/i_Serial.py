@@ -103,8 +103,8 @@ import common.status
 class r_Serial(Base_Resource):
     type = "Serial"
         
-    def __init__(self, resID, controller):
-        Base_Resource.__init__(self, resID, controller)
+    def __init__(self, resID, controller, **kwargs):
+        Base_Resource.__init__(self, resID, controller, **kwargs)
         
         try:
             #conn = "\\.\%s" % resID

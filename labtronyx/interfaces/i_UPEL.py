@@ -672,10 +672,3 @@ class r_UPEL(Base_Resource):
                     
             except ICP_Timeout:
                 return None
-
-        
-class r_UPEL_Serial(r_UPEL):
-    pass
-
-class r_UPEL_CAN(r_UPEL):
-    pass

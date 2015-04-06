@@ -316,26 +316,26 @@ class Base_Script(object):
             if self.instr_details.get('serial', None) is not None:
                 # Serial
                 instr_serial = self.instr_details.get('serial')
-                self.instr = self.ICF.getInstrument_serial(instr_serial)
+                self.instr = self.ICF.findInstruments(deviceSerial=instr_serial)
             
             elif self.instr_details.get('model', None) is not None:
                 # Model
                 instr_model = self.instr_details.get('model')
-                self.instr = self.ICF.getInstrument_model(instr_model)
+                self.instr = self.ICF.findInstruments(deviceModel=instr_model)
                 if len(self.instr) == 0:
                     self.instr = None
             
             elif self.instr_details.get('type', None) is not None:
                 # Type
                 instr_type = self.instr_details.get('type')
-                self.instr = self.ICF.getInstrument_type(instr_type)
+                self.instr = self.ICF.findInstruments(deviceType=instr_type)
                 if len(self.instr) == 0:
                     self.instr = None
                     
             elif self.instr_details.get('driver', None) is not None:
                 # Driver
                 instr_driver = self.instr_details.get('driver')
-                self.instr = self.ICF.getInstrument_driver(instr_driver)
+                self.instr = self.ICF.findInstruments(driver=instr_driver)
                 if len(self.instr) == 0:
                     self.instr = None
                     
