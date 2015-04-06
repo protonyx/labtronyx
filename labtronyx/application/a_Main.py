@@ -48,12 +48,18 @@ class a_Main(Tk.Tk):
         # TODO: Log to file?
         
         # Instantiate a LabManager
+        import socket
+        localhost = socket.gethostname()
         self.lab = LabManager()
-        if not self.lab.addManager('localhost'):
+        if not self.lab.addManager(localhost):
             # Instantiate a local InstrumentManager object
             self.local_manager = InstrumentManager(Logger=self.logger)
             self.local_manager.start()
-            self.lab.addManager('localhost')
+            self.lab.addManager(localhost)
+            
+        # Register new resource callback on local manager
+        man = self.lab.getManager(localhost)
+        man._registerCallback('event_new_resource', lambda: self.cb_event_new_resource())
         
         # GUI Startup
         self.rebuild()
@@ -332,7 +338,7 @@ class a_Main(Tk.Tk):
         # Spawn a window to select the driver to load
         
         # Create the child window
-        w_DriverSelector = ResourcePages.a_LoadDriver(self, self.lab, uuid)
+        w_DriverSelector = ResourcePages.a_LoadDriver(self, self.lab, uuid, self.cb_refreshTree)
         
         self.lab.refreshResource(uuid)
         

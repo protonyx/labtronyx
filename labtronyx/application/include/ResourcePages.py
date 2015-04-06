@@ -37,19 +37,21 @@ class a_LoadDriver(Tk.Toplevel):
     
     instructions = "A driver could not automatically be loaded for this instrument, please provide the vendor and model to load the proper driver."
     
-    def __init__(self, master, labManager, uuid):
+    def __init__(self, master, labManager, uuid, cb_complete):
         Tk.Toplevel.__init__(self, master, padx=2, pady=2)
         
         self.labManager = labManager
         self.uuid = uuid
+        self.cb_complete = cb_complete
         
-        self.res = self.labManager.getInstrument(self.uuid)
-        self.resInfo = self.labManager.getResources().get(self.uuid)
+        self.res = self.labManager.getResource(self.uuid)
+        self.resInfo = self.labManager.getProperties(self.uuid)
         self.resType = self.resInfo.get('resourceType')
         self.address = self.resInfo.get('address')
         
         # Find valid drivers for this resource type
-        allDrivers = self.labManager.getDrivers(self.address)
+        manager = self.labManager.getManager(self.address)
+        allDrivers = manager.getDrivers()
         self.validDrivers = {}
         for driverModule, driverInfo in allDrivers.items():
             if self.resType in driverInfo.get('validResourceTypes', []):
@@ -152,11 +154,11 @@ class a_LoadDriver(Tk.Toplevel):
                     if not self.res.loadDriver(modelModule):
                         tkMessageBox.showwarning('Unable to load driver', 'An error occured while loading the driver')
                         
-                    self.ICF.refreshResources()
-                    self.ICF.refreshInstrument(self.uuid)
+                    self.labManager.refreshResource(self.uuid)
             
                     # Close this window
                     self.destroy()
+                    self.cb_complete()
         
         else:
             tkMessageBox.showerror('Load Driver', 'Please select a driver to load')

@@ -1,2 +1,3 @@
 from InstrumentManager import InstrumentManager
 from RemoteManager import RemoteManager
+from LabManager import LabManager

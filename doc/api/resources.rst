@@ -20,10 +20,10 @@ Manually Managing Resources
 
 .. note::
 
-	This is an experimental feature and has not been well tested, since there
-	are no devices currently that would need this support. Its possible it won't
-	work at all. This section should give you an idea of how it will work...
-	someday.
+   This is an experimental feature and has not been well tested, since there
+   are no devices currently that would need this support. Its possible it won't
+   work at all. This section should give you an idea of how it will work...
+   someday.
 
 The ability to manage resources is dependent on the nature of a controller.
 Most controllers accessed a fixed set of system resources that are known.

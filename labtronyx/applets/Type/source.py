@@ -29,12 +29,15 @@ class source(Base_Applet):
         
         # Driver info
         self.w_info = vw_info.vw_DriverInfo(self, self.instr)
-        self.w_info.grid(row=0, column=0, columnspan=2)
+        self.w_info.grid(row=0, column=0, columnspan=2, sticky=Tk.W)
+        
+        self.f_left = Tk.Frame(self)
+        self.f_right = Tk.Frame(self)
         
         #=======================================================================
         # Configuration
         #=======================================================================
-        self.f_conf = Tk.LabelFrame(self, text="Configuration")
+        self.f_conf = Tk.LabelFrame(self.f_left, text="Configuration")
         
         # Power
         self.w_power_on = vw_state.vw_Trigger(self.f_conf,
@@ -72,19 +75,20 @@ class source(Base_Applet):
                                            label='Power')
             self.w_power.pack()
         
-        self.f_conf.grid(row=1, column=0)
+        self.f_conf.pack()
         
         #=======================================================================
         # Protection
         #=======================================================================
-        self.f_prot = Tk.LabelFrame(self, text="Protection")
+        self.f_prot = Tk.LabelFrame(self.f_left, text="Protection")
         
         # Over Voltage
         if 'Voltage' in prop.get('protectionModes', []):
             self.w_prot_v = vw_entry.vw_Text(self.f_prot, 
                                           get_cb=lambda: self.instr.getProtection().get('Voltage'),
                                           set_cb=lambda voltage: self.instr.setProtection(voltage=voltage),
-                                          label="Voltage")
+                                          label="Voltage",
+                                          units="V")
             self.w_prot_v.pack()
             
         # Over Current
@@ -92,7 +96,8 @@ class source(Base_Applet):
             self.w_prot_i = vw_entry.vw_Text(self.f_prot, 
                                           get_cb=lambda: self.instr.getProtection().get('Current'),
                                           set_cb=lambda current: self.instr.setProtection(current=current),
-                                          label="Current")
+                                          label="Current",
+                                          units="A")
             self.w_prot_i.pack()
             
         # Over Current
@@ -100,15 +105,16 @@ class source(Base_Applet):
             self.w_prot_p = vw_entry.vw_Text(self.f_prot, 
                                           get_cb=lambda: self.instr.getProtection().get('Power'),
                                           set_cb=lambda power: self.instr.setProtection(power=power),
-                                          label="Power")
+                                          label="Power",
+                                          units="W")
             self.w_prot_p.pack()
         
-        self.f_prot.grid(row=2, column=0)
+        self.f_prot.pack()
         
         #=======================================================================
         # Data
         #=======================================================================
-        self.f_data = Tk.LabelFrame(self, text="Data")
+        self.f_data = Tk.LabelFrame(self.f_right, text="Data")
         
         # Voltage
         if 'Voltage' in prop.get('terminalSense', []):
@@ -135,4 +141,7 @@ class source(Base_Applet):
             self.w_data_p.pack()
         
         
-        self.f_data.grid(row=1, column=1)
+        self.f_data.pack()
+        
+        self.f_left.grid(row=1, column=0, sticky=Tk.N)
+        self.f_right.grid(row=1, column=1, sticky=Tk.N)

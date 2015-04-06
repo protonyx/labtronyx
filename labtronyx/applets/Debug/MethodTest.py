@@ -7,12 +7,6 @@ import tkMessageBox
 class MethodTest(Base_Applet):
     
     info = {
-        # View revision author
-        'author':               'KKENNEDY',
-        # View version
-        'version':              '1.0',
-        # Revision date of View version
-        'date':                 '2015-02-11',  
         # Description
         'description':          'RPC Method Invoker',  
             
@@ -79,6 +73,7 @@ class MethodTest(Base_Applet):
         
         # Populate Listbox
         methods = self.instr.rpc_getMethods()
+        methods.sort()
         for proc in methods:
             self.methodList.insert(Tk.END, proc)
         

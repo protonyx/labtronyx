@@ -4,7 +4,6 @@ import importlib
 import logging
 import threading
 
-import common
 import common.rpc
 
 class Base_Driver(object):
@@ -14,11 +13,10 @@ class Base_Driver(object):
     
     info = {}
     
-    def __init__(self, resource):
+    def __init__(self, resource, **kwargs):
         
-        common_globals = common.ICF_Common()
-        self.config = common_globals.getConfig()
-        self.logger = common_globals.getLogger()
+        self.config = kwargs.get('config')
+        self.logger = kwargs.get('logger')
         
         self.__resource = resource
         

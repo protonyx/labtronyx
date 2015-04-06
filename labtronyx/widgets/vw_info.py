@@ -38,23 +38,45 @@ class vw_DriverInfo(vw_Base):
         self.l_serial = Tk.StringVar(self)
         self.l_firmware = Tk.StringVar(self)
         
-        self.f_resource = Tk.Frame(self, width=30)
-        Tk.Label(self.f_resource, text="Type").grid(row=0, column=0)
-        Tk.Label(self.f_resource, textvariable=self.l_type).grid(row=0, column=1)
-        Tk.Label(self.f_resource, text="Identifier").grid(row=1, column=0)
-        Tk.Label(self.f_resource, textvariable=self.l_id).grid(row=1, column=1)
-        Tk.Label(self.f_resource, text="Driver").grid(row=2, column=0)
-        Tk.Label(self.f_resource, textvariable=self.l_driver).grid(row=2, column=1)
+        self.f_resource = Tk.Frame(self)
+        Tk.Label(self.f_resource, text="Type", width=10, 
+                 anchor=Tk.W, justify=Tk.LEFT).grid(row=0, column=0)
+        Tk.Label(self.f_resource, textvariable=self.l_type).grid(row=0, column=1, 
+                                                                   sticky=Tk.W,
+                                                                   padx=5)
+                 
+        Tk.Label(self.f_resource, text="Identifier", width=10, 
+                 anchor=Tk.W, justify=Tk.LEFT).grid(row=1, column=0)
+        Tk.Label(self.f_resource, textvariable=self.l_id).grid(row=1, column=1, 
+                                                                   sticky=Tk.W,
+                                                                   padx=5)
+                 
+        Tk.Label(self.f_resource, text="Driver", width=10, 
+                 anchor=Tk.W, justify=Tk.LEFT).grid(row=2, column=0)
+        Tk.Label(self.f_resource, textvariable=self.l_driver).grid(row=2, column=1, 
+                                                                   sticky=Tk.W,
+                                                                   padx=5)
         self.f_resource.grid(row=0, column=0)
         
-        self.f_device = Tk.Frame(self, width=30)
-        Tk.Label(self.f_device, text="Vendor").grid(row=0, column=0)
-        Tk.Label(self.f_device, textvariable=self.l_vendor).grid(row=0, column=1)
-        Tk.Label(self.f_device, text="Model").grid(row=1, column=0)
-        Tk.Label(self.f_device, textvariable=self.l_model).grid(row=1, column=1)
-        Tk.Label(self.f_device, text="Serial").grid(row=2, column=0)
-        Tk.Label(self.f_device, textvariable=self.l_serial).grid(row=2, column=1)
-        self.f_device.grid(row=0, column=1)
+        self.f_device = Tk.Frame(self)
+        Tk.Label(self.f_device, text="Vendor", width=15, 
+                 anchor=Tk.W, justify=Tk.LEFT).grid(row=0, column=0)
+        Tk.Label(self.f_device, textvariable=self.l_vendor).grid(row=0, column=1, 
+                                                                   sticky=Tk.W,
+                                                                   padx=5)
+                 
+        Tk.Label(self.f_device, text="Model", width=15, 
+                 anchor=Tk.W, justify=Tk.LEFT).grid(row=1, column=0)
+        Tk.Label(self.f_device, textvariable=self.l_model).grid(row=1, column=1, 
+                                                                   sticky=Tk.W,
+                                                                   padx=5)
+                 
+        Tk.Label(self.f_device, text="Serial Number", width=15, 
+                 anchor=Tk.W, justify=Tk.LEFT).grid(row=2, column=0)
+        Tk.Label(self.f_device, textvariable=self.l_serial).grid(row=2, column=1, 
+                                                                   sticky=Tk.W,
+                                                                   padx=5)
+        self.f_device.grid(row=0, column=1, padx=10)
         
         self.cb_update()
         

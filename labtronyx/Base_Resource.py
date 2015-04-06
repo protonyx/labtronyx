@@ -270,7 +270,7 @@ class Base_Resource(object):
             className = driverName.split('.')[-1]
             testClass = getattr(testModule, className)
             
-            self.driver = testClass(self)
+            self.driver = testClass(self, logger=self.logger, config=self.config)
             self.driver._onLoad()
             
             # RPC register object
