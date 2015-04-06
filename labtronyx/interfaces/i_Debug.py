@@ -32,7 +32,7 @@ class i_Debug(Base_Interface):
         
     def close(self):
         for resObj in self.resources.values():
-            resObj.killResource()
+            resObj.stop()
                     
         self.resources.clear()
         
@@ -46,7 +46,8 @@ class i_Debug(Base_Interface):
             if 'DEBUG' not in self.resources:
                 new_res = r_Debug('DEBUG', self,
                                   logger=self.logger,
-                                  config=self.config)
+                                  config=self.config,
+                                  enableRpc=self.manager.enableRpc)
                 self.resources['DEBUG'] = new_res
                 
                 self.manager._cb_new_resource()

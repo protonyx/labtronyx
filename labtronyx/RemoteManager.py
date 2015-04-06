@@ -69,8 +69,6 @@ class RemoteManager(RpcClient):
         Get a list of resources that match the parameters specified.
         Parameters can be any key found in the resource property dictionary.
 
-        :param address: IP Address of host
-        :param hostname: Hostname of host
         :param uuid: Unique Resource Identifier (UUID)
         :param interface: Interface
         :param resourceID: Interface Resource Identifier (Port, Address, etc.)

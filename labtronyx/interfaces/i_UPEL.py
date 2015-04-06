@@ -286,7 +286,10 @@ class i_UPEL(Base_Interface):
                         # TODO: Resource creation depends on device type
                         if resID not in self.resources.keys():
                             # Create new device
-                            self.resources[resID] = r_UPEL(resID, self)
+                            self.resources[resID] = r_UPEL(resID, self,
+                                                           logger=self.logger,
+                                                           config=self.config,
+                                                           enableRpc=self.manager.enableRpc)
                         
                             self.logger.info("Found UPEL ICP Device: %s" % res)
                     

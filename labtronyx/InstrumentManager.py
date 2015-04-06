@@ -69,6 +69,11 @@ class InstrumentManager(object):
                     fh.doRollover()
                 except Exception as e:
                     self.logger.error("Unable to open log file for writing: %s", str(e))
+                    
+        # Start the RPC Server
+        self.enableRpc = kwargs.get('enableRpc', True) 
+        if self.enableRpc == True:
+            self.start()
     
         # Announce Version
         self.logger.info(self.config.longname)
@@ -98,22 +103,29 @@ class InstrumentManager(object):
 
         :returns: True if successful, False otherwise
         """
+        self.enableRpc = True
         try:
             import common.rpc as rpc
-            self.rpc_server = rpc.RpcServer(name='Labtronyx-Server', 
+            self.rpc_server = rpc.RpcServer(name='Labtronyx-InstrumentManager', 
                                             port=self.config.managerPort,
                                             logger=self.logger)
             self.rpc_server.registerObject(self)
+            self.logger.debug("RPC Server starting...")
+            
+            for res_uuid, res_obj in self.resources.items():
+                res_obj.start()
 
         except rpc.RpcServerPortInUse:
             self.logger.error("RPC Port in use, shutting down...")
+            del self.rpc_server
 
     def stop(self):
         """
         Stop the RPC Server. Attempts to shutdown and free
         all resources.
         """
-        self.logger.debug("Server stopping...")
+        self.EnableRPC = False
+        self.logger.debug("RPC Server stopping...")
 
         # Close all resources
         for res in self.resources:
@@ -127,10 +139,8 @@ class InstrumentManager(object):
             self.disableInterface(interface)
                 
         # Stop the InstrumentManager RPC Server
-        try:
+        if hasattr(self, 'rpc_server'):
             self.rpc_server.rpc_stop()
-        except:
-            pass
             
     def getVersion(self):
         """
@@ -170,9 +180,8 @@ class InstrumentManager(object):
                 if res_uuid not in self.resources:
                     self.resources[res_uuid] = res_obj
                     
-                    self.refreshResources()
-                    
-        self.rpc_server.notifyClients('event_new_resource')
+        if hasattr(self, 'rpc_server'):
+            self.rpc_server.notifyClients('event_new_resource')
 
     def getInterfaces(self):
         """
@@ -186,6 +195,7 @@ class InstrumentManager(object):
         if interface not in self.interfaces:
             try:
                 interfaceModule = importlib.import_module(interface)
+                # TODO: Find a way to have multiple classes per file
                 className = interface.split('.')[-1]
                 interfaceClass = getattr(interfaceModule, className)
                 inter = interfaceClass(self, logger=self.logger,
@@ -258,8 +268,6 @@ class InstrumentManager(object):
         Get a list of instruments that match the parameters specified.
         Parameters can be any key found in the resource property dictionary.
 
-        :param address: IP Address of host
-        :param hostname: Hostname of host
         :param uuid: Unique Resource Identifier (UUID)
         :param interface: Interface
         :param resourceID: Interface Resource Identifier (Port, Address, etc.)
@@ -267,7 +275,7 @@ class InstrumentManager(object):
         :param deviceVendor: Instrument Vendor
         :param deviceModel: Instrument Model Number
         :param deviceSerial: Instrument Serial Number
-        :returns: list
+        :returns: list of objects
         """
         # NON-SERIALIZABLE
         matching_instruments = []
@@ -306,20 +314,14 @@ class InstrumentManager(object):
         :type interface: str
         :param ResID: Resource Identifier
         :type ResID: str
-        :returns: bool - True if successful, False otherwise
+        :returns: True if successful, False otherwise
         """
-        if interface in self.interfaces:
-            try:
-                int_obj = self.interfaces.get(interface)
-                return int_obj.addResource(ResID)
-            
-            except NotImplementedError:
-                return False
-            
-            except AttributeError:
-                return False
+        try:
+            int_obj = self.interfaces.get(interface)
+            return int_obj.addResource(ResID)
         
-        return False
+        except:
+            return False
 
     #===========================================================================
     # Driver Operations
@@ -345,9 +347,7 @@ if __name__ == "__main__":
         lh_console.setFormatter(formatter)
         logger.addHandler(lh_console)
     
-    man = InstrumentManager(logger=logger)
-    # Start RPC Server
-    man.start()
+    man = InstrumentManager(logger=logger, enableRpc=True)
     
     # Keep the main thread alive
     try:

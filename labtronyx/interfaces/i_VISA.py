@@ -43,7 +43,8 @@ class i_VISA(Base_Interface):
                             new_resource = r_VISA(res, self, 
                                                   drivers=self.manager.getDrivers(),
                                                   logger=self.logger,
-                                                  config=self.config)
+                                                  config=self.config,
+                                                  enableRpc=self.manager.enableRpc)
                             
                             self.resources[res] = new_resource
                             
@@ -84,7 +85,7 @@ class i_VISA(Base_Interface):
         resources associated with the controller.
         """
         for resObj in self.resources.values():
-            resObj.killResource()
+            resObj.stop()
         
         self.resources.clear()
         

@@ -36,7 +36,7 @@ class i_Serial(Base_Interface):
                 if res.isOpen():
                     res.close()
                     
-                res.killResource()
+                res.stop()
                 
             except:
                 pass
@@ -64,7 +64,8 @@ class i_Serial(Base_Interface):
                 if resID not in self.resources:
                     new_resource = r_Serial(resID, self,
                                             logger=self.logger,
-                                            config=self.config)
+                                            config=self.config,
+                                            enableRpc=self.manager.enableRpc)
                     self.resources[resID] = new_resource
                     
                     self.manager._cb_new_resource()
@@ -118,14 +119,16 @@ class r_Serial(Base_Resource):
             self.instrument.close()
             
         except serial.SerialException as e:
+            # Seems to be thrown on Windows systems
             self.setResourceStatus(common.status.error)
             self.setResourceError((e.errno, e.message))
             self.logger.exception("Serial exception")
             
         except OSError as e:
+            # Seems to be thrown on POSIX systems
             self.setResourceStatus(common.status.error)
-            self.setResourceError((e.errno, e.message))
-            self.logger.exception("OS Error")
+            self.setResourceError((e.errno, e.strerror))
+            self.logger.error("OS Error %s: %s" % (e.errno, e.strerror))
             
         except:
             self.logger.exception("Unhandled exception")

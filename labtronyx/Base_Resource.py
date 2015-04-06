@@ -28,16 +28,26 @@ class Base_Resource(object):
         
         self.driver = None
         
-        # Start RPC Server
-        self.rpc_server = rpc.RpcServer(name='%s-%s' % (interface.getInterfaceName(), resID),
+        if kwargs.get('enableRpc', True):
+            self.start()
+        
+    def start(self):
+        """
+        Start the RPC Server
+        """
+        self.rpc_server = rpc.RpcServer(name='RPC-%s' % (self.__uuid),
                                         logger=self.logger)
         self.rpc_server.registerObject(self)
         
-    def __del__(self):
-        self.killResource()
+    def stop(self):
+        """
+        Stop the RPC Server
+        """
+        if hasattr(self, 'rpc_server'):
+            self.rpc_server.rpc_stop()
         
-    def killResource(self):
-        self.rpc_server.rpc_stop()
+    def __del__(self):
+        self.stop()
         
     def getUUID(self):
         return self.__uuid
@@ -57,7 +67,8 @@ class Base_Resource(object):
     def setResourceStatus(self, new_status):
         self.__status = new_status
         
-        self.rpc_server.notifyClients('event_status_change')
+        if hasattr(self, 'rpc_server'):
+            self.rpc_server.notifyClients('event_status_change')
         
     def getResourceError(self):
         return self.__error
@@ -65,7 +76,8 @@ class Base_Resource(object):
     def setResourceError(self, error):
         self.__error = error
         
-        self.rpc_server.notifyClients('event_resource_error')
+        if hasattr(self, 'rpc_server'):
+            self.rpc_server.notifyClients('event_resource_error')
     
     def getInterfaceName(self):
         """
