@@ -148,9 +148,16 @@ class i_UPEL(Base_Interface):
         self.e_conf.clear()
         
     def run(self):
+        self.last_update = 0
+        
         while (self.e_alive.isSet()):
             if not self.e_conf.isSet():
                 continue
+            
+            # Auto-discover
+            if time.time() - self.last_update > 10.0:
+                self.last_update = time.time()
+                self.refresh()
              
             try:
                 #===================================================================
