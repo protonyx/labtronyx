@@ -57,6 +57,10 @@ class m_620XXP(Base_Driver):
     def getProperties(self):
         prop = Base_Driver.getProperties(self)
         
+        # Chroma seems to have a different way of responding to *IDN?
+        prop['deviceSerial'] = getVISA_firmware()
+        prop['deviceFirmware'] = getVISA_serial()
+        
         prop['protectionModes'] = ['Voltage', 'Current', 'Power']
         prop['terminalSense'] = ['Voltage', 'Current', 'Power']
         prop['controlModes'] = ['Voltage', 'Current']
