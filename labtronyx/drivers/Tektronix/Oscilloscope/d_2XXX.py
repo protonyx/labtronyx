@@ -162,6 +162,7 @@ class d_2XXX(Base_Driver):
         enabledWaveforms = self.getEnabledWaveforms()
         
         # Record Length
+        self.instr.write("DATA:SOURCE %s" % enabledWaveforms[0])
         samples = int(self.instr.query("WFMO:RECO?"))
         self.logger.debug("Record Length: %i" % samples)
         
@@ -176,7 +177,7 @@ class d_2XXX(Base_Driver):
         # Number of bytes per data point
         data_width = int(self.instr.query("WFMO:BYT_NR?"))
         
-        self.data['Time'] = list(numpy.arange(t_0, samples) * x_scale)
+        self.data['Time'] = list(numpy.arange(t_0, samples-1) * x_scale)
         
         for ch in enabledWaveforms:
             self.instr.write("DATA:SOURCE %s" % ch)
@@ -217,9 +218,9 @@ class d_2XXX(Base_Driver):
             
         return self.data
     
-    def getScreenshot(self, filename, format="PNG"):
+    def saveScreenshot(self, filename, format="PNG"):
         """
-        Save a screenshot of the oscilloscope to a file.
+        Save a screenshot of the oscilloscope to a file on the local computer.
         
         :param filename: File to save
         :type filename: str
