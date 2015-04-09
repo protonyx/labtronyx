@@ -30,12 +30,12 @@ class t_AMPED(Base_Script):
             pass
             
         # Instruments
-        self.requireInstrument('DMM - Primary Voltage', 'pri_voltage', serial='MY48005640') #'123F12106')
-        self.requireInstrument('DMM - Primary Current', 'pri_current', serial='123D12535')
-        self.requireInstrument('DMM - Secondary Voltage', 'sec_voltage', serial='MY48005608') #'123E12681')
-        self.requireInstrument('DMM - Secondary Current', 'sec_current', serial='123F12106') #'123G11250')
-        self.requireInstrument('Source - Primary', 'pri_source', serial='602078010696820011')
-        self.requireInstrument('Source - Secondary', 'sec_source', serial='00257')
+        self.requireInstrument('DMM - Primary Voltage', 'pri_voltage', deviceSerial='MY48005640') #'123F12106')
+        self.requireInstrument('DMM - Primary Current', 'pri_current', deviceSerial='123D12535')
+        self.requireInstrument('DMM - Secondary Voltage', 'sec_voltage', deviceSerial='MY48005608') #'123E12681')
+        self.requireInstrument('DMM - Secondary Current', 'sec_current', deviceSerial='123F12106') #'123G11250')
+        self.requireInstrument('Source - Primary', 'pri_source', deviceSerial='602078010696820011')
+        self.requireInstrument('Source - Secondary', 'sec_source', deviceSerial='00257')
         self.requireInstrument('AMPED Converter', 'conv', driver='models.UPEL.AMPED.m_BMS')
         self.requireInstrument('Load - Secondary', 'load', driver='models.BK_Precision.Load.m_85XX')
         

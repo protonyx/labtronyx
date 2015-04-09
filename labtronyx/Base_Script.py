@@ -10,11 +10,10 @@ import Tkinter as Tk
 
 class Base_Script(object):
     """
-    Base object for tests
+    Base object for scripts
     
-    Tests are a collection of scripts to test the functionality of a 
-    device-under-test (DUT). They are not necessarily limited to regression
-    testing for software, but can also be used to test physical devices.
+    Contains a set of helper functions and a pre-built GUI for rapid development
+    of scripts for lab instrument automated testing
     """
     
     TIMER_UPDATE_TESTS = 250
@@ -28,18 +27,10 @@ class Base_Script(object):
     _g_tests = []
     
     def __init__(self):
-        """
-        Test Initialization
-        
-        - Attempt to connect to the local InstrumentManager instance
-        - Get a list of test methods
-        - Initialize the logger
-        - Draw the GUI window
-        """
         # Instantiate a logger
         self.logger = logging.getLogger(__name__)
         
-        self.instr = InstrumentManager(logger=self.logger)
+        self.instr = InstrumentManager(logger=self.logger, enableRpc=False)
         
         # Get a list of class attributes, identify test methods
         # Test methods must be prefixed by 'test_'
@@ -211,18 +202,15 @@ class Base_Script(object):
         :type name: str
         :param attr_name: Attribute to register
         :type attr_name: str
-        :param serial: Optional - Serial number to identify instrument
-        :type serial: str
-        :param model: Optional - Model number to identify instrument
-        :type model: str
-        :param type: Optional - Instrument type to identify instrument
-        :type type: str
-        :param driver: Optional - Instrument driver (Model) to identify instrument)
-        :type driver: str
+
+        :param interface: Interface
+        :param resourceID: Interface Resource Identifier (Port, Address, etc.)
+        :param resourceType: Resource Type (Serial, VISA, etc.)
+        :param deviceVendor: Instrument Vendor
+        :param deviceModel: Instrument Model Number
+        :param deviceSerial: Instrument Serial Number
         """
-        kwargs['name'] = name
-        kwargs['object'] = attr_name
-        self._instruments.append(kwargs)
+        self._instruments.append((name, attr_name, kwargs))
         
     def registerTest(self, name, method_name):
         """
@@ -285,15 +273,13 @@ class Base_Script(object):
             
     class g_InstrElement(Tk.Frame):
         
-        def __init__(self, master, ICF, instr_details):
+        def __init__(self, master, labManager, instr_details):
             Tk.Frame.__init__(self, master)
             
-            assert type(instr_details) == dict
+            self.labManager = labManager
+            self.name, self.attr_name, self.instr_details = instr_details
             
-            self.ICF = ICF
-            self.instr_details = instr_details
-            
-            self.l_name = Tk.Label(self, text=instr_details.get('name', 'Instrument'), font=("Helvetica", 10), width=40, anchor=Tk.W)
+            self.l_name = Tk.Label(self, text=self.name, font=("Helvetica", 10), width=40, anchor=Tk.W)
             self.l_name.pack(side=Tk.LEFT)
             
             # TODO: Give information about the instrument being used?
@@ -313,52 +299,32 @@ class Base_Script(object):
         def updateStatus(self):
             assert type(self.instr_details) == dict
             
-            if self.instr_details.get('serial', None) is not None:
-                # Serial
-                instr_serial = self.instr_details.get('serial')
-                self.instr = self.ICF.findInstruments(deviceSerial=instr_serial)
-            
-            elif self.instr_details.get('model', None) is not None:
-                # Model
-                instr_model = self.instr_details.get('model')
-                self.instr = self.ICF.findInstruments(deviceModel=instr_model)
-                if len(self.instr) == 0:
-                    self.instr = None
-            
-            elif self.instr_details.get('type', None) is not None:
-                # Type
-                instr_type = self.instr_details.get('type')
-                self.instr = self.ICF.findInstruments(deviceType=instr_type)
-                if len(self.instr) == 0:
-                    self.instr = None
+            self.instr = self.labManager.findInstruments(**self.instr_details)
                     
-            elif self.instr_details.get('driver', None) is not None:
-                # Driver
-                instr_driver = self.instr_details.get('driver')
-                self.instr = self.ICF.findInstruments(driver=instr_driver)
-                if len(self.instr) == 0:
-                    self.instr = None
-                    
-            if self.instr is not None:
+            if len(self.instr) == 1:
                 self.status.set("Ready")
                 self.l_status.config(fg='green3')
+                
+            elif len(self.instr) > 1:
+                self.status.set('Multiple Found')
+                self.l_status.config(fg='red')
                 
             else:
                 self.status.set("Not Present")
                 self.l_status.config(fg='red')
             
         def getStatus(self):
-            if self.instr is not None:
+            if len(self.instr) == 1:
                 return True
             
             else:
                 return False
             
         def getInstrument(self):
-            return self.instr
+            return self.instr[0]
         
         def getAttributeName(self):
-            return self.instr_details.get('object', None)
+            return self.attr_name
         
     class g_StateController(Tk.Frame):
         
