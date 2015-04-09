@@ -1,6 +1,14 @@
 """
 .. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
 
+Driver
+------
+
+The BK Precision 9110 Series DC Power Sources use the default USB Test and 
+Measurement driver and should be recognized without problems when plugged in.
+If the device is not recognized, it is likely because there is a problem with
+the VISA driver installation. 
+
 API
 ---
 """

@@ -1,6 +1,26 @@
 """
 .. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
 
+Driver
+------
+
+The BK Precision Multimeters use a Silicon Labs `CP210x USB to UART Bridge`. This 
+requires a third party driver that must be downloaded from the BK Precision 
+website before connecting the device.
+
+That driver can be downloaded from 
+`here <https://bkpmedia.s3.amazonaws.com/downloads/software/Bench_Multimeter_USB_Drivers.zip>`_
+
+The driver officially supports Windows XP, Vista, 7
+
+Configuration
+-------------
+
+In order to be recognized by the VISA driver, the instrument must be configured
+with a baudrate of `9600`. This must be done on the instrument following the
+directions given in the 
+`user's guide <https://bkpmedia.s3.amazonaws.com/downloads/manuals/en-us/2831Eand5491B_manual.pdf>`_
+
 API
 ---
 """

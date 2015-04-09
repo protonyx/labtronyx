@@ -1,6 +1,28 @@
 """
 .. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
 
+Connection Instructions
+-----------------------
+
+The BK Precision 8500 Series DC Loads must be connected to a PC through a
+USB-to-Serial adapter. BK Precision also recommends using an RS-232-to-TTL
+isolated pass-through to protect the serial interface on the instrument.
+
+These devices also use a custom communication protocol that does not support
+enumeration. In order to use the device, this driver must be loaded to the
+proper serial port before use. Once the driver is loaded, the device will be
+placed into `Remote Control` mode.
+
+Driver
+------
+
+You may need to install a driver for the USB-to-Serial adapter. Follow the
+instructions from the device vendor's website.
+
+BK Precision provides a device for communicating with this class of DC load:
+`IT-132 USB-to-Serial Adapter`. The driver for this device can be found
+`here <https://bkpmedia.s3.amazonaws.com/downloads/software/ITE132_driver.zip>`_
+
 API
 ---
 """

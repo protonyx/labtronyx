@@ -4,10 +4,12 @@
 Driver
 ------
 
-The XLN Series DC Sources use a Silicon Labs `CP210x USB to UART Bridge` instead
-of the USB Test and Measurement profile. This requires a third party driver
-that must be downloaded from the BK Precision website before connecting the
-device.
+The XLN Series DC Sources use a Silicon Labs `CP210x USB to UART Bridge`. This 
+requires a third party driver that must be downloaded from the BK Precision 
+website before connecting the device.
+
+That driver can be downloaded from 
+`here <https://bkpmedia.s3.amazonaws.com/downloads/software/CP210X_USB_Driver.zip>`_
 
 Remote Interface
 ----------------
