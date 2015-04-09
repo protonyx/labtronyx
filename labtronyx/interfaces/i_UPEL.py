@@ -155,7 +155,7 @@ class i_UPEL(Base_Interface):
                 continue
             
             # Auto-discover
-            if time.time() - self.last_update > 10.0:
+            if time.time() - self.last_update > 30.0:
                 self.last_update = time.time()
                 self.refresh()
              

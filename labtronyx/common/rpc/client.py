@@ -206,7 +206,6 @@ class RpcClient(object):
         return self.ready
     
     def __getattr__(self, name):
-        print "RPC Call %s" % name
         return lambda *args, **kwargs: self._rpcCall(name, *args, **kwargs)
     
     def _rpcCall(self, remote_method, *args, **kwargs):
