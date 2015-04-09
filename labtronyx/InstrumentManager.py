@@ -227,6 +227,24 @@ class InstrumentManager(object):
     # Resource Operations
     #===========================================================================
     
+    def refresh(self):
+        """
+        Signal all resources to refresh
+        """
+        for res in self.resources:
+            try:
+                res.refresh()
+            except:
+                pass
+            
+        return True
+    
+    def refreshResources(self):
+        """
+        Alias for :func:`refresh`
+        """
+        return self.refresh()
+    
     def getProperties(self):
         """
         Returns the property dictionaries for all resources

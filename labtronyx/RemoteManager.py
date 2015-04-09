@@ -29,6 +29,7 @@ class RemoteManager(RpcClient):
         Query the InstrumentManager resources and create RemoteResource objects
         for new resources
         """
+        self.refresh()
         prop = self.getProperties()
         
         for res_uuid, res_dict in prop.items():
