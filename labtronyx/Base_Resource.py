@@ -152,6 +152,12 @@ class Base_Resource(object):
         """
         if self.getResourceStatus() != resource_status.READY:
             raise resource_status.ResourceNotReady()
+        
+    def refresh(self):
+        """
+        Refresh the resource
+        """
+        raise NotImplementedError
     
     #===========================================================================
     # Data Transmission

@@ -133,6 +133,11 @@ class r_VISA(Base_Resource):
             
             self.identify()
             
+            self.logger.info("Vendor: %s", self.VID)
+            self.logger.info("Model:  %s", self.PID)
+            self.logger.info("Serial: %s", self.serial)
+            self.logger.info("F/W:    %s", self.firmware)
+            
             self.close()
             
             # Attempt to automatically load a driver
@@ -174,6 +179,9 @@ class r_VISA(Base_Resource):
         def_prop.setdefault('deviceFirmware', self.getVISA_firmware())
         
         return def_prop
+    
+    def refresh(self):
+        self.identify()
         
     #===========================================================================
     # VISA Specific
@@ -189,19 +197,12 @@ class r_VISA(Base_Resource):
             
         if len(self.identity) >= 4:
             self.VID, self.PID, self.serial, self.firmware = self.identity[0:4]
-            self.logger.info("Vendor: %s", self.VID)
-            self.logger.info("Model:  %s", self.PID)
-            self.logger.info("Serial: %s", self.serial)
-            self.logger.info("F/W:    %s", self.firmware)
         
         elif len(self.identity) == 3:
             # Resource provided a non-standard identify response
             # Screw you BK Precision for making me do this
             self.VID = ''
             self.PID, self.firmware, self.serial = self.identity
-            self.logger.info("Model:  %s", self.PID)
-            self.logger.info("Serial: %s", self.serial)
-            self.logger.info("F/W:    %s", self.firmware)
             
         else:
             self.VID = ''
