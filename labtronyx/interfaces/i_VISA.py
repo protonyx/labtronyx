@@ -225,30 +225,6 @@ class r_VISA(Base_Resource):
     
     def getVISA_firmware(self):
         return self.firmware
-    
-    #===========================================================================
-    # Serial
-    #===========================================================================
-    
-    def configure(self, **kwargs):
-        if 'baudrate' in kwargs:
-            self.instrument.baud_rate = int(kwargs.get('baudrate'))
-            
-        if 'bytesize' in kwargs:
-            self.instrument.data_bits = int(kwargs.get('bytesize'))
-            
-        if 'parity' in kwargs:
-            import pyvisa.constants as pvc
-            parity_convert = {
-                'N': pvc.Parity.none,
-                'E': pvc.Parity.even,
-                'M': pvc.Parity.mark,
-                'O': pvc.Parity.odd,
-                'S': pvc.Parity.space}
-            self.instrument.parity = parity_convert.get(kwargs.get('parity'))
-            
-        if 'stopbits' in kwargs:
-            self.instrument.stopbits = int(kwargs.get('stopbits'))
         
     #===========================================================================
     # Resource State
@@ -277,13 +253,63 @@ class r_VISA(Base_Resource):
         self.instrument.unlock()
         
     #===========================================================================
+    # Configuration
+    #===========================================================================
+    
+    def configure(self, **kwargs):
+        """
+        Configure Serial port parameters for the resource.
+        
+        :param baudrate: Serial - Baudrate. Default 9600
+        :param timeout: Read timeout
+        :param bytesize: Serial - Number of bits per frame. Default 8.
+        :param parity: Serial - Parity
+        :param stopbits: Serial - Number of stop bits
+        :param termination: Write termination
+        """
+        if 'baudrate' in kwargs:
+            self.instrument.baud_rate = int(kwargs.get('baudrate'))
+            
+        if 'bytesize' in kwargs:
+            self.instrument.data_bits = int(kwargs.get('bytesize'))
+            
+        if 'parity' in kwargs:
+            import pyvisa.constants as pvc
+            parity_convert = {
+                'N': pvc.Parity.none,
+                'E': pvc.Parity.even,
+                'M': pvc.Parity.mark,
+                'O': pvc.Parity.odd,
+                'S': pvc.Parity.space}
+            self.instrument.parity = parity_convert.get(kwargs.get('parity'))
+            
+        if 'stopbits' in kwargs:
+            self.instrument.stopbits = int(kwargs.get('stopbits'))
+            
+        if 'termination' in kwargs:
+            self.instrument.write_termination = kwargs.get('termination')
+            
+    def getConfiguration(self):
+        ret = {}
+        ret['baudrate'] = self.instrument.baud_rate
+        ret['bytesize'] = self.instrument.data_bits
+        ret['parity'] = self.instrument.parity
+        ret['stopbits'] = self.instrument.stopbits
+        ret['termination'] = self.instrument.write_termination
+        return ret
+        
+    #===========================================================================
     # Data Transmission
     #===========================================================================
     
     def write(self, data):
         """
-        Send data to the instrument. Raises exception if the resource is not
-        ready. To get the error condition, call `getResourceError`
+        Send String data to the instrument. Includes termination
+        character.
+        
+        Raises exception if the resource is not ready. 
+        
+        To get the error condition, call `getResourceError`
         
         :param data: Data to send
         :type data: str
@@ -301,17 +327,65 @@ class r_VISA(Base_Resource):
                 self.open()
                 
     def write_raw(self, data):
-        self.instrument.write_raw(data)
+        """
+        Send Binary-encoded data to the instrument. Termination character is
+        not included
         
-    def read_raw(self, size=None):
-        return self.instrument.read_raw(size)
-    
-    def read(self):
+        :param data: Data to send
+        :type data: str
+        :raises: ResourceNotReady
+        """
         self.checkResourceStatus()
         
-        return self.instrument.read()
+        for attempt in range(2):
+            try:
+                self.instrument.write_raw(data)
+                break
+            
+            except visa.InvalidSession:
+                self.open()
+        
+    def read(self, termination=None, encoding=None):
+        """
+        Read ASCII-formatted data from the instrument.
+        
+        Reading stops when the device stops sending, or the termination 
+        characters sequence was detected.
+        
+        All line-ending characters are stripped from the end of the string.
+        
+        :param termination: Line termination
+        :type termination: str
+        :param encoding: Encoding
+        :type encoding: Unknown
+        """
+        self.checkResourceStatus()
+        
+        return self.instrument.read(termination, encoding)
     
-    def query(self, data):
+    def read_raw(self, size=None):
+        """
+        Read Binary-encoded data from the instrument.
+        
+        No termination characters are stripped.
+        
+        :param size: Number of bytes to read
+        :type size: int
+        """
+        return self.instrument.read_raw(size)
+    
+    def query(self, data, delay=None):
+        """
+        Retreive ASCII-encoded data from the device given a prompt.
+        
+        A combination of write(data) and read()
+        
+        :param data: Data to send
+        :type data: str
+        :param delay: delay (in seconds) between write and read operations.
+        :type delay: float
+        :returns: str
+        """
         self.checkResourceStatus()
         
         for attempt in range(2):
@@ -321,6 +395,14 @@ class r_VISA(Base_Resource):
             
             except visa.InvalidSession:
                 self.open()
+                
+    def inWaiting(self):
+        """
+        Return the number of bytes in the receive buffer
+        
+        :returns: int
+        """
+        return self.instrument.bytes_in_buffer
     
     #===========================================================================
     # Drivers
