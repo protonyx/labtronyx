@@ -60,7 +60,7 @@ class Base_Script(object):
         
         Run before every test function
         """
-        for req_instr in self._g_instruments:
+        for req_instr in self.__g_instruments:
             if req_instr.getStatus():
                 # Register instruments as test attributes
                 attr_name = req_instr.getAttributeName()
@@ -108,13 +108,13 @@ class Base_Script(object):
         Tk.Label(master, text="Required Instruments:").pack()
         
         try:
-            if len(self._instruments) > 0:
+            if len(self.__instruments) > 0:
                 # Create an instrument element for each instrument
-                for instr_details in self._instruments:
+                for instr_details in self.__instruments:
                     temp_instr = self.g_InstrElement(master, self.instr, instr_details)
                     temp_instr.pack(fill=Tk.BOTH)
                     
-                    self._g_instruments.append(temp_instr)
+                    self.__g_instruments.append(temp_instr)
                     
         except:
             raise
@@ -185,7 +185,7 @@ class Base_Script(object):
     def _Timer_UpdateInstruments(self):
         ready = True
         # Update Required Instruments
-        for instr in self._g_instruments:
+        for instr in self.__g_instruments:
             instr.cb_update()
             status = instr.getStatus()
             if not status:
