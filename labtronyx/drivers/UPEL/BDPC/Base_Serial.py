@@ -141,6 +141,7 @@ class Base_Serial(m_BDPC_Base):
         self.resource = self.getResource()
         
         # Configure the COM Port
+        self.resource.open()
         self.resource.configure(baudrate=115200,
                                 timeout=0.25,
                                 bytesize=8,
@@ -209,7 +210,7 @@ class Base_Serial(m_BDPC_Base):
         :type data: int
         """
         packet = self._SRC_pack(addr, data)
-        self.resource.write(packet)
+        self.resource.write_raw(packet)
         self.logger.debug("SRC TX: %s", packet.encode('hex'))
     
     def _SRC_read_packet(self):
@@ -219,16 +220,15 @@ class Base_Serial(m_BDPC_Base):
         
         :returns: tuple (address, data) if found, None otherwise
         """
-        
         while (self.resource.inWaiting() > 0):
             # Read the next byte in the serial buffer
-            buf = self.resource.read(1)
+            buf = self.resource.read_raw(1)
             # Check if the byte is a START_SYNC
             if (buf == chr(0x24)):
                 bytesWaiting = self.resource.inWaiting()
                 if (bytesWaiting >= (self.pkt_struct.size - 1)):
                     # Retrieve the rest of the packet
-                    buf = buf + self.resource.read(self.pkt_struct.size - 1)
+                    buf = buf + self.resource.read_raw(self.pkt_struct.size - 1)
                     
                     # Is there an END_SYNC at the end of the packet?
                     if buf[-1] == chr(0x1E):
@@ -252,7 +252,7 @@ class Base_Serial(m_BDPC_Base):
                         # Keep searching for a valid packet
                 else:
                     # START_SYNC but not full packet in the queue
-                    buf = buf + self.resource.read(self.resource.inWaiting())
+                    buf = buf + self.resource.read_raw(self.resource.inWaiting())
                     self.logger.error("SRC RX Incomplete Packet: %s", buf.encode('hex'))
                     
         return None

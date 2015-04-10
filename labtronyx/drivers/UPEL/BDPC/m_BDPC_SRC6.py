@@ -20,7 +20,7 @@ class m_BDPC_SRC6(Base_Serial.Base_Serial):
         'deviceType':           'DC-DC Converter',      
         
         # List of compatible resource types
-        'validResourceTypes':   ['Serial']
+        'validResourceTypes':   ['Serial', 'VISA']
     }
     
     def getProperties(self):
