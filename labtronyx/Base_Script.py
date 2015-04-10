@@ -5,6 +5,7 @@ import logging
 import inspect
 import time
 import sys
+import Queue
 
 import Tkinter as Tk
 
@@ -19,47 +20,51 @@ class Base_Script(object):
     TIMER_UPDATE_TESTS = 250
     TIMER_UPDATE_INSTR = 1000
     
-    _instruments = []
-    _test_methods = [] # List of all test methods
-    _tests = []
-    
-    _g_instruments = []
-    _g_tests = []
-    
     def __init__(self):
         # Instantiate a logger
         self.logger = logging.getLogger(__name__)
         
+        # Instantiate InstrumentManager
         self.instr = InstrumentManager(logger=self.logger, enableRpc=False)
+
+        # Initialize instance variables
+        self.__instruments = []
+        self.__tests = []
+    
+        self.__g_instruments = []
+        self.__g_tests = []
+    
+        self.__test_queue = Queue.Queue()
+        self.__test_curr = None
+    
+        # Run the script startup routine
+        try:
+            self.open()
+        except NotImplementedError:
+            # Get a list of class attributes, identify test methods
+            # Test methods must be prefixed by 'test_'
+            for func in dir(self.__class__):
+                test = getattr(self.__class__, func)
+                if func.startswith('test_') and inspect.ismethod(test):
+                    self.registerTest(func, func)
         
-        # Get a list of class attributes, identify test methods
-        # Test methods must be prefixed by 'test_'
-        for func in dir(self.__class__):
-            test = getattr(self.__class__, func)
-            if func.startswith('test_') and inspect.ismethod(test):
-                new_test = {}
-                new_test['name'] = func
-                new_test['method'] = func
-                self._test_methods.append(new_test)
-                
-        # Create a lock object to prevent multiple tests from running at once
-        self.testLock = threading.Lock()
+        # Start test runner thread
+        self.__test_run_thread = threading.Thread(target=self.__main_runner)
         
-        self.open()
+        # Keep the main thread occupied with the GUI
+        self.__main_gui()
         
-        self._runGUI()
+    def __prepare(self):
+        """
+        Register all required instruments as attributes in the script object.
         
-    def _startup(self):
-        ready = True
-        
-        # Register all required instruments as object attributes in self
+        Run before every test function
+        """
         for req_instr in self._g_instruments:
             if req_instr.getStatus():
                 # Register instruments as test attributes
                 attr_name = req_instr.getAttributeName()
                 instr_obj = req_instr.getInstrument()
-
-                self.logger.debug("Attr [%s] registered", attr_name)
                 
                 if type(instr_obj) == list and len(instr_obj) == 1:
                     setattr(self, attr_name, instr_obj[0])
@@ -68,36 +73,29 @@ class Base_Script(object):
             else:
                 ready = False
                 
-        if not ready:
-            self.logger.error("Not all instruments are ready")
-        else:
-            if self.startup():
-                for test in self._g_tests:
-                    test.enable()
-
-
         self.logger.info("All instruments enumerated and registered")
-                
-        return ready
-    
-    def _shutdown(self):
-        for test in self._g_tests:
-            test.stop()
+        
+    def _queue_test(self, test):
+        if test.getState() == 'On' and not self._queue_contains(test):
+            self.__test_queue.put(test, False)
             
-        res = self.shutdown()
-        
-        if res:
-            for test in self._g_tests:
-                test.disable()
-                
-        return res
+    def _queue_contains(self, test):
+        return test in self.__test_queue.queue
     
-    def _runTests(self):
+    def _queue_all(self):
         for test in self._g_tests:
-            test.run()
-            test.wait()
+            self._queue_test(test)
+          
+    def __main_runner(self):
+        """
+        Main thread for the test runner
+        """
+        pass
         
-    def _runGUI(self):
+    def __main_gui(self):
+        """
+        Main thread for the GUI
+        """
         self.myTk = Tk.Tk()
         master = self.myTk
         
@@ -124,9 +122,9 @@ class Base_Script(object):
         #=======================================================================
         # Test State
         #=======================================================================
-        Tk.Label(master, text="Test State:").pack()
+        Tk.Label(master, text="Test Control:").pack()
         
-        self.state_controller = self.g_StateController(master, self._startup, self._shutdown, self._runTests)
+        self.state_controller = self.g_StateController(master, self._queue_all)
         self.state_controller.pack(fill=Tk.BOTH)
         
         #=======================================================================
@@ -134,14 +132,18 @@ class Base_Script(object):
         #=======================================================================
         Tk.Label(master, text="Tests:").pack()
         
+        self.f_tests = Tk.Frame(master)
         if len(self._tests) > 0:
             # Create a test element for each test method
-            for reg_test in self._tests:
-                elem = self.g_TestElement(master, self, reg_test, self.logger, self.testLock)
+            for test_name, test_method in self._tests:
+                elem = self.g_TestElement(self.f_tests, self, 
+                                          name=test_name,
+                                          method_name=test_method, 
+                                          logger=self.logger)
                 elem.pack()
                 
                 self._g_tests.append(elem)
-                
+        self.f_tests.pack(fill=Tk.BOTH)
         #self.f_run = Tk.Frame(master)
         
         #=======================================================================
@@ -181,15 +183,37 @@ class Base_Script(object):
         self.myTk.after(self.TIMER_UPDATE_TESTS, self._Timer_UpdateTests)
         
     def _Timer_UpdateInstruments(self):
+        ready = True
         # Update Required Instruments
         for instr in self._g_instruments:
-            instr.updateStatus()
+            instr.cb_update()
+            status = instr.getStatus()
+            if not status:
+                ready = False
+            
+        # If ready, enable all tests
+        if ready:
+            for test in self._g_tests:
+                test.enable()
+        else:
+            for test in self._g_tests:
+                test.disable()
             
         self.myTk.after(self.TIMER_UPDATE_INSTR, self._Timer_UpdateInstruments)
         
     #===========================================================================
     # Helper Functions
     #===========================================================================
+    
+    def open(self):
+        """
+        Script startup routine. Contains all of the code to register tests and
+        notify the test framework of any required instruments.
+        
+        If not implemented by subclass, all methods beginning with 'test_' will
+        be registered by default.
+        """
+        raise NotImplementedError
     
     def requireInstrument(self, name, attr_name, **kwargs):
         """
@@ -209,8 +233,9 @@ class Base_Script(object):
         :param deviceVendor: Instrument Vendor
         :param deviceModel: Instrument Model Number
         :param deviceSerial: Instrument Serial Number
+        :param deviceType: Instrument Type
         """
-        self._instruments.append((name, attr_name, kwargs))
+        self.__instruments.append((name, attr_name, kwargs))
         
     def registerTest(self, name, method_name):
         """
@@ -221,11 +246,7 @@ class Base_Script(object):
         :param method_name: Method name
         :type method_name: str
         """
-        new_test = {}
-        new_test['name'] = name
-        new_test['method'] = method_name
-        
-        self._tests.append(new_test)
+        self.__tests.append((name, method_name))
         
     #===========================================================================
     # GUI Frame Elements
@@ -296,7 +317,7 @@ class Base_Script(object):
             self.instr = []
             #self.instr_sel = 0
             
-        def updateStatus(self):
+        def cb_update(self):
             assert type(self.instr_details) == dict
             
             self.instr = self.labManager.findInstruments(**self.instr_details)
@@ -380,31 +401,36 @@ class Base_Script(object):
         
         states = ['On', 'Off']
         
-        def __init__(self, master, testObject, test_details, logger, lock):
+        def __init__(self, master, scriptObject, name, method_name, logger):
             Tk.Frame.__init__(self, master, padx=3, pady=3)
             
             self.logger = logger
-            self.lock = lock
             
-            self.testMethodName = test_details.get('method')
-            self.testName = test_details.get('name')
+            self.testMethodName = method_name
+            self.testName = name
             
-            self.testMethod = getattr(testObject, self.testMethodName)
+            self.testMethod = getattr(scriptObject, self.testMethodName)
             self.active = False
             
             self.state = 0
             self.v_state = Tk.StringVar()
-            self.b_state = Tk.Button(self, textvariable=self.v_state, command=self.cb_buttonPressed, width=5)
+            self.b_state = Tk.Button(self, textvariable=self.v_state, width=5,
+                                     command=self.cb_buttonPressed)
             self.b_state.pack(side=Tk.LEFT)
             
-            self.l_name = Tk.Label(self, text=self.testName, font=("Helvetica", 12), width=30, anchor=Tk.W, justify=Tk.LEFT)
+            self.l_name = Tk.Label(self, text=self.testName, 
+                                   font=("Helvetica", 12), width=30, 
+                                   anchor=Tk.W, justify=Tk.LEFT)
             self.l_name.pack(side=Tk.LEFT)
             
-            self.b_run = Tk.Button(self, text="Run", command=self.run, width=5)
+            self.b_run = Tk.Button(self, text="Run", width=5,
+                                   command=lambda: self.scriptObject._queue_test(self))
             self.b_run.pack(side=Tk.LEFT)
             
             self.status = Tk.StringVar()
-            self.l_status = Tk.Label(self, textvariable=self.status, font=("Helvetica", 12), width=10, justify=Tk.CENTER)
+            self.l_status = Tk.Label(self, textvariable=self.status, 
+                                     font=("Helvetica", 12), width=10, 
+                                     justify=Tk.CENTER)
             self.l_status.pack(side=Tk.LEFT)
             
             # Set Initial state
@@ -432,6 +458,9 @@ class Base_Script(object):
             
             else:
                 raise IndexError
+            
+        def getState(self):
+            return self.states[self.state]
                 
         def updateState(self):
             stateIdent = self.states[self.state]
@@ -475,31 +504,11 @@ class Base_Script(object):
                 self.status.set("Error")
                 
         def run(self):
-            """
-            Run the test in a new thread
-            """
-            stateIdent = self.states[self.state]
-            
-            if stateIdent == "On":
-                self.testThread = threading.Thread(target=self._run_thread)
-                self.testThread.start()
-            
-        def wait(self):
-            if self.testThread is not None:
-                self.testThread.join()
-                
-        def stop(self):
-            pass
-            
-        def _run_thread(self):
-            """
-            Test Thread handler
-            """
             try:
-                with self.lock:
-                    self.testResult = self.testMethod()
+                self.testResult = self.testMethod()
                 
             except:
                 self.logger.exception("Exception while running test")
                 self.testResult = False
+            
             

@@ -40,12 +40,14 @@ class t_AMPED(Base_Script):
         self.requireInstrument('Load - Secondary', 'load', driver='models.BK_Precision.Load.m_85XX')
         
         # Tests
+        self.registerTest('Startup', 'startup')
         #self.registerTest('Identify', 'test_Identify') # Identify is now done during startup
         self.registerTest('Calibrate Secondary Voltage', 'test_CalibrateSecVoltage')
         self.registerTest('Calibrate Primary Voltage', 'test_CalibratePriVoltage')
         self.registerTest('Calibrate Current Sensor', 'test_CalibrateCurrent')
         self.registerTest('Closed Loop Regulation', 'test_ClosedLoopRegulation')
         self.registerTest('Test Efficiency', 'test_Efficiency')
+        self.registerTest('Shutdown', 'shutdown')
     
     def startup(self):
         try:
