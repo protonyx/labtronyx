@@ -249,6 +249,21 @@ class Base_Script(object):
         self.__tests.append((name, method_name))
         
     #===========================================================================
+    # Test Runner
+    #===========================================================================
+    
+    class TestRunner(threading.Thread):
+        
+        def __init__(self):
+            super(TestRunner, self).__init__()
+            self._running = threading.Event()
+            
+        def stop(self):
+            self._running.clear()
+            
+        
+        
+    #===========================================================================
     # GUI Frame Elements
     #===========================================================================
     class g_ConsoleLogger(Tk.Frame):
