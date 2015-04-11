@@ -50,6 +50,6 @@ def getAllApplets():
                     applets[moduleName] = info
                 
                 except Exception as e:
-                    pass
+                    raise
             
     return applets

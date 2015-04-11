@@ -3,9 +3,9 @@ UPEL View Helper Classes
 """
 
 import Tkinter as Tk
-from common.icp.errors import *
+from interfaces.upel.errors import *
 
-import application.widgets as vw
+import widgets as vw
         
 class ICP_Operation_Mode(vw.vw_Base):
     def __init__(self, master, model):
