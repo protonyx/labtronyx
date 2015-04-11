@@ -35,8 +35,6 @@ class Base_Script(object):
         self.__g_tests = []
     
         self.__test_queue = Queue.Queue()
-        self.__test_curr = None
-    
         # Run the script startup routine
         try:
             self.open()
@@ -49,7 +47,7 @@ class Base_Script(object):
                     self.registerTest(func, func)
         
         # Start test runner thread
-        self.__test_run_thread = threading.Thread(target=self.__main_runner)
+        self.__test_run_thread = self.TestRunner(self.__test_queue)
         
         # Keep the main thread occupied with the GUI
         self.__main_gui()
@@ -85,12 +83,13 @@ class Base_Script(object):
     def _queue_all(self):
         for test in self._g_tests:
             self._queue_test(test)
-          
-    def __main_runner(self):
-        """
-        Main thread for the test runner
-        """
-        pass
+            
+    def _queue_empty(self):
+        try:
+            while (1):
+                self.__test_queue.get_nowait()
+        except Queue.Empty:
+            pass
         
     def __main_gui(self):
         """
@@ -124,7 +123,7 @@ class Base_Script(object):
         #=======================================================================
         Tk.Label(master, text="Test Control:").pack()
         
-        self.state_controller = self.g_StateController(master, self._queue_all)
+        self.state_controller = self.g_StateController(master, self, self.__test_run_thread)
         self.state_controller.pack(fill=Tk.BOTH)
         
         #=======================================================================
@@ -254,14 +253,29 @@ class Base_Script(object):
     
     class TestRunner(threading.Thread):
         
-        def __init__(self):
+        def __init__(self, test_queue):
             super(TestRunner, self).__init__()
             self._running = threading.Event()
+            
+            self.__test_curr = None
+            
+        def start(self):
+            self.__running.set()
+            
+            threading.Thread.start(self)
+            
+        def run(self):
+            while self._running.is_set():
+                pass
             
         def stop(self):
             self._running.clear()
             
+        def getRunningTest(self):
+            return self.__test_curr
         
+        def isRunning(self):
+            return self._running.is_set()
         
     #===========================================================================
     # GUI Frame Elements
@@ -364,53 +378,78 @@ class Base_Script(object):
         
     class g_StateController(Tk.Frame):
         
-        def __init__(self, master, m_startup, m_shutdown, m_run):
+        def __init__(self, master, script_object, run_thread):
             Tk.Frame.__init__(self, master, padx=3, pady=3)
             
-            self.state = 0
-            self.m_startup = m_startup
-            self.m_shutdown = m_shutdown
-            self.m_run = m_run
+            self.script_object = script_object
+            self.run_thread = run_thread
             
-            self.b_start = Tk.Button(self, text="Startup", command=self.cb_startup, width=10)
-            self.b_start.pack(side=Tk.LEFT, padx=2)
-            self.b_stop = Tk.Button(self, text="Shutdown", command=self.cb_shutdown, width=10, state=Tk.DISABLED)
-            self.b_stop.pack(side=Tk.LEFT, padx=2)
-            self.b_run = Tk.Button(self, text="Run Tests", command=self.cb_run, width=10, state=Tk.DISABLED)
-            self.b_run.pack(side=Tk.LEFT, padx=2)
+            self.state = 0
+            
+            self.b_queue = Tk.Button(self, text="Queue All Tests", width=10,
+                                     command=self.cb_queue,
+                                     state=Tk.ENABLED)
+            self.b_run = Tk.Button(self, text="Run All Tests", width=10, 
+                                   command=self.cb_run, 
+                                   state=Tk.DISABLED)
+            self.b_run.pack(side=Tk.LEFT, padx=3)
+            self.b_stop = Tk.Button(self, test="Stop", width=10,
+                                    command=self.cb_stop,
+                                    state=Tk.DISABLED)
+            self.b_stop.pack(side=Tk.LEFT, padx=3)
             
             self.status = Tk.StringVar()
-            self.l_status = Tk.Label(self, textvariable=self.status, font=("Helvetica", 12), width=10, justify=Tk.CENTER)
+            self.l_status = Tk.Label(self, textvariable=self.status, 
+                                     font=("Helvetica", 12), width=10, 
+                                     justify=Tk.CENTER)
             self.l_status.pack(side=Tk.RIGHT)
-            self.status.set("Not Ready")
             
-        def getState(self):
-            return self.state
+            self.cb_update()
             
-        def cb_startup(self):
-            ret = self.m_startup()
+        def enable(self):
+            self.state = 1
             
-            if ret == True:
-                self.b_start.config(state=Tk.DISABLED)
-                self.b_stop.config(state=Tk.NORMAL)
-                self.b_run.config(state=Tk.NORMAL)
-                
-                self.state = 1
-                self.status.set("Ready")
+        def disable(self):
+            self.state = 0
         
-        def cb_shutdown(self):
-            ret = self.m_shutdown()
-            
-            if ret == True:
-                self.b_start.config(state=Tk.NORMAL)
-                self.b_stop.config(state=Tk.DISABLED)
+        def cb_update(self):
+            if self.run_thread.isRunning():
+                self.status.set('Stopped')
+                
+            else:
+                self.status.set('Running')
+                
+            if self.run_thread.isRunning():
                 self.b_run.config(state=Tk.DISABLED)
+                self.b_stop.config(state=Tk.ENABLED)
                 
-                self.state = 0
-                self.status.set("Not Ready")
+            elif self.state == 1:
+                self.b_run.config(state=Tk.ENABLED)
+                self.b_stop.config(state=Tk.DISABLED)
                 
+            else:
+                self.b_run.config(state=Tk.DISABLED)
+                self.b_stop.config(state=Tk.DISABLED)
+        
         def cb_run(self):
-            self.m_run()
+            # Start the test thread
+            self.run_thread.start()
+            
+            self.b_run.config(state=Tk.DISABLED)
+            self.b_stop.config(state=Tk.ENABLED)
+        
+        def cb_stop(self):
+            # Stop the test thread
+            self.run_thread.stop()
+            
+            # Empty the queue
+            self.script_object._queue_empty
+            
+            self.b_run.config(state=Tk.ENABLED)
+            self.b_stop.config(state=Tk.DISABLED)
+            
+        def cb_queue(self):
+            self.script_object._queue_all()
         
     class g_TestElement(Tk.Frame):
         
