@@ -372,7 +372,21 @@ class r_VISA(Base_Resource):
         :param size: Number of bytes to read
         :type size: int
         """
-        return self.instrument.read_raw(size)
+        ret = bytes()
+
+        # There is a bug in PyVISA that forces a low-level call (hgrecco/pyvisa #93)
+        with self.instrument.ignore_warning(visa.constants.VI_SUCCESS_MAX_CNT):
+            if size is None:
+                num_bytes = self.instrument.bytes_in_buffer
+                chunk, status = self.instrument.visalib.read(self.instrument.session, num_bytes)
+                ret += chunk
+
+            else:
+                while len(ret) < size:
+                    chunk, status = self.instrument.visalib.read(self.instrument.session, size - len(ret))
+                    ret += chunk
+                    
+        return ret
     
     def query(self, data, delay=None):
         """
