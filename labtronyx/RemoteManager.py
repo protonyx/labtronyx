@@ -103,5 +103,14 @@ class RemoteManager(RpcClient):
         return self.findResources(**kwargs)
     
 class RemoteResource(RpcClient):
-    pass
+    
+    def _handleException(self, exception_object):
+        if type(exception_object) == RpcInvalidPacket:
+            pass
+        elif type(exception_object) == RpcMethodNotFound:
+            pass
+        elif type(exception_object) == RpcError:
+            pass
+        elif type(exception_object) == RpcServerException:
+            pass
 

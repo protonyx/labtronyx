@@ -73,13 +73,7 @@ class RpcClient(object):
             self.socket.settimeout(self.timeout)
         
         except socket.error as e:
-            if e.errno == errno.ECONNREFUSED:
-                raise RpcServerNotFound()
-            
-            elif e.errno == errno.ECONNRESET: #10054: # Connection reset
-                raise RpcServerNotFound()
-                
-            elif e.errno == errno.ETIMEDOUT: #10060: # Time out
+            if e.errno in [errno.ECONNREFUSED, errno.ECONNRESET, errno.ETIMEDOUT]:
                 raise RpcServerNotFound()
             
             else:
@@ -205,6 +199,9 @@ class RpcClient(object):
     def _ready(self):
         return self.ready
     
+    def _handleException(self, exception_object):
+        raise NotImplementedError
+    
     def __getattr__(self, name):
         return lambda *args, **kwargs: self._rpcCall(name, *args, **kwargs)
     
@@ -248,7 +245,11 @@ class RpcClient(object):
                         # so just check the first one
                         recv_error = errors[0]
                         err_obj = JsonRpc_to_RpcErrors.get(type(recv_error), RpcError)
-                        raise err_obj(recv_error.message)
+                        try:
+                            # Create a subclass hook for exception handling
+                            self._handleException(err_obj)
+                        except NotImplementedError:
+                            raise err_obj(recv_error.message)
                     
                     elif len(responses) == 1:
                         resp = responses[0]
