@@ -411,7 +411,7 @@ class RpcConnection(threading.Thread):
                                     
                                 except Exception as e:
                                     # Catch-all for everything else
-                                    out_packet.addError_ServerException(id, e.message)
+                                    out_packet.addError_ServerException(id, e.__class__.__name__)
                                     self.logger.exception("RPC Server Exception")
                         
                         # Encode the outputs of the RPC requests

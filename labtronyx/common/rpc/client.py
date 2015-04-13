@@ -246,8 +246,9 @@ class RpcClient(object):
                     if len(errors) > 0:
                         # There is a problem if there are more than one errors,
                         # so just check the first one
-                        err_obj = JsonRpc_to_RpcErrors.get(type(errors[0]), RpcError)
-                        raise err_obj()
+                        recv_error = errors[0]
+                        err_obj = JsonRpc_to_RpcErrors.get(type(recv_error), RpcError)
+                        raise err_obj(recv_error.message)
                     
                     elif len(responses) == 1:
                         resp = responses[0]
@@ -264,7 +265,6 @@ class RpcClient(object):
                 raise
                         
             except RpcInvalidPacket:
-                print data # DEBUG
                 self.logger.exception("Invalid RPC Packet")
                     
         raise RpcTimeout("The operation timed out")
