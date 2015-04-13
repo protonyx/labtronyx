@@ -333,3 +333,6 @@ class Base_Resource(object):
         
         else:
             return False
+
+class ResourceNotOpen(RuntimeError):
+    pass

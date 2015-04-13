@@ -8,12 +8,56 @@ the available functions. This is necessary if the driver does not support a
 particular function or a driver does not exist for the device you are 
 interacting with.
 
-Resource Types
---------------
+The Resource types that are currently supported are:
 
    - :class:`labtronyx.interfaces.i_VISA.r_VISA`
    - :class:`labtronyx.interfaces.i_Serial.r_Serial`
    - :class:`labtronyx.interfaces.i_UPEL.r_UPEL`
+   
+Status
+------
+
+The status of a resource can be queried by calling 
+:func:`labtronyx.Base_Resource.getResourceStatus`. Resource status can be in
+any of these states:
+
+   * INIT - Resource does not have a driver loaded
+   * READY - Resource has a driver loaded and is ready
+   * ERROR - An error has occurred
+   
+To get additional information about an error, call
+:func:`labtronyx.Base_Resource.getResourceError`. Errors include any of the
+following:
+
+   * UNAVAILABLE - The Resource is locked by the system or is busy and cannot be 
+     used
+   * NOTFOUND - The Interface denies knowing anything about the Resource. It may
+     have been disconnected. A Resource with this error will likely be deleted
+     soon
+   * UNRESPONSIVE - The Resource is available, but there are no responses from
+     any connected instruments or devices
+   * UNKNOWN - Some other error has occurred that could not be explained. Good
+     luck.
+
+Error Handling
+--------------
+
+If an error is encountered during communication with an instrument or device,
+an exception will be raised that must be caught downstream.
+
+Interface related exceptions are generated when a problem occurs during a
+device-level function call like :func:`write`, :func:`read` or :func:`query`:
+
+   - InterfaceError
+   - InterfaceTimeout
+   - ResourceNotOpen
+
+Driver-specific exceptions are generated based on data received from an
+instrument. The documentation for each driver will specify how these exceptions
+are to be handled:
+
+   - InvalidData
+   - DeviceError
 
 Manually Managing Resources
 ---------------------------

@@ -127,3 +127,9 @@ class Base_Interface(object):
         :returns: bool - True if successful, False otherwise
         """
         raise NotImplementedError
+
+class InterfaceError(RuntimeError):
+    pass
+
+class InterfaceTimeout(RuntimeError):
+    pass

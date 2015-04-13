@@ -1,5 +1,5 @@
-from Base_Interface import Base_Interface
-from Base_Resource import Base_Resource
+from Base_Interface import Base_Interface, InterfaceError, InterfaceTimeout
+from Base_Resource import Base_Resource, ResourceNotOpen
 
 import importlib
 import re
@@ -66,7 +66,7 @@ class i_VISA(Base_Interface):
         Initialize the VISA Controller. Instantiates a VISA Resource Manager
         and starts the controller thread.
         
-        Return True if success, False if an error occurred
+        :returns: True if successful, False if an error occurred
         """
         try:
             # Load the VISA Resource Manager
@@ -313,18 +313,14 @@ class r_VISA(Base_Resource):
         
         :param data: Data to send
         :type data: str
-        :raises: ResourceNotReady
+        :raises: ResourceNotOpen
         """
-        self.checkResourceStatus()
+        try:
+            self.logger.debug("VISA Write: %s" % data)
+            self.instrument.write(data)
         
-        for attempt in range(2):
-            try:
-                self.logger.debug("VISA Write: %s" % data)
-                self.instrument.write(data)
-                break
-            
-            except visa.InvalidSession:
-                self.open()
+        except visa.InvalidSession:
+            raise ResourceNotOpen
                 
     def write_raw(self, data):
         """
@@ -337,13 +333,11 @@ class r_VISA(Base_Resource):
         """
         self.checkResourceStatus()
         
-        for attempt in range(2):
-            try:
-                self.instrument.write_raw(data)
-                break
-            
-            except visa.InvalidSession:
-                self.open()
+        try:
+            self.instrument.write_raw(data)
+        
+        except visa.InvalidSession:
+            raise ResourceNotOpen
         
     def read(self, termination=None, encoding=None):
         """
@@ -359,9 +353,11 @@ class r_VISA(Base_Resource):
         :param encoding: Encoding
         :type encoding: Unknown
         """
-        self.checkResourceStatus()
+        try:
+            return self.instrument.read(termination, encoding)
         
-        return self.instrument.read(termination, encoding)
+        except visa.InvalidSession:
+            raise ResourceNotOpen
     
     def read_raw(self, size=None):
         """
@@ -400,15 +396,12 @@ class r_VISA(Base_Resource):
         :type delay: float
         :returns: str
         """
-        self.checkResourceStatus()
+        try:
+            self.logger.debug("VISA Query: %s" % data)
+            return self.instrument.query(data)
         
-        for attempt in range(2):
-            try:
-                self.logger.debug("VISA Query: %s" % data)
-                return self.instrument.query(data)
-            
-            except visa.InvalidSession:
-                self.open()
+        except visa.InvalidSession:
+            raise ResourceNotOpen
                 
     def inWaiting(self):
         """

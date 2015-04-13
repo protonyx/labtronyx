@@ -222,7 +222,7 @@ class Base_Script(object):
         Script startup routine. Contains all of the code to register tests and
         notify the test framework of any required instruments.
         
-        If not implemented by subclass, all methods beginning with 'test_' will
+        If not implemented by subclass, all methods beginning with `test_` will
         be registered by default.
         """
         raise NotImplementedError
