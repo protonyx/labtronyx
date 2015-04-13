@@ -1,5 +1,5 @@
-from Base_Interface import Base_Interface
-from Base_Resource import Base_Resource
+from Base_Interface import Base_Interface, InterfaceError, InterfaceTimeout
+from Base_Resource import Base_Resource, ResourceNotOpen
 
 import importlib
 import sys
@@ -10,6 +10,7 @@ import serial.tools.list_ports
 # list(serial.tools.list_ports.comports())
 
 import common.resource_status as resource_status
+from serial.serialutil import SerialException
 
 class i_Serial(Base_Interface):
     
@@ -206,17 +207,16 @@ class r_Serial(Base_Resource):
         :type data: str
         :raises: ResourceNotReady
         """
-        self.checkResourceStatus()
-        
-        for attempt in range(2):
-            try:
-                return self.instrument.write(data + self.termination)
-            except SerialException as e:
-                if e == serial.portNotOpenError:
-                    self.open()
-                else:
-                    raise
-                
+        try:
+            self.logger.debug("Serial Write: %s", data)
+            self.instrument.write(data + self.termination)
+            
+        except SerialException as e:
+            if e == serial.portNotOpenError:
+                raise ResourceNotOpen
+            else:
+                raise InterfaceError
+            
     def write_raw(self, data):
         """
         Send Binary-encoded data to the instrument. Termination character is
@@ -226,16 +226,14 @@ class r_Serial(Base_Resource):
         :type data: str
         :raises: ResourceNotReady
         """
-        self.checkResourceStatus()
-        
-        for attempt in range(2):
-            try:
-                return self.instrument.write(data)
-            except SerialException as e:
-                if e == serial.portNotOpenError:
-                    self.open()
-                else:
-                    raise
+        try:
+            self.instrument.write(data)
+            
+        except SerialException as e:
+            if e == serial.portNotOpenError:
+                raise ResourceNotOpen
+            else:
+                raise InterfaceError
     
     def read(self, termination=None):
         """
@@ -246,20 +244,27 @@ class r_Serial(Base_Resource):
         
         All line-ending characters are stripped from the end of the string.
         """
-        self.checkResourceStatus()
-        
-        ret = ''
-        if termination is None:
-            bytes = self.instrument.inWaiting()
-            ret += self.instrument.read(bytes)
-        
-        else:
-            ret += self.instrument.read(1)
-            while ret[-1] != self.termination[-1] or self.instrument.inWaiting() == 0:
+        try:
+            ret = ''
+            
+            if termination is None:
+                bytes = self.instrument.inWaiting()
+                ret += self.instrument.read(bytes)
+            
+            else:
                 ret += self.instrument.read(1)
-            ret = ret[:-len(self.termination)]
+                while ret[-1] != self.termination[-1] or self.instrument.inWaiting() == 0:
+                    ret += self.instrument.read(1)
+                ret = ret[:-len(self.termination)]
+        
+            return ret
+        
+        except SerialException as e:
+            if e == serial.portNotOpenError:
+                raise ResourceNotOpen
+            else:
+                raise InterfaceError
                 
-        return ret
     
     def read_raw(self, size=None):
         """
@@ -271,16 +276,23 @@ class r_Serial(Base_Resource):
         :type size: int
         :returns: bytes
         """
-        ret = bytes()
+        try:
+            ret = bytes()
+            
+            if size is None:
+                bytes = self.instrument.inWaiting()
+                ret += self.instrument.read(bytes)
+                
+            else:
+                ret += self.instrument.read(size)
+                
+            return ret
         
-        if size is None:
-            bytes = self.instrument.inWaiting()
-            ret += self.instrument.read(bytes)
-            
-        else:
-            ret += self.instrument.read(size)
-            
-        return ret
+        except SerialException as e:
+            if e == serial.portNotOpenError:
+                raise ResourceNotOpen
+            else:
+                raise InterfaceError
     
     def query(self, data, delay=None):
         """
@@ -293,17 +305,12 @@ class r_Serial(Base_Resource):
         :param delay: delay (in seconds) between write and read operations.
         :type delay: float
         :returns: str
+        :raises: ResourceNotOpen
         """
-        self.checkResourceStatus()
-        
-        for attempt in range(2):
-            try:
-                self.write(data)
-                if delay is not None:
-                    time.sleep(delay)
-                return self.read()
-            except portNotOpenError:
-                self.open()
+        self.write(data)
+        if delay is not None:
+            time.sleep(delay)
+        return self.read()
     
     def inWaiting(self):
         """

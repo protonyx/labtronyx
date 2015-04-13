@@ -316,7 +316,7 @@ class r_VISA(Base_Resource):
         :raises: ResourceNotOpen
         """
         try:
-            self.logger.debug("VISA Write: %s" % data)
+            self.logger.debug("VISA Write: %s", data)
             self.instrument.write(data)
         
         except visa.InvalidSession:
