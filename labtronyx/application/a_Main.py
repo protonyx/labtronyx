@@ -43,27 +43,9 @@ class a_Main(Tk.Tk):
         self.logFormatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
         self.logger.setLevel(logging.DEBUG)
         # TODO: Log to console?
-        console = logging.StreamHandler(stream=sys.stdout)
-        self.logger.addHandler(console)
+        #console = logging.StreamHandler(stream=sys.stdout)
+        #self.logger.addHandler(console)
         # TODO: Log to file?
-        
-        # Instantiate a LabManager
-        import socket
-        localhost = socket.gethostname()
-        self.lab = LabManager()
-        if not self.lab.addManager(localhost):
-            # Instantiate a local InstrumentManager object
-            self.local_manager = InstrumentManager(Logger=self.logger)
-            self.local_manager.start()
-            self.lab.addManager(localhost)
-            
-        # Register new resource callback on local manager
-        man = self.lab.getManager(localhost)
-        man._registerCallback('event_new_resource', lambda: self.cb_event_new_resource())
-        
-        # GUI Startup
-        self.rebuild()
-        self.rebind()
         
         # Load applets
         import applets
@@ -71,6 +53,26 @@ class a_Main(Tk.Tk):
         
         for applet in self.applets.keys():
             self.logger.debug("Found Applet: %s", applet)
+        
+        # Instantiate a LabManager
+        import socket
+        localhost = socket.gethostname()
+        
+        self.lab = LabManager()
+        if not self.lab.addManager(localhost):
+            # Instantiate a local InstrumentManager object
+            self.local_manager = InstrumentManager()
+            self.local_manager.start()
+            self.lab.addManager(localhost)
+            
+        # Register new resource callback on local manager
+        man = self.lab.getManager(localhost)
+        if man is not None:
+            man._registerCallback('event_new_resource', lambda: self.cb_event_new_resource())
+        
+        # GUI Startup
+        self.rebuild()
+        self.rebind()
         
         # TODO: Persistent Settings
         
