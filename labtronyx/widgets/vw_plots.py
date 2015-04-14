@@ -2,6 +2,8 @@ from . import vw_Base
 
 import Tkinter as Tk
 
+import time
+
 class vw_Plot(vw_Base):
     """
     Plotting Widget for views.
@@ -35,7 +37,7 @@ class vw_Plot(vw_Base):
         # Plot parameters
         self.max_samples = kwargs.get('sample_depth', 100)
         self.sample_time = kwargs.get('sample_interval', 0.1)
-        self.update_interval = int(kwargs.get('update_interval', 0.25) * 1000)
+        self.update_interval = int(kwargs.get('update_interval', 1.0) * 1000)
         self.sampling = kwargs.get('start', False)
         self.title = kwargs.get('title', 'Generic Plot')
         
@@ -60,7 +62,7 @@ class vw_Plot(vw_Base):
             # GUI Elements
             #===================================================================
             # Figure
-            self.fig = matplotlib.figure.Figure(figsize=(4,3), facecolor='w')
+            self.fig = matplotlib.figure.Figure(frameon=False, figsize=(4,3), facecolor='w')
             self.subplot_1 = self.fig.add_subplot(1, 1, 1)
             self.subplot_1.grid(True)
             self.fig.suptitle(self.title)
@@ -90,10 +92,36 @@ class vw_Plot(vw_Base):
         except ImportError:
             Tk.Label(self, text="Missing Dependencies!").pack()
         
-    def addPlot(self, obj, method, **kwargs):
+    def addPlot(self, name, method):
         """
         Add an object and method to the plot
         
+        :param name: Dataset name
+        :type name: str
+        :param method: Data method
+        :type method: str
+        """
+        ret = {}
+        
+        ret['method'] = method
+        ret['data'] = [0.0] * self.max_samples
+        ret['dataset'] = self.subplot_1.plot(self.time_axis, ret['data'])
+        ret['time'] = 0
+        
+        self.plots[name] = ret
+        self.nextID = self.nextID + 1
+        
+        if self.sampling == True:
+            self.startSampling()
+        else:
+            self.stopSampling()
+    
+    def addCollectorPlot(self, name, obj, method):
+        """
+        Add an object and method to the plot using a collector
+        
+        :param name: Dataset name
+        :type name: str
         :param obj: Instrument object
         :type obj: object
         :param method: Y-Axis data method name
@@ -101,6 +129,7 @@ class vw_Plot(vw_Base):
         """
         ret = {}
         
+        ret['type'] = 'collector'
         ret['object'] = obj
         ret['method'] = method
         ret['dataset'] = self.subplot_1.plot(self.time_axis, self.data)
@@ -114,16 +143,23 @@ class vw_Plot(vw_Base):
             self.startSampling()
         else:
             self.stopSampling()
+        
+    def removePlot(self, name):
+        plot = self.plots.pop(name)
+        
+        if plot.get('type') == 'collector':
+            obj = plot.get('object')
+            method = plot.get('method')
             
-    def removePlot(self):
-        pass
+            obj.stopCollector(method)
         
     def startSampling(self):
-        for plotID, plot_attr in self.plots.items():
-            obj = plot_attr.get('object')
-            method = plot_attr.get('method')
-            
-            obj.startCollector(method, self.sample_time, self.max_samples)
+        for plot_name, plot_attr in self.plots.items():
+            if plot_attr.get('type') == 'collector':
+                obj = plot_attr.get('object')
+                method = plot_attr.get('method')
+                
+                obj.startCollector(method, self.sample_time, self.max_samples)
             
         self.sampling = True
         self._schedule_update()
@@ -131,11 +167,12 @@ class vw_Plot(vw_Base):
     def stopSampling(self):
         self.sampling = False
         
-        for plotID, plot_attr in self.plots.items():
-            obj = plot_attr.get('object')
-            method = plot_attr.get('method')
-            
-            obj.stopCollector(method)
+        for plot_name, plot_attr in self.plots.items():
+            if plot_attr.get('type') == 'collector':
+                obj = plot_attr.get('object')
+                method = plot_attr.get('method')
+                
+                obj.stopCollector(method)
 
     def cb_run(self):
         if self.sampling == False:
@@ -150,14 +187,18 @@ class vw_Plot(vw_Base):
         
     def cb_update(self):
         if self.sampling:
-            for plotID, plot_attr in self.plots.items():
-                obj = plot_attr.get('object')
-                method = plot_attr.get('method')
+            for plot_name, plot_attr in self.plots.items():
                 dataset = plot_attr.get('dataset')
                 data = plot_attr.get('data')
                 last_time = plot_attr.get('time')
                 
-                new_data = obj.getCollector(method, last_time)
+                if plot_attr.get('type') == 'collector':
+                    obj = plot_attr.get('object')
+                    method = plot_attr.get('method')
+                    new_data = obj.getCollector(method, last_time)
+                else:
+                    method = plot_attr.get('method')
+                    new_data = [(time.time(), method())]
                 
                 try:
                     for timestamp, sample in new_data:
@@ -166,17 +207,16 @@ class vw_Plot(vw_Base):
                      
                     if len(data) > self.max_samples:
                         data = data[(-1 * self.max_samples):]
-                        
-                    #plot_attr['data'] = data
                     
-                    dataset.set_data(self.time_axis, self.data)
+                    # Update data
+                    dataset[0].set_data(self.time_axis, data)
                     
                     # Autoscale axis
-                    self.subplot_1.axis([0, self.sample_time*self.max_samples, min(self.data)*1.10, max(self.data)*1.10])
+                    self.subplot_1.axis([0, self.sample_time*self.max_samples, min(data)*0.9, max(data)*1.10])
                     
                     self.canvas.draw()
                     
-                except:
+                except Exception as e:
                     pass
         
 class vw_XYPlot(Tk.Frame):
