@@ -1,3 +1,20 @@
+"""
+Dependencies
+------------
+    
+   * matplotlib
+   
+Usage Notes
+-----------
+     
+.. note::
+
+   Make sure to take into account the amount of time it takes to retrieve data
+   from a physical device. This will depend on the interface used, the data
+   transfer rate, operating system overhead and the process priority. This will 
+   limit how quickly you will be able to collect data.
+"""
+
 from . import vw_Base
 
 import Tkinter as Tk
@@ -6,16 +23,8 @@ import time
 
 class vw_Plot(vw_Base):
     """
-    Plotting Widget for views.
-    
-    Dependencies:
-    
-        * matplotlib
-        * numpy
-        
+    Plotting Widget using matplotlib.
     """
-    # Data
-    #methods = {} # (Model object, Method) -> 'last', 'data'
     
     def __init__(self, master, **kwargs):
         """
@@ -46,16 +55,16 @@ class vw_Plot(vw_Base):
         
         try:
             # Dependent Imports
-            import numpy as np
+            #import numpy as np
     
             import matplotlib
             matplotlib.use('TkAgg')
-            from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+            from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
             from matplotlib.backend_bases import key_press_handler
             
             # Initialize Data
-            # self.time_axis = [x/self.sample_time for x in xrange(0, self.max_samples)]
-            self.time_axis = np.arange(0.0, self.max_samples * self.sample_time, self.sample_time)
+            self.time_axis = [x/self.sample_time for x in xrange(0, self.max_samples)]
+            #self.time_axis = np.arange(0.0, self.max_samples * self.sample_time, self.sample_time)
             self.data = [0.0] * self.max_samples
             
             #===================================================================
@@ -145,6 +154,12 @@ class vw_Plot(vw_Base):
             self.stopSampling()
         
     def removePlot(self, name):
+        """
+        Remove a data set from the plot
+        
+        :param name: Dataset name
+        :type name: str
+        """
         plot = self.plots.pop(name)
         
         if plot.get('type') == 'collector':
@@ -154,6 +169,9 @@ class vw_Plot(vw_Base):
             obj.stopCollector(method)
         
     def startSampling(self):
+        """
+        Start sampling and updating the plot
+        """
         for plot_name, plot_attr in self.plots.items():
             if plot_attr.get('type') == 'collector':
                 obj = plot_attr.get('object')
@@ -165,6 +183,9 @@ class vw_Plot(vw_Base):
         self._schedule_update()
 
     def stopSampling(self):
+        """
+        Stop sampling and updating the plot
+        """
         self.sampling = False
         
         for plot_name, plot_attr in self.plots.items():
@@ -217,7 +238,6 @@ class vw_Plot(vw_Base):
                     self.canvas.draw()
                     
                 except Exception as e:
-                    pass
+                    self.stopSampling()
+                    raise
         
-class vw_XYPlot(Tk.Frame):
-    pass
