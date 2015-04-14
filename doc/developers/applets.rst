@@ -1,8 +1,10 @@
 Applets
 =======
 
-Applets allows a seperation of visual code from instrument control code. 
+.. image:: media/applet_multimeter.png
+   :width: 500px
 
+Applets allows a seperation of visual code from instrument control code. 
 
 Applets draw the graphical user interface (GUI) and handle callbacks from GUI 
 elements when the user interacts with them. Applets communicate with a model 
@@ -12,16 +14,8 @@ purpose of views is to separate the GUI elements from the application logic.
 
 .. note::
 
-	Applets are not used in any of the API functions, they can only be launched in 
-	Application mode. The Application GUI will index the `applets` folder and 
-	make them available.
-	
-Widgets
--------
-
-Widgets are pre-built interface elements to perform common actions. A collection
-of widget are provided to make building views much easier. Widgets are
-instantiated
+	Applets can only be launched in Application mode. The Application GUI will 
+	index the `applets` folder and make them available.
 
 Notifications
 -------------
@@ -29,41 +23,45 @@ Notifications
 Event notifications can be enabled to avoid polling in applets. They are enabled
 using by calling `common.rpc.RpcClient._enableNotifications`
 
-Using Collectors
-----------------
+Collectors
+----------
 
 In some applications, it may be beneficial to collect data at a regular and
-precise intervals. Collectors serve this purpose by running at regular 
-intervals.
+precise intervals. If network latency is a concern, a collector can be used to
+reduce latency caused by the RPC subsystem. Collectors run in a dedicated thread 
+on the machine hosting the instrument. 
 
-.. note::
-
-   Make sure to take into account the amount of time it takes to retrieve data
-   from a physical device. This will depend on the interface used, the data
-   transfer rate, operating system overhead and the process priority. This will 
-   limit how quickly you will be able to collect data.
-   
 To start a collector, you must tell the driver which function you would like to
 call, how often you would like to call it and how to interpret the returned
 data. This is done by calling `startCollector` on the Instrument
-object.
+object. To change the interval time, call the :func:`startCollector` method with 
+the new interval. Only one collector can be running at a time for each method, 
+so the old collector will be destroyed and a new one will be created. Data is 
+retreived from a collector using :func:`getCollector`.
 
-.. autoclass:: labtronyx.Base_Driver.Base_Driver
-   :members: startCollector
-
-Example::
-
-	dev = instr.getInstrument_list()[0]
-	
-	dev.startCollector('getMeasurement', 100, lambda x: print x)
-	
-To stop a collector, notify the Model by calling `stopCollector` with the
+To stop a collector, notify the Model by calling :func:`stopCollector` with the
 name of the method.
 
 Example::
+	
+	dev.startCollector('getMeasurement', 100, lambda x: print x)
+	
+	data = []
+	last_time = time.time()
+	
+	while an_event.is_set():
+		new_data = dev.getCollector('getMeasurement', last_time)
+		for timestamp, sample in new_data:
+            plot_attr['time'] = timestamp
+            data.append(sample)
 
 	dev.stopCollector('getMeasurement')
-	
-To change the interval time, call the `startCollector` method with the new
-interval. Only one collector can be running at a time for each method, so the
-old collector will be destroyed and a new one will be created.
+
+.. autoclass:: labtronyx.Base_Driver.Base_Driver
+   :members: startCollector, getCollector, stopCollector
+
+Widgets
+-------
+
+Widgets are pre-built interface elements to perform common actions. A collection
+of widget are provided to make building applets much easier.
