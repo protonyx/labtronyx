@@ -37,10 +37,10 @@ class i_Serial(Base_Interface):
                 if res.isOpen():
                     res.close()
                     
-                res.stop()
-                
             except:
                 pass
+            
+            res.stop()
             
         return True
     
@@ -144,6 +144,9 @@ class r_Serial(Base_Resource):
         
     def open(self):
         self.instrument.open()
+        
+    def isOpen(self):
+        return self.instrument._isOpen
     
     def close(self):
         self.instrument.close()
