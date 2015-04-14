@@ -64,6 +64,7 @@ import select
 import threading
 import Queue
 from sets import Set
+import errno
 
 import numpy
 
@@ -142,8 +143,11 @@ class i_UPEL(Base_Interface):
     def close(self):
         self.stop()
         
-        self.__socket.shutdown(1)
-        self.__socket.close()
+        try:
+            self.__socket.shutdown(1)
+            self.__socket.close()
+        except:
+            pass
         
         self.e_conf.clear()
         
@@ -176,6 +180,12 @@ class i_UPEL(Base_Interface):
                 self._serviceRoutingMap()
                 
                 # TODO: Do we need to sleep here or run full speed?
+                
+            except socket.error as e:
+                if e.errno == errno.EACCES:
+                    # Permission denied
+                    self.logger.error('Unable to send: permission denied. Check firewall policy')
+                    self.e_alive.clear()
                 
             except:
                 self.logger.exception("UPEL ICP Thread Exception")
@@ -374,10 +384,6 @@ class i_UPEL(Base_Interface):
             
             except Queue.Empty:
                 return False
-            
-            except:
-                self.logger.exception("Exception encountered while servicing queue")
-                return True
             
         else:
             return False
