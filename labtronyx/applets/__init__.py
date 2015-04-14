@@ -41,7 +41,7 @@ def getAllApplets():
 
                 # Attempt to load the view
                 try:
-                    testModule = importlib.import_module(moduleName)
+                    testModule = importlib.import_module('applets.' + moduleName)
                 
                     # Check to make sure the correct class exists
                     testClass = getattr(testModule, fileName) # Will raise exception if doesn't exist

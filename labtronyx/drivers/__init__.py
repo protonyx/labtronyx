@@ -41,7 +41,7 @@ def getAllDrivers():
         
                 # Attempt to load the model
                 try:
-                    testModule = importlib.import_module(moduleName)
+                    testModule = importlib.import_module('drivers.' + moduleName)
                     
                     # Check to make sure the correct class exists
                     testClass = getattr(testModule, fileName) # Will raise exception if doesn't exist
