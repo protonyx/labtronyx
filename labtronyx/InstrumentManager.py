@@ -117,7 +117,6 @@ class InstrumentManager(object):
 
         except rpc.RpcServerPortInUse:
             self.logger.error("RPC Port in use, shutting down...")
-            del self.rpc_server
 
     def stop(self):
         """

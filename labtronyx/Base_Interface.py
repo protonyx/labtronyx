@@ -12,7 +12,7 @@ class Base_Interface(object):
     Interface Base Class
     """
     
-    REFRESH_RATE = 5.0 # Seconds
+    REFRESH_RATE = 1.0 # Seconds
 
     # TODO: Interface will have hooks into the persistence config to "remember" how
     #       a particular device is configured when the program is run in the future.
