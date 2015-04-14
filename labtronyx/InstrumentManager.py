@@ -230,10 +230,10 @@ class InstrumentManager(object):
         """
         Signal all resources to refresh
         """
-        for res in self.resources:
+        for res in self.resources.values():
             try:
                 res.refresh()
-            except:
+            except Exception as e:
                 pass
             
         return True

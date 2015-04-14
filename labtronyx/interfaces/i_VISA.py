@@ -40,8 +40,12 @@ class i_VISA(Base_Interface):
                 for res in res_list:
                     if res not in self.resources.keys():
                         try:
+                            instrument = self.resource_manager.open_resource(res,
+                                                                  open_timeout=0.1)
+                            
                             new_resource = r_VISA(res, self, 
                                                   drivers=self.manager.getDrivers(),
+                                                  instrument=instrument,
                                                   logger=self.logger,
                                                   config=self.config,
                                                   enableRpc=self.manager.enableRpc)
@@ -49,6 +53,15 @@ class i_VISA(Base_Interface):
                             self.resources[res] = new_resource
                             
                             self.manager._cb_new_resource()
+                        
+                        except visa.VisaIOError as e:
+                            if e.abbreviation in ["VI_ERROR_RSRC_BUSY", 
+                                                  "VI_ERROR_RSRC_NFOUND",
+                                                  "VI_ERROR_TMO"]:
+                                pass
+                                
+                            else:
+                                self.logger.exception("Unknown VISA Exception")
                         
                         except:
                             self.logger.exception("Unhandled VISA Exception occurred while creating new resource: %s", res)
@@ -124,51 +137,21 @@ class r_VISA(Base_Resource):
         
         self.resource_manager = visa.ResourceManager()
         self.driver_list = kwargs.get('drivers', {})
-
-        try:
-            self.logger.info("Created VISA Resource: %s", resID)
-            self.instrument = self.resource_manager.open_resource(resID,
-                                                                  open_timeout=0.5)
-            self.setResourceStatus(resource_status.READY)
-            
-            self.identify()
-            
-            self.logger.info("Vendor: %s", self.VID)
-            self.logger.info("Model:  %s", self.PID)
-            self.logger.info("Serial: %s", self.serial)
-            self.logger.info("F/W:    %s", self.firmware)
-            
-            self.close()
-            
-            # Attempt to automatically load a driver
-            self.loadDriver()
-            
-        except visa.VisaIOError as e:
-            self.VID = ''
-            self.PID = ''
-            self.firmware = ''
-            self.serial = ''
-            
-            if e.abbreviation == "VI_ERROR_RSRC_BUSY":
-                self.locked = True
-                self.logger.info("Unable to Identify, resource is busy")
-                self.setResourceStatus(resource_status.ERROR)
-                self.setResourceError(resource_status.ERROR_BUSY)
-                
-            elif e.abbreviation == "VI_ERROR_TMO":
-                self.logger.info("Unable to Identify, resource did not respond")
-                #self.setResourceError(resource_status.ERROR_NOTFOUND)
-                # This could indicate incorrect settings in the case of serial devices
-                
-            elif e.abbreviation == "VI_ERROR_RSRC_NFOUND":
-                self.logger.info("Unable to connect, resource was not found")
-                self.setResourceStatus(resource_status.ERROR)
-                self.setResourceError(resource_status.ERROR_NOTFOUND)
-                
-            else:
-                self.logger.exception("Unknown VISA Exception")
-                self.setResourceStatus(resource_status.ERROR)
-                self.setResourceError(resource_status.ERROR_UNKNOWN)
+        self.instrument = kwargs.get('instrument')
+        
+        #self.instrument.timeout = 1000
+        
+        self.identify()
+        
+        self.logger.debug("Created VISA Resource: %s", resID)
+        self.logger.debug("Vendor: %s", self.VID)
+        self.logger.debug("Model:  %s", self.PID)
+        self.logger.debug("Serial: %s", self.serial)
+        self.logger.debug("F/W:    %s", self.firmware)
+        
+        self.close()
+        
+        self.loadDriver()
                 
     def getProperties(self):
         def_prop = Base_Resource.getProperties(self)
@@ -183,16 +166,25 @@ class r_VISA(Base_Resource):
     def refresh(self):
         self.identify()
         
+        if self.driver is None:
+            # Attempt to automatically load a driver
+            self.loadDriver()
+        
     #===========================================================================
     # VISA Specific
     #===========================================================================
     
     def identify(self):
         start_state = self.isOpen()
+        start_timeout = self.instrument.timeout
+        if not start_state:
+            self.open()
+            
+        #self.instrument.timeout = 500
         
         try:
             self.identity = self.query("*IDN?").strip().split(',')
-        except:
+        except Exception as e:
             self.identity = []
             
         if len(self.identity) >= 4:
@@ -210,6 +202,8 @@ class r_VISA(Base_Resource):
             self.firmware = ''
             self.serial = ''
             self.logger.error('Unable to identify VISA device')
+            
+        self.instrument.timeout = start_timeout
             
         if start_state == False:
             self.close()
