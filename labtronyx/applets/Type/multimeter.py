@@ -83,7 +83,7 @@ class multimeter(Base_Applet):
         # Plot
         #=======================================================================
         self.w_graph = vw_plots.vw_Plot(self, title="Measurement")
-        self.w_graph.addPlot(self.instr, method='getMeasurement')
+        self.w_graph.addPlot('Measurement', self.instr.getMeasurement)
         self.w_graph.grid(row=1, column=1, rowspan=2)
         
         

@@ -35,7 +35,7 @@ class Base_Resource(object):
         """
         Start the RPC Server
         """
-        self.rpc_server = rpc.RpcServer(name='RPC-%s' % (self.__uuid),
+        self.rpc_server = rpc.RpcServer(name='RPC-%s' % (self.__resID),
                                         logger=self.logger)
         self.rpc_server.registerObject(self)
         

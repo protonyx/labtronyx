@@ -35,7 +35,7 @@ class Base_Driver(object):
         Asynchronous thread that automatically polls methods that are marked
         for collection
         """
-        threading.current_thread().setName('collector_%s' % self.uuid)
+        threading.current_thread().setName('collector_%s' % self.__class__.__name__)
         next_sample = {}
         
         while (len(self._collector_methods) > 0):

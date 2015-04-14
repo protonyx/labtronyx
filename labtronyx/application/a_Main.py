@@ -260,6 +260,8 @@ class a_Main(Tk.Tk):
         w_addResource.grab_set()
             
     def cb_refreshTree(self, address=None):
+        self.lab.refresh()
+        
         self.treeFrame.refresh()
         
     def cb_loadApplet(self, uuid, applet=None):
