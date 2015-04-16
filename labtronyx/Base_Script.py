@@ -1,4 +1,5 @@
 from InstrumentManager import InstrumentManager
+from RemoteManager import RemoteManager
 
 import threading
 import logging
@@ -25,7 +26,10 @@ class Base_Script(object):
         self.logger = logging.getLogger(__name__)
         
         # Instantiate InstrumentManager
-        self.instr = InstrumentManager(logger=self.logger, enableRpc=False)
+        try:
+            self.instr = RemoteManager(address='localhost')
+        except:
+            self.instr = InstrumentManager(logger=self.logger, enableRpc=False)
 
         # Initialize instance variables
         self.__instruments = []
