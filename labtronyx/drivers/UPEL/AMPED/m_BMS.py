@@ -9,12 +9,6 @@ class m_BMS(Base_Driver):
     """
     
     info = {
-        # Model revision author
-        'author':               'KKENNEDY',
-        # Model version
-        'version':              '1.0',
-        # Revision date of Model version
-        'date':                 '2015-01-31',
         # Device Manufacturer
         'deviceVendor':         'UPEL',
         # List of compatible device models
@@ -40,6 +34,8 @@ class m_BMS(Base_Driver):
     def _onLoad(self):
         self.instr = self.getResource()
         
+        self.instr.open()
+        
         # Configure the COM Port
         self.instr.configure(baudrate=1500000,
                              timeout=0.5,
@@ -50,10 +46,10 @@ class m_BMS(Base_Driver):
         self.status = 0
     
     def _onUnload(self):
-        pass
+        self.instr.close()
     
     def getProperties(self):
-        prop = models.m_Base.getProperties(self)
+        prop = Base_Driver.getProperties(self)
         
     	prop['deviceModel'] = self.info.get('deviceModel')[0]
         
