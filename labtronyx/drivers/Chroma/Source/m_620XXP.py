@@ -43,23 +43,27 @@ class m_620XXP(Base_Driver):
                                          '62012P-80-60', '62012P-100-50', 
                                          '62012P-600-8', '62024P-40-120', 
                                          '62024P-80-60', '62024P-100-50', 
-                                         '62024-600-8', '62052P-100-100']
+                                         '62024P-600-8', '62052P-100-100']
     }
     
     def _onLoad(self):
         self.instr = self.getResource()
+        
+        self.instr.open()
         
         self.setRemoteControl()
     
     def _onUnload(self):
         self.setLocalControl()
         
+        self.instr.close()
+        
     def getProperties(self):
         prop = Base_Driver.getProperties(self)
         
         # Chroma seems to have a different way of responding to *IDN?
-        prop['deviceSerial'] = getVISA_firmware()
-        prop['deviceFirmware'] = getVISA_serial()
+        prop['deviceSerial'] = self.instr.identity[3]
+        prop['deviceFirmware'] = self.instr.identity[2]
         
         prop['protectionModes'] = ['Voltage', 'Current', 'Power']
         prop['terminalSense'] = ['Voltage', 'Current', 'Power']
