@@ -188,7 +188,10 @@ class r_VISA(Base_Resource):
             self.identity = []
             
         if len(self.identity) >= 4:
-            self.VID, self.PID, self.serial, self.firmware = self.identity[0:4]
+            self.VID = self.identity[0].strip()
+            self.PID = self.identity[1].strip()
+            self.serial = self.identity[2].strip()
+            self.firmware = self.identity[4].strip()
         
         elif len(self.identity) == 3:
             # Resource provided a non-standard identify response
