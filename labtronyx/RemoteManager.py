@@ -15,7 +15,7 @@ class RemoteManager(RpcClient):
     """
     resources = {}
     
-    def __init__(self, address, port, **kwargs):
+    def __init__(self, address, port=6780, **kwargs):
         RpcClient.__init__(self, address, port, **kwargs)
         
         self._enableNotifications()
@@ -65,7 +65,7 @@ class RemoteManager(RpcClient):
         """
         return self.getResource()
     
-    def findResources(self):
+    def findResources(self, **kwargs):
         """
         Get a list of resources that match the parameters specified.
         Parameters can be any key found in the resource property dictionary.
