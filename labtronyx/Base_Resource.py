@@ -30,6 +30,19 @@ class Base_Resource(object):
         
         if kwargs.get('enableRpc', True):
             self.start()
+            
+    def __del__(self):
+        self.stop()
+        
+    def __getattr__(self, name):
+        if self.driver is not None:
+            if hasattr(self.driver, name):
+                return getattr(self.driver, name)
+            else:
+                raise AttributeError
+            
+        else:
+            raise AttributeError
         
     def start(self):
         """
@@ -45,9 +58,6 @@ class Base_Resource(object):
         """
         if hasattr(self, 'rpc_server'):
             self.rpc_server.rpc_stop()
-        
-    def __del__(self):
-        self.stop()
         
     def getUUID(self):
         return self.__uuid
