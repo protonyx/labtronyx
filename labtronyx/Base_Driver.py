@@ -176,3 +176,8 @@ class Base_Driver(object):
             'deviceVendor':     self.info.get('deviceVendor', '')
         }
         
+class InvalidResponse(RuntimeError):
+    pass
+
+class DeviceError(RuntimeError):
+    pass
