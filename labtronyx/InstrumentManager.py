@@ -139,6 +139,7 @@ class InstrumentManager(object):
                 
         # Stop the InstrumentManager RPC Server
         if hasattr(self, 'rpc_server'):
+            self.rpc_server.notifyClients('manager_shutdown')
             self.rpc_server.rpc_stop()
             
     def getVersion(self):
