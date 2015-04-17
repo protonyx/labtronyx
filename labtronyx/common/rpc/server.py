@@ -21,12 +21,15 @@ class RpcServer(object):
     :type port: int 
     :param name: Internal name for the RPC server thread
     :type name: str
+    :param type: Server type - 'TCP' or 'UDP'
+    :type type: str
     
     .. note::
 
         Method calls to functions that begin with an underscore are considered 
         protected and will not be invoked
     """
+    DEBUG_RPC_SERVER = False
     
     _identity = 'JSON-RPC/2.0'
     type = "TCP"
@@ -263,8 +266,13 @@ class RpcServer(object):
     
 class RpcServerThread(threading.Thread):
     
+    DEBUG_RPC_SERVER = False
+    
     def __init__(self, name, server, srv_socket, **kwargs):
         threading.Thread.__init__(self)
+        
+        # RPC Server Threads are daemon threads, they die when the main thread dies
+        self.daemon = True
         
         self.server = server
         self.srv_socket = srv_socket
@@ -279,7 +287,8 @@ class RpcServerThread(threading.Thread):
     def run(self):
         self.e_alive.set()
         
-        self.logger.debug('[%s] RPC Server started on port %i', self.name, self.port)
+        if self.DEBUG_RPC_SERVER:
+            self.logger.debug('[%s] RPC Server started on port %i', self.name, self.port)
         
         while self.e_alive.isSet():
             # Service Socket
@@ -302,10 +311,12 @@ class RpcServerThread(threading.Thread):
                 
         self.srv_socket.close()
         
-        self.logger.debug('[%s] RPC Server stopped', self.name)
+        if self.DEBUG_RPC_SERVER:
+            self.logger.debug('[%s] RPC Server stopped', self.name)
         
     def stop(self, timeout=None):
-        self.logger.debug('[%s] RPC Server asked to stop', self.name)
+        if self.DEBUG_RPC_SERVER:
+            self.logger.debug('[%s] RPC Server asked to stop', self.name)
         
         for conn in self.server._connections:
             try:
@@ -333,10 +344,15 @@ class RpcConnection(threading.Thread):
     :param logger: Logger instance if you wish to override the internal instance
     :type logger: Logging.logger
     """
-    RPC_MAX_PACKET_SIZE = 4096
+    DEBUG_RPC_CONNECTION = False
+    
+    RPC_MAX_PACKET_SIZE = 4096 # Internal buffer limit
     
     def __init__(self, server, conn_socket, **kwargs):
         threading.Thread.__init__(self)
+        
+        # RPC Threads are daemon threads, they die when the main thread dies
+        self.daemon = True
         
         self.server = server
         self.conn_socket = conn_socket
@@ -354,7 +370,8 @@ class RpcConnection(threading.Thread):
         self.e_alive.set()
         self.server._connections.append(self)
 
-        self.logger.debug("New RPC Connection: %s", self.address)
+        if self.DEBUG_RPC_CONNECTION:
+            self.logger.debug("New RPC Connection: %s", self.address)
         
         while(self.e_alive.isSet()):
             # Maintain the connection as long as it is open
@@ -416,8 +433,10 @@ class RpcConnection(threading.Thread):
                         
                         # Encode the outputs of the RPC requests
                         out_str = out_packet.export()
-                        self.logger.debug("RPC Send %i bytes" % len(out_str))
                         self.conn_socket.send(out_str)
+                        
+                        if self.DEBUG_RPC_CONNECTION:
+                            self.logger.debug("RPC Send %i bytes" % len(out_str))
                         
             except socket.error as e:
                 # Socket closed poorly from client
@@ -441,7 +460,9 @@ class RpcConnection(threading.Thread):
     def processRequest(self, req):
         id = req.getID()
         method = req.getMethod()
-        self.logger.debug('[%s, %i] RPC Request: %s', self.name, id, method)
+        
+        if self.DEBUG_RPC_CONNECTION:
+            self.logger.debug('[%s, %i] RPC Request: %s', self.name, id, method)
                             
         try:
             test_method = self.server.findMethod(method)

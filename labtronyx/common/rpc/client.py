@@ -28,6 +28,7 @@ class RpcClient(object):
     :param port: Port of remote RpcServer
     :type port: int
     """
+    DEBUG_RPC_CLIENT = False
     
     RPC_TIMEOUT = 10.0
     RPC_MAX_PACKET_SIZE = 1048576 # 1MB
@@ -107,7 +108,8 @@ class RpcClient(object):
             
             self._rpcCall('rpc_register', address, port)
             
-            self.logger.debug("RPC Notifications enabled")
+            if self.DEBUG_RPC_CLIENT:
+                self.logger.debug("RPC Notifications enabled")
             
             return True
         
@@ -156,6 +158,10 @@ class RpcClient(object):
         for attempt in range(2):
             try:
                 self.socket.send(data_out)
+                
+                if self.DEBUG_RPC_CLIENT:
+                    self.logger.debug('RPC TX: %s bytes', len(data_out))
+                
                 break
                 
             except socket.error as e:
