@@ -50,10 +50,11 @@ class m_3441XA(Base_Driver):
     
     def _onLoad(self):
         self.instr = self.getResource()
+        
         self.instr.open()
     
     def _onUnload(self):
-        pass
+        self.instr.close()
     
     def reset(self):
         """
@@ -62,6 +63,11 @@ class m_3441XA(Base_Driver):
         self.instr.write("*RST")
         
     def getError(self):
+        """
+        Get the last error
+        
+        :returns: str
+        """
         return self.instr.query("SYST:ERR?")
     
     def getMode(self):
@@ -70,7 +76,7 @@ class m_3441XA(Base_Driver):
         
         :returns: str
         """
-        self.mode = str(self.query("CONF?")).upper()
+        self.mode = str(self.instr.query("CONF?")).upper()
         
         for desc, code in self.modes.items():
             if self.mode == code:
@@ -110,7 +116,7 @@ class m_3441XA(Base_Driver):
         """
         if func in self.modes:
             value = self.modes.get(func)
-            self.instr.write("CONF %s" % self.value)
+            self.instr.write("CONF %s" % value)
             
             self.func = self.getMode()
         else:
