@@ -158,12 +158,8 @@ class m_85XX(Base_Driver):
         '''
         assert(len(command) == self.length_packet)
         
-        if self.instr.getResourceType() == 'VISA':
-            self.instr.write_raw(command)
-            response = self.instr.read_raw(self.length_packet)
-        else:
-            self.instr.write(command)
-            response = self.instr.read(self.length_packet)
+        self.instr.write_raw(command)
+        response = self.instr.read_raw(self.length_packet)
         
         assert(len(response) == self.length_packet)
         return response
