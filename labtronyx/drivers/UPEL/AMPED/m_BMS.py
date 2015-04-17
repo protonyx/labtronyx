@@ -103,7 +103,6 @@ class m_BMS(Base_Driver):
             tx = struct.pack(fmt, address, address, cmd, cmd, data)
             
             self.instr.write_raw(tx)
-            self.instr.flush()
             
             return True
             
@@ -119,13 +118,11 @@ class m_BMS(Base_Driver):
         self.sendCommand_noAck(0xFA, cmd, 0)
         
         try:
-            old_timeout = self.instr.timeout
             self.instr.configure(timeout=3.0)
             
             rx = self.instr.read_raw(10)
-            #rx = self.instr.read(512)
 
-            self.instr.timeout = old_timeout
+            self.instr.configure(timeout=0.5)
             
             if (len(rx) == 10):
 
