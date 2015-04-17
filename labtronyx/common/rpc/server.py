@@ -382,6 +382,12 @@ class RpcConnection(threading.Thread):
                 if self.conn_socket in ready_to_read:
                     
                     data = self.conn_socket.recv(self.RPC_MAX_PACKET_SIZE)
+                    
+                    # Check if connection has closed
+                    if data == '':
+                        self.e_alive.clear()
+                        break
+                    
                     seg = None
                     # Receive the full packet
                     try:

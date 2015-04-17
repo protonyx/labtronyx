@@ -99,7 +99,6 @@ class Base_Script(object):
             pass
         
     def __close_gui(self):
-        self.instr.stop()
         self.__test_run_thread.kill()
         
         self.myTk.destroy()

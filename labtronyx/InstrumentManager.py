@@ -73,7 +73,20 @@ class InstrumentManager(object):
         # Start the RPC Server
         self.enableRpc = kwargs.get('enableRpc', True) 
         if self.enableRpc == True:
-            self.start()
+            try:
+                import common.rpc as rpc
+                self.rpc_server = rpc.RpcServer(name='Labtronyx-InstrumentManager', 
+                                                port=self.config.managerPort,
+                                                logger=self.logger)
+                self.rpc_server.registerObject(self)
+                self.logger.debug("RPC Server starting...")
+                
+                for res_uuid, res_obj in self.resources.items():
+                    res_obj.start()
+    
+            except rpc.RpcServerPortInUse:
+                self.logger.error("RPC Port in use, shutting down...")
+                sys.exit(1)
     
         # Announce Version
         self.logger.info(self.config.longname)
@@ -104,19 +117,7 @@ class InstrumentManager(object):
         :returns: True if successful, False otherwise
         """
         self.enableRpc = True
-        try:
-            import common.rpc as rpc
-            self.rpc_server = rpc.RpcServer(name='Labtronyx-InstrumentManager', 
-                                            port=self.config.managerPort,
-                                            logger=self.logger)
-            self.rpc_server.registerObject(self)
-            self.logger.debug("RPC Server starting...")
-            
-            for res_uuid, res_obj in self.resources.items():
-                res_obj.start()
-
-        except rpc.RpcServerPortInUse:
-            self.logger.error("RPC Port in use, shutting down...")
+        
 
     def stop(self):
         """

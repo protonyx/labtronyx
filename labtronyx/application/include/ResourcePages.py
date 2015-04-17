@@ -52,6 +52,7 @@ class a_LoadDriver(Tk.Toplevel):
         # Find valid drivers for this resource type
         manager = self.labManager.getManager(self.address)
         allDrivers = manager.getDrivers()
+        
         self.validDrivers = {}
         for driverModule, driverInfo in allDrivers.items():
             if self.resType in driverInfo.get('validResourceTypes', []):

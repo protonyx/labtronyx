@@ -211,6 +211,8 @@ class Base_Resource(object):
             className = driverName.split('.')[-1]
             testClass = getattr(testModule, className)
             
+            self.logger.debug('Loading driver [%s] for resource [%s]', driverName, self.getResourceID())
+            
             self.driver = testClass(self, logger=self.logger, config=self.config)
             self.driver._onLoad()
             

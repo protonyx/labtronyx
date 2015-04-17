@@ -26,7 +26,7 @@ BK Precision provides a device for communicating with this class of DC load:
 API
 ---
 """
-from Base_Driver import Base_Driver
+from Base_Driver import *
 
 class m_85XX(Base_Driver):
     """
@@ -48,7 +48,7 @@ class m_85XX(Base_Driver):
     }
 
     address = 0
-    debug = 0  # Set to 1 to see dumps of commands and responses
+    debug = 1  # Set to 1 to see dumps of commands and responses
     length_packet = 26  # Number of bytes in a packet
     convert_current = 1e4  # Convert current in A to 0.1 mA
     convert_voltage = 1e3  # Convert voltage in V to mV
@@ -66,6 +66,14 @@ class m_85XX(Base_Driver):
         "EXTERNAL":1, 
         "BUS":2}
     
+    responses = {
+        0x90 : "Wrong checksum",
+        0xA0 : "Incorrect parameter value",
+        0xB0 : "Command cannot be carried out",
+        0xC0 : "Invalid command",
+        0x80 : "",
+    }
+    
     def _onLoad(self):
         self.instr = self.getResource()
         
@@ -77,23 +85,51 @@ class m_85XX(Base_Driver):
                              stopbits=1,
                              timeout=0.5)
         
-        self.setRemoteControl()
+        # Try multiple times to force the load into remote mode
+        # If any stray data was received, it could be stuck in a bad state, this
+        # should flush it out
+        for attempt in range(3):
+            try:
+                self.setRemoteControl()
+                break
+            
+            except:
+                pass
+        else:
+            self.instr.setResourceStatus('ERROR')
+            # INSTRUMENT NOT PRESENT
+            # This must be the wrong driver
+            
+        return True
     
     def _onUnload(self):
-        self.setLocalControl()
+        try:
+            self.setLocalControl()
+            
+        except:
+            pass
         
-        self.instr.close()
+        finally:
+            self.instr.close()
         
     def getProperties(self):
         prop = Base_Driver.getProperties(self)
         
         prop['deviceVendor'] = 'BK Precision'
         
-        prodInfo = self._GetProductInformation()
-        prop['deviceModel'] = prodInfo[0]
-        prop['deviceSerial'] = prodInfo[1]
-        prop['deviceFirmware'] = prodInfo[2]
-        
+        if hasattr(self, 'prodInfo'):
+            prop['deviceModel'] = self.prodInfo[0]
+            prop['deviceSerial'] = self.prodInfo[1]
+            prop['deviceFirmware'] = self.prodInfo[2]
+        else:
+            try:
+                self.prodInfo = self._GetProductInformation()
+                prop['deviceModel'] = self.prodInfo[0]
+                prop['deviceSerial'] = self.prodInfo[1]
+                prop['deviceFirmware'] = self.prodInfo[2]
+            except:
+                self.logger.exception('Get prod info exception')
+            
         prop['validModes'] = self.modes
         prop['validTriggerSources'] = self.trigger_sources
         prop['controlModes'] = ['Voltage', 'Current', 'Power', 'Resistance']
@@ -161,23 +197,20 @@ class m_85XX(Base_Driver):
         self.instr.write_raw(command)
         response = self.instr.read_raw(self.length_packet)
         
-        assert(len(response) == self.length_packet)
+        if self.debug:
+            print "command:"
+            print str(command).encode('hex')
+            print "response:"
+            print str(response).encode('hex')
+            
+        if (len(response) == self.length_packet):
+            #assert(ord(response[2]) == 0x12)
+            self.last_status = ord(response[3])
+        
+        else:
+            raise InvalidResponse
+        
         return response
-    
-    def _ResponseStatus(self, response):
-        '''Return a message string about what the response meant.  The
-        empty string means the response was OK.
-        '''
-        responses = {
-            0x90 : "Wrong checksum",
-            0xA0 : "Incorrect parameter value",
-            0xB0 : "Command cannot be carried out",
-            0xC0 : "Invalid command",
-            0x80 : "",
-        }
-        assert(len(response) == self.length_packet)
-        assert(ord(response[2]) == 0x12)
-        return responses[ord(response[3])]
     
     def _CodeInteger(self, value, num_bytes=4):
         '''Construct a little endian string for the indicated value.  Two
@@ -215,16 +248,6 @@ class m_85XX(Base_Driver):
         num = self.length_packet - num_used - 1
         assert(num > 0)
         return chr(0)*num
-    
-    def _PrintCommandAndResponse(self, cmd, response, cmd_name):
-        '''Print the command and its response if debugging is on.
-        '''
-        assert(cmd_name)
-        if self.debug:
-            out(cmd_name + " command:" + nl)
-            self.DumpCommand(cmd)
-            out(cmd_name + " response:" + nl)
-            self.DumpCommand(response)
             
     def _GetCommand(self, command, value, num_bytes=4):
         '''Construct the command with an integer value of 0, 1, 2, or 
@@ -263,8 +286,6 @@ class m_85XX(Base_Driver):
         '''
         cmd = self._GetCommand(byte, int(value), num_bytes)
         response = self._SendCommand(cmd)
-        self._PrintCommandAndResponse(cmd, response, msg)
-        return self._ResponseStatus(response)
     
     def _GetIntegerFromLoad(self, cmd_byte, msg, num_bytes=4):
         '''Construct a command from the byte in cmd_byte, send it, get
@@ -278,7 +299,7 @@ class m_85XX(Base_Driver):
         cmd += chr(self._CalculateChecksum(cmd))
         assert(self._CommandProperlyFormed(cmd))
         response = self._SendCommand(cmd)
-        self._PrintCommandAndResponse(cmd, response, msg)
+        
         return self._DecodeInteger(response[3:3 + num_bytes])
     
     # Returns model number, serial number, and firmware version number
@@ -291,13 +312,23 @@ class m_85XX(Base_Driver):
         cmd += chr(self._CalculateChecksum(cmd))
         assert(self._CommandProperlyFormed(cmd))
         response = self._SendCommand(cmd)
-        self._PrintCommandAndResponse(cmd, response, "Get product info")
-        model = response[3:8]
-        fw = hex(ord(response[9]))[2:] + "."
-        fw += hex(ord(response[8]))[2:] 
+        
+        model = response[3:7] #str(response[3:8]).strip()
+        fw = hex(ord(response[9]))[2:] + "." + hex(ord(response[8]))[2:] 
         serial_number = response[10:20]
         
         return (str(model), str(serial_number), str(fw))
+    
+    def getLastStatus(self):
+        """
+        Get the last command response status
+        
+        :returns: int
+        """
+        if hasattr(self, 'last_status'):
+            return self.last_status
+        else:
+            return 0x80
     
     def powerOn(self):
         """
@@ -540,8 +571,6 @@ class m_85XX(Base_Driver):
         cmd += chr(self._CalculateChecksum(cmd))
         assert(self._CommandProperlyFormed(cmd))
         response = self._SendCommand(cmd)
-        self._PrintCommandAndResponse(cmd, response, "Set %s transient" % mode)
-        return self._ResponseStatus(response)
     
     def getTransient(self, mode):
         """
@@ -557,7 +586,7 @@ class m_85XX(Base_Driver):
         cmd += chr(self._CalculateChecksum(cmd))
         assert(self._CommandProperlyFormed(cmd))
         response = self._SendCommand(cmd)
-        self._PrintCommandAndResponse(cmd, response, "Get %s transient" % mode)
+        
         A = self._DecodeInteger(response[3:7])
         A_timer_ms = self._DecodeInteger(response[7:9])
         B = self._DecodeInteger(response[9:13])
@@ -724,8 +753,6 @@ class m_85XX(Base_Driver):
         cmd += chr(self._CalculateChecksum(cmd))
         assert(self._CommandProperlyFormed(cmd))
         response = self._SendCommand(cmd)
-        self._PrintCommandAndResponse(cmd, response, "Trigger load (trigger = bus)")
-        return self._ResponseStatus(response)
     
     def saveSettings(self, register=0):
         "Save instrument settings to a register"
@@ -738,8 +765,6 @@ class m_85XX(Base_Driver):
         assert(self.lowest_register <= register <= self.highest_register)
         cmd = self._GetCommand(0x5C, register, num_bytes=1)
         response = self._SendCommand(cmd)
-        self._PrintCommandAndResponse(cmd, response, "Recall register %d" % register)
-        return self._ResponseStatus(response)
     
     def setFunction(self, function="fixed"):
         """
@@ -775,7 +800,7 @@ class m_85XX(Base_Driver):
         cmd += chr(self._CalculateChecksum(cmd))
         assert(self._CommandProperlyFormed(cmd))
         response = self._SendCommand(cmd)
-        self._PrintCommandAndResponse(cmd, response, "Get input values")
+        
         voltage = self._DecodeInteger(response[3:7])/self.convert_voltage
         current = self._DecodeInteger(response[7:11])/self.convert_current
         power   = self._DecodeInteger(response[11:15])/self.convert_power

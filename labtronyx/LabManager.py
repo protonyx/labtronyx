@@ -200,7 +200,7 @@ class LabManager(object):
         
         if address in self.managers:
             # Clear out all cached properties from this manager
-            dev_list = [x.get('uuid') for x in self.properties if x.get('address') == address]
+            dev_list = [uuid for uuid, res_dict in self.properties.items() if res_dict.get('address') == address]
             
             try:
                 for uuid in dev_list:

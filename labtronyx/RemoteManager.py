@@ -21,9 +21,6 @@ class RemoteManager(RpcClient):
         self._enableNotifications()
         #self._registerCallback('event_new_resource', lambda: self.cb_event_new_resource())
         
-    def stop(self):
-        pass
-        
     def disconnect(self):
         self._disconnect()
         
