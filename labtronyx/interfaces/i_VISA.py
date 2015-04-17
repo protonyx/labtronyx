@@ -64,7 +64,7 @@ class i_VISA(Base_Interface):
                                 self.logger.exception("Unknown VISA Exception")
                         
                         except:
-                            self.logger.exception("Unhandled VISA Exception occurred while creating new resource: %s", res)
+                            self.logger.exception("Unhandled VISA Exception while creating new resource: %s", res)
             
             except visa.VisaIOError:
                 # Exception thrown when there are no resources
@@ -132,12 +132,14 @@ class r_VISA(Base_Resource):
     
     type = "VISA"
         
-    def __init__(self, resID, interface, **kwargs):
+    def __init__(self, resID, interface, instrument, **kwargs):
         Base_Resource.__init__(self, resID, interface, **kwargs)
         
-        self.resource_manager = visa.ResourceManager()
+        self.resID = resID
+        self.interface = interface
+        self.instrument = instrument
+        
         self.driver_list = kwargs.get('drivers', {})
-        self.instrument = kwargs.get('instrument')
         
         #self.instrument.timeout = 1000
         
@@ -191,7 +193,7 @@ class r_VISA(Base_Resource):
             self.VID = self.identity[0].strip()
             self.PID = self.identity[1].strip()
             self.serial = self.identity[2].strip()
-            self.firmware = self.identity[4].strip()
+            self.firmware = self.identity[3].strip()
         
         elif len(self.identity) == 3:
             # Resource provided a non-standard identify response

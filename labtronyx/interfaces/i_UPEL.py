@@ -104,6 +104,8 @@ class i_UPEL(Base_Interface):
         'date':                 '2015-03-06'
     }
     
+    DEBUG_INTERFACE_ICP = False
+    
     # Dict: ResID -> Resource Object
     resources = {}
     
@@ -129,7 +131,7 @@ class i_UPEL(Base_Interface):
             self.__socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             _, port = self.__socket.getsockname()
             
-            self.logger.debug("ICP Socket Bound to port %i", port)
+            self.logger.info("ICP Socket Bound to port %i", port)
             
             self.refresh()
             
@@ -283,9 +285,11 @@ class i_UPEL(Base_Interface):
                     # Debug output
                     packetID = resp_pkt.getPacketID()
                     packetType = resp_pkt.getPacketType()
-                    self.logger.debug("ICP RX [ID:%i, TYPE:%X, SIZE:%i] from %s", 
-                                      packetID, packetType, len(resp_pkt.getPayload()), 
-                                      sourceIP)
+                    
+                    if self.DEBUG_INTERFACE_ICP:
+                        self.logger.debug("ICP RX [ID:%i, TYPE:%X, SIZE:%i] from %s", 
+                                          packetID, packetType, len(resp_pkt.getPayload()), 
+                                          sourceIP)
                     
                     packetTypeClass = icp.packet_types.get(packetType)
                     pkt = packetTypeClass(packet_data=data,
@@ -373,7 +377,8 @@ class i_UPEL(Base_Interface):
                     # Transmit
                     self.__socket.sendto(packet, (destination, self.DEFAULT_PORT))
                     
-                    self.logger.debug("ICP TX [ID:%i] to %s", packetID, destination)
+                    if self.DEBUG_INTERFACE_ICP:
+                        self.logger.debug("ICP TX [ID:%i] to %s", packetID, destination)
                     
                 else:
                     return True

@@ -4,6 +4,7 @@ from Base_Resource import Base_Resource, ResourceNotOpen
 import importlib
 import sys
 import time
+import errno
 
 import serial
 import serial.tools.list_ports
@@ -11,6 +12,8 @@ import serial.tools.list_ports
 
 import common.resource_status as resource_status
 from serial.serialutil import SerialException
+
+import common.status
 
 class i_Serial(Base_Interface):
     
@@ -50,7 +53,7 @@ class i_Serial(Base_Interface):
     #===========================================================================
     # Optional - Automatic Controllers
     #===========================================================================
-    
+
     def refresh(self):
         """
         Scans system for new resources and creates resource objects for them.
@@ -63,14 +66,34 @@ class i_Serial(Base_Interface):
                 resID, _, _ = res
                     
                 if resID not in self.resources:
-                    new_resource = r_Serial(resID, self,
-                                            logger=self.logger,
-                                            config=self.config,
-                                            enableRpc=self.manager.enableRpc)
-                    self.resources[resID] = new_resource
-                    
-                    self.manager._cb_new_resource()
-
+                    try:
+                        instrument = serial.Serial(port=resID, timeout=0)
+                        
+                        new_resource = r_Serial(resID, self,
+                                                instrument=instrument,
+                                                logger=self.logger,
+                                                config=self.config,
+                                                enableRpc=self.manager.enableRpc)
+                        self.resources[resID] = new_resource
+                        
+                        self.manager._cb_new_resource()    
+                        
+                    except serial.SerialException as e:
+                        # Seems to be thrown on Windows systems
+                        self.logger.exception("Serial Error %s: %s", e.errno, e.message)
+            
+                    except OSError as e:
+                        # Seems to be thrown on POSIX systems
+                        if e.errno in [errno.EACCES, errno.EBUSY]:
+                            pass
+                            #self.logger.error("Serial OSError %s", e.errno)
+                        
+                        else:
+                            self.logger.exception("Unknown OSError Exception")
+                        
+                    except:
+                        self.logger.exception("Unhandled Serial Exception while creating new resource %s", resID)
+    
         except:
             # Exception thrown when there are no resources
             self.logger.exception("Unhandled Exception occurred while creating new Serial resource: %s", resID)
@@ -99,8 +122,6 @@ class i_Serial(Base_Interface):
     #         except (OSError, serial.SerialException):
     #             pass
     #===========================================================================
-
-import common.status
         
 class r_Serial(Base_Resource):
     type = "Serial"
@@ -109,34 +130,19 @@ class r_Serial(Base_Resource):
     LF = '\n'
     termination = CR + LF
         
-    def __init__(self, resID, controller, **kwargs):
-        Base_Resource.__init__(self, resID, controller, **kwargs)
+    def __init__(self, resID, interface, instrument, **kwargs):
+        Base_Resource.__init__(self, resID, interface, **kwargs)
         
-        try:
-            #conn = "\\.\%s" % resID
-            self.instrument = serial.Serial(port=resID, timeout=0)
+        self.resID = resID
+        self.interface = interface
+        self.instrument = instrument
+        
+        self.logger.info("Created Serial resource: %s", resID)
+        
+        self.setResourceStatus(resource_status.READY)
             
-            self.logger.info("Identified new Serial resource: %s", resID)
-            
-            self.setResourceStatus(resource_status.READY)
-            
-            # Serial port is immediately opened on object creation
-            self.instrument.close()
-            
-        except serial.SerialException as e:
-            # Seems to be thrown on Windows systems
-            self.setResourceStatus(common.status.error)
-            self.setResourceError((e.errno, e.message))
-            self.logger.error("Serial Error %s: %s", e.errno, e.message)
-            
-        except OSError as e:
-            # Seems to be thrown on POSIX systems
-            self.setResourceStatus(common.status.error)
-            self.setResourceError((e.errno, e.strerror))
-            self.logger.error("OS Error %s: %s", e.errno, e.strerror)
-            
-        except:
-            self.logger.exception("Unhandled exception")
+        # Serial port is immediately opened on object creation
+        self.instrument.close()
         
     #===========================================================================
     # Resource State
@@ -283,8 +289,8 @@ class r_Serial(Base_Resource):
             ret = bytes()
             
             if size is None:
-                bytes = self.instrument.inWaiting()
-                ret += self.instrument.read(bytes)
+                to_read = self.instrument.inWaiting()
+                ret += self.instrument.read(to_read)
                 
             else:
                 ret += self.instrument.read(size)
