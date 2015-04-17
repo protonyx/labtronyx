@@ -57,6 +57,11 @@ class m_BMS(Base_Driver):
         return prop
     
     def getLastStatus(self):
+        """
+        The the status of the last transfer
+        
+        :returns: Status code
+        """
         return self.status
     
     def sendCommand(self, address, cmd, data=0):
@@ -65,12 +70,11 @@ class m_BMS(Base_Driver):
         
         :returns: bool, True if successful, False otherwise
         """
-        time.sleep(0.2)
         self.sendCommand_noAck(address, cmd, data)
         
         try:
             # Verify the acknowledgement
-            rx = self.instr.read(10)
+            rx = self.instr.read_raw(10)
             
             if (len(rx) == 10):
                 
@@ -98,7 +102,7 @@ class m_BMS(Base_Driver):
             fmt = 'BBBBi'
             tx = struct.pack(fmt, address, address, cmd, cmd, data)
             
-            self.instr.write(tx)
+            self.instr.write_raw(tx)
             self.instr.flush()
             
             return True
@@ -108,14 +112,17 @@ class m_BMS(Base_Driver):
             return False
         
     def identify(self):
+        """
+        Identify a single module connected to the RS-485 bus
+        """
         cmd = self.commands.get('identify', 0xAA)
         self.sendCommand_noAck(0xFA, cmd, 0)
         
         try:
             old_timeout = self.instr.timeout
-            self.instr.timeout = 1.2
+            self.instr.configure(timeout=3.0)
             
-            rx = self.instr.read(10)
+            rx = self.instr.read_raw(10)
             #rx = self.instr.read(512)
 
             self.instr.timeout = old_timeout
@@ -139,10 +146,26 @@ class m_BMS(Base_Driver):
             self.logger.exception('Failed during identify')
     
     def resetStatus(self, address):
+        """
+        Reset converter status, clears any latched errors
+        
+        :param address: Address of converter to reset
+        :type address: int
+        """
         cmd = self.commands.get('resetStatus', 0xBB)
         self.sendCommand(address, cmd)
     
     def calibrate(self, address, data1=1, data2=1):
+        """
+        Calibrate converter
+        
+        :param address: Address of converter
+        :type address: int
+        :param data1: Calibration 1
+        :type data1: int
+        :param data2: Calibration 2
+        :type data2: int
+        """
         cmd = self.commands.get('calibrate', 0xAF)
 
         data = (data1 << 8) | (data2)
@@ -150,10 +173,24 @@ class m_BMS(Base_Driver):
         self.sendCommand(address, cmd, data)
     
     def shutoff_wdt(self, address):
+        """
+        Disable the watchdog timer
+        
+        :param address: Address of converter
+        :type address: int
+        """
         cmd = self.commands.get('shutdown_wdt', 0xBD)
         self.sendCommand(address, cmd)
     
     def set_phaseAngle(self, address, phase):
+        """
+        Set the open-loop phase angle
+        
+        :param address: Address of converter
+        :type address: int
+        :param phase: Phase command, 16-bit resolution
+        :type phase: int
+        """
         cmd = self.commands.get('set_phaseAngle', 0x46)
         
         data = phase & 0xFFFF
@@ -161,6 +198,14 @@ class m_BMS(Base_Driver):
         self.sendCommand(address, cmd, data)
     
     def set_vRef(self, address, vref):
+        """
+        Set the closed-loop voltage reference
+        
+        :param address: Address of converter
+        :type address: int
+        :param vref: Regulation voltage, 16-bit resolution
+        :type vref: int
+        """
         cmd = self.commands.get('set_vRef', 0xB9)
         
         data = vref & 0xFFFF
@@ -168,14 +213,33 @@ class m_BMS(Base_Driver):
         self.sendCommand(address, cmd, data)
             
     def enableSampling(self, address):
+        """
+        Enable sensor sampling
+        
+        :param address: Address of converter
+        :type address: int
+        """
         cmd = self.commands.get('enableSampling', 0xB4)
         self.sendCommand(address, cmd)
     
     def disableSampling(self, address):
+        """
+        Disable sensor sampling
+        
+        :param address: Address of converter
+        :type address: int
+        """
         cmd = self.commands.get('disableSampling', 0x5F)
         self.sendCommand(address, cmd)
     
     def getData(self, address):
+        """
+        Get sensor data
+        
+        :param address: Address of converter
+        :type address: int
+        :returns: tuple (phase, vout, vin, iin, status)
+        """
         ret = (0,0,0,0,0)
         
         cmd = self.commands.get('getData', 0x8C)
@@ -201,6 +265,8 @@ class m_BMS(Base_Driver):
         
         Tries 3 times to start switching since this seems to be so buggy
         
+        :param address: Address of converter
+        :type address: int
         :returns: True if switching started, False otherwise
         """
         for x in range(3):
@@ -231,6 +297,8 @@ class m_BMS(Base_Driver):
         
         Tries 3 times to start switching since this seems to be so buggy
         
+        :param address: Address of converter
+        :type address: int
         :returns: True if switching started, False otherwise
         """
         for x in range(3):
@@ -256,10 +324,22 @@ class m_BMS(Base_Driver):
         return False
 
     def close_loop(self, address):
+        """
+        Enter closed-loop mode
+        
+        :param address: Address of converter
+        :type address: int
+        """
         cmd = self.commands.get('close_loop', 0xB7)
         self.sendCommand(address, cmd)
     
     def disableSwitching(self, address):
+        """
+        Disable switching
+        
+        :param address: Address of converter
+        :type address: int
+        """
         cmd = self.commands.get('disableSwitching', 0x64)
         self.sendCommand(address, cmd)
     
