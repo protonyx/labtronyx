@@ -1,9 +1,10 @@
+from Base_Driver import Base_Driver
+
 import threading
-from .. import m_Generic
 
 __all__ = ['Base_ICP', 'Base_Serial']
 
-class m_BDPC_Base(m_Generic):
+class m_BDPC_Base(Base_Driver):
     """
     Common model for all BDPC devices
     """
@@ -74,7 +75,7 @@ class m_BDPC_Base(m_Generic):
         }
     
     def getProperties(self):
-        prop = m_Generic.getProperties(self)
+        prop = Base_Driver.getProperties(self)
         
         prop['numSensors'] = len(self.sensors)
         

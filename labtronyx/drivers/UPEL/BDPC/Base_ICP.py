@@ -4,6 +4,18 @@ from . import m_BDPC_Base
 
 class Base_ICP(m_BDPC_Base):
     
+    states = {
+        0x01: ('Running', 'Start'),
+        0x02: ('Stopped', 'Stop'),
+        0x80: ('Ready', 'Initialize'),
+        0x81: ('Reset', 'Reset') }
+     
+    state_transitions = {
+        0x01: [0x02, 0x80, 0x81],
+        0x02: [0x80, 0x81],
+        0x80: [0x01, 0x81],
+        0x81: [0x80]}
+    
     registers = {
         'SensorGain': 0x2110,
         'SensorOffset': 0x2111,
@@ -19,6 +31,28 @@ class Base_ICP(m_BDPC_Base):
 #         This StatusReg function will return only the value of the status register to use here
         'StatusReg': 0x2000
         }
+    
+    #===========================================================================
+    # Operation
+    #===========================================================================
+     
+    def getStates(self):
+        return self.states
+     
+    def getStateTransitions(self):
+        return self.state_transitions
+     
+    def getState(self):
+        return self.instr.getState()
+     
+    def setState(self, new_state):
+        return self.instr.setState(new_state)    
+     
+    def getErrors(self):
+        return int(self.instr.readReg(0x1001, 0x01, 'int16'))
+     
+    def getStatus(self):
+        return int(self.instr.readReg(0x1002, 0x1, 'int16'))
     
     #===========================================================================
     # Maybe obsolete functions
