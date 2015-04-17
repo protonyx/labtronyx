@@ -48,7 +48,7 @@ class m_85XX(Base_Driver):
     }
 
     address = 0
-    debug = 1  # Set to 1 to see dumps of commands and responses
+    debug = 0  # Set to 1 to see dumps of commands and responses
     length_packet = 26  # Number of bytes in a packet
     convert_current = 1e4  # Convert current in A to 0.1 mA
     convert_voltage = 1e3  # Convert voltage in V to mV
