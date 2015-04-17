@@ -50,7 +50,7 @@ def getAllDrivers():
                     drivers[moduleName] = info
                     
                 except Exception as e:
-                    raise
+                    pass
                 
                 #===========================================================
                 # except AttributeError:
