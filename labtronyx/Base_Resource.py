@@ -21,7 +21,6 @@ class Base_Resource(object):
         self.__uuid = str(uuid.uuid4())
         self.__resID = resID
         self.__interface = interface
-        self.__groupTag = kwargs.get('groupTag', '')
         self.__status = 'INIT'
         
         self.__lock = None
@@ -64,9 +63,6 @@ class Base_Resource(object):
     
     def getResourceID(self):
         return self.__resID
-    
-    def getGroupTag(self):
-        return self.__groupTag
     
     def getResourceType(self):
         return self.type
@@ -116,7 +112,6 @@ class Base_Resource(object):
             'interface': self.getInterfaceName(),
             'resourceID': self.getResourceID(),
             'resourceType': self.getResourceType(),
-            'groupTag': self.getGroupTag(),
             'status': self.getResourceStatus()
             }
         
