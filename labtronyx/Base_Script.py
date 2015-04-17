@@ -56,7 +56,7 @@ class Base_Script(object):
         # Keep the main thread occupied with the GUI
         self.__main_gui()
         
-    def __prepare(self):
+    def _prepare(self):
         """
         Register all required instruments as attributes in the script object.
         
@@ -470,6 +470,8 @@ class Base_Script(object):
                 self.b_stop.config(state=Tk.DISABLED)
         
         def cb_run(self):
+            self.script_object._prepare()
+            
             # Start the test thread
             self.run_thread.start()
             
