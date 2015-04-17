@@ -19,15 +19,15 @@ class t_AMPED(Base_Script):
     def open(self):
         # Manually load some instruments
         try:
-            conv = self.instr.findInstrument(resID='COM5')[0] # COM15 for the nice RS-485 converters
-            conv.loadDriver('UPEL.AMPED.m_BMS')
+            conv = self.instr.findInstruments(resourceID='COM5')[0] # COM15 for the nice RS-485 converters
+            conv.loadDriver('drivers.UPEL.AMPED.m_BMS')
             self.logger.debug("Registered AMPED BMS on COM5")
             
-            load = self.instr.findInstrument(resID='COM6')[0]
-            load.loadDriver('BK_Precision.Load.m_85XX')
+            load = self.instr.findInstruments(resourceID='COM6')[0]
+            load.loadDriver('drivers.BK_Precision.Load.m_85XX')
             self.logger.debug("Registered BK Load on COM6")
         except:
-            pass
+            raise
             
         # Instruments
         self.requireInstrument('DMM - Primary Voltage', 'pri_voltage', deviceSerial='MY48005640') #'123F12106')
@@ -36,8 +36,8 @@ class t_AMPED(Base_Script):
         self.requireInstrument('DMM - Secondary Current', 'sec_current', deviceSerial='123F12106') #'123G11250')
         self.requireInstrument('Source - Primary', 'pri_source', deviceSerial='602078010696820011')
         self.requireInstrument('Source - Secondary', 'sec_source', deviceSerial='00257')
-        self.requireInstrument('AMPED Converter', 'conv', driver='models.UPEL.AMPED.m_BMS')
-        self.requireInstrument('Load - Secondary', 'load', driver='models.BK_Precision.Load.m_85XX')
+        self.requireInstrument('AMPED Converter', 'conv', driver='drivers.UPEL.AMPED.m_BMS')
+        self.requireInstrument('Load - Secondary', 'load', driver='drivers.BK_Precision.Load.m_85XX')
         
         # Tests
         self.registerTest('Startup', 'startup')
@@ -57,14 +57,10 @@ class t_AMPED(Base_Script):
             #time.sleep(3.0)
             
             self.logger.debug("Setting Instrument Functions...")
-            self.pri_voltage.setFunction_DC_Voltage()
-            self.pri_current.setFunction_DC_Current()
-            self.sec_voltage.setFunction_DC_Voltage()
-            self.sec_current.setFunction_DC_Current()
-            
-            time.sleep(0.5)
-            self.pri_current.setRange_Manual()
-            self.sec_current.setRange_Manual()
+            self.pri_voltage.setMode('DC Voltage')
+            self.pri_current.setMode('DC Current')
+            self.sec_voltage.setMode('DC Voltage')
+            self.sec_current.setMode('DC Current')
             
             time.sleep(0.5)
             self.pri_current.setRange(20)
