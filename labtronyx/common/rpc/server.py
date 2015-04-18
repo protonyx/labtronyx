@@ -486,3 +486,17 @@ class RpcConnection(threading.Thread):
             self.logger.error('RPC Method Not Found')
             raise
         
+    #===========================================================================
+    # def handle_request(self):
+    #     pass
+    # 
+    # def handle_notification(self):
+    #     pass
+    # 
+    # def handle_response(self):
+    #     pass
+    # 
+    # def handle_error(self):
+    #     pass
+    #===========================================================================
+        
