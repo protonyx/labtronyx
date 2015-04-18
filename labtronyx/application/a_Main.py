@@ -288,7 +288,7 @@ class a_Main(Tk.Tk):
                     tkMessageBox.showwarning('Unable to load applet', 'Unable to get a handle for the resource')
                 
             except:
-                self.logger.exception("Failed to load applet: %s", applet)
+                tkMessageBox.showerror(e.__class__.__name__, e.message)
                 
         else:
             # Check if a view is already open
@@ -337,41 +337,54 @@ class a_Main(Tk.Tk):
                 tkMessageBox.showwarning('Unable to load applet', 'No suitable applets could be found for this resource')
         
     def cb_loadDriver(self, uuid):
-        dev = self.lab.getResource(uuid)
-        
-        # Spawn a window to select the driver to load
-        
-        # Create the child window
-        w_DriverSelector = ResourcePages.a_LoadDriver(self, self.lab, uuid, self.cb_refreshTree)
-        
-        self.lab.refreshResource(uuid)
+        try:
+            dev = self.lab.getResource(uuid)
+            
+            # Spawn a window to select the driver to load
+            w_DriverSelector = ResourcePages.a_LoadDriver(self, self.lab, uuid, self.cb_refreshTree)
+            
+            self.lab.refreshResource(uuid)
+            
+        except Exception as e:
+            tkMessageBox.showerror(e.__class__.__name__, e.message)
         
         self.treeFrame.refresh()
             
     def cb_unloadDriver(self, uuid):
-        dev = self.lab.getResource(uuid)
-        
-        dev.unloadDriver()
-        
-        self.lab.refreshResource(uuid)
+        try:
+            dev = self.lab.getResource(uuid)
+            dev.unloadDriver()
+            self.lab.refreshResource(uuid)
+            
+        except Exception as e:
+            tkMessageBox.showerror(e.__class__.__name__, e.message)
+            
         self.treeFrame.refresh()
         
     def cb_configResource(self, uuid):
-        res = self.lab.getResource(uuid)
-        
-        prop = res.getProperties()
-        type = prop.get('resourceType')
-        
-        if hasattr(ConfigPages, 'config_%s' % type):
-            config_class = getattr(ConfigPages, 'config_%s' % type)
-            w_ConfigWindow = config_class(self, res)
+        try:
+            dev = self.lab.getResource(uuid)
             
-        else:
-            tkMessageBox.showwarning('Resource Error', 'This resource has no configuration options')
+            prop = dev.getProperties()
+            type = prop.get('resourceType')
+            
+            if hasattr(ConfigPages, 'config_%s' % type):
+                config_class = getattr(ConfigPages, 'config_%s' % type)
+                w_ConfigWindow = config_class(self, dev)
+                
+            else:
+                tkMessageBox.showwarning('Resource Error', 'This resource has no configuration options')
+        
+        except Exception as e:
+            tkMessageBox.showerror(e.__class__.__name__, e.message)
         
     def cb_ResourceProperties(self, uuid):
-        res = self.lab.getResource(uuid)
-        w_ResourceProperties = ResourcePages.a_PropertyWindow(self, res)
+        try:
+            dev = self.lab.getResource(uuid)
+            w_ResourceProperties = ResourcePages.a_PropertyWindow(self, dev)
+            
+        except Exception as e:
+            tkMessageBox.showerror(e.__class__.__name__, e.message)
     
     #===========================================================================
     # Notification Event Handlers

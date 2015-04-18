@@ -27,7 +27,11 @@ class config_Serial(Tk.Toplevel):
         
         self.resource = resource
         
-        config = self.resource.getConfiguration()
+        try:
+            config = self.resource.getConfiguration()
+        except Exception as e:
+            tkMessageBox.showerror(e.__class__.__name__, e.message)
+            self.destroy()
         
         # Baud
         Tk.Label(self, text="Baud Rate").grid(row=0, column=0)
@@ -78,9 +82,12 @@ class config_Serial(Tk.Toplevel):
         self.destroy()
     
     def cb_save(self):
-        self.resource.configure(baudrate=self.str_baudrate.get(),
+        try:
+            self.resource.configure(baudrate=self.str_baudrate.get(),
                                 bytesize=self.str_bits.get(),
                                 parity=self.str_parity.get(),
                                 stopbits=self.str_stop.get())
+        except Exception as e:
+            tkMessageBox.showerror(e.__class__.__name__, e.message)
         
         self.destroy()

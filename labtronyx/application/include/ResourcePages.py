@@ -50,8 +50,12 @@ class a_LoadDriver(Tk.Toplevel):
         self.address = self.resInfo.get('address')
         
         # Find valid drivers for this resource type
-        manager = self.labManager.getManager(self.address)
-        allDrivers = manager.getDrivers()
+        try:
+            manager = self.labManager.getManager(self.address)
+            allDrivers = manager.getDrivers()
+        except Exception as e:
+            tkMessageBox.showerror(e.__class__.__name__, e.message)
+            self.destroy()
         
         self.validDrivers = {}
         for driverModule, driverInfo in allDrivers.items():
@@ -171,7 +175,11 @@ class a_PropertyWindow(Tk.Toplevel):
     def __init__(self, master, resource):
         Tk.Toplevel.__init__(self, master, padx=2, pady=2)
         
-        res_dict = resource.getProperties()
+        try:
+            res_dict = resource.getProperties()
+        except Exception as e:
+            tkMessageBox.showerror(e.__class__.__name__, e.message)
+            self.destroy()
         
         row = 0
         for key, value in res_dict.items():
@@ -183,3 +191,4 @@ class a_PropertyWindow(Tk.Toplevel):
         
     def cb_close(self):
         self.destroy()
+        
