@@ -203,6 +203,9 @@ class Base_Resource(object):
         :type driverName: str
         :returns: True if successful, False otherwise
         """
+        if self.driver is not None:
+            return False
+        
         try:
             # Check if the specified model is valid
             testModule = importlib.import_module(driverName)
