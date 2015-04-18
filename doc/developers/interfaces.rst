@@ -27,31 +27,6 @@ Types of Controllers
   maintains a list of available COM ports, but the user must supply the
   baud rate, stop bits and parity information for the controller to be able
   to establish communication. 
-
-Resources
-=========
-
-Interfaces are responsible for maintaining a list of available resources that 
-it has access to. Controller resources are identified by a string identifier
-that directly corresponds to the device within the system. In general, a 
-resource represents an instrument or device that is connected to the local 
-machine and is known to the operating system.
-
-When new resources are found, the interface should instantiate an object that
-extends the Base_Resource class. The interface should then notify the
-Instrument Manager that a new resource is available. 
-	
-Properties
-----------
-
-Properties are auxiliary information about a physical device. The keys and data
-contained in the properties are dependent on the device and Model, but the
-following keys will exist for all resources.
-
-	* 'uuid': Unique Resource Identifier
-	* 'controller': The module name for the controller
-	* 'resourceID': Resource ID specific for the controller
-	
   
 Controller Template
 -------------------

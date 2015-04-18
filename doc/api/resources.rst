@@ -39,6 +39,40 @@ following:
    * UNKNOWN - Some other error has occurred that could not be explained. Good
      luck.
 
+Properties
+----------
+
+Properties are auxiliary information about a physical device. It could include
+information such as:
+
+	* Firmware Revision
+	* Serial Numbers
+	* Product Codes
+	* Number of channels
+	* Operating Frequencies
+	* Command Set Revision
+	* etc.
+	
+Properties are retrieved by calling :func:`getProperties`. D
+
++---------------+-------------------------------------------------+
+| Key           | Description                                     |
++---------------+-------------------------------------------------+
+| 'uuid'        | Resource UUID                                   |
++---------------+-------------------------------------------------+
+| 'controller'  | The module name for the controller              |
++---------------+-------------------------------------------------+
+| 'resourceID'  | Resource ID specific for the controller         |
++---------------+-------------------------------------------------+
+| 'vendorID'    | Vendor ID used to find compatible Drivers       |
++---------------+-------------------------------------------------+
+| 'productID'   | Product ID used to find compatible Drivers      |
++---------------+-------------------------------------------------+
+| 'modelName'   | The module name for the currently loaded model  |
++---------------+-------------------------------------------------+
+| 'port'        | RPC port                                        |
++---------------+-------------------------------------------------+
+
 Error Handling
 --------------
 
