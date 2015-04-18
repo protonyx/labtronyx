@@ -74,7 +74,7 @@ class d_2831(Base_Driver):
         self.instr = self.getResource()
         self.instr.open()
         
-        self.func = self.getFunction()
+        self.getFunction()
     
     def _onUnload(self):
         self.instr.close()

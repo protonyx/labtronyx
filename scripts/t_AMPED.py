@@ -41,7 +41,7 @@ class t_AMPED(Base_Script):
         
         # Tests
         self.registerTest('Startup', 'startup')
-        #self.registerTest('Identify', 'test_Identify') # Identify is now done during startup
+        self.registerTest('Identify', 'test_Identify') # Identify is now done during startup
         self.registerTest('Calibrate Secondary Voltage', 'test_CalibrateSecVoltage')
         self.registerTest('Calibrate Primary Voltage', 'test_CalibratePriVoltage')
         self.registerTest('Calibrate Current Sensor', 'test_CalibrateCurrent')
@@ -455,15 +455,15 @@ class t_AMPED(Base_Script):
         #=======================================================================
         # Test Spinup
         #=======================================================================
-        self.sec_source.setVoltage(14.0)
+        self.sec_source.setVoltage(12.0)
         self.sec_source.powerOn()
         
-        self.pri_source.setVoltage(3.5)
+        self.pri_source.setVoltage(3.8)
         self.pri_source.powerOn()
         
         self.load.powerOff()
-        self.load.SetMode('cc') # Constant Current 
-        self.load.SetCCCurrent(0.0)
+        self.load.setMode('cc') # Constant Current 
+        self.load.setCurrent(0.0)
         self.load.powerOn()
         
         # Converter configuration
@@ -507,7 +507,7 @@ class t_AMPED(Base_Script):
         self.logger.info("-"*68)
 
         for opPoint in steps:
-            self.load.SetCCCurrent(opPoint)
+            self.load.setCurrent(opPoint)
             #self.conv.set_phaseAngle(self.convAddress, long(opPoint))
             time.sleep(2.0)
             
@@ -563,8 +563,8 @@ class t_AMPED(Base_Script):
         self.pri_source.powerOn()
         
         self.load.powerOff()
-        self.load.SetMode('cc') # Constant Voltage 
-        self.load.SetCCCurrent(1.0)
+        self.load.setMode('cc') # Constant Voltage 
+        self.load.setCurrent(1.0)
         self.load.powerOn()
         
         time.sleep(1.0)
@@ -642,8 +642,8 @@ class t_AMPED(Base_Script):
         self.pri_source.powerOn()
         
         self.load.powerOff()
-        self.load.SetMode('cc') # Constant Current 
-        self.load.SetCCCurrent(1.0)
+        self.load.setMode('cc') # Constant Current 
+        self.load.setCurrent(1.0)
         self.load.powerOn()
         
         # setup the converter again since power might have dropped out when the load was turned on

@@ -243,7 +243,7 @@ class m_BMS(Base_Driver):
         self.sendCommand_noAck(address, cmd)
         
         try:
-            rx = self.instr.read(10)
+            rx = self.instr.read_raw(10)
             
             fmt = '>HHHHH' #note the big endian ">" in the format code - this is required if you don't want funky data
             phase, vout, vin, iin, status = struct.unpack(fmt, rx)
