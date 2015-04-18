@@ -192,7 +192,9 @@ class Base_Resource(object):
         
         Example::
         
-            instr.loadDriver('Tektronix.Oscilloscope.m_DigitalPhosphor')
+            instr = manager.findInstruments(resourceID='COM5')[0]
+            
+            instr.loadDriver('drivers.BK_Precision.Load.m_85XX')
         
         :param driverName: Module name of the desired Model
         :type driverName: str
@@ -211,7 +213,10 @@ class Base_Resource(object):
             
             self.logger.debug('Loading driver [%s] for resource [%s]', driverName, self.getResourceID())
             
-            self.driver = testClass(self, logger=self.logger, config=self.config)
+            # Instantiate driver
+            self.driver = testClass(self, 
+                                    logger=self.logger, 
+                                    config=self.config)
             self.driver._onLoad()
             
             # RPC register object
@@ -222,7 +227,7 @@ class Base_Resource(object):
             return True
 
         except:
-            self.logger.exception('Failed to load driver: %s', driverName)
+            self.logger.exception('Exception during driver load: %s', driverName)
             
             self.unloadDriver()
             
@@ -237,23 +242,20 @@ class Base_Resource(object):
         if self.driver is not None:
             try:
                 self.driver._onUnload()
+                self.close()
                 
             except:
                 self.logger.exception('Exception while unloading driver')
                 
+            self.driver = None
+            
+            self.logger.debug('Unloaded driver for resource [%s]', self.getResourceID())
+            
             # RPC unregister object    
             if hasattr(self, 'rpc_server'):
                 self.rpc_server.unregisterObject(self.driver)
                 self.rpc_server.notifyClients('event_driver_unloaded')
-                
-            del self.driver
-            self.driver = None
-            
-            try:
-                self.close()
-            except:
-                pass
-                
+               
             return True
         
         else:

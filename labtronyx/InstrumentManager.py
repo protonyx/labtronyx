@@ -94,14 +94,15 @@ class InstrumentManager(object):
         
         # Load Drivers
         import drivers
-        self.drivers = drivers.getAllDrivers()
+        #self.drivers = drivers.getAllDrivers()
+        self.drivers = self.__scan(drivers)
         
         for driver in self.drivers.keys():
             self.logger.debug("Found Driver: %s", driver)
         
         # Load Interfaces
         import interfaces
-        interface_info = interfaces.getAllInterfaces()
+        interface_info = self.__scan(interfaces)
         
         for interf in interface_info.keys():
             self.logger.debug("Found Interface: %s", interf)
@@ -109,6 +110,41 @@ class InstrumentManager(object):
     
     def __del__(self):
         self.stop()
+        
+    def __scan(self, pkg):
+        """
+        Scan a package for valid plug-in modules.
+        
+        :param pkg: Package to scan
+        :type pkg: package
+        """
+        import pkgutil
+        plugins = {}
+        
+        for pkg_iter in pkgutil.walk_packages(path=pkg.__path__,
+                                              prefix=pkg.__name__+'.'):
+            pkg_imp, pkg_name, is_pkg = pkg_iter
+        
+            if not is_pkg:
+                try:
+                    # Use the filename as the class name
+                    class_name = pkg_name.split('.')[-1]
+                    
+                    # Import the module
+                    testModule = importlib.import_module(pkg_name)
+                    
+                    # Check to make sure the correct class exists
+                    if hasattr(testModule, class_name):
+                        testClass = getattr(testModule, class_name) # Will raise exception if doesn't exist
+                        
+                        if testClass != {}:
+                            info = copy.deepcopy(testClass.info)
+                            plugins[pkg_name] = info
+                    
+                except Exception as e:
+                    self.logger.exception("Exception during module scan: %s", pkg_name)
+                
+        return plugins
 
     def start(self):
         """
