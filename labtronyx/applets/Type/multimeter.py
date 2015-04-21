@@ -15,9 +15,9 @@ class multimeter(Base_Applet):
         'date':                 '2015-03-11',    
         
         # List of compatible models
-        'validDrivers':          ['Agilent.Multimeter.m_3441XA', 
-                                  'BK_Precision.Multimeter.d_2831',
-                                  'BK_Precision.Multimeter.d_5492']
+        'validDrivers':          ['drivers.Agilent.Multimeter.m_3441XA', 
+                                  'drivers.BK_Precision.Multimeter.d_2831',
+                                  'drivers.BK_Precision.Multimeter.d_5492']
     }
     
     def run(self):

@@ -15,10 +15,10 @@ class source(Base_Applet):
         'date':                 '2015-03-11',    
         
         # List of compatible models
-        'validDrivers':          ['BK_Precision.Source.m_911X',
-                                  'BK_Precision.Source.m_XLN',
-                                  'Chroma.Source.m_620XXP',
-                                  'Regatron.m_GSS']
+        'validDrivers':          ['drivers.BK_Precision.Source.m_911X',
+                                  'drivers.BK_Precision.Source.m_XLN',
+                                  'drivers.Chroma.Source.m_620XXP',
+                                  'drivers.Regatron.m_GSS']
     }
     
     def run(self):

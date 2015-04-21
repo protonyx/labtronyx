@@ -11,8 +11,8 @@ class load(Base_Applet):
         'description':          'Generic view for DC Loads',   
         
         # List of compatible models
-        'validDrivers':          ['BK_Precision.Load.m_85XX',
-                                  'TDI.d_XBL']
+        'validDrivers':          ['drivers.BK_Precision.Load.m_85XX',
+                                  'drivers.TDI.d_XBL']
     }
     
     def run(self):

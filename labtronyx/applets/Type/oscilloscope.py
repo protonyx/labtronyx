@@ -17,14 +17,19 @@ class oscilloscope(Base_Applet):
     
     info = {    
         # List of compatible models
-        'validDrivers':          ['Tektronix.Oscilloscope.d_2XXX', 
-                                  'Tektronix.Oscilloscope.d_5XXX7XXX']
+        'validDrivers':          ['drivers.Tektronix.Oscilloscope.d_2XXX', 
+                                  'drivers.Tektronix.Oscilloscope.d_5XXX7XXX']
     }
     
     def run(self):
         self.wm_title("Tektronix Oscilloscope")
         
         self.instr = self.getInstrument()
+        
+        try:
+            self.instr._setTimeout(10.0)
+        except:
+            self.logger.exception("Unable to set timeout")
         
         matplotlib.use('TkAgg')
         
@@ -58,27 +63,31 @@ class oscilloscope(Base_Applet):
         self.cb_update()
         
     def cb_update(self):
-        self.data = self.instr.getWaveform()
-        
-        self.figure.clear()
-        
-        if 'CH1' in self.data:
-            ch1 = self.figure.add_subplot(2,2,1, title='CH1', axis_bgcolor='k')
-            ch1.plot(self.data['Time'], self.data['CH1'], 'y')
+        try:
+            self.data = self.instr.getWaveform()
             
-        if 'CH2' in self.data:
-            ch1 = self.figure.add_subplot(2,2,2, title='CH2', axis_bgcolor='k')
-            ch1.plot(self.data['Time'], self.data['CH2'], 'b')
+            self.figure.clear()
             
-        if 'CH3' in self.data:
-            ch1 = self.figure.add_subplot(2,2,3, title='CH3', axis_bgcolor='k')
-            ch1.plot(self.data['Time'], self.data['CH3'], 'm')
+            if 'CH1' in self.data:
+                ch1 = self.figure.add_subplot(2,2,1, title='CH1', axis_bgcolor='k')
+                ch1.plot(self.data['Time'], self.data['CH1'], 'y')
+                
+            if 'CH2' in self.data:
+                ch1 = self.figure.add_subplot(2,2,2, title='CH2', axis_bgcolor='k')
+                ch1.plot(self.data['Time'], self.data['CH2'], 'b')
+                
+            if 'CH3' in self.data:
+                ch1 = self.figure.add_subplot(2,2,3, title='CH3', axis_bgcolor='k')
+                ch1.plot(self.data['Time'], self.data['CH3'], 'm')
+                
+            if 'CH4' in self.data:
+                ch1 = self.figure.add_subplot(2,2,4, title='CH4', axis_bgcolor='k')
+                ch1.plot(self.data['Time'], self.data['CH4'], 'g')
+                
+            self.canvas.show()
             
-        if 'CH4' in self.data:
-            ch1 = self.figure.add_subplot(2,2,4, title='CH4', axis_bgcolor='k')
-            ch1.plot(self.data['Time'], self.data['CH4'], 'g')
-            
-        self.canvas.show()
+        except Exception as e:
+            tkMessageBox.showerror(e.__class__.__name__, e.message)
         
     def cb_export(self):
         

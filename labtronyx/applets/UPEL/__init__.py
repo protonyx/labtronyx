@@ -3,7 +3,7 @@ UPEL View Helper Classes
 """
 
 import Tkinter as Tk
-from interfaces.upel.errors import *
+from interfaces.icp.errors import *
 
 import widgets as vw
         

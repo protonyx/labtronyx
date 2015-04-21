@@ -41,9 +41,9 @@ class v_BDPC(Base_Applet):
         'date':                 '2015-02-11',    
         
         # List of compatible models
-        'validDrivers':          ['UPEL.BDPC.m_BDPC_BR2',
-                                  'UPEL.BDPC.m_BDPC_BR32',
-                                  'UPEL.BDPC.m_BDPC_SRC6']
+        'validDrivers':          ['drivers.UPEL.BDPC.m_BDPC_BR2',
+                                  'drivers.UPEL.BDPC.m_BDPC_BR32',
+                                  'drivers.UPEL.BDPC.m_BDPC_SRC6']
     }
     
     def run(self):
