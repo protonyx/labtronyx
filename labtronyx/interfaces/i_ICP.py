@@ -1,17 +1,18 @@
 """
-UPEL Instrument Control Protocol (ICP)
-======================================
+Instrument Control Protocol (ICP)
+=================================
 
-Dependencies
-------------
+The Instrument Control Protocol was developed by Kevin Kennedy as a protocol for 
+communication with instruments over an Ethernet network.
 
-None
+   * Low Overhead
+   * Flexible
 
 Detailed Operation
 ------------------
 
-The UPEL ICP thread manages communication in and out of the network socket
-on port 7968.
+The ICP thread manages communication in and out of the network socket on port 
+7968.
 
 Message Queue
 ^^^^^^^^^^^^^
@@ -88,9 +89,9 @@ import interfaces.upel as icp
 #     'double': lambda data: struct.unpack('!d', data)[0] }
 #===========================================================================
 
-class i_UPEL(Base_Interface):
+class i_ICP(Base_Interface):
     """
-    Conforms to Rev 1.0 of the UPEL Instrument Control Protocol
+    Conforms to Rev 1.0 of the Instrument Control Protocol
 
     :author: Kevin Kennedy
     """
@@ -109,7 +110,8 @@ class i_UPEL(Base_Interface):
     # Dict: ResID -> Resource Object
     resources = {}
     
-    # UPEL Controller Config
+    # Config
+    # TODO: Find a way to generate the broadcast IP
     broadcastIP = '192.168.1.255'
     DEFAULT_PORT = 7968
     
@@ -136,7 +138,7 @@ class i_UPEL(Base_Interface):
             self.refresh()
             
         except:
-            self.logger.exception("UPEL ICP Socket Exception")
+            self.logger.exception("ICP Socket Exception")
             
         self.e_conf.set()
         
@@ -190,7 +192,7 @@ class i_UPEL(Base_Interface):
                     self.e_alive.clear()
                 
             except:
-                self.logger.exception("UPEL ICP Thread Exception")
+                self.logger.exception("ICP Thread Exception")
     
     def getResources(self):
         return self.resources
@@ -243,7 +245,7 @@ class i_UPEL(Base_Interface):
         Insert a packet into the queue. If unable to queue packet, raises Full
          
         :param packet_obj: ICP Packet Object
-        :type packet_obj: UPEL_ICP_Packet
+        :type packet_obj: ICP_Packet
         :param ttl: Time to Live (seconds)
         :type ttl: float
         :returns: packetID or none if unable to queue message
@@ -312,7 +314,7 @@ class i_UPEL(Base_Interface):
                                                            config=self.config,
                                                            enableRpc=self.manager.enableRpc)
                         
-                            self.logger.info("Found UPEL ICP Device: %s" % res)
+                            self.logger.info("Found ICP Device: %s" % res)
                     
                     elif packetID in self.__routingMap.keys():
                         destination = self.__routingMap.get(packetID, None)
@@ -424,7 +426,7 @@ class r_UPEL(Base_Resource):
     devices over the network. 
     """
     
-    type = "UPEL"
+    type = "ICP"
     
     def __init__(self, resID, interface, **kwargs):
         Base_Resource.__init__(self, resID, interface, **kwargs)
@@ -476,7 +478,7 @@ class r_UPEL(Base_Resource):
         :type packetID: int
         :param block: Block until packet is received or timeout occurs
         :type block: bool
-        :returns: UPEL_ICP_Packet object or None if no response
+        :returns: ICP_Packet object or None if no response
         """
         if block:
             while (True):
