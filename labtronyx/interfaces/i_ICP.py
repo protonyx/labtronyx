@@ -69,7 +69,7 @@ import errno
 
 import numpy
 
-import interfaces.upel as icp
+import interfaces.icp as icp
 
 #===========================================================================
 # data_types_pack = {
@@ -105,7 +105,7 @@ class i_ICP(Base_Interface):
         'date':                 '2015-03-06'
     }
     
-    DEBUG_INTERFACE_ICP = False
+    DEBUG_INTERFACE_ICP = True
     
     # Dict: ResID -> Resource Object
     resources = {}
@@ -420,9 +420,9 @@ class i_ICP(Base_Interface):
     
 
     
-class r_UPEL(Base_Resource):
+class r_ICP(Base_Resource):
     """
-    Instrument class for ICP devices. Used by Models to communicate with ICP
+    Resource class for ICP devices. Used by Drivers to communicate with ICP
     devices over the network. 
     """
     
