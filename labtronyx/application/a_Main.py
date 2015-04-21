@@ -287,7 +287,7 @@ class a_Main(Tk.Tk):
                 else:
                     tkMessageBox.showwarning('Unable to load applet', 'Unable to get a handle for the resource')
                 
-            except:
+            except Exception as e:
                 tkMessageBox.showerror(e.__class__.__name__, e.message)
                 
         else:
