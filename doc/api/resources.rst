@@ -12,7 +12,7 @@ The Resource types that are currently supported are:
 
    - :class:`labtronyx.interfaces.i_VISA.r_VISA`
    - :class:`labtronyx.interfaces.i_Serial.r_Serial`
-   - :class:`labtronyx.interfaces.i_UPEL.r_UPEL`
+   - :class:`labtronyx.interfaces.i_ICP.r_ICP`
    
 Status
 ------
@@ -137,5 +137,5 @@ Resource APIs
 .. autoclass:: labtronyx.interfaces.i_Serial.r_Serial
    :members:
 
-.. autoclass:: labtronyx.interfaces.i_UPEL.r_UPEL
+.. autoclass:: labtronyx.interfaces.i_ICP.r_ICP
    :members:

@@ -2,6 +2,7 @@ import sys
 import os
 import importlib
 import sets
+import copy
 
 #===============================================================================
 # Configuration
@@ -28,9 +29,51 @@ sys.path.append(libpath)
 
 import labtronyx
 
+def scan(pkg, prefix=None):
+    """
+    Scan a package for valid plug-in modules.
+    
+    :param pkg: Package to scan
+    :type pkg: package
+    """
+    import pkgutil
+    plugins = {}
+    
+    if prefix is None:
+        prefix = pkg.__name__
+    
+    for pkg_iter in pkgutil.walk_packages(path=pkg.__path__,
+                                          prefix=prefix+'.'):
+        pkg_imp, pkg_name, is_pkg = pkg_iter
+    
+        if not is_pkg:
+            try:
+                # Use the filename as the class name
+                class_name = pkg_name.split('.')[-1]
+                
+                # Import the module
+                testModule = importlib.import_module(pkg_name)
+                
+                # Check to make sure the correct class exists
+                if hasattr(testModule, class_name):
+                    testClass = getattr(testModule, class_name) # Will raise exception if doesn't exist
+                    
+                    if testClass != {}:
+                        info = copy.deepcopy(testClass.info)
+                        plugins[pkg_name] = info
+                
+            except Exception as e:
+                raise
+            
+    return plugins
+
+import labtronyx.drivers as drivers
+driver_dict = scan(drivers, 'drivers')
+
 #===============================================================================
 # Build Documentation
 #===============================================================================
+    
 def gen_sphinx_header(text, undl):
     return '{0}\n{1}\n\n'.format(text, str(undl)[0]*len(text))
 
@@ -54,9 +97,6 @@ def gen_sphinx_toctree(elems):
 
 def build_driver_docs():
     print "Generating driver documentation..."
-    
-    import labtronyx.drivers
-    driver_dict = labtronyx.drivers.getAllDrivers()
 
     driver_folder = os.path.join(canpath, DRIVER_DOC)
 
@@ -101,9 +141,6 @@ def build_driver_docs():
     
 def build_instrument_docs():
     print "Generating Supported Instruments..."
-
-    import labtronyx.drivers
-    driver_dict = labtronyx.drivers.getAllDrivers()
 
     instr_folder = os.path.join(canpath, INSTRUMENT_DOC)
     

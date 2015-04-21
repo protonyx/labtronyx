@@ -1,7 +1,7 @@
-Agilent.SMU.m_SMU
+drivers.TDI.d_XBL
 =================
 
-.. automodule:: Agilent.SMU.m_SMU
+.. automodule:: drivers.TDI.d_XBL
    :show-inheritance:
    :members:
 

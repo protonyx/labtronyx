@@ -3,22 +3,27 @@ Drivers
 
 .. toctree::
 
-   Agilent.Multimeter.m_3441XA
-   Agilent.SMU.m_SMU
-   BK_Precision.Load.m_85XX
-   BK_Precision.Multimeter.d_2831
-   BK_Precision.Multimeter.d_5492
-   BK_Precision.Source.m_911X
-   BK_Precision.Source.m_XLN
-   Chroma.Source.m_620XXP
-   Debug.m_debug
-   Regatron.d_TopCon
-   Sorensen.d_XFR
-   TDI.d_XBL
-   Tektronix.Oscilloscope.d_2XXX
-   Tektronix.Oscilloscope.d_5XXX7XXX
-   UPEL.AMPED.m_BMS
-   UPEL.BDPC.m_BDPC_BR2
-   UPEL.BDPC.m_BDPC_BR32
-   UPEL.BDPC.m_BDPC_SRC6
+   drivers.Agilent.Multimeter.m_3441XA
+   drivers.Agilent.SMU.m_SMU
+   drivers.BK_Precision.Load.m_85XX
+   drivers.BK_Precision.Multimeter.d_2831
+   drivers.BK_Precision.Multimeter.d_5492
+   drivers.BK_Precision.Multimeter.m_DMM
+   drivers.BK_Precision.Source.m_911X
+   drivers.BK_Precision.Source.m_912X
+   drivers.BK_Precision.Source.m_XLN
+   drivers.Chroma.Source.m_620XXP
+   drivers.Debug.m_debug
+   drivers.Regatron.d_TopCon
+   drivers.Regatron.m_GSS
+   drivers.Sorensen.d_XFR
+   drivers.TDI.d_XBL
+   drivers.Tektronix.Oscilloscope.d_2XXX
+   drivers.Tektronix.Oscilloscope.d_5XXX7XXX
+   drivers.Tektronix.Oscilloscope.m_MixedSignal
+   drivers.Tektronix.Oscilloscope.m_Oscilloscope
+   drivers.UPEL.AMPED.m_BMS
+   drivers.UPEL.BDPC.m_BDPC_BR2
+   drivers.UPEL.BDPC.m_BDPC_BR32
+   drivers.UPEL.BDPC.m_BDPC_SRC6
 
