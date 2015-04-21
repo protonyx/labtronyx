@@ -57,19 +57,19 @@ number.
 
 To connect to instruments by type::
 
-	scope = instr.getInstrument_type('Oscilloscope')
+	scope = instr.findInstruments(deviceType='Oscilloscope')
 
 To connect to instruments by Model number::
 
-	smu = instr.getInstrument_model('B2902A')
+	smu = instr.findInstruments(deviceModel='B2902A')
 	
 To connect to instruments by Serial number::
 
-	dev = instr.getInstrument_serial('12345')
+	dev = instr.findInstruments(deviceSerial='12345')
 	
 To get a list of all instruments::
 
-	all = instr.getInstrument_list()
+	all = instr.findInstruments()
 	
 Loading and Unloading Drivers
 -----------------------------
@@ -84,9 +84,9 @@ The UUID can be retrieved if you know the Resource Identifier (Resource ID) of
 the instrument. The Resource ID is related to how the instrument is connected
 to the computer. e.g. COM5 (Serial), ASRL::5 (VISA)::
 
-	instrument = instr.getInstrument(address='localhost', resID='ASRL::9')
+	instrument = instr.findInstruments(address='localhost', resourceID='ASRL::9')[0]
 	
-	instrument.loadDriver('Tektronix.Oscilloscope.m_DigitalPhosphor')
+	instrument.loadDriver('drivers.BK_Precision.Load.m_85XX')
 	
 To unload a driver::
 
@@ -101,7 +101,8 @@ InstrumentManager. While this whole process should be mostly transparent to
 both the user and the developer, some things are limited:
 
 	* Only methods can be called, it is not possible to access object attributes
-	* Accessing or Modifying attributes can only be done by wrapping the attribute in a set of methods (getters and setters) 
+	* Accessing or Modifying attributes can only be done by wrapping the 
+	  attribute in a set of methods (getters and setters) 
 	* Methods that begin with '_' are considered protected and cannot be accessed
 	* The RPC subsystem introduces 2-20 milliseconds of latency
 

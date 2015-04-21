@@ -18,7 +18,7 @@ Status
 ------
 
 The status of a resource can be queried by calling 
-:func:`labtronyx.Base_Resource.getResourceStatus`. Resource status can be in
+:func:`getResourceStatus`. Resource status can be in
 any of these states:
 
    * INIT - Resource does not have a driver loaded
@@ -26,7 +26,7 @@ any of these states:
    * ERROR - An error has occurred
    
 To get additional information about an error, call
-:func:`labtronyx.Base_Resource.getResourceError`. Errors include any of the
+:func:`getResourceError`. Errors include any of the
 following:
 
    * UNAVAILABLE - The Resource is locked by the system or is busy and cannot be 
@@ -53,7 +53,7 @@ information such as:
 	* Command Set Revision
 	* etc.
 	
-Properties are retrieved by calling :func:`getProperties`. D
+Properties are retrieved by calling :func:`getProperties`.
 
 +---------------+-------------------------------------------------+
 | Key           | Description                                     |
@@ -114,10 +114,10 @@ through the entirety of possible device addresses to find a device.
 
 For controllers that support manually adding resources::
 
-	from InstrumentControl import InstrumentControl
-   	instr = InstrumentControl()
+	from labtronyx import InstrumentManager
+   	instr = InstrumentManager()
    	
-   	new_uuid = instr.addResource('c_CAN', 'ACME', 'ABC 2000')
+   	new_uuid = instr.addResource('i_ICP', 'ACME', 'ABC 2000')
    	
    	# Refresh the resources list to find the new resource
    	instr.refreshManager()
