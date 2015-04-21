@@ -4,7 +4,7 @@
 API
 ---
 """
-from Base_Driver import Base_Driver
+from Base_Driver import *
 
 import time
 
@@ -48,13 +48,33 @@ class m_3441XA(Base_Driver):
         'AC Voltage': 'VOLT:AC',
         'DC Voltage': 'VOLT:DC'}
     
+    trigger_sources = {
+        'Continual': 'IMMEDIATE',
+        'Bus': 'BUS', 
+        'External': 'EXTERNAL'
+    }
+    
+    errors = {
+        -102: "Syntax error",
+        -420: "Query UNTERMINATED"}
+    
     def _onLoad(self):
         self.instr = self.getResource()
         
         self.instr.open()
+        
+        self.getFunction()
     
     def _onUnload(self):
         self.instr.close()
+        
+    def getProperties(self):
+        prop = Base_Driver.getProperties(self)
+        
+        prop['validModes'] = self.modes
+        prop['validTriggerSources'] = self.trigger_sources
+        
+        return prop
     
     def reset(self):
         """
@@ -62,35 +82,33 @@ class m_3441XA(Base_Driver):
         """
         self.instr.write("*RST")
         
+    def checkForError(self):
+        """
+        Raise an exception if an error was registered on the device
+        """
+        errors = []
+        code = -1
+        
+        while (code != 0):
+            code, msg = self.getError()
+            
+            if code != 0:
+                errors.append(code)
+        
+        if len(errors) > 0:
+            raise DeviceError(self.errors.get(errors[0], 'Unknown Error'))
+        
     def getError(self):
         """
         Get the last error
         
-        :returns: str
+        :returns: tuple (code, msg)
         """
-        return self.instr.query("SYST:ERR?")
-    
-    def getMode(self):
-        """
-        Get the current operating mode
-        
-        :returns: str
-        """
-        self.mode = str(self.instr.query("CONF?")).upper()
-        
-        for desc, code in self.modes.items():
-            if self.mode == code:
-                return desc
-            
-        return 'Unknown'
-    
-    def getModes(self):
-        """
-        Get all of the available operating modes
-        
-        :returns: list
-        """
-        return self.modes
+        ret = self.instr.query("SYST:ERR?")
+        code, msg = ret.split(',')
+        code = int(code)
+        msg = str(msg).strip()[1:-1]
+        return (code, msg)
 
     def setMode(self, func):
         """
@@ -116,11 +134,24 @@ class m_3441XA(Base_Driver):
         """
         if func in self.modes:
             value = self.modes.get(func)
-            self.instr.write("CONF %s" % value)
-            
-            self.func = self.getMode()
+            self.instr.write("CONF:%s" % value)
         else:
-            raise RuntimeError("Invalid Function")
+            raise ValueError("Invalid Function")
+    
+    def getMode(self):
+        """
+        Get the current operating mode
+        
+        :returns: str
+        """
+        self.mode = str(self.instr.query("CONF?")).upper()
+        
+        for desc, code in self.modes.items():
+            if self.mode == code:
+                self.func = code
+                return desc
+            
+        return 'Unknown'
     
     def setFunction(self, value):
         """
@@ -135,24 +166,53 @@ class m_3441XA(Base_Driver):
         return self.getMode()
     
     def getRange(self):
-        return self.instr.query("SENS:VOLT:DC:RANGE?")
+        """
+        Get the range for the measurement.
+        
+        :returns: float
+        """
+        return self.instr.query("SENS:%s:RANGE?" % self.func)
     
     def setRange(self, new_range):
-        # Set to autorange no matter what is passed
-        self.instr.write('SENS:VOLT:DC:RANGE:AUTO ON')
-    
+        """
+        Set the range for the measurement. The range is selected by specifying
+        the expected reading as an absolute value. The instrument will then
+        go to the most ideal range that will accomodate the expected reading
+        
+        Possible values for `value`:
+        
+           * 'AUTO'
+           
+        Expected value ranges:
+        
+           * DC Voltage: 0 to 1000 Volts
+           * AC Voltage: 0 to 750 Volts
+           * Current: 0 to 20 Amps
+           * Resistance: 0 to 20e6 ohms
+           * Frequency or Period: 0 to 1010 Volts
+        
+        :param value: Measurement Range
+        :type value: str
+        """
+        if str(value).upper() == 'AUTO':
+            self.instr.write('SENS:%s:RANGE:AUTO ON' % self.func)
+        else:
+            self.instr.write('SENS:%s:RANGE:AUTO OFF' % self.func)
+            
     def getMeasurement(self):
+        """
+        Get the last available reading from the instrument. This command does
+        not trigger a measurement if trigger source is not set to `IMMEDIATE`.
+        
+        :returns: float
+        """
         # Attempt three times to get a measurement
         for x in range(3):
             try:
                 # Initiate a measurement
                 self.instr.write("INIT")
-                time.sleep(0.1)
-                
-                meas_raw = self.instr.query("FETC?")
-                measure = float(meas_raw)
-                
-                return measure
+                time.sleep(0.01)
+                return float(self.instr.query("FETC?"))
             except ValueError:
                 # Try again
                 pass
