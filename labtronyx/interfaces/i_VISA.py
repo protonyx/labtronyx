@@ -368,20 +368,25 @@ class r_VISA(Base_Resource):
         :type size: int
         """
         ret = bytes()
-
-        # There is a bug in PyVISA that forces a low-level call (hgrecco/pyvisa #93)
-        with self.instrument.ignore_warning(visa.constants.VI_SUCCESS_MAX_CNT):
-            if size is None:
-                num_bytes = self.instrument.bytes_in_buffer
-                chunk, status = self.instrument.visalib.read(self.instrument.session, num_bytes)
-                ret += chunk
-
-            else:
-                while len(ret) < size:
-                    chunk, status = self.instrument.visalib.read(self.instrument.session, size - len(ret))
+        
+        if self.instrument.__class__.__name__ == 'USBInstrument':
+            return self.instrument.read_raw()
+        
+        else:
+            # There is a bug in PyVISA that forces a low-level call (hgrecco/pyvisa #93)
+            import pyvisa
+            with self.instrument.ignore_warning(pyvisa.constants.VI_SUCCESS_MAX_CNT):
+                if size is None:
+                    num_bytes = self.instrument.bytes_in_buffer
+                    chunk, status = self.instrument.visalib.read(self.instrument.session, num_bytes)
                     ret += chunk
-                    
-        return ret
+    
+                else:
+                    while len(ret) < size:
+                        chunk, status = self.instrument.visalib.read(self.instrument.session, size - len(ret))
+                        ret += chunk
+                        
+            return ret
     
     def query(self, data, delay=None):
         """
