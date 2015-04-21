@@ -20,6 +20,7 @@ from . import vw_Base
 import Tkinter as Tk
 
 import time
+import threading
 
 class vw_Plot(vw_Base):
     """
@@ -49,6 +50,9 @@ class vw_Plot(vw_Base):
         self.update_interval = int(kwargs.get('update_interval', 1.0) * 1000)
         self.sampling = kwargs.get('start', False)
         self.title = kwargs.get('title', 'Generic Plot')
+        
+        self.plot_lock = threading.Lock()
+        self.sample_thread = None
         
         self.plots = {}
         self.nextID = 0
@@ -100,6 +104,9 @@ class vw_Plot(vw_Base):
             
         except ImportError:
             Tk.Label(self, text="Missing Dependencies!").pack()
+            
+    def __del__(self):
+        self.stopSampling()
         
     def addPlot(self, name, method):
         """
@@ -110,20 +117,17 @@ class vw_Plot(vw_Base):
         :param method: Data method
         :type method: str
         """
-        ret = {}
-        
-        ret['method'] = method
-        ret['data'] = [0.0] * self.max_samples
-        ret['dataset'] = self.subplot_1.plot(self.time_axis, ret['data'])
-        ret['time'] = 0
-        
-        self.plots[name] = ret
-        self.nextID = self.nextID + 1
-        
-        if self.sampling == True:
-            self.startSampling()
-        else:
-            self.stopSampling()
+        with self.plot_lock:
+            ret = {}
+            
+            ret['method'] = method
+            ret['data'] = [0.0] * self.max_samples
+            ret['dataset'] = self.subplot_1.plot(self.time_axis, ret['data'])
+            ret['samples'] = self.max_samples
+            ret['time'] = 0
+            
+            self.plots[name] = ret
+            self.nextID = self.nextID + 1
     
     def addCollectorPlot(self, name, obj, method):
         """
@@ -136,22 +140,18 @@ class vw_Plot(vw_Base):
         :param method: Y-Axis data method name
         :type method: str
         """
-        ret = {}
-        
-        ret['type'] = 'collector'
-        ret['object'] = obj
-        ret['method'] = method
-        ret['dataset'] = self.subplot_1.plot(self.time_axis, self.data)
-        ret['data'] = []
-        ret['time'] = 0
-        
-        self.plots[self.nextID] = ret
-        self.nextID = self.nextID + 1
-        
-        if self.sampling == True:
-            self.startSampling()
-        else:
-            self.stopSampling()
+        with self.plot_lock:
+            ret = {}
+            
+            ret['type'] = 'collector'
+            ret['object'] = obj
+            ret['method'] = method
+            ret['dataset'] = self.subplot_1.plot(self.time_axis, self.data)
+            ret['data'] = []
+            ret['time'] = 0
+            
+            self.plots[self.nextID] = ret
+            self.nextID = self.nextID + 1
         
     def removePlot(self, name):
         """
@@ -160,13 +160,14 @@ class vw_Plot(vw_Base):
         :param name: Dataset name
         :type name: str
         """
-        plot = self.plots.pop(name)
-        
-        if plot.get('type') == 'collector':
-            obj = plot.get('object')
-            method = plot.get('method')
+        with self.plot_lock:
+            plot = self.plots.pop(name)
             
-            obj.stopCollector(method)
+            if plot.get('type') == 'collector':
+                obj = plot.get('object')
+                method = plot.get('method')
+                
+                obj.stopCollector(method)
         
     def startSampling(self):
         """
@@ -180,7 +181,10 @@ class vw_Plot(vw_Base):
                 obj.startCollector(method, self.sample_time, self.max_samples)
             
         self.sampling = True
-        self._schedule_update()
+        
+        if self.sample_thread is None:
+            self.sample_thread = self.sampleThread(self)
+            self.sample_thread.start()
 
     def stopSampling(self):
         """
@@ -194,13 +198,15 @@ class vw_Plot(vw_Base):
                 method = plot_attr.get('method')
                 
                 obj.stopCollector(method)
+                
+        if self.sample_thread is not None:
+            self.sample_thread.shutdown()
+            self.sample_thread = None
 
     def cb_run(self):
         if self.sampling == False:
             self.startSampling()
             self.txt_btnRun.set('Stop')
-            
-            self._schedule_update()
             
         else:
             self.stopSampling()
@@ -213,31 +219,60 @@ class vw_Plot(vw_Base):
                 data = plot_attr.get('data')
                 last_time = plot_attr.get('time')
                 
-                if plot_attr.get('type') == 'collector':
-                    obj = plot_attr.get('object')
-                    method = plot_attr.get('method')
-                    new_data = obj.getCollector(method, last_time)
-                else:
-                    method = plot_attr.get('method')
-                    new_data = [(time.time(), method())]
+                with (self.plot_lock):
+                    try:
+                        # Update data
+                        dataset[0].set_data(self.time_axis, data)
+                        
+                        # Autoscale axis
+                        self.subplot_1.axis([self.time_axis[0], self.time_axis[-1], min(data)*0.9, max(data)*1.10])
+                        
+                        self.canvas.draw()
+                        
+                    except Exception as e:
+                        self.stopSampling()
+                        print e.message
                 
-                try:
-                    for timestamp, sample in new_data:
-                        plot_attr['time'] = timestamp
-                        data.append(sample)
-                     
-                    if len(data) > self.max_samples:
-                        data = data[(-1 * self.max_samples):]
+    class sampleThread(threading.Thread):
+        
+        def __init__(self, plot_object):
+            threading.Thread.__init__(self)
+            
+            self.plot_object = plot_object
+            
+            self.e_alive = threading.Event()
+            self.e_alive.set()
+        
+        def run(self):
+            while (self.e_alive.is_set()):
+                # Iterate through all plots
+                for plot_name, plot_attr in self.plot_object.plots.items():
+                    dataset = plot_attr.get('dataset')
+                    data = plot_attr.get('data')
+                    last_time = plot_attr.get('time')
+                    samples = plot_attr.get('samples', 100)
                     
-                    # Update data
-                    dataset[0].set_data(self.time_axis, data)
-                    
-                    # Autoscale axis
-                    self.subplot_1.axis([0, self.sample_time*self.max_samples, min(data)*0.9, max(data)*1.10])
-                    
-                    self.canvas.draw()
-                    
-                except Exception as e:
-                    self.stopSampling()
-                    raise
+                    try:
+                        if plot_attr.get('type') == 'collector':
+                            obj = plot_attr.get('object')
+                            method = plot_attr.get('method')
+                            new_data = obj.getCollector(method, last_time)
+                        else:
+                            method = plot_attr.get('method')
+                            new_data = [(time.time(), method())]
+                        
+                        # Get lock to update all plots
+                        with (self.plot_object.plot_lock):
+                            for timestamp, sample in new_data:
+                                plot_attr['time'] = timestamp
+                                data.append(sample)
+                                data.pop(0)
+                            
+                    except Exception as e:
+                        pass
+                
+                time.sleep(self.plot_object.sample_time)
+                
+        def shutdown(self):
+            self.e_alive.clear()
         
