@@ -8,7 +8,6 @@ Drivers
    drivers.BK_Precision.Load.m_85XX
    drivers.BK_Precision.Multimeter.d_2831
    drivers.BK_Precision.Multimeter.d_5492
-   drivers.BK_Precision.Multimeter.m_DMM
    drivers.BK_Precision.Source.m_911X
    drivers.BK_Precision.Source.m_912X
    drivers.BK_Precision.Source.m_XLN

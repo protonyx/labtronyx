@@ -35,11 +35,6 @@ Multimeter
   * :doc:`5492BGPIB <../../api/drivers/drivers.BK_Precision.Multimeter.d_5492>`
   * :doc:`5492B <../../api/drivers/drivers.BK_Precision.Multimeter.d_5492>`
 
-  * :doc:`2831E <../../api/drivers/drivers.BK_Precision.Multimeter.m_DMM>`
-  * :doc:`5491B <../../api/drivers/drivers.BK_Precision.Multimeter.m_DMM>`
-  * :doc:`5492BGPIB <../../api/drivers/drivers.BK_Precision.Multimeter.m_DMM>`
-  * :doc:`5492B <../../api/drivers/drivers.BK_Precision.Multimeter.m_DMM>`
-
   * :doc:`2831E <../../api/drivers/drivers.BK_Precision.Multimeter.d_2831>`
   * :doc:`5491B <../../api/drivers/drivers.BK_Precision.Multimeter.d_2831>`
 

@@ -53,24 +53,49 @@ information such as:
 	* Command Set Revision
 	* etc.
 	
-Properties are retrieved by calling :func:`getProperties`.
+Properties are retrieved by calling :func:`getProperties`. All resources provide
+the following keys in the property dictionary:
 
 +---------------+-------------------------------------------------+
 | Key           | Description                                     |
 +---------------+-------------------------------------------------+
-| 'uuid'        | Resource UUID                                   |
+| uuid          | Resource UUID                                   |
 +---------------+-------------------------------------------------+
-| 'controller'  | The module name for the controller              |
+| interface     | The module name for the interface               |
 +---------------+-------------------------------------------------+
-| 'resourceID'  | Resource ID specific for the controller         |
+| resourceID    | Resource ID specific for that interface         |
 +---------------+-------------------------------------------------+
-| 'vendorID'    | Vendor ID used to find compatible Drivers       |
+| resourceType  | Resource type string for driver identification  |
 +---------------+-------------------------------------------------+
-| 'productID'   | Product ID used to find compatible Drivers      |
+| status        | Resource status string                          |
 +---------------+-------------------------------------------------+
-| 'modelName'   | The module name for the currently loaded model  |
+| error         | Resource error string                           |
 +---------------+-------------------------------------------------+
-| 'port'        | RPC port                                        |
+| address       | RPC server address                              |
++---------------+-------------------------------------------------+
+| hostname      | RPC server hostname                             |
++---------------+-------------------------------------------------+
+| port          | RPC port                                        |
++---------------+-------------------------------------------------+
+
+Drivers may add additional keys to the property dictionary. There are no
+restrictions to the number of keys in the property dictionary, but these will
+always be provided:
+
++---------------+-------------------------------------------------+
+| Key           | Description                                     |
++---------------+-------------------------------------------------+
+| driver        | Driver name                                     |
++---------------+-------------------------------------------------+
+| deviceType    | Device type                                     |
++---------------+-------------------------------------------------+
+| deviceVendor  | Device vendor or manufacturer                   |
++---------------+-------------------------------------------------+
+| deviceModel   | Device model number                             |
++---------------+-------------------------------------------------+
+| deviceSerial  | Device serial number                            |
++---------------+-------------------------------------------------+
+| deviceFirmware| Device firmware revision number                 |
 +---------------+-------------------------------------------------+
 
 Error Handling
@@ -82,9 +107,12 @@ an exception will be raised that must be caught downstream.
 Interface related exceptions are generated when a problem occurs during a
 device-level function call like :func:`write`, :func:`read` or :func:`query`:
 
-   - InterfaceError
-   - InterfaceTimeout
-   - ResourceNotOpen
++------------------+-----------------------------------------------------------+
+| InterfaceError   |
+
+| InterfaceTimeout |
+
+| ResourceNotOpen  |
 
 Driver-specific exceptions are generated based on data received from an
 instrument. The documentation for each driver will specify how these exceptions
