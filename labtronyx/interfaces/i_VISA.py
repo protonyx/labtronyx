@@ -230,7 +230,14 @@ class r_VISA(Base_Resource):
     #===========================================================================
         
     def open(self):
-        self.instrument.open()
+        try:
+            self.instrument.open()
+            
+        except visa.VisaIOError as e:
+            raise InterfaceError(e.description)
+        
+        except:
+            raise InterfaceError("Unhandled Exception")
         
     def isOpen(self):
         import pyvisa
@@ -243,7 +250,16 @@ class r_VISA(Base_Resource):
             return False
     
     def close(self):
-        self.instrument.close()
+        try:
+            self.instrument.close()
+            
+        except visa.VisaIOError as e:
+            #if e.errno in [errno.EACCES]:
+            # Access Denied, the port is probably open somewhere else
+            raise InterfaceError(e.description)
+        
+        except:
+            raise InterfaceError("Unhandled Exception")
         
     def lock(self):
         self.instrument.lock()
@@ -319,8 +335,11 @@ class r_VISA(Base_Resource):
             self.instrument.write(data)
         
         except visa.InvalidSession:
-            raise ResourceNotOpen
-                
+            raise ResourceNotOpen()
+        
+        except visa.VisaIOError as e:
+            raise InterfaceError(e.description)
+        
     def write_raw(self, data):
         """
         Send Binary-encoded data to the instrument. Termination character is
@@ -330,13 +349,14 @@ class r_VISA(Base_Resource):
         :type data: str
         :raises: ResourceNotReady
         """
-        self.checkResourceStatus()
-        
         try:
             self.instrument.write_raw(data)
         
         except visa.InvalidSession:
-            raise ResourceNotOpen
+            raise ResourceNotOpen()
+        
+        except visa.VisaIOError as e:
+            raise InterfaceError(e.description)
         
     def read(self, termination=None, encoding=None):
         """
@@ -356,7 +376,13 @@ class r_VISA(Base_Resource):
             return self.instrument.read(termination, encoding)
         
         except visa.InvalidSession:
-            raise ResourceNotOpen
+            raise ResourceNotOpen()
+        
+        except visa.VisaIOError as e:
+            if e.abbreviation in ["VI_ERROR_TMO"]:
+                raise InterfaceTimeout(e.description)
+            else:
+                raise InterfaceError(e.description)
     
     def read_raw(self, size=None):
         """
@@ -369,24 +395,34 @@ class r_VISA(Base_Resource):
         """
         ret = bytes()
         
-        if self.instrument.__class__.__name__ == 'USBInstrument':
-            return self.instrument.read_raw()
-        
-        else:
-            # There is a bug in PyVISA that forces a low-level call (hgrecco/pyvisa #93)
-            import pyvisa
-            with self.instrument.ignore_warning(pyvisa.constants.VI_SUCCESS_MAX_CNT):
-                if size is None:
-                    num_bytes = self.instrument.bytes_in_buffer
-                    chunk, status = self.instrument.visalib.read(self.instrument.session, num_bytes)
-                    ret += chunk
-    
-                else:
-                    while len(ret) < size:
-                        chunk, status = self.instrument.visalib.read(self.instrument.session, size - len(ret))
+        try:
+            if type(self.instrument) == pyvisa.resources.serial.SerialInstrument:
+                # There is a bug in PyVISA that forces a low-level call (hgrecco/pyvisa #93)
+                import pyvisa
+                with self.instrument.ignore_warning(pyvisa.constants.VI_SUCCESS_MAX_CNT):
+                    if size is None:
+                        num_bytes = self.instrument.bytes_in_buffer
+                        chunk, status = self.instrument.visalib.read(self.instrument.session, num_bytes)
                         ret += chunk
-                        
-            return ret
+        
+                    else:
+                        while len(ret) < size:
+                            chunk, status = self.instrument.visalib.read(self.instrument.session, size - len(ret))
+                            ret += chunk
+                            
+                return ret
+            
+            else:
+                return self.instrument.read_raw()
+            
+        except visa.InvalidSession:
+            raise ResourceNotOpen
+        
+        except visa.VisaIOError as e:
+            if e.abbreviation in ["VI_ERROR_TMO"]:
+                raise InterfaceTimeout(e.description)
+            else:
+                raise InterfaceError(e.description)
     
     def query(self, data, delay=None):
         """
@@ -406,14 +442,24 @@ class r_VISA(Base_Resource):
         
         except visa.InvalidSession:
             raise ResourceNotOpen
+        
+        except visa.VisaIOError as e:
+            if e.abbreviation in ["VI_ERROR_TMO"]:
+                raise InterfaceTimeout(e.description)
+            else:
+                raise InterfaceError(e.description)
                 
     def inWaiting(self):
         """
-        Return the number of bytes in the receive buffer
+        Return the number of bytes in the receive buffer for a Serial VISA
+        Instrument. All other VISA instrument types will return 0.
         
         :returns: int
         """
-        return self.instrument.bytes_in_buffer
+        if type(self.instrument) == pyvisa.resources.serial.SerialInstrument:
+            return self.instrument.bytes_in_buffer
+        else:
+            return 0
     
     #===========================================================================
     # Drivers

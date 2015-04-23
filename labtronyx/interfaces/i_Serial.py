@@ -142,20 +142,41 @@ class r_Serial(Base_Resource):
         self.setResourceStatus(resource_status.READY)
             
         # Serial port is immediately opened on object creation
-        self.instrument.close()
+        self.close()
         
     #===========================================================================
     # Resource State
     #===========================================================================
         
     def open(self):
-        self.instrument.open()
+        try:
+            self.instrument.open()
+            
+        except SerialException as e:
+            #if e.errno in [errno.EACCES]:
+            # Access Denied, the port is probably open somewhere else
+            raise InterfaceError(e.message)
+        
+        except:
+            raise InterfaceError("Unhandled Exception")
         
     def isOpen(self):
-        return self.instrument._isOpen
+        try:
+            return self.instrument._isOpen
+        except:
+            return False
     
     def close(self):
-        self.instrument.close()
+        try:
+            self.instrument.close()
+            
+        except SerialException as e:
+            #if e.errno in [errno.EACCES]:
+            # Access Denied, the port is probably open somewhere else
+            raise InterfaceError(e.message)
+        
+        except:
+            raise InterfaceError("Unhandled Exception")
         
     def lock(self):
         pass
@@ -222,9 +243,9 @@ class r_Serial(Base_Resource):
             
         except SerialException as e:
             if e == serial.portNotOpenError:
-                raise ResourceNotOpen
+                raise ResourceNotOpen()
             else:
-                raise InterfaceError
+                raise InterfaceError()
             
     def write_raw(self, data):
         """
@@ -240,9 +261,9 @@ class r_Serial(Base_Resource):
             
         except SerialException as e:
             if e == serial.portNotOpenError:
-                raise ResourceNotOpen
+                raise ResourceNotOpen()
             else:
-                raise InterfaceError
+                raise InterfaceError()
     
     def read(self, termination=None):
         """
@@ -270,9 +291,9 @@ class r_Serial(Base_Resource):
         
         except SerialException as e:
             if e == serial.portNotOpenError:
-                raise ResourceNotOpen
+                raise ResourceNotOpen()
             else:
-                raise InterfaceError
+                raise InterfaceError()
                 
     
     def read_raw(self, size=None):
@@ -289,11 +310,11 @@ class r_Serial(Base_Resource):
             ret = bytes()
             
             if size is None:
-                to_read = self.instrument.inWaiting()
-                ret += self.instrument.read(to_read)
-                
-            else:
-                ret += self.instrument.read(size)
+                size = self.instrument.inWaiting()
+            
+            ret += self.instrument.read(size)
+            if len(ret) != len(size):
+                raise InterfaceTimeout("Timeout before requested bytes could be read")
                 
             return ret
         
