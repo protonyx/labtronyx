@@ -22,6 +22,7 @@ class Base_Resource(object):
         self.__resID = resID
         self.__interface = interface
         self.__status = 'INIT'
+        self.__error = None
         
         self.__lock = None
         
@@ -112,7 +113,8 @@ class Base_Resource(object):
             'interface': self.getInterfaceName(),
             'resourceID': self.getResourceID(),
             'resourceType': self.getResourceType(),
-            'status': self.getResourceStatus()
+            'status': self.getResourceStatus(),
+            'error': self.__error
             }
         
         if hasattr(self, 'rpc_server') and self.rpc_server.rpc_isRunning():
