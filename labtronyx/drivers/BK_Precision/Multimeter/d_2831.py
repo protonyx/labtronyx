@@ -66,9 +66,9 @@ class d_2831(Base_Driver):
         'Continuity': 'CONT' }
     
     trigger_sources = {
-        'Continual': 'IMMEDIATE', 
+        'Continual': 'IMM', 
         'Bus': 'BUS', 
-        'External': 'MANUAL'}
+        'External': 'MAN'}
     
     def _onLoad(self):
         self.instr = self.getResource()
