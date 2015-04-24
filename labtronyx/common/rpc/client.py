@@ -41,6 +41,8 @@ class RpcClient(object):
         self.timeout = self.RPC_TIMEOUT
         self.nextID = 1
         
+        self.rpc_lock = threading.Lock()
+        
         if self.port is None:
             raise RpcServerNotFound()
         
@@ -236,10 +238,12 @@ class RpcClient(object):
         # Retry if there is an error
         for attempt in range(2):
             try:
-                self._send(out_str)
-                
-                # Wait for return data or timeout
-                data = self._recv()
+                # Lock against concurrent access
+                with self.rpc_lock:
+                    self._send(out_str)
+                    
+                    # Wait for return data or timeout
+                    data = self._recv()
                 
                 if data:
                     packet = JsonRpcPacket(data)
