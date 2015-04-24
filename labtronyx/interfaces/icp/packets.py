@@ -144,12 +144,13 @@ class EnumerationPacket(ICP_Packet):
         # TODO: Should this try to parse as JSON data?
         self.data = self.getPayload()
         
-        self.vendor = str(enum[0:31]).strip()
-        self.model = str(enum[32:63]).strip()
+        self.vendor = str(self.data[0:31]).strip()
+        self.model = str(self.data[32:63]).strip()
         
-        packet_types = enum[64:]
-        packet_types = struct.unpack('h'*32, packet_types)
-        self.packet_types = list(set(packet_types)) # Get unique values
+        packet_types = self.data[64:]
+        if len(packet_types) == 64:
+            packet_types = struct.unpack('h'*32, packet_types)
+            self.packet_types = list(set(packet_types)) # Get unique values
     
     def getSuuportedPacketTypes(self):
         return self.packet_types
