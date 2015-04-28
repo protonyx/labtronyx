@@ -14,7 +14,7 @@ class MethodTest(Base_Applet):
         'validDrivers':          ['Debug.m_Debug'],
         
         # List of compatible resource types
-        'validResourceTypes':   ['Debug', 'VISA', 'Serial']
+        'validResourceTypes':   ['Debug', 'VISA', 'Serial', 'ICP']
     }
         
     def run(self):

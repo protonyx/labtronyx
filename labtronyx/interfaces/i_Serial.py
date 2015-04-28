@@ -133,14 +133,10 @@ class r_Serial(Base_Resource):
     def __init__(self, resID, interface, instrument, **kwargs):
         Base_Resource.__init__(self, resID, interface, **kwargs)
         
-        self.resID = resID
-        self.interface = interface
         self.instrument = instrument
         
         self.logger.info("Created Serial resource: %s", resID)
         
-        self.setResourceStatus(resource_status.READY)
-            
         # Serial port is immediately opened on object creation
         self.close()
         
@@ -278,8 +274,8 @@ class r_Serial(Base_Resource):
             ret = ''
             
             if termination is None:
-                bytes = self.instrument.inWaiting()
-                ret += self.instrument.read(bytes)
+                bytes_waiting = self.instrument.inWaiting()
+                ret += self.instrument.read(bytes_waiting)
             
             else:
                 ret += self.instrument.read(1)

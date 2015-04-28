@@ -1,5 +1,6 @@
 import struct
 import time 
+import binascii
 
 from . import errors
 
@@ -17,6 +18,10 @@ data_format_codes = {
     0x02: 'int16',
     0x03: 'int32',
     0x04: 'int64',
+    0x05: 'uint8',
+    0x06: 'uint16',
+    0x07: 'uint32',
+    0x08: 'uint64',
     0x10: 'float',
     0x11: 'double'
     }
@@ -27,8 +32,13 @@ data_format_struct = {
     'int16': 'h',
     'int32': 'i',
     'int64': 'q',
+    'uint8': 'B',
+    'uint16': 'H',
+    'uint32': 'I',
+    'uint64': 'Q',
     'float': 'f',
-    'double': 'd'}
+    'double': 'd'
+    }
 
 #===============================================================================
 # Packet Base Class
@@ -65,7 +75,7 @@ class ICP_Packet:
                 raise errors.ICP_Invalid_Packet
             
             if len(data) > self.header_size:
-                self.PAYLOAD = data[self.header_size:(self.header_size+8)]
+                self.PAYLOAD = data[self.header_size:]
                 
             self._parse()
                 
@@ -85,6 +95,10 @@ class ICP_Packet:
         Called when the object was created with packet data from the network
         """
         pass
+          
+    def _strip(self, data):
+        # Strip control codes and null terminators from data
+        return ''.join([x for x in data if 31 < ord(x) < 127])
     
     def setPacketID(self, id):
         self.PACKET_ID = id
@@ -121,8 +135,8 @@ class ICP_Packet:
         Pack the header and payload
         """
         # Enforce PAYLOAD type as bytearray
-        if type(self.PAYLOAD) is not bytearray:
-            self.PAYLOAD = bytearray(self.PAYLOAD)
+        #if type(self.PAYLOAD) is not bytearray:
+        #    self.PAYLOAD = bytearray(self.PAYLOAD)
             
         payloadSize = len(self.PAYLOAD)
         headerFormat = self.header_format + str('%is' % (payloadSize))
@@ -144,16 +158,16 @@ class EnumerationPacket(ICP_Packet):
         # TODO: Should this try to parse as JSON data?
         self.data = self.getPayload()
         
-        self.vendor = str(self.data[0:31]).strip()
-        self.model = str(self.data[32:63]).strip()
+        self.vendor = self._strip(str(self.data[0:31]))
+        self.model = self._strip(str(self.data[32:63]))
         
         packet_types = self.data[64:]
         if len(packet_types) == 64:
             packet_types = struct.unpack('h'*32, packet_types)
             self.packet_types = list(set(packet_types)) # Get unique values
-    
-    def getSuuportedPacketTypes(self):
-        return self.packet_types
+            
+    def getEnumeration(self):
+        return (self.vendor, self.model)
     
 class HeartbeatPacket(ICP_Packet):
     PACKET_TYPE = 0x02
@@ -186,7 +200,11 @@ class ErrorPacket(ICP_Packet):
         self.setPayload(data)
     
     def _parse(self):
-        self.error, self.msg = struct.unpack(self.payload_format, self.getPayload())
+        try:
+            self.error, self.msg = struct.unpack(self.payload_format, self.getPayload())
+        except:
+            self.error = 0xFFFFFFFF
+            self.msg = 'Unknown Error'
         
     def getError(self):
         return self.error
@@ -201,14 +219,25 @@ class ErrorPacket(ICP_Packet):
 class ResponsePacket(ICP_Packet):
     PACKET_TYPE = 0x80
     
-    payload_format = 'xBxBs'
+    payload_format = 'xBxB'
     
     def _parse(self):
-        self.format, elems, data = struct.unpack(self.payload_format, self.getPayload())
-        data_code = data_format_codes.get(self.format, 'string')
-        data_unpack_code = data_format_struct.get(data_code, 's')
+        payload = self.getPayload()
         
-        self.data = struct.unpack(data_unpack_code * elems, data)
+        self.format, elems = struct.unpack(self.payload_format, payload[0:4])
+        data = payload[4:]
+        
+        if elems > 0:
+            try:
+                data_code = data_format_codes.get(self.format, 'string')
+                data_unpack_code = data_format_struct.get(data_code, 's')
+                fmt = data_unpack_code * elems
+                
+                data_size = struct.calcsize(fmt)
+                self.data = struct.unpack(fmt, data[:data_size])
+                
+            except:
+                self.data = self._strip(data)
     
     def getData(self):
         return self.data
@@ -243,10 +272,11 @@ class SerialDescriptorPacket(ICP_Packet):
     PACKET_TYPE = 0x88
     
     def _format(self):
+        
         self.setPayload(self.args.get('data'))
         
     def getData(self):
-        return self.getPayload()
+        return self._strip(self.getPayload())
     
 class CANDescriptorPacket(ICP_Packet):
     PACKET_TYPE = 0x89

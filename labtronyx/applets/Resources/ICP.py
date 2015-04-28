@@ -2,7 +2,7 @@ from Base_Applet import Base_Applet
 
 import Tkinter as Tk
 
-class UPEL(Base_Applet):
+class ICP(Base_Applet):
     
     info = {
         # View revision author
@@ -12,14 +12,14 @@ class UPEL(Base_Applet):
         # Revision date of View version
         'date':                 '2015-02-11',  
         # Description
-        'description':          'Generic view for UPEL ICP Resources',  
+        'description':          'Generic view for ICP Resources',  
             
         # List of compatible resource types
-        'validResourceTypes':   ['UPEL']
+        'validResourceTypes':   ['ICP']
     }
     
     def run(self):
-        self.wm_title("UPEL ICP Test")
+        self.wm_title("ICP Test")
         
         #=======================================================================
         # Register Group

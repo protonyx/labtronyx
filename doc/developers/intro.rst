@@ -44,17 +44,16 @@ Prefer Sphinx-style doc-strings over the Google Style Guide.
 Architecture
 ------------
 
-The InstrumentManager class uses a slightly modified `Model-View-Controller`_ 
-design paradigm, which separates the low-level system calls from the instrument 
-drivers. By using this design approach, core program functionality is isolated 
-into smaller chunks in order to keep errors from propagating throughout the 
-entire program. If an exception is raised in a Controller or Model, it can be 
-caught easily before the entire framework is destabilized.
+The InstrumentManager class uses a slightly modified `Presentation-Abstraction-Control`_ 
+architectural pattern, which separates the low-level system calls for 
+communication from the instrument drivers. By using this design approach, core 
+program functionality is isolated into smaller chunks in order to keep errors 
+from propagating throughout the entire program.
 
-.. _Model-View-Controller: http://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller
+.. _Presentation-Abstraction-Control: http://en.wikipedia.org/wiki/Presentation%E2%80%93abstraction%E2%80%93control
 
 On startup, the InstrumentManager will scan the program directory for valid
-controllers. For each controller that is found, a scan will be initiated and the
+interfaces. For each interface that is found, a scan will be initiated and the
 found resources indexed. Once all resources are indexed, InstrumentManager
-attempts to load models for each of them based on the Vendor and Product
-identifier returned from the controller. 
+attempts to load drivers for each of them automatically. If a suitable driver
+cannot be found, the user must specify which driver to load. 

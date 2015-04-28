@@ -55,8 +55,9 @@ routing map. If none of those tasks requires attention, the thread will
 sleep for a small time interval to limit loading the processor excessively.
 """
 
-from Base_Interface import Base_Interface
-from Base_Resource import Base_Resource
+from Base_Interface import Base_Interface, InterfaceError, InterfaceTimeout
+from Base_Resource import Base_Resource, ResourceNotOpen
+
 
 import struct
 import time
@@ -122,7 +123,8 @@ class i_ICP(Base_Interface):
         self.__messageQueue = Queue.Queue()
         self.__routingMap = {} # { PacketID: ResID }
         self.__expiration = {} # { PacketID: Expiration time }
-        self.__availableIDs = Set(range(1,255))
+        self.__nextID = 0
+        self.__queue_lock = threading.Lock()
         
         # Configure Socket
         # IPv4 UDP
@@ -178,13 +180,6 @@ class i_ICP(Base_Interface):
                 #===================================================================
                 self._serviceQueue()
                 
-                #===================================================================
-                # Check for dead entries in the routing map
-                #===================================================================
-                self._serviceRoutingMap()
-                
-                # TODO: Do we need to sleep here or run full speed?
-                
             except socket.error as e:
                 if e.errno == errno.EACCES:
                     # Permission denied
@@ -196,6 +191,9 @@ class i_ICP(Base_Interface):
     
     def getResources(self):
         return self.resources
+    
+    def getAddress(self):
+        return self.__socket.getsockname()
     
     #===========================================================================
     # Resource Management
@@ -250,16 +248,18 @@ class i_ICP(Base_Interface):
         :type ttl: float
         :returns: packetID or none if unable to queue message
         """
-        if len(self.__availableIDs) > 0:
+        with self.__queue_lock:
             try:
                  
                 # Assign a PacketID
-                packetID = self.__availableIDs.pop()
+                packetID = self.__nextID
+                
+                # Increment next packet ID
+                self.__nextID = (self.__nextID + 1) % 256
                  
                 packet_obj.setPacketID(packetID)
                      
                 self.__messageQueue.put(packet_obj, False)
-                self.__expiration[packetID] = time.time() + ttl
                 
                 return packetID
              
@@ -270,9 +270,6 @@ class i_ICP(Base_Interface):
             except Full:
                 # Failed to add to queue
                 raise
-             
-        else:
-            return None
         
     def _serviceSocket(self):
             read, _, _ = select.select([self.__socket],[],[], 0.1)
@@ -283,61 +280,47 @@ class i_ICP(Base_Interface):
             
                 try:
                     resp_pkt = icp.packets.ICP_Packet(packet_data=data)
-                    
-                    # Debug output
                     packetID = resp_pkt.getPacketID()
                     packetType = resp_pkt.getPacketType()
+                    packetTypeClass = icp.packet_types.get(packetType)
                     
+                    if packetTypeClass is not None:
+                        pkt = packetTypeClass(packet_data=data, source=sourceIP)
+                    
+                    # Debug output
                     if self.DEBUG_INTERFACE_ICP:
                         self.logger.debug("ICP RX [ID:%i, TYPE:%X, SIZE:%i] from %s", 
                                           packetID, packetType, len(resp_pkt.getPayload()), 
                                           sourceIP)
                     
-                    packetTypeClass = icp.packet_types.get(packetType)
-                    pkt = packetTypeClass(packet_data=data,
-                                          source=sourceIP)
-                    
-                    # Route Packets
-                    if packetTypeClass == icp.packets.EnumerationPacket:
-                        # TODO: New format for enumeration packets
-                        # Filter Discovery Packets
-                        enum = pkt.getSuuportedPacketTypes()
+                    # Route Packets by type
+                    if packetTypeClass is None:
+                        self.logger.error("ICP RX [ID:%i] INVALID PACKET TYPE: %s", packetType)
                         
-                        self.logger.debug(str(enum))
-                        
-                        # Check if resource exists
-                        # TODO: Resource creation depends on device type
-                        if resID not in self.resources.keys():
-                            # Create new device
-                            self.resources[resID] = r_UPEL(resID, self,
+                    elif packetTypeClass == icp.EnumerationPacket:
+                        # Create new device if resource doesn't already exist
+                        if sourceIP not in self.resources.keys():
+                            self.resources[sourceIP] = r_ICP(sourceIP, self,
                                                            logger=self.logger,
                                                            config=self.config,
-                                                           enableRpc=self.manager.enableRpc)
+                                                           enableRpc=self.manager.enableRpc,
+                                                           enumeration=pkt.getEnumeration())
                         
-                            self.logger.info("Found ICP Device: %s" % res)
-                    
-                    elif packetID in self.__routingMap.keys():
-                        destination = self.__routingMap.get(packetID, None)
-                        
-                        if destination in self.resources.keys():
-                            dev = self.resources.get(destination)
+                            self.logger.info("Found ICP Device: %s" % sourceIP)
                             
-                            dev._processResponse(resp_pkt)
+                            self.manager._cb_new_resource()
                             
-                            # Remove entry from routing map
-                            self.__routingMap.pop(packetID)
+                    elif sourceIP in self.resources.keys():
+                        # Let the resource process the packet
+                        dev = self.resources.get(sourceIP)
                             
-                            # Remove entry from expiration table
-                            self.__expiration.pop(packetID)
-                            
-                            # Add free ID back into pool
-                            self.__availableIDs.add(packetID)
+                        dev._processResponse(pkt)
                             
                     else:
-                        self.logger.error("ICP RX [ID:%i] EXPIRED/INVALID PACKET ID", packetID)
+                        self.logger.error("ICP RX [ID:%i] NO RESOURCE TO ROUTE", packetID)
                         
                 except icp.errors.ICP_Invalid_Packet:
-                    self.logger.error("ICP Invalid Packet")
+                    self.logger.error("ICP RX Invalid Packet")
                 
                 #except:
                     # Pass on all errors for the time being
@@ -347,7 +330,7 @@ class i_ICP(Base_Interface):
         """
         :returns: bool - True if the queue was not empty, False otherwise
         """
-        if not self.__messageQueue.empty() and len(self.__availableIDs) > 0:
+        if not self.__messageQueue.empty():
             try:
                 packet_obj = self.__messageQueue.get_nowait()
                 
@@ -362,18 +345,9 @@ class i_ICP(Base_Interface):
                     
                     # Override broadcast address if necessary
                     if destination == "<broadcast>":
-                        #=======================================================
-                        # if self.config.broadcastIP:
-                        #     try:
-                        #         destination = self.config.broadcastIP
-                        #     except:
-                        #         pass
-                        #=======================================================
                         self.__socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
                             
                     else:
-                        # Add entry to routing map
-                        self.__routingMap[packetID] = destination
                         self.__socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 0)
                     
                     # Transmit
@@ -394,30 +368,6 @@ class i_ICP(Base_Interface):
             
         else:
             return False
-        
-    def _serviceRoutingMap(self):
-        for packetID, ttl in self.__expiration.items():
-            if time.time() > self.__expiration.get(packetID):
-                # packet expired, notify ICP Device
-                try:
-                    destination = self.__routingMap.pop(packetID)
-                    
-                    if destination in self.resources.keys():
-                        dev = self.resources.get(destination)
-                    
-                        dev._processTimeout(packetID)
-                    
-                except KeyError:
-                    # Not in routing map
-                    pass
-                    
-                finally:
-                    # Remove entry from expiration table
-                    self.__expiration.pop(packetID)
-                    # Add free ID back into pool
-                    self.__availableIDs.add(packetID)
-
-    
 
     
 class r_ICP(Base_Resource):
@@ -428,20 +378,24 @@ class r_ICP(Base_Resource):
     
     type = "ICP"
     
+    termination = '\l\r'
+    timeout = 10.0
+    
     def __init__(self, resID, interface, **kwargs):
         Base_Resource.__init__(self, resID, interface, **kwargs)
         
-        self.address = address
-        self.queue = packetQueue
+        self.address = resID
+        self.interface = interface
         
-        self.acc_thread = None
+        if 'enumeration' in kwargs:
+            self.vendor, self.model = kwargs.get('enumeration')
+        else:
+            self.vendor = ''
+            self.model = ''
         
-    def _processTimeout(self, packetID):
-        """
-        Called by the controller thread when a sent packet is considered
-        expired
-        """
-        self.incomingPackets[packetID]= ICP_Timeout
+        self.incomingPackets = dict()
+        
+        self.serialStream = str()
         
     def _processResponse(self, pkt):
         """
@@ -450,26 +404,15 @@ class r_ICP(Base_Resource):
         """
         packetID = pkt.PACKET_ID
         
-        if isinstance(pkt, RegisterPacket):
-            # Check if the register should be cached or accumulated
-            try:
-                address, subindex, data_type = self.reg_outgoing.pop(packetID)
-                key = (address, subindex)
-                
-                if key in self.reg_cache.keys():
-                    self.reg_cache[key] = pkt.get(data_type)
-                    
-                if key in self.accumulators.keys():
-                    # TODO: add new value to accumulator
-                    acc = self.accumulators.get(key)
-                    acc.push(pkt.get(data_type))
-                    
-            except:
-                pass
+        if isinstance(pkt, icp.SerialDescriptorPacket):
+            new_data = pkt.getData()
+            print new_data
+            self.serialStream += str(new_data)
         
-        self.incomingPackets[packetID] = pkt
+        else:
+            self.incomingPackets[packetID] = pkt
         
-    def _getResponse(self, packetID, block=False):
+    def _getResponse(self, packetID, block=False, timeout=10.0):
         """
         Get a response packet from the incoming packet queue. Non-blocking
         unless block is set to True.
@@ -481,21 +424,21 @@ class r_ICP(Base_Resource):
         :returns: ICP_Packet object or None if no response
         """
         if block:
-            while (True):
-                ret = self._getResponse(packetID)
+            start = time.time()
+            while (time.time() < start + timeout):
+                ret = self._getResponse(packetID, block=False)
                 
                 if ret is not None:
                     return ret
-            
+                
+            raise icp.ICP_Timeout()
+        
         else:
             try:
                 pkt = self.incomingPackets.pop(packetID)
             
-                if isinstance(pkt, ICP_Timeout):
-                    raise pkt
-                
-                elif isinstance(pkt, ErrorPacket):
-                    raise ICP_DeviceError(pkt)
+                if isinstance(pkt, icp.ErrorPacket):
+                    raise icp.ICP_DeviceError(pkt)
                 
                 else:
                     return pkt
@@ -517,7 +460,35 @@ class r_ICP(Base_Resource):
     #         raise ICP_Timeout
     #===========================================================================
     
-
+    def getProperties(self):
+        def_prop = Base_Resource.getProperties(self)
+        
+        def_prop.setdefault('deviceVendor', self.vendor)
+        def_prop.setdefault('deviceModel', self.model)
+        
+        return def_prop
+    
+    #===========================================================================
+    # Resource State
+    #===========================================================================
+        
+    def open(self):
+        address = socket.gethostbyname(socket.gethostname())
+        oct = address.split('.')
+        oct = map(int, oct)
+        
+        nbo_address = (oct[0]) | (oct[1] << 8) | (oct[2] << 16) | (oct[3] << 24)
+        
+        self.register_write(0xA, nbo_address)
+        
+        ret = self.register_read(0xA)
+        self.logger.debug('ICP OPEN: %X', ret)
+        
+    def isOpen(self):
+        return False
+    
+    def close(self):
+        pass
         
     #===========================================================================
     # Device State
@@ -529,11 +500,11 @@ class r_ICP(Base_Resource):
         
         :returns: int
         """
-        packet = StateChangePacket(0)
-        packet.setDestination(self.address)
+        packet = icp.StateChangePacket(state=0,
+                                       destination=self.address)
 
         try:
-            packetID = self.queue(packet, 10.0)
+            packetID = self.interface.queuePacket(packet, 10.0)
             
             pkt = self._getResponse(packetID, block=True)
             return pkt.getState()
@@ -542,11 +513,11 @@ class r_ICP(Base_Resource):
             return None
         
     def setState(self, new_state):
-        packet = StateChangePacket(new_state)
-        packet.setDestination(self.address)
+        packet = icp.StateChangePacket(state=new_state,
+                                       destination=self.address)
         
         try:
-            packetID = self.queue(packet, 10.0)
+            packetID = self.interface.queuePacket(packet, 10.0)
             
             pkt = self._getResponse(packetID, block=True)
             return pkt.getState()
@@ -555,143 +526,137 @@ class r_ICP(Base_Resource):
             return None
         
     #===========================================================================
-    # Command Operations
+    # Serial Data Operations
     #===========================================================================
     
-    def write(self, data):
-        pass
+    def configure(self, **kwargs):
+        """
+        Configure Serial port parameters for the resource.
+        
+        :param baudrate: Serial - Baudrate. Default 9600
+        :param timeout: Read timeout
+        :param bytesize: Serial - Number of bits per frame. Default 8.
+        :param parity: Serial - Parity
+        :param stopbits: Serial - Number of stop bits
+        :param termination: Write termination
+        """
+        if 'baudrate' in kwargs:
+            self.instrument.setBaudrate(int(kwargs.get('baudrate')))
+            
+        if 'timeout' in kwargs:
+            self.instrument.setTimeout(float(kwargs.get('timeout')))
+            
+        if 'bytesize' in kwargs:
+            self.instrument.setByteSize(int(kwargs.get('bytesize')))
+            
+        if 'parity' in kwargs:
+            self.instrument.setParity(kwargs.get('parity'))
+            
+        if 'stopbits' in kwargs:
+            self.instrument.setStopbits(int(kwargs.get('stopbits')))
+            
+        if 'termination' in kwargs:
+            self.termination = kwargs.get('termination')
+            
+    def getConfiguration(self):
+        return self.instrument.getSettingsDict()
     
+    def write(self, data, termination='\n'):
+        packet = icp.SerialDescriptorPacket(destination=self.address,
+                                        data=(data+str(termination)))
+        packetID = self.interface.queuePacket(packet, 1.0)
+        
+    def write_raw(self, data):
+        packet = icp.SerialDescriptorPacket(destination=self.address,
+                                        data=data)
+        packetID = self.interface.queuePacket(packet, 1.0)
+        
     def read(self):
-        pass
+        ret = ''
+        
+        if self.termination is None:
+            ret = self.serialStream
+            self.serialStream = ''
+        
+        else:
+            index = self.serialStream.find(self.termination) #self.instrument.read(1)
+            
+            if index != -1:
+                ret = self.serialStream[:(index+len(self.termination))]
+                self.serialStream = self.serialStream[(index+len(self.termination)):]
+            else:
+                pass
+    
+        return ret
+    
+    def read_raw(self, size=1):
+        ret = ''
+        if len(self.serialStream) >= size:
+            ret = self.serialStream[:size]
+            self.serialStream = self.serialStream[size:]
+            
+        return ret
     
     def query(self, data):
-        pass
+        self.write(data)
+        time.sleep(0.1)
+        return self.read()
+            
+    def inWaiting(self):
+        return len(self.serialStream)
     
     #===========================================================================
     # Register Operations
     #===========================================================================
     
-    def register_write(self, address, subindex, data, data_type):
+    def register_write(self, address, data):
         """
         Write a value to a register. Blocking operation.
-        
-        :warning::
-        
-            Binary data cannot be encoded for network transmission from a Model.
-            Models should use the appropriate writeReg function for the desired
-            data type to avoid raising exceptions or corrupting data.
             
         :param address: 16-bit address
         :type address: int
-        :param subindex: 8-bit subindex
-        :type subindex: int
         :param data: Data to write
         :type data: variable
-        :param data_type: Data type
-        :type data_type: str
         """
         try:
-            packetID = self.register_write_queue(address, subindex, data, data_type)
+            packet = icp.RegisterWritePacket(address=address, 
+                                             data=data,
+                                             destination=self.address)
         
-            data = self._getResponse(packetID, block=True)
-                    
-            if data is not None:
-                return data.get(data_type)
-                
-        except ICP_Timeout:
-            return None
-    
-    def register_write_queue(self, address, subindex, data, data_type):
-        """
-        Queue a write operation to a register. Returns packet ID for the sent
-        packet. If there are no packet IDs currently available, this call
-        blocks until one is available. Otherwise, this call returns immediately.
-        
-        :param address: 16-bit address
-        :type address: int
-        :param subindex: 8-bit subindex
-        :type subindex: int
-        :param data: Data to write
-        :type data: variable
-        :param data_type: Data type
-        :type data_type: str
-        :returns: packetID
-        """
+            packetID = self.interface.queuePacket(packet, 10.0)
             
-        packet = RegisterWritePacket(address, subindex, data, data_type)
-        packet.setDestination(self.address)
-        
-        try:
-            packetID = self.queue(packet, 10.0)
-        
-            self.reg_outgoing[packetID] = (address, subindex, data_type)
-        
-            return packetID
-        
-        except:
-            raise
+        except icp.ICP_DeviceError as e:
+            epkt = e.get_errorPacket()
+            
+            print epkt.getError()
+            print epkt.getMessage()
                 
-    def register_read_queue(self, address, subindex, data_type):
+        except icp.ICP_Timeout:
+            raise InterfaceTimeout()
+        
+    def register_read(self, address):
         """
-        Queue a read operation to a register. Returns packet ID for the sent
-        packet. If there are no packet IDs currently available, this call
-        blocks until one is available. Otherwise, this call returns immediately.
+        Read a value from a register. Blocks until data returns.
         
         :param address: 16-bit address
         :type address: int
-        :param subindex: 8-bit subindex
-        :type subindex: int
-        :param data_type: Data type
-        :type data_type: str
-        :returns: packetID
-        """
-        packet = RegisterReadPacket(address, subindex)
-        packet.setDestination(self.address)
-        
-        try:
-            packetID = self.queue(packet, 10.0)
-        
-            self.reg_outgoing[packetID] = (address, subindex, data_type)
-        
-            return packetID
-        
-        except:
-            raise
-    
-    def register_read(self, address, subindex, data_type):
-        """
-        Read a value from a register. Blocks until data returns. If cached data
-        exists, it will be returned. A cache update can be forced by directly
-        calling register_read_queue().
-        
-        :warning::
-        
-            Binary data cannot be encoded for network transmission from a Model.
-            Models should use the appropriate readReg function for the desired
-            data type to avoid raising exceptions. 
-        
-        :param address: 16-bit address
-        :type address: int
-        :param subindex: 8-bit subindex
-        :type subindex: int
-        :param data_type: Data type
-        :type data_type: str
         :returns: str
         """
-        key = (address, subindex)
+        packet = icp.RegisterReadPacket(address=address,
+                                        destination=self.address)
         
-        if key in self.reg_cache.keys():
-            # Cached & Accumulated registers should get values from the reg_cache
-            return self.reg_cache.get(key, None)
+        packetID = self.interface.queuePacket(packet, 10.0)
+        
+        try:
+            data = self._getResponse(packetID, block=True)
             
-        else:
-            try:
-                packetID = self.register_read_queue(address, subindex, data_type)
+            return data.getData()
             
-                data = self._getResponse(packetID, block=True)
-                        
-                if data is not None:
-                    return data.get(data_type)
-                    
-            except ICP_Timeout:
-                return None
+        except icp.ICP_DeviceError as e:
+            epkt = e.get_errorPacket()
+            
+            print epkt.getError()
+            print epkt.getMessage()
+                
+        except icp.ICP_Timeout:
+            raise InterfaceTimeout()

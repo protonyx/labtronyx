@@ -1,6 +1,7 @@
+__all__ = ['errors', 'packets']
 
-from . import errors
-from . import packets
+from packets import *
+from errors import *
 
 packet_types = {
     0x00: packets.DiscoveryPacket,
