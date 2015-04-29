@@ -98,7 +98,7 @@ class ICP_Packet:
           
     def _strip(self, data):
         # Strip control codes and null terminators from data
-        return ''.join([x for x in data if 31 < ord(x) < 127])
+        return ''.join([x for x in data if 31 < ord(x) < 127 or x in ['\r', '\n', '\t']])
     
     def setPacketID(self, id):
         self.PACKET_ID = id

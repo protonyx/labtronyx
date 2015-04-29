@@ -22,7 +22,7 @@ class d_5492(Base_Driver):
         'deviceType':           'Multimeter',      
         
         # List of compatible resource types
-        'validResourceTypes':   ['VISA'],  
+        'validResourceTypes':   ['VISA', 'Serial'],  
         
         #=======================================================================
         # VISA Attributes        
@@ -63,7 +63,7 @@ class d_5492(Base_Driver):
         prop = Base_Driver.getProperties(self)
         
         prop['deviceVendor'] = self.info.get('deviceVendor')
-        prop['deviceModel'] = self.instr.getVISA_model().split(' ')[0]
+        prop['deviceModel'] = '5492B'
         prop['validModes'] = self.modes
         prop['validTriggerSources'] = self.trigger_sources
         

@@ -378,8 +378,11 @@ class r_ICP(Base_Resource):
     
     type = "ICP"
     
-    termination = '\l\r'
-    timeout = 10.0
+    CR = '\r'
+    LF = '\n'
+    termination = LF
+    
+    timeout = 5.0
     
     def __init__(self, resID, interface, **kwargs):
         Base_Resource.__init__(self, resID, interface, **kwargs)
@@ -392,6 +395,9 @@ class r_ICP(Base_Resource):
         else:
             self.vendor = ''
             self.model = ''
+            
+        if self.model == 'ETH_ADAPTER':
+            self.type = "Serial"
         
         self.incomingPackets = dict()
         
@@ -406,7 +412,6 @@ class r_ICP(Base_Resource):
         
         if isinstance(pkt, icp.SerialDescriptorPacket):
             new_data = pkt.getData()
-            print new_data
             self.serialStream += str(new_data)
         
         else:
@@ -579,27 +584,31 @@ class r_ICP(Base_Resource):
             self.serialStream = ''
         
         else:
-            index = self.serialStream.find(self.termination) #self.instrument.read(1)
-            
-            if index != -1:
-                ret = self.serialStream[:(index+len(self.termination))]
-                self.serialStream = self.serialStream[(index+len(self.termination)):]
-            else:
-                pass
-    
+            start = time.time()
+            while (time.time() < start + self.timeout):
+                index = self.serialStream.find(self.termination) #self.instrument.read(1)
+                
+                if index != -1:
+                    ret = self.serialStream[:(index+len(self.termination))]
+                    self.serialStream = self.serialStream[(index+len(self.termination)):]
+                    return ret
+                else:
+                    pass
+                
         return ret
-    
+
     def read_raw(self, size=1):
         ret = ''
-        if len(self.serialStream) >= size:
-            ret = self.serialStream[:size]
-            self.serialStream = self.serialStream[size:]
+        start = time.time()
+        while (time.time() < start + self.timeout):
+            if len(self.serialStream) >= size:
+                ret = self.serialStream[:size]
+                self.serialStream = self.serialStream[size:]
             
         return ret
     
     def query(self, data):
         self.write(data)
-        time.sleep(0.1)
         return self.read()
             
     def inWaiting(self):
