@@ -9,7 +9,6 @@ Drivers
    drivers.BK_Precision.Multimeter.d_2831
    drivers.BK_Precision.Multimeter.d_5492
    drivers.BK_Precision.Source.m_911X
-   drivers.BK_Precision.Source.m_912X
    drivers.BK_Precision.Source.m_XLN
    drivers.Chroma.Source.m_620XXP
    drivers.Debug.m_debug

@@ -108,18 +108,22 @@ Interface related exceptions are generated when a problem occurs during a
 device-level function call like :func:`write`, :func:`read` or :func:`query`:
 
 +------------------+-----------------------------------------------------------+
-| InterfaceError   |
-
-| InterfaceTimeout |
-
-| ResourceNotOpen  |
+| InterfaceError   | An exception was caught that could not be corrected       |
++------------------+-----------------------------------------------------------+
+| InterfaceTimeout | The device took too long to respond to a request          |
++------------------+-----------------------------------------------------------+
+| ResourceNotOpen  | The resource was not open                                 |
++------------------+-----------------------------------------------------------+
 
 Driver-specific exceptions are generated based on data received from an
 instrument. The documentation for each driver will specify how these exceptions
 are to be handled:
 
-   - InvalidData
-   - DeviceError
++------------------+-----------------------------------------------------------+
+| InvalidData      | The device returned data that didnt make sense            |
++------------------+-----------------------------------------------------------+
+| DeviceError      | The device reported an error                              |
++------------------+-----------------------------------------------------------+
 
 Manually Managing Resources
 ---------------------------
