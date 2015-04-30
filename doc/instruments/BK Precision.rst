@@ -38,3 +38,16 @@ Multimeter
   * :doc:`2831E <../../api/drivers/drivers.BK_Precision.Multimeter.d_2831>`
   * :doc:`5491B <../../api/drivers/drivers.BK_Precision.Multimeter.d_2831>`
 
+Power Supply
+------------
+
+  * :doc:`9120A <../../api/drivers/drivers.BK_Precision.Source.m_912X>`
+  * :doc:`9121A <../../api/drivers/drivers.BK_Precision.Source.m_912X>`
+  * :doc:`9122A <../../api/drivers/drivers.BK_Precision.Source.m_912X>`
+  * :doc:`9123A <../../api/drivers/drivers.BK_Precision.Source.m_912X>`
+  * :doc:`9124 <../../api/drivers/drivers.BK_Precision.Source.m_912X>`
+  * :doc:`9150 <../../api/drivers/drivers.BK_Precision.Source.m_912X>`
+  * :doc:`9151 <../../api/drivers/drivers.BK_Precision.Source.m_912X>`
+  * :doc:`9152 <../../api/drivers/drivers.BK_Precision.Source.m_912X>`
+  * :doc:`9153 <../../api/drivers/drivers.BK_Precision.Source.m_912X>`
+
