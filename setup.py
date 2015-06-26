@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 import labtronyx.config.default as config
 conf = config.Config()
@@ -14,22 +14,16 @@ setup(
     author="Kevin Kennedy",
     author_email="kennedy.kevin@gmail.com",
 
+    license="MIT",
+
     # Packages
-    packages=["labtronyx",
-              "labtronyx.applets",
-              "labtronyx.application",
-              "labtronyx.common",
-              "labtronyx.common.rpc",
-              "labtronyx.config",
-              "labtronyx.drivers",
-              "labtronyx.interfaces",
-              "labtronyx.widgets"],
+    packages=find_packages(exclude=['doc', 'tests*']),
 
     # Include additional files into the package
     include_package_data=True,
 
     # Details
-    url="",
+    url="https://github.com/protonyx/labtronyx",
 
     #
     # license="LICENSE.txt",
