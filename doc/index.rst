@@ -29,9 +29,6 @@ User Guide
     | :doc:`installation`
     | Instructions for installing Labtronyx and the associated dependencies
     |
-    | :doc:`application/index`
-    | Step-by-step guide for using the Labtronyx Application
-    |
     | :doc:`api/index`
     | Developing scripts using the Labtronyx Python Library and API
     |
@@ -57,7 +54,6 @@ Indices and tables
    :hidden:
    
    installation
-   application/index
    api/index
    instruments/index
    developers/index

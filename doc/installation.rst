@@ -35,9 +35,7 @@ Additional instructions and help can be found at http://python.org
 Installing Labtronyx
 ^^^^^^^^^^^^^^^^^^^^
 
-For Windows computers, Labtronyx is installed by running the setup file.
-
-TODO: Add more instructions here
+For Windows computers, Labtronyx is installed by running the setup file included in the downloaded zip archive.
 
 Mac OSX
 -------
@@ -70,7 +68,15 @@ Installing Python
 Installing Labtronyx
 ^^^^^^^^^^^^^^^^^^^^
 
-TODO: Add instructions here
+1. Unzip the archive file.
+
+2. Open a terminal window and browse to the location of the extracted files.
+
+3. Execute the following command:
+
+.. code-block:: console
+
+   python setup.py install
 
 Ubuntu Linux
 ------------
@@ -110,6 +116,21 @@ version of NI-VISA was `14.0.2 <http://www.ni.com/download/ni-visa-14.0.2/5075/e
 
 Install NI-VISA using the instructions and ReadMe file included with the
 installer. NI-VISA is compatible with Windows, Mac and Linux.
+
+Numpy
+^^^^^
+
+Numpy is a mathematics library for Python that provides optimized math functions used
+by many of the drivers in Labtronyx. Numpy is normally installed with the Labtronyx
+setup, but on Windows, it may be necessary to download and install the pre-compiled
+binary distribution.
+
+1. Download the Numpy windows superpack distribution for your version of Python from
+   the Numpy SourceForge page `here <http://sourceforge.net/projects/numpy/>`_.
+
+   e.g. numpy-1.9.2-win32-superpack-python2.7.exe
+
+2. Install the superpack
 
 Python Libraries
 ^^^^^^^^^^^^^^^^

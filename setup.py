@@ -33,9 +33,9 @@ setup(
 
     # Dependent packages (distributions)
     install_requires=[
-        "jsonlib2",
-        "visa",
-        "serial",
+        #"jsonlib2",
+        "pyvisa",
+        "pyserial",
         "numpy",
         "matplotlib",
     ],
