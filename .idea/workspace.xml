@@ -1,7 +1,126 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="99fb6e90-c987-425b-9e64-f2844c5572b5" name="Default" comment="" />
+    <list default="true" id="99fb6e90-c987-425b-9e64-f2844c5572b5" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/labtronyx/bases/__init__.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/labtronyx/version.py" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\Base_Applet.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\applets\Debug\MethodTest.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\applets\Debug\__init__.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\applets\Debug\v_collector.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\applets\Resources\ICP.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\applets\Resources\VISA.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\applets\Resources\__init__.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\applets\Resources\serial.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\applets\Type\__init__.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\applets\Type\load.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\applets\Type\multimeter.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\applets\Type\oscilloscope.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\applets\Type\source.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\applets\UPEL\__init__.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\applets\UPEL\v_BDPC.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\applets\__init__.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\application\__init__.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\application\a_Main.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\application\assets\computer.png" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\application\assets\drive.png" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\application\include\ConfigPages.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\application\include\ManagerPages.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\application\include\ResourcePages.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\application\include\__init__.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\launch.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\widgets\__init__.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\widgets\vw_entry.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\widgets\vw_info.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\widgets\vw_plots.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\widgets\vw_state.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\scripts\t_AMPED.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\scripts\t_BDPC_SRC6.py" afterPath="" />
+      <change type="DELETED" beforePath="C:\Users\Kevin\git\labtronyx\scripts\t_template.py" afterPath="" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\Makefile" afterPath="$PROJECT_DIR$/docs/Makefile" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.Agilent.Multimeter.m_3441XA.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.Agilent.Multimeter.m_3441XA.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.Agilent.SMU.m_SMU.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.Agilent.SMU.m_SMU.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.BK_Precision.Load.m_85XX.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.BK_Precision.Load.m_85XX.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.BK_Precision.Multimeter.d_2831.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.BK_Precision.Multimeter.d_2831.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.BK_Precision.Multimeter.d_5492.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.BK_Precision.Multimeter.d_5492.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.BK_Precision.Source.m_911X.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.BK_Precision.Source.m_911X.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.BK_Precision.Source.m_XLN.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.BK_Precision.Source.m_XLN.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.Chroma.Source.m_620XXP.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.Chroma.Source.m_620XXP.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.Debug.m_debug.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.Debug.m_debug.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.Regatron.d_TopCon.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.Regatron.d_TopCon.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.Sorensen.d_XFR.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.Sorensen.d_XFR.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.TDI.d_XBL.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.TDI.d_XBL.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.Tektronix.Oscilloscope.d_2XXX.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.Tektronix.Oscilloscope.d_2XXX.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.Tektronix.Oscilloscope.d_5XXX7XXX.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.Tektronix.Oscilloscope.d_5XXX7XXX.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.UPEL.AMPED.m_BMS.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.UPEL.AMPED.m_BMS.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.UPEL.BDPC.m_BDPC_BR2.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.UPEL.BDPC.m_BDPC_BR2.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.UPEL.BDPC.m_BDPC_BR32.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.UPEL.BDPC.m_BDPC_BR32.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\drivers.UPEL.BDPC.m_BDPC_SRC6.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/drivers.UPEL.BDPC.m_BDPC_SRC6.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\drivers\index.rst" afterPath="$PROJECT_DIR$/docs/api/drivers/index.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\examples.rst" afterPath="$PROJECT_DIR$/docs/api/examples.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\index.rst" afterPath="$PROJECT_DIR$/docs/api/index.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\intro.rst" afterPath="$PROJECT_DIR$/docs/api/intro.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\remote.rst" afterPath="$PROJECT_DIR$/docs/api/remote.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\resources.rst" afterPath="$PROJECT_DIR$/docs/api/resources.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\api\scripts.rst" afterPath="$PROJECT_DIR$/docs/api/scripts.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\build.py" afterPath="$PROJECT_DIR$/docs/build.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\conf.py" afterPath="$PROJECT_DIR$/docs/conf.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\applets.rst" afterPath="$PROJECT_DIR$/docs/developers/applets.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\common.rst" afterPath="$PROJECT_DIR$/docs/developers/common.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\device_types\DAU.py" afterPath="$PROJECT_DIR$/docs/developers/device_types/DAU.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\device_types\DMM.py" afterPath="$PROJECT_DIR$/docs/developers/device_types/DMM.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\device_types\Load.py" afterPath="$PROJECT_DIR$/docs/developers/device_types/Load.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\device_types\Oscilloscope.py" afterPath="$PROJECT_DIR$/docs/developers/device_types/Oscilloscope.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\device_types\Source.py" afterPath="$PROJECT_DIR$/docs/developers/device_types/Source.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\drivers.rst" afterPath="$PROJECT_DIR$/docs/developers/drivers.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\index.rst" afterPath="$PROJECT_DIR$/docs/developers/index.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\interfaces.rst" afterPath="$PROJECT_DIR$/docs/developers/interfaces.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\intro.rst" afterPath="$PROJECT_DIR$/docs/developers/intro.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\resources.rst" afterPath="$PROJECT_DIR$/docs/developers/resources.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\templates\__init__.py" afterPath="$PROJECT_DIR$/docs/developers/templates/__init__.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\templates\tp_applet.py" afterPath="$PROJECT_DIR$/docs/developers/templates/tp_applet.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\templates\tp_driver.py" afterPath="$PROJECT_DIR$/docs/developers/templates/tp_driver.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\templates\tp_interface.py" afterPath="$PROJECT_DIR$/docs/developers/templates/tp_interface.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\templates\tp_resource.py" afterPath="$PROJECT_DIR$/docs/developers/templates/tp_resource.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\templates\tp_script.py" afterPath="$PROJECT_DIR$/docs/developers/templates/tp_script.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\templates\tp_widget.py" afterPath="$PROJECT_DIR$/docs/developers/templates/tp_widget.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\developers\widgets.rst" afterPath="$PROJECT_DIR$/docs/developers/widgets.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\index.rst" afterPath="$PROJECT_DIR$/docs/index.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\installation.rst" afterPath="$PROJECT_DIR$/docs/installation.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\instruments\Agilent.rst" afterPath="$PROJECT_DIR$/docs/instruments/Agilent.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\instruments\BK Precision.rst" afterPath="$PROJECT_DIR$/docs/instruments/BK Precision.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\instruments\Chroma.rst" afterPath="$PROJECT_DIR$/docs/instruments/Chroma.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\instruments\Debug.rst" afterPath="$PROJECT_DIR$/docs/instruments/Debug.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\instruments\Regatron.rst" afterPath="$PROJECT_DIR$/docs/instruments/Regatron.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\instruments\Sorensen.rst" afterPath="$PROJECT_DIR$/docs/instruments/Sorensen.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\instruments\TDI.rst" afterPath="$PROJECT_DIR$/docs/instruments/TDI.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\instruments\Tektronix.rst" afterPath="$PROJECT_DIR$/docs/instruments/Tektronix.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\instruments\UPEL.rst" afterPath="$PROJECT_DIR$/docs/instruments/UPEL.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\instruments\index.rst" afterPath="$PROJECT_DIR$/docs/instruments/index.rst" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\make.bat" afterPath="$PROJECT_DIR$/docs/make.bat" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\media\applet_multimeter.PNG" afterPath="$PROJECT_DIR$/docs/media/applet_multimeter.PNG" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\media\applet_source.PNG" afterPath="$PROJECT_DIR$/docs/media/applet_source.PNG" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\media\install_mac_step1.png" afterPath="$PROJECT_DIR$/docs/media/install_mac_step1.png" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\media\install_mac_step2.png" afterPath="$PROJECT_DIR$/docs/media/install_mac_step2.png" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\media\install_win_step1.PNG" afterPath="$PROJECT_DIR$/docs/media/install_win_step1.PNG" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\media\install_win_step2.PNG" afterPath="$PROJECT_DIR$/docs/media/install_win_step2.PNG" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\media\instruments.PNG" afterPath="$PROJECT_DIR$/docs/media/instruments.PNG" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\doc\readme.txt" afterPath="$PROJECT_DIR$/docs/readme.txt" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\Base_Driver.py" afterPath="$PROJECT_DIR$/labtronyx/bases/Base_Driver.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\Base_Interface.py" afterPath="$PROJECT_DIR$/labtronyx/bases/Base_Interface.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\Base_Resource.py" afterPath="$PROJECT_DIR$/labtronyx/bases/Base_Resource.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\Base_Script.py" afterPath="$PROJECT_DIR$/labtronyx/bases/Base_Script.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\InstrumentManager.py" afterPath="$PROJECT_DIR$/labtronyx/manager.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\LabManager.py" afterPath="$PROJECT_DIR$/labtronyx/lab.py" />
+      <change type="MOVED" beforePath="C:\Users\Kevin\git\labtronyx\labtronyx\RemoteManager.py" afterPath="$PROJECT_DIR$/labtronyx/remote.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/labtronyx/__init__.py" afterPath="$PROJECT_DIR$/labtronyx/__init__.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/labtronyx/config/default.py" afterPath="$PROJECT_DIR$/labtronyx/config/default.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/setup.py" afterPath="$PROJECT_DIR$/setup.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/tests/test_manager.py" afterPath="$PROJECT_DIR$/tests/test_manager.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/tests/test_resource.py" afterPath="$PROJECT_DIR$/tests/test_resource.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+    </list>
     <ignored path="labtronyx.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -21,27 +140,84 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="conf.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/doc/conf.py">
+      <file leaf-file-name="setup.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/setup.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="162" column="56" selection-start-line="162" selection-start-column="56" selection-end-line="162" selection-end-column="56" />
+              <caret line="85" column="9" selection-start-line="85" selection-start-column="9" selection-end-line="85" selection-end-column="9" />
+              <folding>
+                <element signature="e#588#597#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="__init__.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/labtronyx/__init__.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.20348205">
+              <caret line="11" column="12" selection-start-line="11" selection-start-column="12" selection-end-line="11" selection-end-column="12" />
+              <folding>
+                <element signature="e#219#241#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="lab.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/labtronyx/lab.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0">
+              <caret line="14" column="0" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
+              <folding>
+                <element signature="e#17#27#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="manager.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/labtronyx/manager.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0">
+              <caret line="9" column="15" selection-start-line="9" selection-start-column="15" selection-end-line="9" selection-end-column="15" />
+              <folding>
+                <element signature="e#17#31#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="remote.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/labtronyx/remote.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0">
+              <caret line="3" column="25" selection-start-line="3" selection-start-column="25" selection-end-line="3" selection-end-column="25" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="setup.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/setup.py">
+      <file leaf-file-name="default.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/labtronyx/config/default.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.61044616">
-              <caret line="35" column="20" selection-start-line="35" selection-start-column="20" selection-end-line="35" selection-end-column="20" />
-              <folding />
+            <state vertical-scroll-proportion="0.0">
+              <caret line="7" column="27" selection-start-line="7" selection-start-column="27" selection-end-line="7" selection-end-column="27" />
+              <folding>
+                <element signature="e#0#14#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
     </leaf>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -51,9 +227,16 @@
       <list>
         <option value="$PROJECT_DIR$/LICENSE" />
         <option value="$PROJECT_DIR$/doc/conf.py" />
-        <option value="$PROJECT_DIR$/setup.py" />
         <option value="$PROJECT_DIR$/doc/installation.rst" />
         <option value="$PROJECT_DIR$/doc/index.rst" />
+        <option value="$PROJECT_DIR$/labtronyx/version.py" />
+        <option value="$PROJECT_DIR$/labtronyx/config/default.py" />
+        <option value="$PROJECT_DIR$/setup.py" />
+        <option value="$PROJECT_DIR$/labtronyx/remote.py" />
+        <option value="$PROJECT_DIR$/labtronyx/manager.py" />
+        <option value="$PROJECT_DIR$/labtronyx/lab.py" />
+        <option value="$PROJECT_DIR$/labtronyx/__init__.py" />
+        <option value="$PROJECT_DIR$/.gitignore" />
       </list>
     </option>
   </component>
@@ -133,7 +316,29 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="doc" />
+              <option name="myItemId" value="labtronyx" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="bases" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="labtronyx" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="labtronyx" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="labtronyx" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Labtronyx.egg-info" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -142,9 +347,14 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="settings.editor.selected.configurable" value="settings.github" />
+    <property name="settings.editor.selected.configurable" value="vcs.Git" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="C:/Program Files (x86)/Git/bin/git.exe" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Kevin\git\labtronyx\labtronyx\bases" />
+    </key>
   </component>
   <component name="RunManager">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
@@ -282,7 +492,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.18020834" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -312,11 +522,13 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/doc/conf.py">
+    <entry file="file://$PROJECT_DIR$/setup.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#588#597#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -327,35 +539,125 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/doc/installation.rst">
+    <entry file="file://$PROJECT_DIR$/labtronyx/version.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.76233184">
-          <caret line="109" column="7" selection-start-line="109" selection-start-column="7" selection-end-line="109" selection-end-column="7" />
+        <state vertical-scroll-proportion="0.055495102">
+          <caret line="3" column="31" selection-start-line="3" selection-start-column="31" selection-end-line="3" selection-end-column="31" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/doc/index.rst">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="1.0729053">
-          <caret line="58" column="19" selection-start-line="58" selection-start-column="19" selection-end-line="58" selection-end-column="19" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/doc/conf.py">
+    <entry file="file://$PROJECT_DIR$/labtronyx/Labtronyx.egg-info/dependency_links.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="162" column="56" selection-start-line="162" selection-start-column="56" selection-end-line="162" selection-end-column="56" />
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/labtronyx/Labtronyx.egg-info/top_level.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/labtronyx/Labtronyx.egg-info/SOURCES.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/labtronyx/Labtronyx.egg-info/requires.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/labtronyx/Labtronyx.egg-info/PKG-INFO">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/setup.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.61044616">
-          <caret line="35" column="20" selection-start-line="35" selection-start-column="20" selection-end-line="35" selection-end-column="20" />
+        <state vertical-scroll-proportion="0.0">
+          <caret line="85" column="9" selection-start-line="85" selection-start-column="9" selection-end-line="85" selection-end-column="9" />
+          <folding>
+            <element signature="e#588#597#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/labtronyx/bases/Base_Driver.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/labtronyx/config/default.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="7" column="27" selection-start-line="7" selection-start-column="27" selection-end-line="7" selection-end-column="27" />
+          <folding>
+            <element signature="e#0#14#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/labtronyx/remote.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="3" column="25" selection-start-line="3" selection-start-column="25" selection-end-line="3" selection-end-column="25" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/labtronyx/manager.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="9" column="15" selection-start-line="9" selection-start-column="15" selection-end-line="9" selection-end-column="15" />
+          <folding>
+            <element signature="e#17#31#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/labtronyx/lab.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="14" column="0" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
+          <folding>
+            <element signature="e#17#27#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.8335147">
+          <caret line="62" column="0" selection-start-line="62" selection-start-column="0" selection-end-line="62" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/labtronyx/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.20348205">
+          <caret line="11" column="12" selection-start-line="11" selection-start-column="12" selection-end-line="11" selection-end-column="12" />
+          <folding>
+            <element signature="e#219#241#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
