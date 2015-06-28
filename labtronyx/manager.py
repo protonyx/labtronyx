@@ -1,10 +1,14 @@
+# System Imports
 import os, sys
 import time
 import socket
-import uuid
 import copy
-import importlib, inspect
+import importlib
 import logging, logging.handlers
+
+# Local Imports
+
+__all__ = ['InstrumentManager']
 
 class InstrumentManager(object):
     """

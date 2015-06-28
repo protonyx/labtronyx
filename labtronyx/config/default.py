@@ -6,12 +6,7 @@ class Config(object):
     # Software Branding
     name = 'Labtronyx'
     longname = 'Labtronyx Instrumentation Control Framework'
-    
-    # Version
-    version = '0.1'
-    build = '150401' # time.strftime("%y%m%d")
-    stage = 'dev'
-    
+
     # Default port for manager objects to setup RPC servers on
     managerPort = 6780
     

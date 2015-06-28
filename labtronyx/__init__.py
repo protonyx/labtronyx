@@ -1,5 +1,18 @@
-from InstrumentManager import InstrumentManager
-from RemoteManager import RemoteManager
-from LabManager import LabManager
+# Import Labtronyx modules into the namespace
+from .manager import *
+from .lab import *
+from .remote import *
 
-from Base_Script import Base_Script
+try:
+    import version
+except ImportError:
+    raise EnvironmentError("Missing version file, try building project again")
+
+import common
+
+import bases
+
+import drivers
+import interfaces
+
+__all__ = ['bases', 'common']

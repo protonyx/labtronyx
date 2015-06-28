@@ -1,10 +1,5 @@
 import time
-import sys
-import importlib
-import logging
 import threading
-
-import common.rpc
 
 class Base_Driver(object):
     """

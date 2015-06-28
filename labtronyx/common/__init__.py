@@ -82,4 +82,7 @@ class ICF_Common(object):
         
     def getConfig(self):
         return self.config
-        
+
+__all__ = ['rpc']
+
+import rpc

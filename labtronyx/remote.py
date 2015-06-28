@@ -1,5 +1,9 @@
+# System Imports
 
+# Local Imports
 from common.rpc import *
+
+__all__ = ['RemoteManager', 'RemoteResource']
 
 class RemoteManager(RpcClient):
     """
