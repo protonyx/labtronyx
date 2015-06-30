@@ -1,0 +1,4 @@
+[submodule "labtronyx/common/rpc"]
+	path = labtronyx/common/rpc
+	url = https://protonyx@github.com/protonyx/ptx-rpc.git
+	branch = master
