@@ -1,12 +1,7 @@
 import unittest
 
-import time
-import sys
-sys.path.append("..")
-
 from labtronyx import InstrumentManager
 import labtronyx.common.resource_status as resource_status
-import labtronyx.common.rpc.errors as rpc_errors
 
 class Resource_Tests(unittest.TestCase):
     

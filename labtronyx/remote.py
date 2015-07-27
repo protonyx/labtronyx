@@ -1,11 +1,14 @@
 # System Imports
 
 # Local Imports
-from common.rpc import *
+try:
+    from ptxrpc import PtxRpcClient, RpcServerNotFound
+except ImportError:
+    raise
 
 __all__ = ['RemoteManager', 'RemoteResource']
 
-class RemoteManager(RpcClient):
+class RemoteManager(PtxRpcClient):
     """
     Labtronyx Remote Instrument Manager
     
@@ -19,10 +22,10 @@ class RemoteManager(RpcClient):
     """
     resources = {}
     
-    def __init__(self, address, port=6780, **kwargs):
-        RpcClient.__init__(self, address, port, **kwargs)
+    def __init__(self, uri, port=6780, **kwargs):
+        super(RemoteManager, self).__init__(uri, port, **kwargs)
         
-        self._enableNotifications()
+        #self._enableNotifications()
         #self._registerCallback('event_new_resource', lambda: self.cb_event_new_resource())
         
     def disconnect(self):
@@ -106,7 +109,7 @@ class RemoteManager(RpcClient):
         """
         return self.findResources(**kwargs)
     
-class RemoteResource(RpcClient):
+class RemoteResource(PtxRpcClient):
     
     def _handleException(self, exception_object):
         if type(exception_object) == RpcInvalidPacket:

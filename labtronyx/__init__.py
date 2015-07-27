@@ -16,3 +16,4 @@ import drivers
 import interfaces
 
 __all__ = ['bases', 'common']
+__version__ = version.ver_sem

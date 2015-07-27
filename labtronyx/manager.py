@@ -7,6 +7,11 @@ import importlib
 import logging, logging.handlers
 
 # Local Imports
+try:
+    from ptxrpc import PtxRpcServer
+    from labtronyx import version
+except ImportError:
+    raise
 
 __all__ = ['InstrumentManager']
 
@@ -21,11 +26,13 @@ class InstrumentManager(object):
     :param configFile: Configuration file to load
     :type configFile: str
     """
-    drivers = {} # Module name -> Model info
-    interfaces = {} # Interface name -> interface object
-    resources = {} # UUID -> Resource Object
     
     def __init__(self, **kwargs):
+        # Initialize instance variables
+        self.interfaces = {} # Interface name -> interface object
+        self.resources = {} # UUID -> Resource Object
+        self.drivers = {} # Module name -> Model info
+
         # Ensure library is present in PYTHONPATH
         self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
         
@@ -58,7 +65,7 @@ class InstrumentManager(object):
                 if not os.path.exists(self.config.logPath):
                     os.makedirs(self.config.logPath)
                 
-                self.logFilename = os.path.normpath(os.path.join(self.config.logPath, 'InstrControl_Manager.log'))
+                self.logFilename = os.path.normpath(os.path.join(self.config.logPath, 'Labtronyx_Manager.log'))
                 #===============================================================
                 # if self.config.logFilename == None:
                 #     self.logFilename = os.path.normpath(os.path.join(self.config.logPath, 'InstrControl_Manager.log'))
@@ -73,28 +80,14 @@ class InstrumentManager(object):
                     fh.doRollover()
                 except Exception as e:
                     self.logger.error("Unable to open log file for writing: %s", str(e))
-                    
-        # Start the RPC Server
-        self.enableRpc = kwargs.get('enableRpc', True) 
-        if self.enableRpc == True:
-            try:
-                import common.rpc as rpc
-                self.rpc_server = rpc.RpcServer(name='Labtronyx-InstrumentManager', 
-                                                port=self.config.managerPort,
-                                                logger=self.logger)
-                self.rpc_server.registerObject(self)
-                self.logger.debug("RPC Server starting...")
-                
-                for res_uuid, res_obj in self.resources.items():
-                    res_obj.start()
-    
-            except rpc.RpcServerPortInUse:
-                self.logger.error("RPC Port in use, shutting down...")
-                sys.exit(1)
     
         # Announce Version
         self.logger.info(self.config.longname)
-        self.logger.info("Instrument Manager, Version: %s", self.config.version)
+        self.logger.info("Instrument Manager, Version: %s", version.ver_full)
+
+        #
+        # Load Plugins
+        #
         
         # Load Drivers
         import drivers
@@ -111,13 +104,19 @@ class InstrumentManager(object):
         for interf in interface_info.keys():
             self.logger.debug("Found Interface: %s", interf)
             self.enableInterface(interf)
+
+        # Attempt to start the RPC Server
+        if kwargs.get('rpc', True):
+            if not self.rpc_start():
+                raise RuntimeError("Unable to start RPC Server")
     
     def __del__(self):
-        self.stop()
+        self.rpc_stop()
         
     def __scan(self, pkg):
         """
-        Scan a package for valid plug-in modules.
+        Scan a package for valid plug-in modules. Plugin modules have a class with the same name as the module and
+        each class has an attribute "info" (dict) that is cataloged.
         
         :param pkg: Package to scan
         :type pkg: package
@@ -150,38 +149,72 @@ class InstrumentManager(object):
                 
         return plugins
 
-    def start(self):
+    def rpc_start(self):
         """
         Start the RPC Server and being listening for remote connections.
 
         :returns: True if successful, False otherwise
         """
-        self.enableRpc = True
+        # Clean out old RPC server, if any exists
+        if hasattr(self, 'rpc_server'):
+            del self.rpc_server
+        self.rpc_server = None
+
+        # Attempt to import ptx-rpc
+        try:
+            import ptxrpc as rpc
+        except ImportError:
+            return False
+
+        try:
+            self.rpc_server = rpc.PtxRpcServer(host='localhost',
+                                               port=self.config.managerPort,
+                                               name='Labtronyx-InstrumentManager',
+                                               logger=self.logger)
+
+            # Register InstrumentManager in the base path
+            self.rpc_server.register_path('/', self)
+            self.logger.debug("RPC Server starting...")
+
+            for res_uuid, res_obj in self.resources.items():
+                self.rpc_server.register_path(res_uuid, res_obj)
+
+            return True
+
+        except rpc.RpcServerPortInUse:
+            self.logger.error("RPC Port in use, shutting down...")
+            return False
+
+        except Exception as e:
+            self.logger.exception("RPC Exception")
+            return False
         
 
-    def stop(self):
+    def rpc_stop(self):
         """
         Stop the RPC Server. Attempts to shutdown and free
         all resources.
         """
-        self.EnableRPC = False
-        self.logger.debug("RPC Server stopping...")
+        if self.rpc_server is not None:
+            self.logger.debug("RPC Server stopping...")
 
-        # Close all resources
-        for res in self.resources:
-            try:
-                res.close()
-            except:
-                pass
-            
-        # Close all interfaces
-        for interface in self.interfaces.keys():
-            self.disableInterface(interface)
-                
-        # Stop the InstrumentManager RPC Server
-        if hasattr(self, 'rpc_server'):
-            self.rpc_server.notifyClients('manager_shutdown')
-            self.rpc_server.rpc_stop()
+            # Close all resources
+            for res in self.resources:
+                try:
+                    res.close()
+                except:
+                    pass
+
+            # Close all interfaces
+            for interface in self.interfaces.keys():
+                self.disableInterface(interface)
+
+            # Stop the InstrumentManager RPC Server
+            if hasattr(self, 'rpc_server'):
+                self.rpc_server.notifyClients('manager_shutdown')
+                self.rpc_server.rpc_stop()
+
+            self.rpc_server = None
             
     def getVersion(self):
         """
@@ -189,7 +222,7 @@ class InstrumentManager(object):
         
         :returns: str
         """
-        return self.config.version
+        return version.ver_full
     
     def getAddress(self):
         """
@@ -236,12 +269,20 @@ class InstrumentManager(object):
         if interface not in self.interfaces:
             try:
                 interfaceModule = importlib.import_module(interface)
+
+                # Look for a class with the same name as the module
                 # TODO: Find a way to have multiple classes per file
                 className = interface.split('.')[-1]
                 interfaceClass = getattr(interfaceModule, className)
-                inter = interfaceClass(self, logger=self.logger,
-                                             config=self.config)
+
+                # Instantiate interface
+                inter = interfaceClass(manager=self,
+                                       logger=self.logger,
+                                       config=self.config)
+
+                # Call the plugin hook to open the interface
                 inter.open()
+
                 self.logger.info("Started Interface: %s" % interface)
                 self.interfaces[interface] = inter
             except:
@@ -254,8 +295,10 @@ class InstrumentManager(object):
         if interface in self.interfaces:
             try:
                 inter = self.interfaces.pop(interface)
+
+                # Call the plugin hook to close the interface
                 inter.close()
-                inter.stop()
+
                 self.logger.info("Stopped Interface: %s" % interface)
                 
             except:
@@ -406,7 +449,7 @@ if __name__ == "__main__":
         lh_console.setFormatter(formatter)
         logger.addHandler(lh_console)
     
-    man = InstrumentManager(logger=logger, enableRpc=True)
+    man = InstrumentManager(logger=logger, rpc=True)
     
     # Keep the main thread alive
     try:

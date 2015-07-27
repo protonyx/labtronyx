@@ -1,15 +1,14 @@
 import time
 import threading
+import logging
 
 class Base_Interface(object):
     """
     Interface Base Class
     """
-    
-    REFRESH_RATE = 1.0 # Seconds
 
-    # TODO: Interface will have hooks into the persistence config to "remember" how
-    #       a particular device is configured when the program is run in the future.
+    # TODO: Interface will have hooks into the persistence config to "remember" how a particular device is configured
+    # when the program is run in the future.
     
     def __init__(self, manager, **kwargs):
         """
@@ -17,34 +16,10 @@ class Base_Interface(object):
         :type manager: InstrumentManager object
         """
         self.config = kwargs.get('config')
-        self.logger = kwargs.get('logger')
+        self.logger = kwargs.get('logger', logging)
         
         self.resources = {}
         self.manager = manager
-        
-        self.e_alive = threading.Event()
-        self.e_alive.set()
-            
-        self.__interface_thread = threading.Thread(name=self.getInterfaceName(), target=self.run)
-        self.__interface_thread.start()
-        
-    #===========================================================================
-    # Interface Thread
-    #===========================================================================
-    
-    def run(self):
-        """
-        Interface thread
-        """
-        while(self.e_alive.isSet()):
-            
-            self.refresh()
-            
-            time.sleep(self.REFRESH_RATE)
-            
-    def stop(self):
-        self.e_alive.clear()
-        self.__interface_thread.join()
             
     #===========================================================================
     # Interface Methods
@@ -91,12 +66,17 @@ class Base_Interface(object):
         """
         raise NotImplementedError
 
-    def refresh(self):
+    def enumerate(self):
         """
-        Refreshes the resource list. This function is called regularly by the
-        controller thread.
+        Refreshes the resource list by enumerating all of the available devices on the interface.
         """
         raise NotImplementedError
+
+    def refresh(self):
+        """
+        Alias for enumerate
+        """
+        return self.enumerate()
     
     def addResource(self, ResID, VID, PID):
         """

@@ -2,7 +2,6 @@ import uuid
 import importlib
 import socket
 
-import labtronyx.common.rpc as rpc
 import labtronyx.common.resource_status as resource_status
 
 class Base_Resource(object):
@@ -22,9 +21,6 @@ class Base_Resource(object):
         self.__lock = None
         
         self.driver = None
-        
-        if kwargs.get('enableRpc', True):
-            self.start()
             
     def __del__(self):
         self.stop()
@@ -38,21 +34,6 @@ class Base_Resource(object):
             
         else:
             raise AttributeError
-        
-    def start(self):
-        """
-        Start the RPC Server
-        """
-        self.rpc_server = rpc.RpcServer(name='RPC-%s' % (self.__resID),
-                                        logger=self.logger)
-        self.rpc_server.registerObject(self)
-        
-    def stop(self):
-        """
-        Stop the RPC Server
-        """
-        if hasattr(self, 'rpc_server'):
-            self.rpc_server.rpc_stop()
         
     def getUUID(self):
         return self.__uuid
@@ -69,17 +50,11 @@ class Base_Resource(object):
     def setResourceStatus(self, new_status):
         self.__status = new_status
         
-        if hasattr(self, 'rpc_server'):
-            self.rpc_server.notifyClients('event_status_change')
-        
     def getResourceError(self):
         return self.__error
     
     def setResourceError(self, error):
         self.__error = error
-        
-        if hasattr(self, 'rpc_server'):
-            self.rpc_server.notifyClients('event_resource_error')
     
     def getInterfaceName(self):
         """
@@ -88,11 +63,6 @@ class Base_Resource(object):
         :returns: str
         """
         return self.__interface.getInterfaceName()
-    
-    def getPort(self):
-        # Start the RPC server if it isn't already started
-        if hasattr(self, 'rpc_server') and self.rpc_server.rpc_isRunning():
-            return self.rpc_server.rpc_getPort()
     
     def getProperties(self):
         driver_prop = {}
@@ -111,11 +81,6 @@ class Base_Resource(object):
             'status': self.getResourceStatus(),
             'error': self.__error
             }
-        
-        if hasattr(self, 'rpc_server') and self.rpc_server.rpc_isRunning():
-            res_prop['address'] = socket.gethostbyname(socket.gethostname())
-            res_prop['hostname'] = socket.gethostname()
-            res_prop['port'] = self.rpc_server.rpc_getPort()
           
         driver_prop.update(res_prop)
         
@@ -216,11 +181,6 @@ class Base_Resource(object):
                                     config=self.config)
             self.driver._onLoad()
             
-            # RPC register object
-            if hasattr(self, 'rpc_server'):
-                self.rpc_server.registerObject(self.driver)
-                self.rpc_server.notifyClients('event_driver_loaded')
-            
             return True
 
         except:
@@ -247,11 +207,6 @@ class Base_Resource(object):
             self.driver = None
             
             self.logger.debug('Unloaded driver for resource [%s]', self.getResourceID())
-            
-            # RPC unregister object    
-            if hasattr(self, 'rpc_server'):
-                self.rpc_server.unregisterObject(self.driver)
-                self.rpc_server.notifyClients('event_driver_unloaded')
                
             return True
         
