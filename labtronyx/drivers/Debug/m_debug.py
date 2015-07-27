@@ -1,4 +1,4 @@
-from Base_Driver import Base_Driver
+from labtronyx.bases import Base_Driver
 
 import math
 import time

@@ -1,5 +1,5 @@
 """
-.. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
+.. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
 Limitations
 -----------
@@ -12,7 +12,7 @@ using other means.
 API
 ---
 """
-from Base_Driver import Base_Driver
+from labtronyx.bases import Base_Driver
 
 import time
 import struct

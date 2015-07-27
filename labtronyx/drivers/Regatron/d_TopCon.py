@@ -1,5 +1,5 @@
 """
-.. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
+.. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
 Connecting to the Instrument
 ----------------------------
@@ -12,7 +12,7 @@ local COM port to the operating system.
 API
 ---
 """
-from Base_Driver import Base_Driver
+from labtronyx.bases import Base_Driver
 
 import struct
 

@@ -1,5 +1,5 @@
 """
-.. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
+.. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
 Driver
 ------
@@ -25,7 +25,7 @@ Java-enabled web browser.
 API
 ---
 """
-from Base_Driver import Base_Driver
+from labtronyx.bases import Base_Driver
 
 class m_XLN(Base_Driver):
     """

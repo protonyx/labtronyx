@@ -1,5 +1,5 @@
-from Base_Interface import Base_Interface
-from Base_Resource import Base_Resource
+from labtronyx.bases.interface import Base_Interface
+from labtronyx.bases.resource import Base_Resource
 
 import sys
 

@@ -1,5 +1,5 @@
-from Base_Interface import Base_Interface, InterfaceError, InterfaceTimeout
-from Base_Resource import Base_Resource, ResourceNotOpen
+from labtronyx.bases.interface import Base_Interface, InterfaceError, InterfaceTimeout
+from labtronyx.bases.resource import Base_Resource, ResourceNotOpen
 
 import importlib
 import sys

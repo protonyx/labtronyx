@@ -55,8 +55,8 @@ routing map. If none of those tasks requires attention, the thread will
 sleep for a small time interval to limit loading the processor excessively.
 """
 
-from Base_Interface import Base_Interface, InterfaceError, InterfaceTimeout
-from Base_Resource import Base_Resource, ResourceNotOpen
+from labtronyx.bases.interface import Base_Interface, InterfaceError, InterfaceTimeout
+from labtronyx.bases.resource import Base_Resource, ResourceNotOpen
 
 
 import struct

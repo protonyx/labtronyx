@@ -1,5 +1,5 @@
 """
-.. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
+.. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
 Limitations
 -----------
@@ -11,7 +11,7 @@ uses this driver.
 API
 ---
 """
-from Base_Driver import Base_Driver
+from labtronyx.bases import Base_Driver
 
 class m_620XXP(Base_Driver):
     """

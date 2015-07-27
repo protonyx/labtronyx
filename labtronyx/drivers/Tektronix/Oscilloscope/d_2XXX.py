@@ -1,5 +1,5 @@
 """
-.. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
+.. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
 Supported Interfaces
 --------------------
@@ -17,7 +17,7 @@ VISA driver should be able to detect the oscilloscope on the network.
 API
 ---
 """
-from Base_Driver import Base_Driver
+from labtronyx.bases import Base_Driver
 
 import time
 import struct

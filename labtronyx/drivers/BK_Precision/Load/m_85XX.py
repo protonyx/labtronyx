@@ -1,5 +1,5 @@
 """
-.. codeauthor:: Kevin Kennedy <kennedy.kevin@gmail.com>
+.. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
 Connection Instructions
 -----------------------
@@ -26,7 +26,7 @@ BK Precision provides a device for communicating with this class of DC load:
 API
 ---
 """
-from Base_Driver import *
+from labtronyx.bases import Base_Driver
 
 class m_85XX(Base_Driver):
     """

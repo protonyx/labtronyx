@@ -1,5 +1,5 @@
-from Base_Interface import Base_Interface, InterfaceError, InterfaceTimeout
-from Base_Resource import Base_Resource, ResourceNotOpen
+from labtronyx.bases.interface import Base_Interface, InterfaceError, InterfaceTimeout
+from labtronyx.bases.resource import Base_Resource, ResourceNotOpen
 
 import importlib
 import re
@@ -14,9 +14,7 @@ class i_VISA(Base_Interface):
     
     Wraps PyVISA. Requires a VISA driver to be installed on the system.
     """
-    
-    REFRESH_RATE = 5.0 # Seconds
-    
+
     info = {
         # Interface Author
         'author':               'KKENNEDY',
@@ -31,7 +29,7 @@ class i_VISA(Base_Interface):
     
     resource_manager = None
             
-    def refresh(self):
+    def enumerate(self):
         if self.resource_manager is not None:
             try:
                 res_list = self.resource_manager.list_resources()
@@ -40,18 +38,20 @@ class i_VISA(Base_Interface):
                 for res in res_list:
                     if res not in self.resources.keys():
                         try:
+                            # TODO: Minimize time spent creating new resources
                             instrument = self.resource_manager.open_resource(res,
                                                                   open_timeout=0.1)
                             
-                            new_resource = r_VISA(res, self, 
-                                                  drivers=self.manager.getDrivers(),
+                            new_resource = r_VISA(resID=res,
+                                                  interface=self,
                                                   instrument=instrument,
+                                                  drivers=self.manager.getDrivers(),
                                                   logger=self.logger,
-                                                  config=self.config,
-                                                  enableRpc=self.manager.enableRpc)
+                                                  config=self.config)
                             
                             self.resources[res] = new_resource
-                            
+
+                            # TODO: Implement new event architecture
                             self.manager._cb_new_resource()
                         
                         except visa.VisaIOError as e:
@@ -69,6 +69,29 @@ class i_VISA(Base_Interface):
             except visa.VisaIOError:
                 # Exception thrown when there are no resources
                 res_list = []
+
+    def prune(self):
+        """
+        Close any resources that are no longer present in the system
+        """
+        if self.resource_manager is not None:
+            try:
+                res_list = self.resource_manager.list_resources()
+
+                # Check for new resources
+                for res in self.resources:
+                    if res not in res_list:
+                        resource = self.resources.get(res)
+
+                        resource.close()
+
+            except visa.VisaIOError:
+                # Exception thrown when there are no resources
+                pass
+
+            except:
+                self.logger.exception("Unhandled VISA Exception while pruning resource: %s", res)
+
                 
     #===========================================================================
     # Required API Function Definitions
@@ -84,6 +107,9 @@ class i_VISA(Base_Interface):
         try:
             # Load the VISA Resource Manager
             self.resource_manager = visa.ResourceManager()
+
+            # Enumerate all of the connected instruments
+            self.enumerate()
             
             return True
         
@@ -94,12 +120,11 @@ class i_VISA(Base_Interface):
         
     def close(self):
         """
-        Stops the VISA Controller. Stops the controller thread and frees all
-        resources associated with the controller.
+        Stops the VISA Interface. Frees all resources associated with the interface.
         """
         for resObj in self.resources.values():
-            resObj.stop()
-        
+            resObj.close()
+
         self.resources.clear()
         
         return True
@@ -120,7 +145,7 @@ class r_VISA(Base_Resource):
     BK Precision has a non-standard format for some of their instruments:
     <Model>,<Firmware>,<Serial>
     
-    Models derived from a VISA resource do not need to provide values for the
+    Drivers derived from a VISA resource do not need to provide values for the
     following property attributes as they are derived from the identification
     string:
         
@@ -142,20 +167,17 @@ class r_VISA(Base_Resource):
         self.driver_list = kwargs.get('drivers', {})
         
         #self.instrument.timeout = 1000
-        
-        self.identify()
-        
-        self.logger.debug("Created VISA Resource: %s", resID)
-        self.logger.debug("Vendor: %s", self.VID)
-        self.logger.debug("Model:  %s", self.PID)
-        self.logger.debug("Serial: %s", self.serial)
-        self.logger.debug("F/W:    %s", self.firmware)
-        
+
+        # Instrument is created in the open state, but we do not want to lock the VISA instrument
         self.close()
-        
-        self.loadDriver()
+
+        # Set a flag to initialize the resource when it is used
+        self.ready = False
                 
     def getProperties(self):
+        if not self.ready:
+            self.identify()
+
         def_prop = Base_Resource.getProperties(self)
         
         def_prop.setdefault('deviceVendor', self.getVISA_vendor())
@@ -178,10 +200,10 @@ class r_VISA(Base_Resource):
     
     def identify(self):
         start_state = self.isOpen()
-        start_timeout = self.instrument.timeout
         if not start_state:
             self.open()
-            
+
+        start_timeout = self.instrument.timeout
         #self.instrument.timeout = 500
         
         try:
@@ -212,6 +234,8 @@ class r_VISA(Base_Resource):
             
         if start_state == False:
             self.close()
+
+        self.ready = True
             
     def getVISA_vendor(self):
         return self.VID
@@ -232,6 +256,14 @@ class r_VISA(Base_Resource):
     def open(self):
         try:
             self.instrument.open()
+
+            self.identify()
+
+            self.logger.debug("Opened VISA Resource: %s", self.resID)
+            self.logger.debug("Vendor: %s", self.VID)
+            self.logger.debug("Model:  %s", self.PID)
+            self.logger.debug("Serial: %s", self.serial)
+            self.logger.debug("F/W:    %s", self.firmware)
             
         except visa.VisaIOError as e:
             raise InterfaceError(e.description)
