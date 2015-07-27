@@ -48,5 +48,5 @@ instruments on other computers. It simplifies script development by wrapping
 communication with a JSON-RPC server inside a Python object that can be used
 as if the remote InstrumentManager object was a local Python object.
 
-.. autoclass:: labtronyx.RemoteManager.RemoteManager
+.. autoclass:: remote.RemoteManager
    :members:

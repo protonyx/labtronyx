@@ -7,9 +7,9 @@ through the steps needed to connect to and control instruments.
 Creating an Instrument Manager
 ------------------------------
 
-The Instrument Manager is the core of the labtronyx framework. It connects to
+The Instrument Manager is the core of the Labtronyx framework. It connects to
 all of the compatible interfaces and discovers connected instruments. To load
-the Instrument Manager, use the following code::
+the Instrument Manager::
    
    import labtronyx
    instr = labtronyx.InstrumentManager()
@@ -17,107 +17,83 @@ the Instrument Manager, use the following code::
 Connecting to Instruments
 -------------------------
 
-In order to connect to an instrument, you must know something about how it is
-connected. You may need information such as:
-
-   * Interface (VISA, Serial, etc.)
-   * Location (COM Port, IP Address, etc.)
-   
-Some interfaces support automatic enumeration and can detect other attributes
-about the instrument such as:
-
-	* Type
-	* Vendor
-	* Model Number
-	* Serial Number
-
-Without Enumeration
-^^^^^^^^^^^^^^^^^^^
-
-The command :func:`findInstruments` can be used to return a list of all
-instruments::
+The command :func:`findInstruments` can be used to return a list of instruments. This will search all resources
+connected to the system for valid instruments::
 
    dev_list = instr.findInstruments()
    
-It can also be used to identify a specific instrument with additional
-information::
-
-   device = instr.findInstruments(resourceID='COM16')
-
-With Enumeration
-^^^^^^^^^^^^^^^^
-
-Looking up instruments by Type and Model Number may return multiple instruments
-if there are many devices connected. In these cases, InstrumentControl will
-return a list of devices that match. The programmer will have to use other
-logic to determine which device to use. The easiest way to deal with this
-situation is to identify a device by serial number, though there is always the
-possibility that devices from different vendors could have the same serial
-number.
+Labtronyx may be able to discover additional information about resources that will help identify a specific instrument
+connected to the system. This requires that the instrument has some means to identify itself (like the VISA *IDN?
+command) and a compatible Labtronyx driver for that instrument. For instruments with this capability, you can use
+the parameters to target specific instruments.
 
 To connect to instruments by type::
 
-	scope = instr.findInstruments(deviceType='Oscilloscope')
+   scope = instr.findInstruments(deviceType='Oscilloscope')
 
 To connect to instruments by Model number::
 
-	smu = instr.findInstruments(deviceModel='B2902A')
-	
+   smu = instr.findInstruments(deviceModel='B2902A')
+
 To connect to instruments by Serial number::
 
-	dev = instr.findInstruments(deviceSerial='12345')
-	
-To get a list of all instruments::
+   dev = instr.findInstruments(deviceSerial='12345')
 
-	all = instr.findInstruments()
-	
+Multiple search criteria can also be used to pinpoint a specific instrument if there are many instruments present on
+the system::
+
+   dev = instr.findInstruments(deviceType='Oscilloscope', deviceSerial='12345')
+
+Other parameters you can use to identify devices:
+
+   * deviceVendor
+   * deviceModel
+   * deviceSerial
+   * deviceFirmware
+
+Interfaces or drivers may specify additional parameters that can be used to identify instruments. See the driver
+documentation for your instrument to find out what else may be available.
+
+If the instrument does not have any means to identify itself, you must find the instrument using information about how
+the resource is connected to the system, such as:
+
+   * Interface (VISA, Serial, etc.)
+   * Location (COM Port, IP Address, etc.)
+
+To connect to instruments by resource ID (interface dependent)::
+
+   device = instr.findInstruments(resourceID='COM16')   # Serial
+   device = instr.findInstruments(resourceID='ASRL::9') # VISA
+
+Note::
+
+   `findInstruments` will always return a list of instrument objects, even if only one was found.
+
 Loading and Unloading Drivers
 -----------------------------
 
-Drivers are code modules that contain the information needed to communicate
-with a specific instrument. Labtronyx will try to automatically identify a
-suitable driver to load, but it is sometimes necessary to load a specific
-driver.
+Drivers are code modules that contain the commands needed to communicate with a specific instrument. Labtronyx will
+try to automatically identify a suitable driver to load, but it is sometimes necessary to load a specific driver.
 
-To load a driver for an instrument, you must know the UUID of the instrument.
-The UUID can be retrieved if you know the Resource Identifier (Resource ID) of
-the instrument. The Resource ID is related to how the instrument is connected
-to the computer. e.g. COM5 (Serial), ASRL::5 (VISA)::
+To load a driver for an instrument, call the :func:`loadDriver` method of the resource where the instrument is
+connected.::
 
-	instrument = instr.findInstruments(address='localhost', resourceID='ASRL::9')[0]
+   device_list = instr.findInstruments(address='localhost', resourceID='ASRL::9')
+
+   if len(device_list) > 0:
+       instrument = device_list[0]
 	
-	instrument.loadDriver('drivers.BK_Precision.Load.m_85XX')
+       instrument.loadDriver('drivers.BK_Precision.Load.m_85XX')
 	
-To unload a driver::
+Similarly, to unload a driver::
 
-	instrument.unloadModel()
+   instrument.unloadModel()
 
 Using Instruments
 -----------------
 
-Instruments can be used like any Python object, with some limitations. Under
-the hood, Instruments are an RPC-endpoint connected to a socket on the
-InstrumentManager. While this whole process should be mostly transparent to
-both the user and the developer, some things are limited:
-
-	* Only methods can be called, it is not possible to access object attributes
-	* Accessing or Modifying attributes can only be done by wrapping the 
-	  attribute in a set of methods (getters and setters) 
-	* Methods that begin with '_' are considered protected and cannot be accessed
-	* The RPC subsystem introduces 2-20 milliseconds of latency
-
-see :doc:`Driver APIs <drivers/index>` for further documentation on each 
-driver.
-
-API Documentation
------------------
-
-The InstrumentManager object is the primary interface to communicating with
-instruments. It simplifies script development by abstracting nstruments as 
-simple Python objects.
-
-.. autoclass:: labtronyx.InstrumentManager.InstrumentManager
-   :members:
-
+When a driver is loaded for an instrument, additional methods are made available. For documentation on the available
+methods, see :doc:`Driver APIs <drivers/index>` for the desired driver. It is also possible to send commands directly
+to the instrument using the :doc:`Resource API <resources>` for the interface where the instrument is connected.
 
 	

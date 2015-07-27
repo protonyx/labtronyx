@@ -4,6 +4,9 @@ Using the Labtronyx Python Library
     | :doc:`intro`
     | First steps to connecting to and controlling instruments
     |
+    | :doc:`manager`
+    | API Documentation for the InstrumentManager class
+    |
     | :doc:`resources`
     | API Documentation for each resource type
     |
@@ -23,6 +26,7 @@ Using the Labtronyx Python Library
    :hidden:
 
    intro
+   manager
    resources
    remote
    scripts

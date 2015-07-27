@@ -7,6 +7,4 @@ Developer Guide
    interfaces
    resources
    drivers
-   applets
-   common
 

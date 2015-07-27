@@ -26,7 +26,7 @@ Remote Procedure Call (RPC)
 Drivers methods can be executed through the resource RPC instance. Thus, it is
 important to follow the same recommendations for return values as resources.
 
-See :doc:`developers/resources`
+See :doc:`resources`
     
 Properties
 ----------

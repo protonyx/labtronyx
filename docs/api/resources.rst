@@ -10,9 +10,9 @@ interacting with.
 
 The Resource types that are currently supported are:
 
-   - :class:`labtronyx.interfaces.i_VISA.r_VISA`
-   - :class:`labtronyx.interfaces.i_Serial.r_Serial`
-   - :class:`labtronyx.interfaces.i_ICP.r_ICP`
+   - :class:`interfaces.i_VISA.r_VISA`
+   - :class:`interfaces.i_Serial.r_Serial`
+   - :class:`interfaces.i_ICP.r_ICP`
    
 Status
 ------
@@ -45,13 +45,13 @@ Properties
 Properties are auxiliary information about a physical device. It could include
 information such as:
 
-	* Firmware Revision
-	* Serial Numbers
-	* Product Codes
-	* Number of channels
-	* Operating Frequencies
-	* Command Set Revision
-	* etc.
+   * Firmware Revision
+   * Serial Numbers
+   * Product Codes
+   * Number of channels
+   * Operating Frequencies
+   * Command Set Revision
+   * etc.
 	
 Properties are retrieved by calling :func:`getProperties`. All resources provide
 the following keys in the property dictionary:
@@ -163,11 +163,11 @@ To destroy a resource, provide the Resource UUID::
 Resource APIs
 -------------
 
-.. autoclass:: labtronyx.interfaces.i_VISA.r_VISA
+.. autoclass:: interfaces.i_VISA.r_VISA
    :members:
 
-.. autoclass:: labtronyx.interfaces.i_Serial.r_Serial
+.. autoclass:: interfaces.i_Serial.r_Serial
    :members:
 
-.. autoclass:: labtronyx.interfaces.i_ICP.r_ICP
+.. autoclass:: interfaces.i_ICP.r_ICP
    :members:
