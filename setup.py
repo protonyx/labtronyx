@@ -104,7 +104,6 @@ def build_package():
 
         # Dependent packages (distributions)
         install_requires=[
-            #"jsonlib2",
             "pyvisa",
             "pyserial",
             "numpy",

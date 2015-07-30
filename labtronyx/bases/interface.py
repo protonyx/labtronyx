@@ -15,11 +15,21 @@ class Base_Interface(object):
         :param manager: Reference to the InstrumentManager instance
         :type manager: InstrumentManager object
         """
+        self.__manager = manager
+
         self.config = kwargs.get('config')
         self.logger = kwargs.get('logger', logging)
-        
+
+        # Instance variables
         self.resources = {}
-        self.manager = manager
+
+    @property
+    def manager(self):
+        return self.__manager
+
+    @property
+    def name(self):
+        return self.__class__.__name__
             
     #===========================================================================
     # Interface Methods

@@ -2,19 +2,21 @@ import uuid
 import importlib
 import socket
 
-import labtronyx.common.resource_status as resource_status
+import labtronyx.common.status as resource_status
 
 class Base_Resource(object):
     type = "Generic"
     
-    def __init__(self, resID, interface, **kwargs):
+    def __init__(self, manager, interface, resID, **kwargs):
         
         self.config = kwargs.get('config')
         self.logger = kwargs.get('logger')
+
+        self.__manager = manager
+        self.__interface = interface
         
         self.__uuid = str(uuid.uuid4())
         self.__resID = resID
-        self.__interface = interface
         self.__status = 'INIT'
         self.__error = None
         
@@ -23,7 +25,10 @@ class Base_Resource(object):
         self.driver = None
             
     def __del__(self):
-        self.stop()
+        try:
+            self.close()
+        except Exception as e:
+            pass
         
     def __getattr__(self, name):
         if self.driver is not None:
@@ -34,12 +39,24 @@ class Base_Resource(object):
             
         else:
             raise AttributeError
-        
-    def getUUID(self):
-        return self.__uuid
-    
+
+    @property
+    def manager(self):
+        return self.__manager
+
+    @property
+    def interface(self):
+        return self.__interface
+
     def getResourceID(self):
         return self.__resID
+
+    resID = property(getResourceID)
+
+    def getUUID(self):
+        return self.__uuid
+
+    uuid = property(getUUID)
     
     def getResourceType(self):
         return self.type

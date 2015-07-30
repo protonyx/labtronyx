@@ -28,7 +28,7 @@ class Config(object):
     elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
         logPath = '/var/log/' # User directory
     elif sys.platform.startswith('darwin'):
-        logPath = '/Library/logs/' # User directory
+        logPath = '/Library/Logs/Labtronyx/' # User directory
     else:
         raise EnvironmentError('Unsupported platform')
     
