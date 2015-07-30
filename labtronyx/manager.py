@@ -4,6 +4,7 @@ import time
 import socket
 import copy
 import importlib
+import threading
 import logging, logging.handlers
 
 # Local Imports
@@ -13,6 +14,8 @@ try:
 except ImportError:
     raise
 
+import common
+
 __all__ = ['InstrumentManager']
 
 class InstrumentManager(object):
@@ -21,8 +24,8 @@ class InstrumentManager(object):
 
     Facilitates communication with instruments using all available interfaces.
     
-    :param Logger: Logger instance if you wish to override the internal instance
-    :type Logger: Logging.logger
+    :param logger: Logger instance if you wish to override the internal instance
+    :type logger: Logging.logger
     :param configFile: Configuration file to load
     :type configFile: str
     """
@@ -30,60 +33,72 @@ class InstrumentManager(object):
     def __init__(self, **kwargs):
         # Initialize instance variables
         self.interfaces = {} # Interface name -> interface object
-        self.resources = {} # UUID -> Resource Object
         self.drivers = {} # Module name -> Model info
+        self.rpc_server = None
 
-        # Ensure library is present in PYTHONPATH
+        #
+        # Initialize PYTHONPATH
+        #
         self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
         
         if not self.rootPath in sys.path:
             sys.path.append(self.rootPath)
-        
+
+        #
         # Load Config
+        #
         configFile = kwargs.get('configFile', 'default')
         try:
             cFile = importlib.import_module('config.%s' % configFile)
             self.config = cFile.Config()
             
         except Exception as e:
-            print("FATAL ERROR: Unable to import config file")
-            sys.exit()
-        
+            raise RuntimeError("Unable to import config file")
+
+        #
         # Configure logger
-        if 'Logger' in kwargs or 'logger' in kwargs:
-            self.logger = kwargs.get('Logger') or kwargs.get('logger')
+        #
+        if 'logger' in kwargs:
+            # Use the supplied logger object
+            self.logger = kwargs.get('logger')
         
         else:
+            # Create a new logger object
             self.logger = logging.getLogger(__name__)
+
+            # Configure Log format
             formatter = logging.Formatter(self.config.logFormat)
-                    
-             # Configure logging level
-            self.logger.setLevel(self.config.logLevel_console)
+
+            # Handler - Console
+            try:
+                ch = logging.StreamHandler()
+                ch.setLevel(self.config.logLevel_console)
+                ch.setFormatter(formatter)
+                self.logger.addHandler(ch)
+
+            except:
+                pass
                 
-            # File Log Handler
+            # Handler - File
             if self.config.logToFile:
-                if not os.path.exists(self.config.logPath):
-                    os.makedirs(self.config.logPath)
-                
-                self.logFilename = os.path.normpath(os.path.join(self.config.logPath, 'Labtronyx_Manager.log'))
-                #===============================================================
-                # if self.config.logFilename == None:
-                #     self.logFilename = os.path.normpath(os.path.join(self.config.logPath, 'InstrControl_Manager.log'))
-                # else:
-                #     self.logFilename = os.path.normpath(os.path.join(self.config.logPath, self.config.logFilename))
-                #===============================================================
                 try:
+                    if not os.path.exists(self.config.logPath):
+                        os.makedirs(self.config.logPath)
+
+                    self.logFilename = os.path.normpath(os.path.join(self.config.logPath, 'Labtronyx_Manager.log'))
+
                     fh = logging.handlers.RotatingFileHandler(self.logFilename, backupCount=self.config.logBackups)
                     fh.setLevel(self.config.logLevel_file)
                     fh.setFormatter(formatter)
-                    self.logger.addHandler(fh)  
+                    self.logger.addHandler(fh)
+
                     fh.doRollover()
                 except Exception as e:
                     self.logger.error("Unable to open log file for writing: %s", str(e))
     
         # Announce Version
         self.logger.info(self.config.longname)
-        self.logger.info("Instrument Manager, Version: %s", version.ver_full)
+        self.logger.info("Labtronyx InstrumentManager, Version: %s", version.ver_full)
 
         #
         # Load Plugins
@@ -105,7 +120,9 @@ class InstrumentManager(object):
             self.logger.debug("Found Interface: %s", interf)
             self.enableInterface(interf)
 
-        # Attempt to start the RPC Server
+        #
+        # Start RPC Server
+        #
         if kwargs.get('rpc', True):
             if not self.rpc_start():
                 raise RuntimeError("Unable to start RPC Server")
@@ -149,6 +166,10 @@ class InstrumentManager(object):
                 
         return plugins
 
+    #===========================================================================
+    # RPC Server
+    #===========================================================================
+
     def rpc_start(self):
         """
         Start the RPC Server and being listening for remote connections.
@@ -157,29 +178,35 @@ class InstrumentManager(object):
         """
         # Clean out old RPC server, if any exists
         if hasattr(self, 'rpc_server'):
-            del self.rpc_server
+            self.rpc_stop()
+
         self.rpc_server = None
+        self.rpc_server_thread = None
 
         # Attempt to import ptx-rpc
         try:
             import ptxrpc as rpc
-        except ImportError:
-            return False
 
-        try:
             self.rpc_server = rpc.PtxRpcServer(host='localhost',
                                                port=self.config.managerPort,
-                                               name='Labtronyx-InstrumentManager',
                                                logger=self.logger)
 
             # Register InstrumentManager in the base path
             self.rpc_server.register_path('/', self)
             self.logger.debug("RPC Server starting...")
 
-            for res_uuid, res_obj in self.resources.items():
-                self.rpc_server.register_path(res_uuid, res_obj)
+            # Register all resources with the RPC server
+            self.rpc_refresh()
+
+            # Start the server in a new thread
+            self.rpc_server_thread = threading.Thread(name='Labtronyx-InstrumentManager',
+                                                      target=self.rpc_server.serve_forever)
+            self.rpc_server_thread.start()
 
             return True
+
+        except ImportError:
+            return False
 
         except rpc.RpcServerPortInUse:
             self.logger.error("RPC Port in use, shutting down...")
@@ -188,7 +215,21 @@ class InstrumentManager(object):
         except Exception as e:
             self.logger.exception("RPC Exception")
             return False
-        
+
+    def rpc_refresh(self):
+        """
+        Re-register all resources with the RPC server
+
+        :return: None
+        """
+        if self.rpc_server is not None:
+            for interf in self.interfaces:
+                try:
+                    for res_uuid, res_obj in interf.getResources.items():
+                        self.rpc_server.register_path(res_uuid, res_obj)
+
+                except:
+                    pass
 
     def rpc_stop(self):
         """
@@ -198,23 +239,20 @@ class InstrumentManager(object):
         if self.rpc_server is not None:
             self.logger.debug("RPC Server stopping...")
 
-            # Close all resources
-            for res in self.resources:
-                try:
-                    res.close()
-                except:
-                    pass
-
             # Close all interfaces
             for interface in self.interfaces.keys():
                 self.disableInterface(interface)
 
             # Stop the InstrumentManager RPC Server
-            if hasattr(self, 'rpc_server'):
-                self.rpc_server.notifyClients('manager_shutdown')
-                self.rpc_server.rpc_stop()
+            self.rpc_server.shutdown()
+            self.rpc_server.server_close()
+            self.rpc_server_thread.join()
+
+            # Signal the event
+            self._event_signal(common.events.Manager_Shutdown())
 
             self.rpc_server = None
+            self.rpc_server_thread = None
             
     def getVersion(self):
         """
@@ -235,27 +273,31 @@ class InstrumentManager(object):
         Get the local hostname
         """
         return socket.gethostname()
-        
+
+    #===========================================================================
+    # Event Processing and Dispatch
+    #===========================================================================
+
+    def _event_signal(self, event, **kwargs):
+        """
+        Private method called internally to signal events. Calls handlers and dispatches event signal to subscribed
+        clients
+
+        :param event: event object
+        :param kwargs: arguments
+        :return:
+        """
+        pass
+
+    def addEventHandler(self, event, handler):
+        pass
+
+    def removeEventHandler(self, event):
+        pass
+
     #===========================================================================
     # Interface Operations
     #===========================================================================
-    
-    def _cb_new_resource(self):
-        """
-        Notify InstrumentManager of the creation of a new resource. Called by
-        controllers
-        """
-        for interface in self.interfaces.values():
-            int_res = interface.getResources()
-            for resID, res_obj in int_res.items():
-            
-                res_uuid = res_obj.getUUID()
-        
-                if res_uuid not in self.resources:
-                    self.resources[res_uuid] = res_obj
-                    
-        if hasattr(self, 'rpc_server'):
-            self.rpc_server.notifyClients('event_new_resource')
 
     def getInterfaces(self):
         """
@@ -314,12 +356,22 @@ class InstrumentManager(object):
     def refresh(self):
         """
         Signal all resources to refresh
+
+        :returns: bool
         """
-        for res in self.resources.values():
+        for interf in self.interfaces:
             try:
-                res.refresh()
+                # Discover any new resources
+                interf.enumerate()
+
+                # Refresh each resource
+                for res in interf.getResources():
+                    res.refresh()
+
             except Exception as e:
-                pass
+                self.logger.exception("Unhandled exception during refresh of interface: %s", interf.name)
+
+        self.rpc_refresh()
             
         return True
     
@@ -336,14 +388,20 @@ class InstrumentManager(object):
         :returns: dict
         """
         ret = {}
-        for uuid, res in self.resources.items():
-            ret[uuid] = res.getProperties()
-            
-            ret[uuid].setdefault('deviceType', '')
-            ret[uuid].setdefault('deviceVendor', '')
-            ret[uuid].setdefault('deviceModel', '')
-            ret[uuid].setdefault('deviceSerial', '')
-            ret[uuid].setdefault('deviceFirmware', '')
+
+        for interf in self.interfaces:
+            try:
+                for uuid, res in interf.getResources().items():
+                    ret[uuid] = res.getProperties()
+
+                    ret[uuid].setdefault('deviceType', '')
+                    ret[uuid].setdefault('deviceVendor', '')
+                    ret[uuid].setdefault('deviceModel', '')
+                    ret[uuid].setdefault('deviceSerial', '')
+                    ret[uuid].setdefault('deviceFirmware', '')
+
+            except:
+                pass
         
         return ret
     
@@ -356,7 +414,16 @@ class InstrumentManager(object):
         :returns: object
         """
         # NON-SERIALIZABLE
-        return self.resources.get(res_uuid)
+        for interf in self.interfaces:
+            try:
+                temp = interf.getResources().get(res_uuid)
+                if temp is not None:
+                    return temp
+
+            except:
+                pass
+
+        return None
     
     def getInstrument(self, res_uuid):
         """

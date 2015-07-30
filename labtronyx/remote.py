@@ -22,16 +22,15 @@ class RemoteManager(PtxRpcClient):
     """
     resources = {}
     
-    def __init__(self, uri, port=6780, **kwargs):
-        super(RemoteManager, self).__init__(uri, port, **kwargs)
+    def __init__(self, host='localhost', **kwargs):
+        uri = kwargs.get('uri', 'http://%s:6780/' % host)
+
+        super(RemoteManager, self).__init__(uri)
         
         #self._enableNotifications()
         #self._registerCallback('event_new_resource', lambda: self.cb_event_new_resource())
         
-    def disconnect(self):
-        self._disconnect()
-        
-    def refreshResources(self):
+    def refresh(self):
         """
         Query the InstrumentManager resources and create RemoteResource objects
         for new resources
@@ -50,6 +49,9 @@ class RemoteManager(PtxRpcClient):
         for res_uuid in self.resources:
             if res_uuid not in prop:
                 self.resources.pop(res_uuid)
+
+    def refreshResources(self):
+        self.refresh()
 
     def getResource(self, res_uuid):
         """
@@ -112,12 +114,5 @@ class RemoteManager(PtxRpcClient):
 class RemoteResource(PtxRpcClient):
     
     def _handleException(self, exception_object):
-        if type(exception_object) == RpcInvalidPacket:
-            pass
-        elif type(exception_object) == RpcMethodNotFound:
-            pass
-        elif type(exception_object) == RpcError:
-            pass
-        elif type(exception_object) == RpcServerException:
-            pass
+        pass
 
