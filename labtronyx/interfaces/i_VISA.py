@@ -1,12 +1,15 @@
+"""
+VISA Interface module for Labtronyx
+
+:codeauthor: Kevin Kennedy
+"""
+
 from labtronyx.bases.interface import Base_Interface, InterfaceError, InterfaceTimeout
 from labtronyx.bases.resource import Base_Resource, ResourceNotOpen
+import labtronyx.common.status as resource_status
+import labtronyx.common.events as events
 
-import importlib
-import re
-import time
 import visa
-
-import common.resource_status as resource_status
 
 class i_VISA(Base_Interface):
     """
@@ -15,21 +18,16 @@ class i_VISA(Base_Interface):
     Wraps PyVISA. Requires a VISA driver to be installed on the system.
     """
 
-    info = {
-        # Interface Author
-        'author':               'KKENNEDY',
-        # Interface Version
-        'version':              '1.0',
-        # Revision date
-        'date':                 '2015-03-06'
-    }
-    
-    # Dict: ResID -> r_VISA Object
-    resources = {}
+    info = {}
     
     resource_manager = None
             
     def enumerate(self):
+        """
+        Identify all devices known to the VISA driver and create resource objects for valid resources
+
+        :return:
+        """
         if self.resource_manager is not None:
             try:
                 res_list = self.resource_manager.list_resources()
@@ -38,12 +36,12 @@ class i_VISA(Base_Interface):
                 for res in res_list:
                     if res not in self.resources.keys():
                         try:
-                            # TODO: Minimize time spent creating new resources
                             instrument = self.resource_manager.open_resource(res,
                                                                   open_timeout=0.1)
                             
-                            new_resource = r_VISA(resID=res,
+                            new_resource = r_VISA(manager=self.manager,
                                                   interface=self,
+                                                  resID=res,
                                                   instrument=instrument,
                                                   drivers=self.manager.getDrivers(),
                                                   logger=self.logger,
@@ -51,28 +49,30 @@ class i_VISA(Base_Interface):
                             
                             self.resources[res] = new_resource
 
-                            # TODO: Implement new event architecture
-                            self.manager._cb_new_resource()
+                            # Signal new resource event
+                            self.manager._event_signal(events.Resource_Created())
                         
                         except visa.VisaIOError as e:
                             if e.abbreviation in ["VI_ERROR_RSRC_BUSY", 
                                                   "VI_ERROR_RSRC_NFOUND",
                                                   "VI_ERROR_TMO"]:
+                                # Ignore these errors and move on
                                 pass
                                 
                             else:
-                                self.logger.exception("Unknown VISA Exception")
-                        
-                        except:
-                            self.logger.exception("Unhandled VISA Exception while creating new resource: %s", res)
+                                raise
             
             except visa.VisaIOError:
                 # Exception thrown when there are no resources
                 res_list = []
 
+            except:
+                self.logger.exception("Unhandled VISA Exception while enumerating resources")
+                raise
+
     def prune(self):
         """
-        Close any resources that are no longer present in the system
+        Close any resources that are no longer known to the VISA driver
         """
         if self.resource_manager is not None:
             try:
@@ -90,7 +90,8 @@ class i_VISA(Base_Interface):
                 pass
 
             except:
-                self.logger.exception("Unhandled VISA Exception while pruning resource: %s", res)
+                self.logger.exception("Unhandled VISA Exception while pruning resources")
+                raise
 
                 
     #===========================================================================
@@ -157,13 +158,10 @@ class r_VISA(Base_Resource):
     
     type = "VISA"
         
-    def __init__(self, resID, interface, instrument, **kwargs):
-        Base_Resource.__init__(self, resID, interface, **kwargs)
-        
-        self.resID = resID
-        self.interface = interface
-        self.instrument = instrument
-        
+    def __init__(self, manager, interface, resID, **kwargs):
+        Base_Resource.__init__(self, manager, interface, resID, **kwargs)
+
+        self.instrument = kwargs.get('instrument')
         self.driver_list = kwargs.get('drivers', {})
         
         #self.instrument.timeout = 1000
@@ -290,7 +288,7 @@ class r_VISA(Base_Resource):
             # Access Denied, the port is probably open somewhere else
             raise InterfaceError(e.description)
         
-        except:
+        except Exception as e:
             raise InterfaceError("Unhandled Exception")
         
     def lock(self):
@@ -363,7 +361,6 @@ class r_VISA(Base_Resource):
         :raises: ResourceNotOpen
         """
         try:
-            self.logger.debug("VISA Write: %s", data)
             self.instrument.write(data)
         
         except visa.InvalidSession:
@@ -469,7 +466,6 @@ class r_VISA(Base_Resource):
         :returns: str
         """
         try:
-            self.logger.debug("VISA Query: %s" % data)
             return self.instrument.query(data)
         
         except visa.InvalidSession:
@@ -502,7 +498,7 @@ class r_VISA(Base_Resource):
         Load a Model. VISA supports enumeration and will thus search for a
         compatible model. A Model name can be specified to load a specific model,
         even if it may not be compatible with this resource. Reloads model
-        when importing, in case an update has occured. If more than one 
+        when importing, in case an update has occurred. If more than one
         compatible model is found, no model will be loaded
         
         `driverName` must be an importable module on the remote system. The

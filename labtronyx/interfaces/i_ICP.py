@@ -57,7 +57,7 @@ sleep for a small time interval to limit loading the processor excessively.
 
 from labtronyx.bases.interface import Base_Interface, InterfaceError, InterfaceTimeout
 from labtronyx.bases.resource import Base_Resource, ResourceNotOpen
-
+import labtronyx.common.status as resource_status
 
 import struct
 import time
@@ -139,16 +139,20 @@ class i_ICP(Base_Interface):
             
             self.refresh()
             
+        except socket.error as e:
+            if e.errno in [errno.EADDRINUSE]:
+                self.logger.error("ICP Socket In Use")
+                return False
+
         except:
-            self.logger.exception("ICP Socket Exception")
+            self.logger.exception("ICP Unhandled Exception")
+            return False
             
         self.e_conf.set()
         
         return True
     
     def close(self):
-        self.stop()
-        
         try:
             self.__socket.shutdown(1)
             self.__socket.close()
@@ -300,11 +304,12 @@ class i_ICP(Base_Interface):
                     elif packetTypeClass == icp.EnumerationPacket:
                         # Create new device if resource doesn't already exist
                         if sourceIP not in self.resources.keys():
-                            self.resources[sourceIP] = r_ICP(sourceIP, self,
-                                                           logger=self.logger,
-                                                           config=self.config,
-                                                           enableRpc=self.manager.enableRpc,
-                                                           enumeration=pkt.getEnumeration())
+                            self.resources[sourceIP] = r_ICP(manager=self.manager,
+                                                             interface=self,
+                                                             resID=sourceIP,
+                                                             logger=self.logger,
+                                                             config=self.config,
+                                                             enumeration=pkt.getEnumeration())
                         
                             self.logger.info("Found ICP Device: %s" % sourceIP)
                             
@@ -384,11 +389,10 @@ class r_ICP(Base_Resource):
     
     timeout = 5.0
     
-    def __init__(self, resID, interface, **kwargs):
-        Base_Resource.__init__(self, resID, interface, **kwargs)
+    def __init__(self, manager, interface, resID, **kwargs):
+        Base_Resource.__init__(self, manager, interface, resID, **kwargs)
         
         self.address = resID
-        self.interface = interface
         
         if 'enumeration' in kwargs:
             self.vendor, self.model = kwargs.get('enumeration')

@@ -1,19 +1,13 @@
 from labtronyx.bases.interface import Base_Interface, InterfaceError, InterfaceTimeout
 from labtronyx.bases.resource import Base_Resource, ResourceNotOpen
+import labtronyx.common.status as resource_status
 
-import importlib
-import sys
 import time
 import errno
 
 import serial
 import serial.tools.list_ports
-# list(serial.tools.list_ports.comports())
-
-import common.resource_status as resource_status
 from serial.serialutil import SerialException
-
-import common.status
 
 class i_Serial(Base_Interface):
     
@@ -130,12 +124,12 @@ class r_Serial(Base_Resource):
     LF = '\n'
     termination = CR + LF
         
-    def __init__(self, resID, interface, instrument, **kwargs):
-        Base_Resource.__init__(self, resID, interface, **kwargs)
+    def __init__(self, manager, interface, resID, **kwargs):
+        Base_Resource.__init__(self, manager, interface, resID, **kwargs)
         
-        self.instrument = instrument
+        self.instrument = kwargs.get('instrument')
         
-        self.logger.info("Created Serial resource: %s", resID)
+        self.logger.debug("Created Serial resource: %s", resID)
         
         # Serial port is immediately opened on object creation
         self.close()
