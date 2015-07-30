@@ -8,13 +8,15 @@ class InstrumentManager_Init_Tests(unittest.TestCase):
         import time
         start = time.clock()
         instr = InstrumentManager(rpc=False)
-        self.assertLessEqual(time.clock() - start, 1.0, "No RPC Init time must be less than 0.5 second(s)")
+        self.assertLessEqual(time.clock() - start, 1.0, "No RPC Init time must be less than 1.0 second(s)")
 
     def test_init_time_rpc(self):
         import time
         start = time.clock()
         instr = InstrumentManager(rpc=True)
-        self.assertLessEqual(time.clock() - start, 2.0, "RPC Init time must be less than 1.0 second(s)")
+        self.assertLessEqual(time.clock() - start, 2.0, "RPC Init time must be less than 2.0 second(s)")
+
+        instr.rpc_stop()
 
 class InstrumentManager_Tests(unittest.TestCase):
 

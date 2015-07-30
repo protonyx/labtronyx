@@ -1,18 +1,29 @@
 import unittest
+import mock
 
 from labtronyx import InstrumentManager
-import labtronyx.common.resource_status as resource_status
+from labtronyx.bases import Base_Resource, Base_Interface
 
 class Resource_Tests(unittest.TestCase):
-    
-    def setUp(self):
-        self.instr = InstrumentManager()
-        
-    def tearDown(self):
-        self.instr.stop()
+
+    @classmethod
+    def setUpClass(self):
+        self.instr = InstrumentManager(rpc=False)
+
+        # Create a fake resource
+        self.res = Base_Resource()
+
+        # Create a fake interface, imitating the interface API
+        self.interf = Base_Interface()
+        self.interf.open = mock.Mock(return_value=True)
+        self.interf.close = mock.Mock(return_value=True)
+        self.interf.getResources = mock.Mock(return_value={'DEBUG': self.res})
+
+        self.instr.interfaces['interfaces.i_Debug'] = self.interf
         
     def test_resource_found(self):
         self.dev = self.instr.findInstruments(resourceID='DEBUG')
+        self.assertEqual(type(self.dev), list)
         self.assertTrue(len(self.dev) == 1)
         
     def test_resource_init(self):
