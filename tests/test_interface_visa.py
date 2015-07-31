@@ -12,10 +12,17 @@ class InstrumentManager_Interface_VISA_Tests(unittest.TestCase):
         self.manager = mock.Mock(spec=InstrumentManager)
 
         self.m_visa = importlib.import_module('labtronyx.interfaces.i_VISA')
-        self.i_visa = self.m_visa.i_VISA(manager=self.manager)
 
-    def test_interface_visa_open(self):
+        import os
+        lib_path = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
+        lib_path = os.path.join(lib_path, 'sim', 'default.yaml')
+        self.i_visa = self.m_visa.i_VISA(manager=self.manager, library='%s@sim'%lib_path)
+
         self.i_visa.open()
+
+    @classmethod
+    def tearDownClass(self):
+        self.i_visa.close()
 
     def test_interface_visa_enumerate_time(self):
         import time
@@ -27,8 +34,9 @@ class InstrumentManager_Interface_VISA_Tests(unittest.TestCase):
         ret = self.i_visa.getResources()
 
         self.assertEqual(type(ret), dict)
+        self.assertEqual(len(ret), 1)
 
-    def test_interface_visa_close(self):
-        self.i_visa.close()
+        print ret
+
         
         

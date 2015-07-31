@@ -1,0 +1,15 @@
+spec: "1.0"
+
+devices:
+  agilent b2901:
+      eom:
+          USB INSTR:
+              q: "\n"
+              r: "\n"
+      error: ERROR
+      dialogues:
+        - q: "*IDN?"
+          r: "AGILENT TECHNOLOGIES,B2901A,12345,SIM"
+        - q: ":READ?"
+          r: "{:.2f}"
+

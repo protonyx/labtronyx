@@ -22,9 +22,7 @@ REL_TYPE = 'dev0'    # Development Release
 # DO NOT CHANGE ANYTHING BELOW THIS LINE
 # -----------------------------------------------------------------------
 
-import os
-import sys
-import time
+import sys, os, time
 from setuptools import find_packages
 
 def generate_ver(filename='labtronyx/version.py'):
@@ -102,19 +100,21 @@ def build_package():
 
         # long_description=open("README.txt").read(),
 
-        # Dependent packages (distributions)
-        install_requires=[
-            "pyvisa",
-            "pyserial",
-            "numpy",
-            "matplotlib",
-        ],
-
         # Unit tests
-        test_suite="tests.test_suite"
+        test_suite="tests.test_suite",
+
+        # Dependencies
+        extras_require={
+            'VISA': ['pyvisa>=1.6'],
+            'Serial': ['pyserial']
+        },
+
+        install_requires=['ptxrpc', 'numpy']
     )
 
-    print setup_meta['packages']
+    # Additional dependencies for CI and test builds
+    if os.environ.get('CI') == 'true' or 'test' in sys.argv:
+        setup_meta['install_requires'] += ['pyvisa-sim', 'mock']
 
     try:
         from setuptools import setup
