@@ -17,7 +17,7 @@ class i_Debug(Base_Interface):
     }
     
     # Dict: ResID -> r_Debug Object
-    resources = {}
+    _resources = {}
     
     #===========================================================================
     # Required API Function Definitions
@@ -31,10 +31,10 @@ class i_Debug(Base_Interface):
             return False
         
     def close(self):
-        for resObj in self.resources.values():
+        for resObj in self._resources.values():
             resObj.stop()
                     
-        self.resources.clear()
+        self._resources.clear()
         
         return True
     
@@ -43,17 +43,17 @@ class i_Debug(Base_Interface):
     
     def refresh(self):
         if "-d" in sys.argv[1:]:
-            if 'DEBUG' not in self.resources:
+            if 'DEBUG' not in self._resources:
                 new_res = r_Debug('DEBUG', self,
                                   logger=self.logger,
                                   config=self.config,
                                   enableRpc=self.manager.enableRpc)
-                self.resources['DEBUG'] = new_res
+                self._resources['DEBUG'] = new_res
                 
                 self.manager._cb_new_resource()
         
     def getResources(self):
-        return self.resources
+        return self._resources
             
 class r_Debug(Base_Resource):
     type = "Debug"

@@ -21,7 +21,7 @@ class Base_Interface(object):
         self.logger = kwargs.get('logger', logging)
 
         # Instance variables
-        self.resources = {}
+        self._resources = {}
 
     @property
     def manager(self):
@@ -30,6 +30,10 @@ class Base_Interface(object):
     @property
     def name(self):
         return self.__class__.__name__
+
+    @property
+    def resources(self):
+        return self._resources
             
     #===========================================================================
     # Interface Methods
@@ -37,6 +41,9 @@ class Base_Interface(object):
 
     def getInterfaceName(self):
         return self.__class__.__name__
+
+    def getResources(self):
+        return self._resources
 
     # Inheriting classes must implement these functions:
     def open(self):
@@ -65,14 +72,6 @@ class Base_Interface(object):
         to prevent locking errors.
         
         Any exceptions raised will be caught by the InstrumentManager.
-        """
-        raise NotImplementedError
-
-    def getResources(self):
-        """
-        Get the dictionary of resources by ID.
-        
-        :returns: dict
         """
         raise NotImplementedError
 

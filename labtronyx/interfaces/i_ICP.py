@@ -109,7 +109,7 @@ class i_ICP(Base_Interface):
     DEBUG_INTERFACE_ICP = True
     
     # Dict: ResID -> Resource Object
-    resources = {}
+    _resources = {}
     
     # Config
     # TODO: Find a way to generate the broadcast IP
@@ -194,7 +194,7 @@ class i_ICP(Base_Interface):
                 self.logger.exception("ICP Thread Exception")
     
     def getResources(self):
-        return self.resources
+        return self._resources
     
     def getAddress(self):
         return self.__socket.getsockname()
@@ -303,8 +303,8 @@ class i_ICP(Base_Interface):
                         
                     elif packetTypeClass == icp.EnumerationPacket:
                         # Create new device if resource doesn't already exist
-                        if sourceIP not in self.resources.keys():
-                            self.resources[sourceIP] = r_ICP(manager=self.manager,
+                        if sourceIP not in self._resources.keys():
+                            self._resources[sourceIP] = r_ICP(manager=self.manager,
                                                              interface=self,
                                                              resID=sourceIP,
                                                              logger=self.logger,
@@ -315,9 +315,9 @@ class i_ICP(Base_Interface):
                             
                             self.manager._cb_new_resource()
                             
-                    elif sourceIP in self.resources.keys():
+                    elif sourceIP in self._resources.keys():
                         # Let the resource process the packet
-                        dev = self.resources.get(sourceIP)
+                        dev = self._resources.get(sourceIP)
                             
                         dev._processResponse(pkt)
                             
