@@ -21,7 +21,7 @@ class i_Serial(Base_Interface):
     }
     
     # Dict: ResID -> (VID, PID)
-    resources = {}
+    _resources = {}
     
     REFRESH_RATE = 5.0 # Seconds
 
@@ -29,7 +29,7 @@ class i_Serial(Base_Interface):
         return True
     
     def close(self):
-        for resID, res in self.resources.items():
+        for resID, res in self._resources.items():
             try:
                 if res.isOpen():
                     res.close()
@@ -42,7 +42,7 @@ class i_Serial(Base_Interface):
         return True
     
     def getResources(self):
-        return self.resources
+        return self._resources
     
     #===========================================================================
     # Optional - Automatic Controllers
@@ -59,7 +59,7 @@ class i_Serial(Base_Interface):
             for res in res_list:
                 resID, _, _ = res
                     
-                if resID not in self.resources:
+                if resID not in self._resources:
                     try:
                         instrument = serial.Serial(port=resID, timeout=0)
                         
@@ -68,7 +68,7 @@ class i_Serial(Base_Interface):
                                                 logger=self.logger,
                                                 config=self.config,
                                                 enableRpc=self.manager.enableRpc)
-                        self.resources[resID] = new_resource
+                        self._resources[resID] = new_resource
                         
                         self.manager._cb_new_resource()    
                         

@@ -21,12 +21,48 @@ class i_VISA(Base_Interface):
     info = {}
     
     resource_manager = None
+
+    def __init__(self, manager, **kwargs):
+        # Allow the use of a custom library for testing
+        self._lib = kwargs.pop('library', None)
+
+        Base_Interface.__init__(self, manager, **kwargs)
+
+    def open(self):
+        """
+        Initialize the VISA Controller. Instantiates a VISA Resource Manager
+        and starts the controller thread.
+
+        :returns: True if successful, False if an error occurred
+        """
+        try:
+            # Load the VISA Resource Manager
+            self.resource_manager = visa.ResourceManager(self._lib)
+
+            # Enumerate all of the connected instruments
+            self.enumerate()
+
+            return True
+
+        except Exception as e:
+            self.logger.exception("Failed to initialize VISA Controller")
+
+            return False
+
+    def close(self):
+        """
+        Stops the VISA Interface. Frees all resources associated with the interface.
+        """
+        for resObj in self._resources.values():
+            resObj.close()
+
+        self._resources.clear()
+
+        return True
             
     def enumerate(self):
         """
         Identify all devices known to the VISA driver and create resource objects for valid resources
-
-        :return:
         """
         if self.resource_manager is not None:
             try:
@@ -34,7 +70,7 @@ class i_VISA(Base_Interface):
                 
                 # Check for new resources
                 for res in res_list:
-                    if res not in self.resources.keys():
+                    if res not in self._resources.keys():
                         try:
                             instrument = self.resource_manager.open_resource(res,
                                                                   open_timeout=0.1)
@@ -42,12 +78,11 @@ class i_VISA(Base_Interface):
                             new_resource = r_VISA(manager=self.manager,
                                                   interface=self,
                                                   resID=res,
-                                                  instrument=instrument,
-                                                  drivers=self.manager.getDrivers(),
+                                                  visa_instrument=instrument,
                                                   logger=self.logger,
                                                   config=self.config)
                             
-                            self.resources[res] = new_resource
+                            self._resources[res] = new_resource
 
                             # Signal new resource event
                             self.manager._event_signal(events.Resource_Created())
@@ -76,12 +111,13 @@ class i_VISA(Base_Interface):
         """
         if self.resource_manager is not None:
             try:
+                # Get a fresh list of resources
                 res_list = self.resource_manager.list_resources()
 
                 # Check for new resources
-                for res in self.resources:
+                for res in self._resources:
                     if res not in res_list:
-                        resource = self.resources.get(res)
+                        resource = self._resources.get(res)
 
                         resource.close()
 
@@ -92,46 +128,6 @@ class i_VISA(Base_Interface):
             except:
                 self.logger.exception("Unhandled VISA Exception while pruning resources")
                 raise
-
-                
-    #===========================================================================
-    # Required API Function Definitions
-    #===========================================================================
-    
-    def open(self):
-        """
-        Initialize the VISA Controller. Instantiates a VISA Resource Manager
-        and starts the controller thread.
-        
-        :returns: True if successful, False if an error occurred
-        """
-        try:
-            # Load the VISA Resource Manager
-            self.resource_manager = visa.ResourceManager()
-
-            # Enumerate all of the connected instruments
-            self.enumerate()
-            
-            return True
-        
-        except:
-            self.logger.exception("Failed to initialize VISA Controller")
-        
-            return False
-        
-    def close(self):
-        """
-        Stops the VISA Interface. Frees all resources associated with the interface.
-        """
-        for resObj in self.resources.values():
-            resObj.close()
-
-        self.resources.clear()
-        
-        return True
-    
-    def getResources(self):
-        return self.resources
             
 class r_VISA(Base_Resource):
     """
@@ -159,10 +155,10 @@ class r_VISA(Base_Resource):
     type = "VISA"
         
     def __init__(self, manager, interface, resID, **kwargs):
+        self.instrument = kwargs.pop('visa_instrument')
         Base_Resource.__init__(self, manager, interface, resID, **kwargs)
 
-        self.instrument = kwargs.get('instrument')
-        self.driver_list = kwargs.get('drivers', {})
+        self.driver_list = self.manager.getDrivers()
         
         #self.instrument.timeout = 1000
 
