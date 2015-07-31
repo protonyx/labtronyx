@@ -4,17 +4,17 @@ devices:
   agilent b2901:
     eom:
       USB INSTR:
-        q: "\n"
-        r: "\n"
+        q: "\r\n"
+        r: "\r"
+    dialogues:
+      - q: "*IDN?"
+        r: "AGILENT TECHNOLOGIES,B2901A,12345,SIM"
+      - q: ":READ?"
+        r: "{:.2f}"
     error:
       error_queue:
         - q: ':SYST:ERR?'
           default: '+0,"No error"'
           command_error: '-100,"Command error"'
           query_error: '-102,"Syntax error"'
-    dialogues:
-      - q: "*IDN?"
-        r: "AGILENT TECHNOLOGIES,B2901A,12345,SIM"
-      - q: ":READ?"
-        r: "{:.2f}"
 

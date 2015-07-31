@@ -75,6 +75,8 @@ class i_VISA(Base_Interface):
                     if res not in self._resources.keys():
                         try:
                             instrument = self.resource_manager.open_resource(res,
+                                                                  read_termination='\r',
+                                                                  write_termination='\r\n',
                                                                   open_timeout=0.1)
 
                             new_resource = r_VISA(manager=self.manager,
@@ -159,6 +161,9 @@ class r_VISA(Base_Resource):
     def __init__(self, manager, interface, resID, **kwargs):
         self.instrument = kwargs.pop('visa_instrument')
 
+        # Set a default read termination character sequence
+        #self.instrument.read_termination = '\r'
+
         Base_Resource.__init__(self, manager, interface, resID, **kwargs)
 
         #self.instrument.timeout = 1000
@@ -198,46 +203,59 @@ class r_VISA(Base_Resource):
         if not start_state:
             self.open()
 
-        start_timeout = self.instrument.timeout
-        self.instrument.timeout = 100
+        # Reset identity data
+        self._identity = []
 
         try:
+            # Set the timeout really low
+            start_timeout = self.instrument.timeout
+            self.instrument.timeout = 100
+            #self.instrument.
+
             scpi_ident = self.query("*IDN?")
-            self.identify = scpi_ident.strip().split(',')
-        except Exception as e:
-            self.identity = []
+            self._identity = scpi_ident.strip().split(',')
 
-        if len(self.identity) >= 4:
-            self.VID = self.identity[0].strip()
-            self.PID = self.identity[1].strip()
-            self.serial = self.identity[2].strip()
-            self.firmware = self.identity[3].strip()
+            # Set the timeout back to what it was
+            self.instrument.timeout = start_timeout
 
-        elif len(self.identity) == 3:
+        except InterfaceTimeout:
+            self.logger.debug("No response to SCPI Identify")
+            self.logger.error('Unable to identify VISA Resource: %s', self.resID)
+
+
+        if len(self._identity) >= 4:
+            self.VID = self._identity[0].strip()
+            self.PID = self._identity[1].strip()
+            self.serial = self._identity[2].strip()
+            self.firmware = self._identity[3].strip()
+
+            self.logger.debug("Identified VISA Resource: %s", self.resID)
+            self.logger.debug("Vendor: %s", self.VID)
+            self.logger.debug("Model:  %s", self.PID)
+            self.logger.debug("Serial: %s", self.serial)
+            self.logger.debug("F/W:    %s", self.firmware)
+
+        elif len(self._identity) == 3:
             # Resource provided a non-standard identify response
             # Screw you BK Precision for making me do this
             self.VID = ''
-            self.PID, self.firmware, self.serial = self.identity
+            self.PID, self.firmware, self.serial = self._identity
+
+            self.logger.debug("Identified VISA Resource: %s", self.resID)
+            self.logger.debug("Model:  %s", self.PID)
+            self.logger.debug("Serial: %s", self.serial)
+            self.logger.debug("F/W:    %s", self.firmware)
 
         else:
             self.VID = ''
             self.PID = ''
             self.firmware = ''
             self.serial = ''
-            self.logger.error('Unable to identify VISA device %s', self.resID)
-
-        self.instrument.timeout = start_timeout
 
         if start_state == False:
             self.close()
 
         self.ready = True
-
-        self.logger.debug("Identified VISA Resource: %s", self.resID)
-        self.logger.debug("Vendor: %s", self.VID)
-        self.logger.debug("Model:  %s", self.PID)
-        self.logger.debug("Serial: %s", self.serial)
-        self.logger.debug("F/W:    %s", self.firmware)
 
     def getVISA_vendor(self):
         if not self.ready:

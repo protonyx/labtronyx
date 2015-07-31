@@ -1,6 +1,5 @@
 import unittest
 import importlib
-import mock
 
 from labtronyx import InstrumentManager
 
@@ -13,14 +12,15 @@ class InstrumentManager_Interface_VISA_Tests(unittest.TestCase):
 
         self.m_visa = importlib.import_module('labtronyx.interfaces.i_VISA')
 
-        # import os
-        # lib_path = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
-        # lib_path = os.path.join(lib_path, 'sim', 'default.yaml')
-        # self.i_visa = self.m_visa.i_VISA(manager=self.manager, library='%s@sim'%lib_path)
+        import os
+        lib_path = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
+        lib_path = os.path.join(lib_path, 'sim', 'default.yaml')
+        self.i_visa = self.m_visa.i_VISA(manager=self.manager, library='%s@sim'%lib_path)
 
-        self.i_visa = self.m_visa.i_VISA(manager=self.manager, library='@sim')
+        # self.i_visa = self.m_visa.i_VISA(manager=self.manager, library='@sim')
 
         if not self.i_visa.open():
+            print self.i_visa.getError()
             raise EnvironmentError("VISA Library did not initialize properly")
 
         self.manager._interfaces['labtronyx.interfaces.i_VISA'] = self.i_visa
@@ -39,16 +39,21 @@ class InstrumentManager_Interface_VISA_Tests(unittest.TestCase):
         ret = self.i_visa.getResources()
 
         self.assertEqual(type(ret), dict)
-        self.assertEqual(len(ret), 1)
 
-        print ret
+    def test_interface_find_instruments(self):
+        dev_list = self.manager.findInstruments()
+        self.assertGreater(len(dev_list), 0)
+
+    def test_interface_get_properties(self):
+        self.manager.getProperties()
 
     def test_instrument_agilent_b2901(self):
-        test = self.manager.getProperties()
-
-        dev_list = self.manager.findInstruments(deviceModel='B2901A')
-
+        dev_list = self.manager.findInstruments(resourceID='USB0::2391::12345::SIM::0::INSTR')
         self.assertEqual(len(dev_list), 1)
 
-        
-        
+        dev = dev_list[0]
+        dev.open()
+
+        self.assertEqual(dev.query('*IDN?'), "AGILENT TECHNOLOGIES,B2901A,12345,SIM")
+
+
