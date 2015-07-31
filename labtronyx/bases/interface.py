@@ -15,17 +15,18 @@ class Base_Interface(object):
         :param manager: Reference to the InstrumentManager instance
         :type manager: InstrumentManager object
         """
-        self.__manager = manager
+        self._manager = manager
 
         self.config = kwargs.get('config')
         self.logger = kwargs.get('logger', logging)
 
         # Instance variables
         self._resources = {}
+        self._error = ''
 
     @property
     def manager(self):
-        return self.__manager
+        return self._manager
 
     @property
     def name(self):
@@ -110,6 +111,14 @@ class Base_Interface(object):
         :returns: bool - True if successful, False otherwise
         """
         raise NotImplementedError
+
+    def getError(self):
+        """
+        Get the last error that occured during an interface operation.
+
+        :returns: str
+        """
+        return self._error
 
 class InterfaceError(RuntimeError):
     pass

@@ -66,12 +66,14 @@ class Base_Resource(object):
     
     def setResourceStatus(self, new_status):
         self.__status = new_status
-        
-    def getResourceError(self):
-        return self.__error
-    
-    def setResourceError(self, error):
-        self.__error = error
+
+    def getError(self):
+        """
+        Get the last error that occured during the last interface I/O operation.
+
+        :returns: str
+        """
+        return self._error
     
     def getInterfaceName(self):
         """

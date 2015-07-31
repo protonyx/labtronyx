@@ -9,7 +9,9 @@ from labtronyx.bases.resource import Base_Resource, ResourceNotOpen
 import labtronyx.common.status as resource_status
 import labtronyx.common.events as events
 
-import visa
+import visa, pyvisa
+
+from traceback import format_exc
 
 class i_VISA(Base_Interface):
     """
@@ -19,12 +21,12 @@ class i_VISA(Base_Interface):
     """
 
     info = {}
-    
+
     resource_manager = None
 
     def __init__(self, manager, **kwargs):
         # Allow the use of a custom library for testing
-        self._lib = kwargs.pop('library', None)
+        self._lib = kwargs.pop('library', '')
 
         Base_Interface.__init__(self, manager, **kwargs)
 
@@ -59,7 +61,7 @@ class i_VISA(Base_Interface):
         self._resources.clear()
 
         return True
-            
+
     def enumerate(self):
         """
         Identify all devices known to the VISA driver and create resource objects for valid resources
@@ -67,36 +69,36 @@ class i_VISA(Base_Interface):
         if self.resource_manager is not None:
             try:
                 res_list = self.resource_manager.list_resources()
-                
+
                 # Check for new resources
                 for res in res_list:
                     if res not in self._resources.keys():
                         try:
                             instrument = self.resource_manager.open_resource(res,
                                                                   open_timeout=0.1)
-                            
+
                             new_resource = r_VISA(manager=self.manager,
                                                   interface=self,
                                                   resID=res,
                                                   visa_instrument=instrument,
                                                   logger=self.logger,
                                                   config=self.config)
-                            
+
                             self._resources[res] = new_resource
 
                             # Signal new resource event
                             self.manager._event_signal(events.Resource_Created())
-                        
+
                         except visa.VisaIOError as e:
-                            if e.abbreviation in ["VI_ERROR_RSRC_BUSY", 
+                            if e.abbreviation in ["VI_ERROR_RSRC_BUSY",
                                                   "VI_ERROR_RSRC_NFOUND",
                                                   "VI_ERROR_TMO"]:
                                 # Ignore these errors and move on
                                 pass
-                                
+
                             else:
                                 raise
-            
+
             except visa.VisaIOError:
                 # Exception thrown when there are no resources
                 res_list = []
@@ -128,7 +130,7 @@ class i_VISA(Base_Interface):
             except:
                 self.logger.exception("Unhandled VISA Exception while pruning resources")
                 raise
-            
+
 class r_VISA(Base_Resource):
     """
     VISA Resource Base class.
@@ -151,15 +153,14 @@ class r_VISA(Base_Resource):
        * deviceSerial
        * deviceFirmware
     """
-    
+
     type = "VISA"
-        
+
     def __init__(self, manager, interface, resID, **kwargs):
         self.instrument = kwargs.pop('visa_instrument')
+
         Base_Resource.__init__(self, manager, interface, resID, **kwargs)
 
-        self.driver_list = self.manager.getDrivers()
-        
         #self.instrument.timeout = 1000
 
         # Instrument is created in the open state, but we do not want to lock the VISA instrument
@@ -167,136 +168,160 @@ class r_VISA(Base_Resource):
 
         # Set a flag to initialize the resource when it is used
         self.ready = False
-                
+
     def getProperties(self):
         if not self.ready:
             self.identify()
 
         def_prop = Base_Resource.getProperties(self)
-        
+
         def_prop.setdefault('deviceVendor', self.getVISA_vendor())
         def_prop.setdefault('deviceModel', self.getVISA_model())
         def_prop.setdefault('deviceSerial', self.getVISA_serial())
         def_prop.setdefault('deviceFirmware', self.getVISA_firmware())
-        
+
         return def_prop
-    
+
     def refresh(self):
         self.identify()
-        
+
         if self.driver is None:
             # Attempt to automatically load a driver
             self.loadDriver()
-        
+
     #===========================================================================
     # VISA Specific
     #===========================================================================
-    
+
     def identify(self):
         start_state = self.isOpen()
         if not start_state:
             self.open()
 
         start_timeout = self.instrument.timeout
-        #self.instrument.timeout = 500
-        
+        self.instrument.timeout = 100
+
         try:
-            self.identity = self.query("*IDN?").strip().split(',')
+            scpi_ident = self.query("*IDN?")
+            self.identify = scpi_ident.strip().split(',')
         except Exception as e:
             self.identity = []
-            
+
         if len(self.identity) >= 4:
             self.VID = self.identity[0].strip()
             self.PID = self.identity[1].strip()
             self.serial = self.identity[2].strip()
             self.firmware = self.identity[3].strip()
-        
+
         elif len(self.identity) == 3:
             # Resource provided a non-standard identify response
             # Screw you BK Precision for making me do this
             self.VID = ''
             self.PID, self.firmware, self.serial = self.identity
-            
+
         else:
             self.VID = ''
             self.PID = ''
             self.firmware = ''
             self.serial = ''
-            self.logger.error('Unable to identify VISA device')
-            
+            self.logger.error('Unable to identify VISA device %s', self.resID)
+
         self.instrument.timeout = start_timeout
-            
+
         if start_state == False:
             self.close()
 
         self.ready = True
-            
+
+        self.logger.debug("Identified VISA Resource: %s", self.resID)
+        self.logger.debug("Vendor: %s", self.VID)
+        self.logger.debug("Model:  %s", self.PID)
+        self.logger.debug("Serial: %s", self.serial)
+        self.logger.debug("F/W:    %s", self.firmware)
+
     def getVISA_vendor(self):
+        if not self.ready:
+            self.identify()
+
         return self.VID
-    
+
     def getVISA_model(self):
+        if not self.ready:
+            self.identify()
+
         return self.PID
-    
+
     def getVISA_serial(self):
+        if not self.ready:
+            self.identify()
+
         return self.serial
-    
+
     def getVISA_firmware(self):
+        if not self.ready:
+            self.identify()
+
         return self.firmware
-        
+
     #===========================================================================
     # Resource State
     #===========================================================================
-        
+
     def open(self):
+        """
+        Open the resource and prepare to receive commands.
+
+        If an error occurs, call :func:`getError` to get more information about the error
+
+        :returns: True if successful, False otherwise
+        """
         try:
             self.instrument.open()
+            return True
 
-            self.identify()
-
-            self.logger.debug("Opened VISA Resource: %s", self.resID)
-            self.logger.debug("Vendor: %s", self.VID)
-            self.logger.debug("Model:  %s", self.PID)
-            self.logger.debug("Serial: %s", self.serial)
-            self.logger.debug("F/W:    %s", self.firmware)
-            
         except visa.VisaIOError as e:
-            raise InterfaceError(e.description)
-        
-        except:
-            raise InterfaceError("Unhandled Exception")
-        
+            self._error = format_exc()
+            return False
+
     def isOpen(self):
-        import pyvisa
-        
+        """
+        Query the VISA resource to find if it is open
+
+        :return: bool
+        """
         try:
             sess = self.instrument.session
             return True
-        
+
         except pyvisa.errors.InvalidSession:
             return False
-    
+
     def close(self):
+        """
+        Close the resource.
+
+        If an error occurs, call :func:`getError` to get more information about the error
+
+        :returns: True if successful, False otherwise
+        """
         try:
             self.instrument.close()
-            
-        except visa.VisaIOError as e:
-            #if e.errno in [errno.EACCES]:
-            # Access Denied, the port is probably open somewhere else
-            raise InterfaceError(e.description)
-        
-        except Exception as e:
-            raise InterfaceError("Unhandled Exception")
-        
+            return True
+
+        except visa.VisaIOError:
+            self._error = format_exc()
+            return False
+
     def lock(self):
         self.instrument.lock()
-        
+
     def unlock(self):
         self.instrument.unlock()
-        
+
     #===========================================================================
     # Configuration
     #===========================================================================
-    
+
     def configure(self, **kwargs):
         """
         Configure Serial port parameters for the resource.
@@ -308,41 +333,45 @@ class r_VISA(Base_Resource):
         :param stopbits: Serial - Number of stop bits
         :param termination: Write termination
         """
-        if 'baudrate' in kwargs:
-            self.instrument.baud_rate = int(kwargs.get('baudrate'))
-            
-        if 'bytesize' in kwargs:
-            self.instrument.data_bits = int(kwargs.get('bytesize'))
-            
-        if 'parity' in kwargs:
-            import pyvisa.constants as pvc
-            parity_convert = {
-                'N': pvc.Parity.none,
-                'E': pvc.Parity.even,
-                'M': pvc.Parity.mark,
-                'O': pvc.Parity.odd,
-                'S': pvc.Parity.space}
-            self.instrument.parity = parity_convert.get(kwargs.get('parity'))
-            
-        if 'stopbits' in kwargs:
-            self.instrument.stopbits = int(kwargs.get('stopbits'))
-            
-        if 'termination' in kwargs:
-            self.instrument.write_termination = kwargs.get('termination')
-            
+        if type(self.instrument) == pyvisa.resources.serial.SerialInstrument:
+            if 'baudrate' in kwargs:
+                self.instrument.baud_rate = int(kwargs.get('baudrate'))
+
+            if 'bytesize' in kwargs:
+                self.instrument.data_bits = int(kwargs.get('bytesize'))
+
+            if 'parity' in kwargs:
+                import pyvisa.constants as pvc
+                parity_convert = {
+                    'N': pvc.Parity.none,
+                    'E': pvc.Parity.even,
+                    'M': pvc.Parity.mark,
+                    'O': pvc.Parity.odd,
+                    'S': pvc.Parity.space}
+                self.instrument.parity = parity_convert.get(kwargs.get('parity'))
+
+            if 'stopbits' in kwargs:
+                self.instrument.stopbits = int(kwargs.get('stopbits'))
+
+            if 'termination' in kwargs:
+                self.instrument.write_termination = kwargs.get('termination')
+
     def getConfiguration(self):
         ret = {}
-        ret['baudrate'] = self.instrument.baud_rate
-        ret['bytesize'] = self.instrument.data_bits
-        ret['parity'] = self.instrument.parity
-        ret['stopbits'] = self.instrument.stopbits
-        ret['termination'] = self.instrument.write_termination
+
+        if type(self.instrument) == pyvisa.resources.serial.SerialInstrument:
+            ret['baudrate'] = self.instrument.baud_rate
+            ret['bytesize'] = self.instrument.data_bits
+            ret['parity'] = self.instrument.parity
+            ret['stopbits'] = self.instrument.stopbits
+            ret['termination'] = self.instrument.write_termination
+
         return ret
-        
+
     #===========================================================================
     # Data Transmission
     #===========================================================================
-    
+
     def write(self, data):
         """
         Send String data to the instrument. Includes termination
@@ -358,13 +387,13 @@ class r_VISA(Base_Resource):
         """
         try:
             self.instrument.write(data)
-        
+
         except visa.InvalidSession:
             raise ResourceNotOpen()
-        
+
         except visa.VisaIOError as e:
             raise InterfaceError(e.description)
-        
+
     def write_raw(self, data):
         """
         Send Binary-encoded data to the instrument. Termination character is
@@ -376,13 +405,13 @@ class r_VISA(Base_Resource):
         """
         try:
             self.instrument.write_raw(data)
-        
+
         except visa.InvalidSession:
             raise ResourceNotOpen()
-        
+
         except visa.VisaIOError as e:
             raise InterfaceError(e.description)
-        
+
     def read(self, termination=None, encoding=None):
         """
         Read ASCII-formatted data from the instrument.
@@ -399,16 +428,16 @@ class r_VISA(Base_Resource):
         """
         try:
             return self.instrument.read(termination, encoding)
-        
+
         except visa.InvalidSession:
             raise ResourceNotOpen()
-        
+
         except visa.VisaIOError as e:
             if e.abbreviation in ["VI_ERROR_TMO"]:
                 raise InterfaceTimeout(e.description)
             else:
                 raise InterfaceError(e.description)
-    
+
     def read_raw(self, size=None):
         """
         Read Binary-encoded data from the instrument.
@@ -419,7 +448,7 @@ class r_VISA(Base_Resource):
         :type size: int
         """
         ret = bytes()
-        
+
         try:
             if type(self.instrument) == pyvisa.resources.serial.SerialInstrument:
                 # There is a bug in PyVISA that forces a low-level call (hgrecco/pyvisa #93)
@@ -429,26 +458,26 @@ class r_VISA(Base_Resource):
                         num_bytes = self.instrument.bytes_in_buffer
                         chunk, status = self.instrument.visalib.read(self.instrument.session, num_bytes)
                         ret += chunk
-        
+
                     else:
                         while len(ret) < size:
                             chunk, status = self.instrument.visalib.read(self.instrument.session, size - len(ret))
                             ret += chunk
-                            
+
                 return ret
-            
+
             else:
                 return self.instrument.read_raw()
-            
+
         except visa.InvalidSession:
             raise ResourceNotOpen
-        
+
         except visa.VisaIOError as e:
             if e.abbreviation in ["VI_ERROR_TMO"]:
                 raise InterfaceTimeout(e.description)
             else:
                 raise InterfaceError(e.description)
-    
+
     def query(self, data, delay=None):
         """
         Retreive ASCII-encoded data from the device given a prompt.
@@ -463,16 +492,16 @@ class r_VISA(Base_Resource):
         """
         try:
             return self.instrument.query(data)
-        
+
         except visa.InvalidSession:
             raise ResourceNotOpen
-        
+
         except visa.VisaIOError as e:
             if e.abbreviation in ["VI_ERROR_TMO"]:
                 raise InterfaceTimeout(e.description)
             else:
                 raise InterfaceError(e.description)
-                
+
     def inWaiting(self):
         """
         Return the number of bytes in the receive buffer for a Serial VISA
@@ -484,11 +513,11 @@ class r_VISA(Base_Resource):
             return self.instrument.bytes_in_buffer
         else:
             return 0
-    
+
     #===========================================================================
     # Drivers
     #===========================================================================
-    
+
     def loadDriver(self, driverName=None):
         """
         Load a Model. VISA supports enumeration and will thus search for a
@@ -510,27 +539,27 @@ class r_VISA(Base_Resource):
         if driverName is None:
             # Search for a compatible model
             validModels = []
-            
+
             # Iterate through all Models to find compatible Models
-            for modelModule, modelInfo in self.driver_list.items():
+            for modelModule, modelInfo in self.manager.drivers.items():
                 try:
                     for resType in modelInfo.get('validResourceTypes'):
                         if resType in ['VISA', 'visa']:
                             if (self.VID in modelInfo.get('VISA_compatibleManufacturers') and
                                 self.PID in modelInfo.get('VISA_compatibleModels')):
                                 validModels.append(modelModule)
-                            
+
                 except:
                     continue
-                
+
             # Only auto-load a model if a single model was found
             if len(validModels) == 1:
                 Base_Resource.loadDriver(self, validModels[0])
-                
+
                 return True
-            
+
             return False
-                
+
         else:
             return Base_Resource.loadDriver(self, driverName)
-    
+

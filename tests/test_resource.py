@@ -19,7 +19,7 @@ class Resource_Tests(unittest.TestCase):
         self.interf.close = mock.Mock(return_value=True)
         self.interf.getResources = mock.Mock(return_value={'DEBUG': self.res})
 
-        self.instr.interfaces['interfaces.i_Debug'] = self.interf
+        self.instr._interfaces['interfaces.i_Debug'] = self.interf
         
     def test_resource_found(self):
         self.dev = self.instr.findInstruments(resourceID='DEBUG')

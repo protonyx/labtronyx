@@ -32,8 +32,8 @@ class InstrumentManager(object):
     
     def __init__(self, **kwargs):
         # Initialize instance variables
-        self.interfaces = {} # Interface name -> interface object
-        self.drivers = {} # Module name -> Model info
+        self._interfaces = {} # Interface name -> interface object
+        self._drivers = {} # Module name -> Model info
         self.rpc_server = None
 
         #
@@ -107,9 +107,9 @@ class InstrumentManager(object):
         # Load Drivers
         import drivers
         #self.drivers = drivers.getAllDrivers()
-        self.drivers = self.__scan(drivers)
+        self._drivers = self.__scan(drivers)
         
-        for driver in self.drivers.keys():
+        for driver in self._drivers.keys():
             self.logger.debug("Found Driver: %s", driver)
         
         # Load Interfaces
@@ -129,7 +129,7 @@ class InstrumentManager(object):
     
     def __del__(self):
         self.rpc_stop()
-        
+
     def __scan(self, pkg):
         """
         Scan a package for valid plug-in modules. Plugin modules have a class with the same name as the module and
@@ -160,10 +160,14 @@ class InstrumentManager(object):
                         if testClass != {}:
                             info = copy.deepcopy(testClass.info)
                             plugins[pkg_name] = info
+
+                except ImportError:
+                    # Missing dependencies, skip this plugin
+                    self.logger.error("Unable to import %s", pkg_name)
                     
                 except Exception as e:
                     self.logger.exception("Exception during module scan: %s", pkg_name)
-                
+
         return plugins
 
     #===========================================================================
@@ -223,7 +227,7 @@ class InstrumentManager(object):
         :return: None
         """
         if self.rpc_server is not None:
-            for interf in self.interfaces:
+            for interf in self._interfaces.values():
                 try:
                     for res_uuid, res_obj in interf.getResources.items():
                         self.rpc_server.register_path(res_uuid, res_obj)
@@ -240,7 +244,7 @@ class InstrumentManager(object):
             self.logger.debug("RPC Server stopping...")
 
             # Close all interfaces
-            for interface in self.interfaces.keys():
+            for interface in self._interfaces.keys():
                 self.disableInterface(interface)
 
             # Stop the InstrumentManager RPC Server
@@ -299,16 +303,21 @@ class InstrumentManager(object):
     # Interface Operations
     #===========================================================================
 
+    @property
+    def interfaces(self):
+        return self._interfaces
+
+
     def getInterfaces(self):
         """
-        Get a list of controllers known to InstrumentManager
+        Get a list of interfaces that are enabled
         
         :returns: list
         """
-        return self.interfaces.keys()
+        return self._interfaces.keys()
     
     def enableInterface(self, interface):
-        if interface not in self.interfaces:
+        if interface not in self._interfaces:
             try:
                 interfaceModule = importlib.import_module(interface)
 
@@ -326,7 +335,7 @@ class InstrumentManager(object):
                 inter.open()
 
                 self.logger.info("Started Interface: %s" % interface)
-                self.interfaces[interface] = inter
+                self._interfaces[interface] = inter
             except:
                 self.logger.exception("Exception during interface open")
                 
@@ -334,9 +343,9 @@ class InstrumentManager(object):
             raise RuntimeError("Interface is already running!")
     
     def disableInterface(self, interface):
-        if interface in self.interfaces:
+        if interface in self._interfaces:
             try:
-                inter = self.interfaces.pop(interface)
+                inter = self._interfaces.pop(interface)
 
                 # Call the plugin hook to close the interface
                 inter.close()
@@ -359,7 +368,7 @@ class InstrumentManager(object):
 
         :returns: bool
         """
-        for interf in self.interfaces:
+        for interf in self._interfaces.values():
             try:
                 # Discover any new resources
                 interf.enumerate()
@@ -389,9 +398,9 @@ class InstrumentManager(object):
         """
         ret = {}
 
-        for interf in self.interfaces:
+        for interf in self._interfaces.values():
             try:
-                for uuid, res in interf.getResources().items():
+                for uuid, res in interf.resources.items():
                     ret[uuid] = res.getProperties()
 
                     ret[uuid].setdefault('deviceType', '')
@@ -400,7 +409,7 @@ class InstrumentManager(object):
                     ret[uuid].setdefault('deviceSerial', '')
                     ret[uuid].setdefault('deviceFirmware', '')
 
-            except:
+            except NotImplementedError:
                 pass
         
         return ret
@@ -414,9 +423,9 @@ class InstrumentManager(object):
         :returns: object
         """
         # NON-SERIALIZABLE
-        for interf in self.interfaces:
+        for interf in self._interfaces.values():
             try:
-                temp = interf.getResources().get(res_uuid)
+                temp = interf.resources.get(res_uuid)
                 if temp is not None:
                     return temp
 
@@ -486,7 +495,7 @@ class InstrumentManager(object):
         :returns: True if successful, False otherwise
         """
         try:
-            int_obj = self.interfaces.get(interface)
+            int_obj = self._interfaces.get(interface)
             return int_obj.addResource(ResID)
         
         except:
@@ -495,9 +504,18 @@ class InstrumentManager(object):
     #===========================================================================
     # Driver Operations
     #===========================================================================
+
+    @property
+    def drivers(self):
+        return self._drivers
                 
     def getDrivers(self):
-        return self.drivers
+        """
+        Get a list of valid drivers found during the initial driver scan.
+
+        :return: dict
+        """
+        return self._drivers
     
 if __name__ == "__main__":
     # Interactive Mode
