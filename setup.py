@@ -5,8 +5,8 @@ Setuptools build file
 """
 
 # Version (Semantic Versioning)
-VER_MAJOR = 0
-VER_MINOR = 1
+VER_MAJOR = 1
+VER_MINOR = 0
 VER_PATCH = 0
 
 # Is this a release version? If so, additional data is appended to full version
@@ -77,7 +77,38 @@ def build_package():
         author="Kevin Kennedy",
         author_email="protonyx@users.noreply.github.com",
 
+        # License
         license="MIT",
+
+        # Details
+        url="https://github.com/protonyx/labtronyx",
+
+        # Description
+        description='Labtronyx Instrument Control',
+
+        # Platforms
+        platforms=["Windows", "Mac OS-X", "Linux"],
+
+        # Long Description
+        long_description=open("README.rst").read(),
+
+        # Classifiers
+        classifiers=[
+            "Development Status :: 3 - Alpha",
+            "Intended Audience :: Developers",
+            "Intended Audience :: Science/Research",
+            "License :: OSI Approved :: MIT License",
+            "Operating System :: Microsoft :: Windows",
+            "Operating System :: POSIX :: Linux",
+            "Operating System :: MacOS :: MacOS X",
+            "Programming Language :: Python",
+            "Programming Language :: Python :: 2.7",
+            "Topic :: Software Development :: Libraries :: Python Modules",
+            "Topic :: Scientific/Engineering :: Interface Engine/Protocol Translator"
+        ],
+
+        # Unit tests
+        test_suite="tests.test_suite",
 
         # Packages
         packages=['labtronyx'], #find_packages('labtronyx'),
@@ -88,28 +119,13 @@ def build_package():
         # Include additional files into the package
         include_package_data=True,
 
-        # Details
-        url="https://github.com/protonyx/labtronyx",
-
-        #
-        # license="LICENSE.txt",
-        description='Labtronyx Instrumentation Control Framework',
-
-        # Platforms
-        platforms=["Windows", "Mac OS-X", "Linux"],
-
-        # long_description=open("README.txt").read(),
-
-        # Unit tests
-        test_suite="tests.test_suite",
-
         # Dependencies
         extras_require={
             'VISA': ['pyvisa>=1.6'],
             'Serial': ['pyserial']
         },
 
-        install_requires=['ptxrpc', 'enum34', 'numpy']
+        install_requires=['ptx-rpc', 'enum34', 'numpy']
     )
 
     # Additional dependencies for CI and test builds
