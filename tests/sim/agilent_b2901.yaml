@@ -6,15 +6,33 @@ devices:
       USB INSTR:
         q: "\r\n"
         r: "\r"
+    error:
+      response:
+        command_error: "ERROR"
+      status_register:
+        - q: "*ESR?"
+          command_error: 32
+          query_error: 4
+#      error_queue:
+#        - q: ':SYST:ERR?'
+#          default: '+0,"No error"'
+#          command_error: '-100,"Command error"'
+#          query_error: '-102,"Syntax error"'
     dialogues:
       - q: "*IDN?"
         r: "AGILENT TECHNOLOGIES,B2901A,12345,SIM"
       - q: ":READ?"
         r: "{:.2f}"
-    error:
-      error_queue:
-        - q: ':SYST:ERR?'
-          default: '+0,"No error"'
-          command_error: '-100,"Command error"'
-          query_error: '-102,"Syntax error"'
+    properties:
+      voltage:
+        default: 1.0
+        getter:
+          q: ":VOLT:IMM:AMPL?"
+          r: "{:+.8E}"
+        setter:
+          q: ":VOLT:IMM:AMPL {:.3f}"
+        specs:
+          min: 1
+          max: 6
+          type: float
 

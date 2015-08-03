@@ -8,6 +8,7 @@ from labtronyx.bases.interface import Base_Interface, InterfaceError, InterfaceT
 from labtronyx.bases.resource import Base_Resource, ResourceNotOpen
 import labtronyx.common.status as resource_status
 import labtronyx.common.events as events
+import labtronyx.constants as constants
 
 import visa, pyvisa
 
@@ -87,7 +88,7 @@ class i_VISA(Base_Interface):
                             self._resources[res] = new_resource
 
                             # Signal new resource event
-                            self.manager._event_signal(events.Resource_Created())
+                            self.manager._event_signal(constants.ResourceEvents.created)
 
                         except visa.VisaIOError as e:
                             if e.abbreviation in ["VI_ERROR_RSRC_BUSY",

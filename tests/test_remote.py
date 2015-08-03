@@ -13,5 +13,9 @@ class RemoteManager_Tests(unittest.TestCase):
 
         self.client = RemoteManager(uri='http://localhost:6780/')
 
+    @classmethod
+    def tearDownClass(self):
+        self.instr.rpc_stop()
+
     def test_remote_connect(self):
         self.assertEqual(self.client.getVersion(), self.instr.getVersion())
