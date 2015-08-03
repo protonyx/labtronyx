@@ -109,7 +109,7 @@ def build_package():
             'Serial': ['pyserial']
         },
 
-        install_requires=['ptxrpc', 'numpy']
+        install_requires=['ptxrpc', 'enum34', 'numpy']
     )
 
     # Additional dependencies for CI and test builds
