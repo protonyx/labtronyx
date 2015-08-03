@@ -74,11 +74,9 @@ class i_VISA(Base_Interface):
                 for res in res_list:
                     if res not in self._resources.keys():
                         try:
-                            instrument = self.resource_manager.open_resource(res,
-                                                                  read_termination='\r',
-                                                                  write_termination='\r\n',
-                                                                  open_timeout=0.1)
+                            instrument = self.resource_manager.open_resource(res)
 
+                            # Instantiate the resource object
                             new_resource = r_VISA(manager=self.manager,
                                                   interface=self,
                                                   resID=res,
@@ -160,13 +158,11 @@ class r_VISA(Base_Resource):
 
     def __init__(self, manager, interface, resID, **kwargs):
         self.instrument = kwargs.pop('visa_instrument')
-
-        # Set a default read termination character sequence
-        #self.instrument.read_termination = '\r'
+        self.instrument.read_termination = self._read_termination = kwargs.pop('read_termination', '\r')
+        self.instrument.write_termination = self._write_termination = kwargs.pop('write_termination', '\r\n')
+        self.instrument.timeout = self._timeout = kwargs.pop('timeout', 2000)
 
         Base_Resource.__init__(self, manager, interface, resID, **kwargs)
-
-        #self.instrument.timeout = 1000
 
         # Instrument is created in the open state, but we do not want to lock the VISA instrument
         self.close()
@@ -295,6 +291,12 @@ class r_VISA(Base_Resource):
         """
         try:
             self.instrument.open()
+
+            # Restore instrument context
+            self.instrument.read_termination = self._read_termination
+            self.instrument.write_termination = self._write_termination
+            self.instrument.timeout = self._timeout
+
             return True
 
         except visa.VisaIOError as e:
@@ -323,6 +325,12 @@ class r_VISA(Base_Resource):
         :returns: True if successful, False otherwise
         """
         try:
+            # Save instrument context before closing
+            self._read_termination = self.instrument.read_termination
+            self._write_termination = self.instrument.write_termination
+            self._timeout = self.instrument.timeout
+
+            # Close the instrument
             self.instrument.close()
             return True
 
@@ -351,6 +359,8 @@ class r_VISA(Base_Resource):
         :param stopbits: Serial - Number of stop bits
         :param termination: Write termination
         """
+        # if self.instrument.interface_type == pyvisa.constants.InterfaceType.usb:
+
         if type(self.instrument) == pyvisa.resources.serial.SerialInstrument:
             if 'baudrate' in kwargs:
                 self.instrument.baud_rate = int(kwargs.get('baudrate'))
