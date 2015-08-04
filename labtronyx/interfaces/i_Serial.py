@@ -66,7 +66,6 @@ class i_Serial(Base_Interface):
                         new_resource = r_Serial(resID, self,
                                                 instrument=instrument,
                                                 logger=self.logger,
-                                                config=self.config,
                                                 enableRpc=self.manager.enableRpc)
                         self._resources[resID] = new_resource
                         

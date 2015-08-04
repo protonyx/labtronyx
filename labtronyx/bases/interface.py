@@ -17,7 +17,6 @@ class Base_Interface(object):
         """
         self._manager = manager
 
-        self.config = kwargs.get('config')
         self.logger = kwargs.get('logger', logging)
 
         # Instance variables

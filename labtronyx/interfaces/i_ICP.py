@@ -308,7 +308,6 @@ class i_ICP(Base_Interface):
                                                              interface=self,
                                                              resID=sourceIP,
                                                              logger=self.logger,
-                                                             config=self.config,
                                                              enumeration=pkt.getEnumeration())
                         
                             self.logger.info("Found ICP Device: %s" % sourceIP)

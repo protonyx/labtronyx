@@ -82,8 +82,7 @@ class i_VISA(Base_Interface):
                                                   interface=self,
                                                   resID=res,
                                                   visa_instrument=instrument,
-                                                  logger=self.logger,
-                                                  config=self.config)
+                                                  logger=self.logger)
 
                             self._resources[res] = new_resource
 

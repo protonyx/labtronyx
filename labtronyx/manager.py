@@ -8,27 +8,29 @@ import threading
 import logging, logging.handlers
 
 # Local Imports
-try:
-    from ptxrpc import PtxRpcServer
-    from labtronyx import version
-except ImportError:
-    raise
-
+from . import logger
+import drivers
+import interfaces
 import common
+import version
 
 __all__ = ['InstrumentManager']
 
 class InstrumentManager(object):
     """
-    Labtronyx Instrument Manager
+    Labtronyx InstrumentManager
 
     Facilitates communication with instruments using all available interfaces.
-    
+
+    :param rpc: Enable RPC endpoint
+    :type rpc: bool
+    :param rpc_port: RPC endpoint port
+    :type rpc_port: int
     :param logger: Logger instance if you wish to override the internal instance
     :type logger: Logging.logger
-    :param configFile: Configuration file to load
-    :type configFile: str
     """
+    name = 'Labtronyx'
+    longname = 'Labtronyx Instrumentation Control Framework'
     
     def __init__(self, **kwargs):
         # Initialize instance variables
@@ -36,76 +38,26 @@ class InstrumentManager(object):
         self._drivers = {} # Module name -> Model info
         self.rpc_server = None
 
-        #
+        # Configurable instance variables
+        self.rpc_port = kwargs.get('rpc_port', 6780)
+        self.logger = kwargs.get('logger', logger)
+
         # Initialize PYTHONPATH
-        #
         self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
         
         if not self.rootPath in sys.path:
             sys.path.append(self.rootPath)
 
-        #
-        # Load Config
-        #
-        configFile = kwargs.get('configFile', 'default')
-        try:
-            cFile = importlib.import_module('config.%s' % configFile)
-            self.config = cFile.Config()
-            
-        except Exception as e:
-            raise RuntimeError("Unable to import config file")
-
-        #
-        # Configure logger
-        #
-        if 'logger' in kwargs:
-            # Use the supplied logger object
-            self.logger = kwargs.get('logger')
-        
-        else:
-            # Create a new logger object
-            self.logger = logging.getLogger(__name__)
-
-            # Configure Log format
-            formatter = logging.Formatter(self.config.logFormat)
-
-            # Handler - Console
-            try:
-                ch = logging.StreamHandler()
-                ch.setLevel(self.config.logLevel_console)
-                ch.setFormatter(formatter)
-                self.logger.addHandler(ch)
-
-            except:
-                pass
-                
-            # Handler - File
-            if self.config.logToFile:
-                try:
-                    if not os.path.exists(self.config.logPath):
-                        os.makedirs(self.config.logPath)
-
-                    self.logFilename = os.path.normpath(os.path.join(self.config.logPath, 'Labtronyx_Manager.log'))
-
-                    fh = logging.handlers.RotatingFileHandler(self.logFilename, backupCount=self.config.logBackups)
-                    fh.setLevel(self.config.logLevel_file)
-                    fh.setFormatter(formatter)
-                    self.logger.addHandler(fh)
-
-                    fh.doRollover()
-                except Exception as e:
-                    self.logger.error("Unable to open log file for writing: %s", str(e))
-    
         # Announce Version
-        self.logger.info(self.config.longname)
-        self.logger.info("Labtronyx InstrumentManager, Version: %s", version.ver_full)
+        self.logger.info(self.longname)
+        self.logger.info("Version: %s", version.ver_full)
+        self.logger.debug("Build Date: %s", version.build_date)
 
         #
         # Load Plugins
         #
         
         # Load Drivers
-        import drivers
         #self.drivers = drivers.getAllDrivers()
         self._drivers = self.__scan(drivers)
         
@@ -113,7 +65,6 @@ class InstrumentManager(object):
             self.logger.debug("Found Driver: %s", driver)
         
         # Load Interfaces
-        import interfaces
         interface_info = self.__scan(interfaces)
         
         for interf in interface_info.keys():
@@ -192,7 +143,7 @@ class InstrumentManager(object):
             import ptxrpc as rpc
 
             self.rpc_server = rpc.PtxRpcServer(host='localhost',
-                                               port=self.config.managerPort,
+                                               port=self.rpc_port,
                                                logger=self.logger)
 
             # Register InstrumentManager in the base path
@@ -328,8 +279,7 @@ class InstrumentManager(object):
 
                 # Instantiate interface
                 inter = interfaceClass(manager=self,
-                                       logger=self.logger,
-                                       config=self.config)
+                                       logger=self.logger)
 
                 # Call the plugin hook to open the interface
                 inter.open()
@@ -519,26 +469,12 @@ class InstrumentManager(object):
     
 if __name__ == "__main__":
     # Interactive Mode
-    # Configure Logger
-    logFormat = '%(asctime)s %(levelname)-8s %(module)s - %(message)s'
-    logger = logging.getLogger(__name__)
-    formatter = logging.Formatter(logFormat)
-            
-     # Configure logging level
-    logger.setLevel(logging.DEBUG)
-        
-    # Logging Handler configuration, only done once
-    if logger.handlers == []:
-        # Console Log Handler
-        lh_console = logging.StreamHandler(sys.stdout)
-        lh_console.setFormatter(formatter)
-        logger.addHandler(lh_console)
-    
-    man = InstrumentManager(logger=logger, rpc=True)
+    import labtronyx
+    labtronyx.logConsole()
+
+    # Instantiate an InstrumentManager
+    man = labtronyx.InstrumentManager(rpc=True)
     
     # Keep the main thread alive
-    try:
-        while(1):
-            time.sleep(1.0)
-    except KeyboardInterrupt:
-        man.stop()
+    while(1):
+        time.sleep(1.0)
