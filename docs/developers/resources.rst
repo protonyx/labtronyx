@@ -60,5 +60,5 @@ Resource Template
 Base Resource API
 -----------------
 
-.. autoclass:: labtronyx.Base_Resource.Base_Resource
+.. autoclass:: labtronyx.bases.Base_Resource
    :members:

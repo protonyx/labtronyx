@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 # System Imports
 import os, sys
 import time
@@ -5,14 +7,13 @@ import socket
 import copy
 import importlib
 import threading
-import logging, logging.handlers
 
 # Local Imports
 from . import logger
-import drivers
-import interfaces
-import common
-import version
+from . import version
+from . import common
+from . import drivers
+from . import interfaces
 
 __all__ = ['InstrumentManager']
 

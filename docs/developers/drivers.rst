@@ -87,5 +87,5 @@ Driver Template
 Base Driver API
 ---------------
 
-.. autoclass:: labtronyx.Base_Driver.Base_Driver
+.. autoclass:: labtronyx.bases.Base_Driver
    :members: _onLoad, _onUnload, getProperties

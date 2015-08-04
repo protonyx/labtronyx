@@ -32,9 +32,9 @@ try:
 except ImportError:
     __version__ = "unknown"
 
-from .manager import *
-from .remote import *
-from .lab import *
-import bases
-import common
+from .manager import InstrumentManager
+from .remote import RemoteManager, RemoteResource
+from .lab import LabManager
+from . import bases
+from . import common
 

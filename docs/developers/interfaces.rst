@@ -15,12 +15,12 @@ Interface Template
 Required API Implementations
 ----------------------------
 
-.. autoclass:: labtronyx.Base_Interface.Base_Interface
+.. autoclass:: labtronyx.bases.Base_Interface
    :members: open, close, getResources
 
 Optional API Implementations
 ----------------------------
 
-.. autoclass:: labtronyx.Base_Interface.Base_Interface
+.. autoclass:: labtronyx.bases.Base_Interface
    :members: refresh
    

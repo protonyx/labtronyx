@@ -29,11 +29,20 @@ User Guide
     | :doc:`installation`
     | Instructions for installing Labtronyx and the associated dependencies
     |
+    | :doc:`intro`
+    | First steps to connecting to and controlling instruments
+    |
+    | :doc:`remote`
+    | Controlling instruments on other computers
+    |
     | :doc:`api/index`
     | Developing scripts using the Labtronyx Python Library and API
     |
     | :doc:`instruments/index`
     | See which instruments are currently supported
+    |
+    | :doc:`examples`
+    | A collection of example scripts
     |
     | :doc:`developers/index`
     | Develop new drivers or interfaces for new instruments
@@ -54,7 +63,10 @@ Indices and tables
    :hidden:
    
    installation
+   intro
+   remote
    api/index
    instruments/index
+   examples
    developers/index
    
