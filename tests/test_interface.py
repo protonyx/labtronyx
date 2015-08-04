@@ -2,14 +2,13 @@ import unittest
 import mock
 
 import labtronyx
-from labtronyx import InstrumentManager
 from labtronyx.bases import Base_Resource, Base_Interface
 
 class Interface_Tests(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.instr = InstrumentManager(rpc=False)
+        self.instr = labtronyx.InstrumentManager(rpc=False)
 
         # Create a fake interface, imitating the interface API
         self.interf = Base_Interface(manager=self.instr)
@@ -29,4 +28,6 @@ class Interface_Tests(unittest.TestCase):
         self.dev = self.instr.findInstruments(resourceID='DEBUG')
         self.assertEqual(type(self.dev), list)
         self.assertEqual(len(self.dev), 1)
+
+        self.dev = self.dev[0]
         
