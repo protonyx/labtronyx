@@ -1,0 +1,5 @@
+pyvisa>=1.6
+pyserial
+numpy
+enum34
+ptx-rpc

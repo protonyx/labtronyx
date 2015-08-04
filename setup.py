@@ -23,7 +23,6 @@ REL_TYPE = 'dev0'    # Development Release
 # -----------------------------------------------------------------------
 
 import sys, os, time
-from setuptools import find_packages
 
 def generate_ver(filename='labtronyx/version.py'):
     # Get Git Revision
@@ -111,11 +110,10 @@ def build_package():
         test_suite="tests.test_suite",
 
         # Packages
-        packages=['labtronyx'], #find_packages('labtronyx'),
-        #package_dir={'':'labtronyx'},
+        packages=['labtronyx'],
 
         # Package data - e.g. non-python modules
-        #package_data = {},
+        # package_data = {},
         # Include additional files into the package
         include_package_data=True,
 
@@ -125,7 +123,10 @@ def build_package():
             'Serial': ['pyserial']
         },
 
-        install_requires=['ptx-rpc', 'enum34', 'numpy']
+        install_requires=['ptx-rpc', 'enum34', 'numpy'],
+
+        # Can the project run from a zip file?
+        zip_safe = False
     )
 
     # Additional dependencies for CI and test builds
