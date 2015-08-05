@@ -2,11 +2,11 @@ Supported Instruments
 =====================
 
 .. toctree::
+   :maxdepth: 2
 
    Agilent
    BK Precision
    Chroma
-   Debug
    Regatron
    Sorensen
    TDI

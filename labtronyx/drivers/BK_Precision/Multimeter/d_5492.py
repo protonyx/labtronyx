@@ -1,8 +1,6 @@
 """
 .. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
-API
----
 """
 from labtronyx.bases import Base_Driver
 

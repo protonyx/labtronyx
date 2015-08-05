@@ -35,14 +35,14 @@ User Guide
     | :doc:`remote`
     | Controlling instruments on other computers
     |
-    | :doc:`api/index`
-    | Developing scripts using the Labtronyx Python Library and API
-    |
     | :doc:`instruments/index`
     | See which instruments are currently supported
     |
     | :doc:`examples`
     | A collection of example scripts
+    |
+    | :doc:`api/index`
+    | Developing scripts using the Labtronyx Python Library and API
     |
     | :doc:`developers/index`
     | Develop new drivers or interfaces for new instruments
@@ -65,8 +65,8 @@ Indices and tables
    installation
    intro
    remote
-   api/index
    instruments/index
    examples
+   api/index
    developers/index
    

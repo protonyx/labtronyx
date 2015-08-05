@@ -2,16 +2,17 @@ Drivers
 =======
 
 .. toctree::
+   :maxdepth: 1
 
-   drivers.Agilent.Multimeter.m_3441XA
-   drivers.Agilent.SMU.m_SMU
-   drivers.BK_Precision.Load.m_85XX
+   drivers.Agilent.FunctionGenerator.d_335XX
+   drivers.Agilent.Multimeter.d_3441XA
+   drivers.Agilent.SMU.d_B29XX
+   drivers.BK_Precision.Load.d_85XX
    drivers.BK_Precision.Multimeter.d_2831
    drivers.BK_Precision.Multimeter.d_5492
    drivers.BK_Precision.Source.m_911X
    drivers.BK_Precision.Source.m_XLN
    drivers.Chroma.Source.m_620XXP
-   drivers.Debug.m_debug
    drivers.Regatron.d_TopCon
    drivers.Sorensen.d_XFR
    drivers.TDI.d_XBL

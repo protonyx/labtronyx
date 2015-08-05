@@ -85,8 +85,9 @@ def gen_sphinx_automodule(module, options):
     
     return ret
 
-def gen_sphinx_toctree(elems):
-    ret =   '.. toctree::\n\n'
+def gen_sphinx_toctree(elems, depth=2):
+    ret = '.. toctree::\n'
+    ret += '   :maxdepth: %s\n\n' % depth
 
     for item in elems:
         ret += '   {0}\n'.format(item)
@@ -137,7 +138,7 @@ def build_driver_docs():
     with file(toc_filename, "w+") as f:
         f.write(gen_sphinx_header("Drivers", "="))
          
-        f.write(gen_sphinx_toctree(toc_list))
+        f.write(gen_sphinx_toctree(toc_list, 1))
     
 def build_instrument_docs():
     print "Generating Supported Instruments..."

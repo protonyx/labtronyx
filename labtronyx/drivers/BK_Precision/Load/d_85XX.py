@@ -23,12 +23,10 @@ BK Precision provides a device for communicating with this class of DC load:
 `IT-132 USB-to-Serial Adapter`. The driver for this device can be found
 `here <https://bkpmedia.s3.amazonaws.com/downloads/software/ITE132_driver.zip>`_
 
-API
----
 """
 from labtronyx.bases import Base_Driver
 
-class m_85XX(Base_Driver):
+class d_85XX(Base_Driver):
     """
     Driver for BK Precision 8500 Series DC Loads
     """

@@ -4,16 +4,16 @@ BK Precision
 DC Electronic Load
 ------------------
 
-  * :doc:`8500 <../../api/drivers/drivers.BK_Precision.Load.m_85XX>`
-  * :doc:`8502 <../../api/drivers/drivers.BK_Precision.Load.m_85XX>`
-  * :doc:`8510 <../../api/drivers/drivers.BK_Precision.Load.m_85XX>`
-  * :doc:`8512 <../../api/drivers/drivers.BK_Precision.Load.m_85XX>`
-  * :doc:`8514 <../../api/drivers/drivers.BK_Precision.Load.m_85XX>`
-  * :doc:`8518 <../../api/drivers/drivers.BK_Precision.Load.m_85XX>`
-  * :doc:`8520 <../../api/drivers/drivers.BK_Precision.Load.m_85XX>`
-  * :doc:`8522 <../../api/drivers/drivers.BK_Precision.Load.m_85XX>`
-  * :doc:`8524 <../../api/drivers/drivers.BK_Precision.Load.m_85XX>`
-  * :doc:`8526 <../../api/drivers/drivers.BK_Precision.Load.m_85XX>`
+  * :doc:`8500 <../../api/drivers/drivers.BK_Precision.Load.d_85XX>`
+  * :doc:`8502 <../../api/drivers/drivers.BK_Precision.Load.d_85XX>`
+  * :doc:`8510 <../../api/drivers/drivers.BK_Precision.Load.d_85XX>`
+  * :doc:`8512 <../../api/drivers/drivers.BK_Precision.Load.d_85XX>`
+  * :doc:`8514 <../../api/drivers/drivers.BK_Precision.Load.d_85XX>`
+  * :doc:`8518 <../../api/drivers/drivers.BK_Precision.Load.d_85XX>`
+  * :doc:`8520 <../../api/drivers/drivers.BK_Precision.Load.d_85XX>`
+  * :doc:`8522 <../../api/drivers/drivers.BK_Precision.Load.d_85XX>`
+  * :doc:`8524 <../../api/drivers/drivers.BK_Precision.Load.d_85XX>`
+  * :doc:`8526 <../../api/drivers/drivers.BK_Precision.Load.d_85XX>`
 
 DC Power Supply
 ---------------
@@ -32,9 +32,9 @@ DC Power Supply
 Multimeter
 ----------
 
-  * :doc:`5492BGPIB <../../api/drivers/drivers.BK_Precision.Multimeter.d_5492>`
-  * :doc:`5492B <../../api/drivers/drivers.BK_Precision.Multimeter.d_5492>`
-
   * :doc:`2831E <../../api/drivers/drivers.BK_Precision.Multimeter.d_2831>`
   * :doc:`5491B <../../api/drivers/drivers.BK_Precision.Multimeter.d_2831>`
+
+  * :doc:`5492BGPIB <../../api/drivers/drivers.BK_Precision.Multimeter.d_5492>`
+  * :doc:`5492B <../../api/drivers/drivers.BK_Precision.Multimeter.d_5492>`
 

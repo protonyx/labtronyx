@@ -36,17 +36,6 @@ and then must be reassembled on the client side.
 
    TODO
    
-   This feaure is still a work in progress and tied to an issue in the project
+   This feature is still a work in progress and tied to an issue in the project
    GitHub repository (#19). Currently, all server-side exceptions are raised as
    RpcServerException objects on the client side.
-
-API Documentation
------------------
-
-The RemoteManager object is the primary interface to communicating with
-instruments on other computers. It simplifies script development by wrapping
-communication with a JSON-RPC server inside a Python object that can be used
-as if the remote InstrumentManager object was a local Python object.
-
-.. autoclass:: remote.RemoteManager
-   :members:

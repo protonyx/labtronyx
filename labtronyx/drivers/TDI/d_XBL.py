@@ -8,8 +8,6 @@ These loads feature a Ethernet connection that hosts a web-based interface from
 which you can control the load much like you would if you were sitting in front
 of it.
 
-API
----
 """
 from labtronyx.bases import Base_Driver
 

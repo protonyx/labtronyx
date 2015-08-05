@@ -21,8 +21,6 @@ with a baudrate of `9600`. This must be done on the instrument following the
 directions given in the 
 `user's guide <https://bkpmedia.s3.amazonaws.com/downloads/manuals/en-us/2831Eand5491B_manual.pdf>`_
 
-API
----
 """
 from labtronyx.bases import Base_Driver
 

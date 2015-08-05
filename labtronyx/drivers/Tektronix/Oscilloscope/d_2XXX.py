@@ -14,8 +14,6 @@ If the optional `DPO2CONN Connectivity Module` is installed, these oscilloscopes
 can also support Ethernet communication using the VXI extensions for VISA. The 
 VISA driver should be able to detect the oscilloscope on the network.
 
-API
----
 """
 from labtronyx.bases import Base_Driver
 

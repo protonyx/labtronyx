@@ -9,8 +9,6 @@ the HARD COPY command to get screenshot data from the oscilloscope application.
 Screenshots can be saved to the oscilloscope hard drive and must be retrieved
 using other means.
 
-API
----
 """
 from labtronyx.bases import Base_Driver
 

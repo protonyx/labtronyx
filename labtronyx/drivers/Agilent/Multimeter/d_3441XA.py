@@ -1,14 +1,13 @@
 """
 .. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
-API
----
+
 """
 from labtronyx.bases import Base_Driver
 
 import time
 
-class m_3441XA(Base_Driver):
+class d_3441XA(Base_Driver):
     """
     Driver for Agilent 34410A and 34411A Digital Multimeter
     """

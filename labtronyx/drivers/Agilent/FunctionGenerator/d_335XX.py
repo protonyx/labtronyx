@@ -1,6 +1,17 @@
+"""
+.. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
+
+"""
 from labtronyx.bases import Base_Driver
 
-class m_335XX(Base_Driver):
+class d_335XX(Base_Driver):
+    """
+    Driver for Agilent Function Generators
+
+    .. warning::
+
+       This driver is a stub and has no implemented functionality
+    """
     
     info = {
         # Model revision author

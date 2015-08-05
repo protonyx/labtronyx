@@ -9,8 +9,6 @@ Measurement driver and should be recognized without problems when plugged in.
 If the device is not recognized, it is likely because there is a problem with
 the VISA driver installation. 
 
-API
----
 """
 from labtronyx.bases import Base_Driver
 

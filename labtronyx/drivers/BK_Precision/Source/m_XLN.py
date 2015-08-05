@@ -22,8 +22,6 @@ Java-enabled web browser.
 
    The default admin password is 123456 
 
-API
----
 """
 from labtronyx.bases import Base_Driver
 

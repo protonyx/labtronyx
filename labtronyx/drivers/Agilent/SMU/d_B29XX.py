@@ -1,14 +1,10 @@
 """
 .. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
-API
----
 """
 from labtronyx.bases import Base_Driver
 
-import time
-
-class m_SMU(Base_Driver):
+class d_B29XX(Base_Driver):
     """
     Driver for Agilent B2901A and B2902A Source Measurement Units
     """
@@ -206,6 +202,10 @@ class m_SMU(Base_Driver):
     def getMeasurement(self, **kwargs):
         """
         Takes a spot measurement
+
+        .. warning::
+
+            This function has not yet been implemented
         """
         pass
 

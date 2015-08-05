@@ -1,5 +1,7 @@
+API
+===
+
 Labtronyx Python Library API
-============================
 
     | :doc:`localmanager`
     | API Documentation for the InstrumentManager class

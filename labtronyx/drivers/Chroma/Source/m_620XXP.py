@@ -8,8 +8,6 @@ This driver does not include any of the device programming functionality,
 it is assumed that an automated program would be designed in a script that
 uses this driver.
 
-API
----
 """
 from labtronyx.bases import Base_Driver
 
