@@ -3,7 +3,7 @@
 
 
 """
-from labtronyx.bases import Base_Driver
+from labtronyx.bases import Base_Driver, DeviceError
 
 import time
 
@@ -57,29 +57,23 @@ class d_3441XA(Base_Driver):
         -102: "Syntax error",
         -420: "Query UNTERMINATED"}
     
-    def _onLoad(self):
-        self.instr = self.getResource()
-        
-        self.instr.open()
-        
+    def open(self):
         self.getFunction()
-    
-    def _onUnload(self):
-        self.instr.close()
+
+    def close(self):
+        pass
         
     def getProperties(self):
-        prop = Base_Driver.getProperties(self)
-        
-        prop['validModes'] = self.modes
-        prop['validTriggerSources'] = self.trigger_sources
-        
-        return prop
+        return dict(
+            validModes=self.modes,
+            validTriggerSources=self.trigger_sources
+        )
     
     def reset(self):
         """
         Reset the instrument
         """
-        self.instr.write("*RST")
+        self.write("*RST")
         
     def checkForError(self):
         """
@@ -103,7 +97,7 @@ class d_3441XA(Base_Driver):
         
         :returns: tuple (code, msg)
         """
-        ret = self.instr.query("SYST:ERR?")
+        ret = self.query("SYST:ERR?")
         code, msg = ret.split(',')
         code = int(code)
         msg = str(msg).strip()[1:-1]
@@ -133,7 +127,7 @@ class d_3441XA(Base_Driver):
         """
         if func in self.modes:
             value = self.modes.get(func)
-            self.instr.write("CONF:%s" % value)
+            self.write("CONF:%s" % value)
         else:
             raise ValueError("Invalid Function")
     
@@ -143,7 +137,7 @@ class d_3441XA(Base_Driver):
         
         :returns: str
         """
-        self.mode = str(self.instr.query("CONF?")).upper()
+        self.mode = str(self.query("CONF?")).upper()
         
         for desc, code in self.modes.items():
             if self.mode == code:
@@ -170,7 +164,7 @@ class d_3441XA(Base_Driver):
         
         :returns: float
         """
-        return self.instr.query("SENS:%s:RANGE?" % self.func)
+        return self.query("SENS:%s:RANGE?" % self.func)
     
     def setRange(self, new_range):
         """
@@ -193,10 +187,10 @@ class d_3441XA(Base_Driver):
         :param value: Measurement Range
         :type value: str
         """
-        if str(value).upper() == 'AUTO':
-            self.instr.write('SENS:%s:RANGE:AUTO ON' % self.func)
+        if str(new_range).upper() == 'AUTO':
+            self.write('SENS:%s:RANGE:AUTO ON' % self.func)
         else:
-            self.instr.write('SENS:%s:RANGE:AUTO OFF' % self.func)
+            self.write('SENS:%s:RANGE:AUTO OFF' % self.func)
             
     def getMeasurement(self):
         """
@@ -209,9 +203,9 @@ class d_3441XA(Base_Driver):
         for x in range(3):
             try:
                 # Initiate a measurement
-                self.instr.write("INIT")
+                self.write("INIT")
                 time.sleep(0.01)
-                return float(self.instr.query("FETC?"))
+                return float(self.query("FETC?"))
             except ValueError:
                 # Try again
                 pass
@@ -226,7 +220,7 @@ class d_3441XA(Base_Driver):
         """
         if mode in self.modes:
             val = self.modes.get(mode)
-            return float(self.instr.query("MEAS:%s?" % val))
+            return float(self.query("MEAS:%s?" % val))
         else:
             raise ValueError('Invalid Mode')
 
@@ -248,7 +242,7 @@ class d_3441XA(Base_Driver):
         :param value: Integration rate
         :type value: 
         """
-        self.instr.write("SENS:%s:NPLC %s" % (self.func, str(value)))
+        self.write("SENS:%s:NPLC %s" % (self.func, str(value)))
     
     def getIntegrationRate(self):
         """
@@ -269,7 +263,7 @@ class d_3441XA(Base_Driver):
         :param count: Number of triggers
         :type count: int
         """
-        self.instr.write("TRIG:COUN %i" % int(count))
+        self.write("TRIG:COUN %i" % int(count))
         
     def setTriggerDelay(self, delay=None):
         """
@@ -290,10 +284,10 @@ class d_3441XA(Base_Driver):
         :type delay: float
         """
         if delay is None:
-            self.instr.write("TRIG:DEL:AUTO ON")
+            self.write("TRIG:DEL:AUTO ON")
         else:
-            self.instr.write("TRIG:DEL:AUTO OFF")
-            self.instr.write("TRIG:DEL %f" % float(delay))
+            self.write("TRIG:DEL:AUTO OFF")
+            self.write("TRIG:DEL %f" % float(delay))
 
     def setTriggerSource(self, source):
         """
@@ -318,7 +312,7 @@ class d_3441XA(Base_Driver):
         validSources = ['IMMEDIATE', 'BUS', 'EXTERNAL']
         
         if source in validSources:
-            self.instr.write("TRIG:SOUR %s" % source)
+            self.write("TRIG:SOUR %s" % source)
         else:
             raise ValueError('Invalid trigger source')
 
