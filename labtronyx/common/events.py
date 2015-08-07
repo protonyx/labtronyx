@@ -1,22 +1,17 @@
 
-class Labtronyx_Event(object):
+import SocketServer
 
-    code = "GENERIC_EVENT"
+class EventHandler(SocketServer.BaseRequestHandler):
+    pass
 
-    def __init__(self, **kwargs):
-        self.args = kwargs
+class EventDispatcher(SocketServer.UDPServer):
 
-    def __str__(self):
-        return self.code
+    def subscribe(self, address):
+        pass
 
-class Manager_Shutdown(Labtronyx_Event):
-    code = "MANAGER_STOP"
+    def unsubscribe(self, address):
+        pass
 
-class Resource_Created(Labtronyx_Event):
-    code = "RESOURCE_CREATED"
+    def signal(self, event_code, args):
+        pass
 
-class Resource_Destroyed(Labtronyx_Event):
-    code = "RESOURCE_DESTROYED"
-
-class Resource_Status_Changed(Labtronyx_Event):
-    code = "RESOURCE_STATUS_CHANGED"
