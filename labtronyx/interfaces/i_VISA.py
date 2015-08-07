@@ -42,6 +42,9 @@ class i_VISA(Base_Interface):
             # Load the VISA Resource Manager
             self.resource_manager = visa.ResourceManager(self._lib)
 
+            # Announce details about the VISA driver
+            debug_info = self.resource_manager.visalib.get_debug_info()
+
             # Enumerate all of the connected instruments
             self.enumerate()
 
@@ -92,15 +95,17 @@ class i_VISA(Base_Interface):
                         except visa.VisaIOError as e:
                             if e.abbreviation in ["VI_ERROR_RSRC_BUSY",
                                                   "VI_ERROR_RSRC_NFOUND",
-                                                  "VI_ERROR_TMO"]:
+                                                  "VI_ERROR_TMO",
+                                                  "VI_ERROR_INV_RSRC_NAME"]: # Returned by TekVISA
                                 # Ignore these errors and move on
                                 pass
 
                             else:
-                                raise
+                                self.logger.exception("Unable to open VISA resource, unhandled error: %s" % e.abbreviation)
 
-            except visa.VisaIOError:
+            except visa.VisaIOError as e:
                 # Exception thrown when there are no resources
+                # TODO: only catch the specific error
                 res_list = []
 
             except:
@@ -195,9 +200,15 @@ class r_VISA(Base_Resource):
     #===========================================================================
 
     def identify(self):
+        """
+        Query the resource to find out what instrument it is. Uses the standard SCPI query string `*IDN?`. Will attempt
+        to load a driver using the information returned.
+        """
         start_state = self.isOpen()
         if not start_state:
             self.open()
+
+        self.logger.debug("Identifying VISA Resource: %s", self.resID)
 
         # Reset identity data
         self._identity = []
@@ -248,6 +259,11 @@ class r_VISA(Base_Resource):
             self.firmware = ''
             self.serial = ''
 
+
+        # Attempt to find a suitable driver if one is not already loaded
+        if self.driver is None:
+            self.loadDriver()
+
         if start_state == False:
             self.close()
 
@@ -297,6 +313,12 @@ class r_VISA(Base_Resource):
             self.instrument.write_termination = self._write_termination
             self.instrument.timeout = self._timeout
 
+            if self.driver is not None:
+                try:
+                    self.driver.open()
+                except NotImplementedError:
+                    pass
+
             return True
 
         except visa.VisaIOError as e:
@@ -325,6 +347,12 @@ class r_VISA(Base_Resource):
         :returns: True if successful, False otherwise
         """
         try:
+            if self.driver is not None:
+                try:
+                    self.driver.close()
+                except NotImplementedError:
+                    pass
+
             # Save instrument context before closing
             self._read_termination = self.instrument.read_termination
             self._write_termination = self.instrument.write_termination
@@ -564,6 +592,8 @@ class r_VISA(Base_Resource):
         
         :returns: True if successful, False otherwise
         """
+        self.logger.debug("Searching for suitable drivers")
+
         if driverName is None:
             # Search for a compatible model
             validModels = []
@@ -576,6 +606,7 @@ class r_VISA(Base_Resource):
                             if (self.VID in modelInfo.get('VISA_compatibleManufacturers') and
                                 self.PID in modelInfo.get('VISA_compatibleModels')):
                                 validModels.append(modelModule)
+                                self.logger.debug("Found match: %s", modelModule)
 
                 except:
                     continue

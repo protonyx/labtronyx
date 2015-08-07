@@ -85,12 +85,14 @@ class Base_Resource(object):
     
     def getProperties(self):
         driver_prop = {}
-        
+
         # Append Driver properties if a Driver is loaded
         if self.driver is not None:
             driver_prop = self.driver.getProperties()
-            
-            driver_prop['driver'] = self.driver.getDriverName()
+
+            driver_prop.setdefault('driver', self.driver.name)
+            driver_prop.setdefault('deviceType', self.driver.info.get('deviceType', ''))
+            driver_prop.setdefault('deviceVendor', self.driver.info.get('deviceVendor', ''))
         
         res_prop = {
             'uuid': self.getUUID(),
@@ -118,7 +120,11 @@ class Base_Resource(object):
         
         :returns: True if open was successful, False otherwise
         """
-        raise NotImplementedError
+        if self.driver is not None:
+            self.driver.open()
+
+        else:
+            raise NotImplementedError
     
     def close(self):
         """
@@ -126,7 +132,10 @@ class Base_Resource(object):
         
         :returns: True if close was successful, False otherwise
         """
-        raise NotImplementedError
+        if self.driver is not None:
+            self.driver.close()
+        else:
+            raise NotImplementedError
     
     def checkResourceStatus(self):
         """
@@ -198,7 +207,6 @@ class Base_Resource(object):
             self.driver = testClass(self, 
                                     logger=self.logger, 
                                     config=self.config)
-            self.driver._onLoad()
             
             return True
 
@@ -211,13 +219,12 @@ class Base_Resource(object):
     
     def unloadDriver(self):
         """
-        If a Driver is currently loaded for the resource, unload it.
+        If a Driver is currently loaded for the resource, unload it. This will close the resource as well.
         
         :returns: True if successful, False otherwise
         """
         if self.driver is not None:
             try:
-                self.driver._onUnload()
                 self.close()
                 
             except:

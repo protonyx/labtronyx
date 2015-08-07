@@ -9,18 +9,30 @@ class Base_Driver(object):
     info = {}
     
     def __init__(self, resource, **kwargs):
-        
-        self.config = kwargs.get('config')
+
+        self._resource = resource
         self.logger = kwargs.get('logger')
-        
-        self.__resource = resource
-        
+
         # Collector Attributes
         self._collector_thread = None
         self._collector_lock = threading.Lock()
         self._collectors = {}
         self._collector_methods = {}
-        
+
+    def __getattr__(self, name):
+        if hasattr(self._resource, name):
+            return getattr(self._resource, name)
+        else:
+            raise AttributeError
+
+    @property
+    def resource(self):
+        return self._resource
+
+    @property
+    def name(self):
+        return self.__class__.__module__
+
     #===========================================================================
     # Collector Functionality
     #===========================================================================
@@ -122,20 +134,19 @@ class Base_Driver(object):
     # Virtual Functions
     #===========================================================================
         
-    def _onLoad(self):
+    def open(self):
         """
-        Called shortly after a Driver is instantiated. Since Drivers can be run
-        in a new thread, all member attributes in __init__ must be pickleable.
-        If there are attributes that cannot be pickled, load them here.
+        Prepare the device to receive commands. Called after the resource is opened, so any calls to resource functions
+        should work.
+
+        This function can be used to configure the device for remote control, reset the device, etc.
         """
         raise NotImplementedError
     
-    def _onUnload(self):
+    def close(self):
         """
-        Called when a Driver is unloaded by the InstrumentManager. After this
-        function is called, all reference will be nulled, and the object will
-        be marked for Garbage Collection. This function should ensure that no
-        object references are orphaned.
+        Prepare the device to close. Called before the resource is closed, so any calls to resource functions should
+        work.
         """
         raise NotImplementedError
     
@@ -163,13 +174,10 @@ class Base_Driver(object):
         
         :returns: object
         """
-        return self.__resource
+        return self._resource
     
     def getProperties(self):
-        return { 
-            'deviceType':       self.info.get('deviceType', ''),
-            'deviceVendor':     self.info.get('deviceVendor', '')
-        }
+        return {}
         
 class InvalidResponse(RuntimeError):
     pass
