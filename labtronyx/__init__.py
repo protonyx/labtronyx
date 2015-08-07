@@ -11,11 +11,15 @@ log_formatter = logging.Formatter(log_format)
 # Default handler
 logger.addHandler(logging.NullHandler())
 
+# Set default log level to debug
+logger.setLevel(logging.DEBUG)
+
 def logConsole(logLevel=logging.DEBUG):
     ch = logging.StreamHandler()
     ch.setLevel(logLevel)
     ch.setFormatter(log_formatter)
     logger.addHandler(ch)
+    logger.info("Console logging enabled")
 
 def logFile(filename, backupCount=1, logLevel=logging.DEBUG):
     fh = logging.handlers.RotatingFileHandler(filename, backupCount)
