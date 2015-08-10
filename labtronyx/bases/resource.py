@@ -12,17 +12,12 @@ class Base_Resource(object):
         self.config = kwargs.get('config')
         self.logger = kwargs.get('logger')
 
-        self.__manager = manager
-        self.__interface = interface
+        self._manager = manager
+        self._interface = interface
+        self._uuid = str(uuid.uuid4())
+        self._resID = resID
         
-        self.__uuid = str(uuid.uuid4())
-        self.__resID = resID
-        self.__status = 'INIT'
-        self.__error = None
-        
-        self.__lock = None
-        
-        self.driver = None
+        self._driver = None
             
     def __del__(self):
         try:
@@ -31,49 +26,41 @@ class Base_Resource(object):
             pass
         
     def __getattr__(self, name):
-        if self.driver is not None:
-            if hasattr(self.driver, name):
-                return getattr(self.driver, name)
+        if self._driver is not None:
+            if hasattr(self._driver, name):
+                return getattr(self._driver, name)
             else:
                 raise AttributeError
             
         else:
             raise AttributeError
 
+    def __enter__(self):
+        self.open()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
     @property
     def manager(self):
-        return self.__manager
+        return self._manager
 
     @property
     def interface(self):
-        return self.__interface
+        return self._interface
 
     def getResourceID(self):
-        return self.__resID
+        return self._resID
 
     resID = property(getResourceID)
 
     def getUUID(self):
-        return self.__uuid
+        return self._uuid
 
     uuid = property(getUUID)
     
     def getResourceType(self):
         return self.type
-    
-    def getResourceStatus(self):
-        return self.__status
-    
-    def setResourceStatus(self, new_status):
-        self.__status = new_status
-
-    def getError(self):
-        """
-        Get the last error that occured during the last interface I/O operation.
-
-        :returns: str
-        """
-        return self._error
     
     def getInterfaceName(self):
         """
@@ -81,26 +68,24 @@ class Base_Resource(object):
         
         :returns: str
         """
-        return self.__interface.getInterfaceName()
+        return self._interface.getInterfaceName()
     
     def getProperties(self):
         driver_prop = {}
 
         # Append Driver properties if a Driver is loaded
-        if self.driver is not None:
-            driver_prop = self.driver.getProperties()
+        if self._driver is not None:
+            driver_prop = self._driver.getProperties()
 
-            driver_prop.setdefault('driver', self.driver.name)
-            driver_prop.setdefault('deviceType', self.driver.info.get('deviceType', ''))
-            driver_prop.setdefault('deviceVendor', self.driver.info.get('deviceVendor', ''))
+            driver_prop.setdefault('driver', self._driver.name)
+            driver_prop.setdefault('deviceType', self._driver.info.get('deviceType', ''))
+            driver_prop.setdefault('deviceVendor', self._driver.info.get('deviceVendor', ''))
         
         res_prop = {
             'uuid': self.getUUID(),
             'interface': self.getInterfaceName(),
             'resourceID': self.getResourceID(),
-            'resourceType': self.getResourceType(),
-            'status': self.getResourceStatus(),
-            'error': self.__error
+            'resourceType': self.getResourceType()
             }
           
         driver_prop.update(res_prop)
@@ -120,8 +105,8 @@ class Base_Resource(object):
         
         :returns: True if open was successful, False otherwise
         """
-        if self.driver is not None:
-            self.driver.open()
+        if self._driver is not None:
+            self._driver.open()
 
         else:
             raise NotImplementedError
@@ -132,8 +117,8 @@ class Base_Resource(object):
         
         :returns: True if close was successful, False otherwise
         """
-        if self.driver is not None:
-            self.driver.close()
+        if self._driver is not None:
+            self._driver.close()
         else:
             raise NotImplementedError
     
@@ -170,9 +155,13 @@ class Base_Resource(object):
     #===========================================================================
     # Driver
     #===========================================================================
+
+    @property
+    def driver(self):
+        return self._driver
     
     def hasDriver(self):
-        return self.driver is not None
+        return self._driver is not None
     
     def loadDriver(self, driverName):
         """
@@ -190,7 +179,7 @@ class Base_Resource(object):
         :type driverName: str
         :returns: True if successful, False otherwise
         """
-        if self.driver is not None:
+        if self._driver is not None:
             return False
         
         try:
@@ -204,7 +193,7 @@ class Base_Resource(object):
             self.logger.debug('Loading driver [%s] for resource [%s]', driverName, self.getResourceID())
             
             # Instantiate driver
-            self.driver = testClass(self, 
+            self._driver = testClass(self,
                                     logger=self.logger, 
                                     config=self.config)
             
@@ -223,14 +212,14 @@ class Base_Resource(object):
         
         :returns: True if successful, False otherwise
         """
-        if self.driver is not None:
+        if self._driver is not None:
             try:
                 self.close()
                 
             except:
                 self.logger.exception('Exception while unloading driver')
                 
-            self.driver = None
+            self._driver = None
             
             self.logger.debug('Unloaded driver for resource [%s]', self.getResourceID())
                
