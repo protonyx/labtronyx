@@ -6,6 +6,7 @@
 from labtronyx.bases import Base_Driver, DeviceError
 
 import time
+import re
 
 class d_3441XA(Base_Driver):
     """
@@ -37,7 +38,7 @@ class d_3441XA(Base_Driver):
         'Capacitance': 'CAP',
         'Continuity': 'CONT',
         'AC Current': 'CURR:AC',
-        'DC Current': 'CURR:DC',
+        'DC Current': 'CURR',
         'Diode': 'DIOD',
         'Frequency': 'FREQ',
         'Resistance': 'RES',
@@ -45,23 +46,66 @@ class d_3441XA(Base_Driver):
         'Period': 'PER',
         'Temperature': 'TEMP',
         'AC Voltage': 'VOLT:AC',
-        'DC Voltage': 'VOLT:DC'}
+        'DC Voltage': 'VOLT'}
     
     trigger_sources = {
-        'Continual': 'IMMEDIATE',
+        'Continual': 'IMM',
         'Bus': 'BUS', 
-        'External': 'EXTERNAL'
+        'External': 'EXT'
     }
     
     errors = {
+        0: "No error",
+        # Execution Errors
         -102: "Syntax error",
-        -420: "Query UNTERMINATED"}
+        -103: "Invalid separator",
+        -113: "Undefined header",
+        -123: "Numeric overflow",
+        -151: "Invalid string data",
+        -213: "INIT ignored",
+        -222: "Data out of range; value not accepted",
+        -222: "Data out of range; value clipped to upper limit",
+        -222: "Data out of range; value clipped to lower limit",
+        -222: "Data out of range; value clipped to lower limit",
+        -224: "Illegal parameter value: ranges must be positive",
+        -230: "Data stale",
+        -231: "Internal software error",
+        -292: "Referenced name does not exist",
+        -330: "Self-test failed",
+        -313: "Calibration memory lost; memory corruption detected",
+        -313: "Calibration memory lost; due to firmware revision change",
+        -314: "Save/recall memory lost; memory corruption detected",
+        -314: "Save/recall memory lost; due to firmware revision change",
+        -315: "Configuration memory lost; memory corruption detected",
+        -315: "Configuration memory lost; due to firmware revision change",
+        -330: "Self-test failed",
+        -350: "Error queue overflow",
+        -410: "Query INTERRUPTED",
+        -420: "Query UNTERMINATED",
+        # Instrument Errors
+        201: "Memory lost: stored state",
+        202: "Memory lost: power-on state",
+        203: "Memory lost: stored readings",
+        221: "Settings conflict: calculate limit state forced off",
+        223: "Settings conflict: trig source changed to IMM",
+        251: "Unsupported temperature transducer type",
+        263: "Not able to execute while instrument is measuring",
+        291: "Not able to recall state: it is empty",
+        305: "Not able to perform requested operation",
+        311: "Not able to specify resolution with Auto range",
+        514: "Not allowed",
+        521: "Communications: input buffer overflow",
+        522: "Communications: output buffer overflow",
+        532: "Not able to achieve requested resolution",
+        540: "Cannot use overload as math reference",
+        550: "Not able to execute command in local mode",
+        624: "Unable to sense line frequency"}
     
     def open(self):
         self.getFunction()
 
     def close(self):
-        pass
+        self.enableFrontPanel()
         
     def getProperties(self):
         return dict(
@@ -74,34 +118,134 @@ class d_3441XA(Base_Driver):
         Reset the instrument
         """
         self.write("*RST")
-        
+
+    def trigger(self):
+        """
+        Used in conjunction with the Trigger Source to trigger the instrument from the remote interface. After setting
+        the trigger source, you must place the multimeter in the "wait-for-trigger" state by calling
+        :func:`waitForTrigger`.
+        """
+        self.write("*TRG")
+
+    def waitForTrigger(self):
+        """
+        Change the state of the triggering system from "idle" to "wait-for-trigger". Measurements will begin when the
+        specified trigger conditions are satisfied. Will also clear the previous set of readings from memory.
+        """
+        self.write("INIT")
+
+        self.checkForError()
+
+    def self_test(self):
+        """
+        Run the self-test suite
+
+        +========+================================+
+        | Test # | Test Name                      |
+        +========+================================+
+        | 600    | Front Panel Communications     |
+        | 601    | Front Panel All On Test        |
+        | 602    | A/D Feedback Test              |
+        | 603    | Fine A/D Test                  |
+        | 604    | Fine A/D Linearity             |
+        | 605    | A/D & FE Measure Zero          |
+        | 606    | Input Amplifier x100 Zero Test |
+        | 607    | Input Amplifier x10 Zero Test  |
+        | 608    | Input Amplifier x1 Zero Test   |
+        | 609    | Input Leakage Test             |
+        | 610    | Input Amplifier x10 Gain Test  |
+        | 611    | Input Amplifier x1 Gain Test   |
+        | 612    | Ohms 500nA Current Source      |
+        | 613    | DC High Voltage Divider Test   |
+        | 614    | Ohms 5uA Current Source Test   |
+        | 615    | Ohms 10uA Current Source       |
+        | 616    | Ohms 100uA to 200 Ohm Shunt    |
+        | 617    | Ohms 1mA to 2 Ohm Shunt        |
+        | 618    | High Current Shunt Test        |
+        | 619    | AC 0.1VAC Zero Test            |
+        | 620    | Precharge Amplifier Gain Test  |
+        | 621    | Precharge Offset Range Test    |
+        | 622    | FPGA Ping Test                 |
+        +--------+--------------------------------+
+        :return:
+        """
+        self.write("*TST?")
+
     def checkForError(self):
         """
-        Raise an exception if an error was registered on the device
+        Query the device for errors. Raises an exception if an error was registered on the device
         """
-        errors = []
-        code = -1
-        
-        while (code != 0):
-            code, msg = self.getError()
-            
-            if code != 0:
-                errors.append(code)
-        
-        if len(errors) > 0:
-            raise DeviceError(self.errors.get(errors[0], 'Unknown Error'))
-        
-    def getError(self):
-        """
-        Get the last error
-        
-        :returns: tuple (code, msg)
-        """
+        errors = self.getErrors()
+
+        if len(errors) == 1:
+            code, msg = errors[0]
+            raise DeviceError(msg)
+        elif len(errors) > 1:
+            raise DeviceError("Multiple errors")
+
+    def _getError(self):
+        # Get a single error
         ret = self.query("SYST:ERR?")
         code, msg = ret.split(',')
         code = int(code)
         msg = str(msg).strip()[1:-1]
         return (code, msg)
+        
+    def getErrors(self):
+        """
+        Get the last error
+        
+        :returns: tuple (code, msg)
+        """
+        errors = []
+
+        code, msg = self._getError()
+        while code != 0:
+            errors.append((code, msg))
+            code, msg = self._getError()
+
+        return errors
+
+    def enableFrontPanel(self):
+        """
+        Enables the front panel display if it was previously disabled.
+        """
+        self.write("DISP 1")
+        self.write("DISP:WIND1:TEXT:CLEAR")
+        self.write("DISP:WIND2:TEXT:CLEAR")
+
+    def disableFrontPanel(self):
+        """
+        Disables the front panel display. Display can be re-enabled by calling
+        `enableFrontPanel` or pressing the `LOCAL` button on the instrument.
+
+        .. note:
+
+           When the front panel is disabled, the instrument runs faster
+
+        """
+        self.write("DISP 0")
+
+    def frontPanelText(self, text_top, text_bottom):
+        """
+        Set the text on the front panel of the instrument. The top line is limited to 12 characters, the bottom line to
+        18 characters. You can use letters (A-Z), numbers (0-9), and special characters like "@", "%", "*", etc.
+        Use "#" character to display a degree symbol.
+
+        :param text_top: Top text (up to 12 characters)
+        :type text_top: str
+        :param text_bottom: Bottom text (up to 18 characters)
+        :type text_bottom: str
+        """
+        if len(text_top) > 12:
+            text_top = text_top[0:12]
+        if len(text_bottom) > 18:
+            text_bottom = text_bottom[0:18]
+
+        if len(text_top) > 0:
+            self.write('DISP:WIND1:TEXT "%s"' % text_top)
+        if len(text_bottom) > 0:
+            self.write('DISP:WIND2:TEXT "%s"' % text_bottom)
 
     def setMode(self, func):
         """
@@ -137,7 +281,11 @@ class d_3441XA(Base_Driver):
         
         :returns: str
         """
-        self.mode = str(self.query("CONF?")).upper()
+        mode = self.query("CONF?")
+
+        mode = re.search(r'"([A-Z:]+)\s?([A-Z0-9,+\-.]*)"', mode)
+
+        self.mode = mode.group(1)
         
         for desc, code in self.modes.items():
             if self.mode == code:
@@ -205,24 +353,16 @@ class d_3441XA(Base_Driver):
                 # Initiate a measurement
                 self.write("INIT")
                 time.sleep(0.01)
-                return float(self.query("FETC?"))
+                data = str(self.query("FETC?"))
+                if ',' in data:
+                    data = data.split(',')
+                    return map(float, data)
+                else:
+                    return float(data)
+
             except ValueError:
                 # Try again
                 pass
-        
-    def getQuickMeasurement(self, mode):
-        """
-        Get a quick measurement using the default mode configuration
-        
-        :param mode: Operating mode
-        :type mode: str
-        :returns: float
-        """
-        if mode in self.modes:
-            val = self.modes.get(mode)
-            return float(self.query("MEAS:%s?" % val))
-        else:
-            raise ValueError('Invalid Mode')
 
     def setIntegrationRate(self, value):
         """
@@ -309,10 +449,29 @@ class d_3441XA(Base_Driver):
         :param source: Trigger source
         :type source: str
         """
-        validSources = ['IMMEDIATE', 'BUS', 'EXTERNAL']
-        
-        if source in validSources:
+        if source in self.trigger_sources.values():
             self.write("TRIG:SOUR %s" % source)
         else:
             raise ValueError('Invalid trigger source')
 
+    def setSampleCount(self, samples):
+        """
+        Set the number of readings (samples) the multimeter will take per trigger.
+
+        When the sample source is `Immediate`, the trigger delay value is used to determine how far apart the samples
+        are to be taken. In `Timer` mode, the sample timer value is used.
+
+        :param samples: Number of samples
+        :type samples: int
+        """
+        self.write("SAMP:COUN %s" % samples)
+
+        self.checkForError()
+
+    def getSampleCount(self):
+        """
+        Get the number of readings (samples) the multimeter will take per trigger.
+
+        :return: Number of samples (int)
+        """
+        return int(self.query("SAMP:COUN?"))

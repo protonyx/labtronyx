@@ -1,5 +1,6 @@
 import labtronyx
 
+import time
 # Enable debug logging
 labtronyx.logConsole()
 
@@ -11,8 +12,16 @@ dev_list = im.findInstruments(deviceModel="34410A")
 dev = dev_list[0]
 
 # Open the instrument
-dev.open()
+with dev:
 
-print(dev.getProperties())
+    dev.disableFrontPanel()
 
-print(dev.getMode())
+    dev.frontPanelText("PRIMARY VOLT", "measuring...")
+
+    dev.setMode('DC Voltage')
+
+    dev.setSampleCount(10)
+
+    data = dev.getMeasurement()
+
+    dev.checkForError()
