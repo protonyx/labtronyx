@@ -191,7 +191,7 @@ class r_VISA(Base_Resource):
     def refresh(self):
         self.identify()
 
-        if self.driver is None:
+        if self._driver is None:
             # Attempt to automatically load a driver
             self.loadDriver()
 
@@ -261,7 +261,7 @@ class r_VISA(Base_Resource):
 
 
         # Attempt to find a suitable driver if one is not already loaded
-        if self.driver is None:
+        if self._driver is None:
             self.loadDriver()
 
         if start_state == False:
@@ -313,9 +313,9 @@ class r_VISA(Base_Resource):
             self.instrument.write_termination = self._write_termination
             self.instrument.timeout = self._timeout
 
-            if self.driver is not None:
+            if self._driver is not None:
                 try:
-                    self.driver.open()
+                    self._driver.open()
                 except NotImplementedError:
                     pass
 
@@ -347,9 +347,9 @@ class r_VISA(Base_Resource):
         :returns: True if successful, False otherwise
         """
         try:
-            if self.driver is not None:
+            if self._driver is not None:
                 try:
-                    self.driver.close()
+                    self._driver.close()
                 except NotImplementedError:
                     pass
 
@@ -444,6 +444,8 @@ class r_VISA(Base_Resource):
         try:
             self.instrument.write(data)
 
+            self.logger.debug("VISA Write: %s", data)
+
         except visa.InvalidSession:
             raise ResourceNotOpen()
 
@@ -483,7 +485,11 @@ class r_VISA(Base_Resource):
         :type encoding: Unknown
         """
         try:
-            return self.instrument.read(termination, encoding)
+            data = self.instrument.read(termination, encoding)
+
+            self.logger.debug("VISA Read: %s", data)
+
+            return data
 
         except visa.InvalidSession:
             raise ResourceNotOpen()
@@ -547,7 +553,12 @@ class r_VISA(Base_Resource):
         :returns: str
         """
         try:
-            return self.instrument.query(data)
+            ret_data = self.instrument.query(data)
+
+            self.logger.debug("VISA Write: %s", data)
+            self.logger.debug("VISA Read: %s", ret_data)
+
+            return ret_data
 
         except visa.InvalidSession:
             raise ResourceNotOpen
