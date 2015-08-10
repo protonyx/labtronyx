@@ -1,6 +1,5 @@
 import labtronyx
 
-import time
 # Enable debug logging
 labtronyx.logConsole()
 
@@ -13,15 +12,20 @@ dev = dev_list[0]
 
 # Open the instrument
 with dev:
-
+    # Disable the front panel
     dev.disableFrontPanel()
 
+    # Set the text on the front panel
     dev.frontPanelText("PRIMARY VOLT", "measuring...")
 
+    # Set the mode to DC Voltage
     dev.setMode('DC Voltage')
 
+    # Set the sample count to 10
     dev.setSampleCount(10)
 
+    # Measure the input
     data = dev.getMeasurement()
 
+    # Check for errors
     dev.checkForError()

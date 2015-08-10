@@ -171,6 +171,8 @@ class d_3441XA(Base_Driver):
         """
         self.write("*TST?")
 
+        self.checkForError()
+
     def checkForError(self):
         """
         Query the device for errors. Raises an exception if an error was registered on the device

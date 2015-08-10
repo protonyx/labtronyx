@@ -3,7 +3,7 @@ import importlib
 
 from labtronyx import InstrumentManager
 
-class InstrumentManager_Interface_VISA_Tests(unittest.TestCase):
+class InstrumentManager_Instrument_Agilent_B2901_Tests(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
@@ -27,22 +27,15 @@ class InstrumentManager_Interface_VISA_Tests(unittest.TestCase):
     def tearDownClass(self):
         self.i_visa.close()
 
-    def test_interface_visa_enumerate_time(self):
-        import time
-        start = time.clock()
-        self.i_visa.enumerate()
-        self.assertLessEqual(time.clock() - start, 1.0, "VISA refresh time must be less than 1.0 second(s)")
+    def test_identify(self):
+        dev_list = self.manager.findInstruments(resourceID='USB0::2391::12345::SIM::0::INSTR')
+        self.assertEqual(len(dev_list), 1)
 
-    def test_interface_visa_get_resources(self):
-        ret = self.i_visa.getResources()
+        dev = dev_list[0]
+        dev.open()
 
-        self.assertEqual(type(ret), dict)
+        self.assertEqual(dev.query('*IDN?'), "AGILENT TECHNOLOGIES,B2901A,12345,SIM")
 
-    def test_interface_find_instruments(self):
-        dev_list = self.manager.findInstruments()
-        self.assertGreater(len(dev_list), 0)
-
-    def test_interface_get_properties(self):
-        self.manager.getProperties()
-
+        dev_list = self.manager.findInstruments(deviceModel="B2901A")
+        self.assertEqual(len(dev_list), 1)
 

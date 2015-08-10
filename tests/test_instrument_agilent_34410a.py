@@ -38,15 +38,24 @@ class InstrumentManager_Instrument_Agilent_34410A(unittest.TestCase):
     def tearDownClass(self):
         self.dev.close()
 
-        self.i_visa.close()
+        if self.SIM:
+            self.i_visa.close()
 
-    def sweepModes(self):
+    @unittest.skip("")
+    def test_sweep_modes(self):
         for mode, code in self.dev.modes.items():
             self.dev.setMode(mode)
 
             time.sleep(0.5)
 
-            print(self.dev.getMode())
+            self.assertNotEqual(self.dev.getMode(), 'Unknown')
 
-            time.sleep(0.5)
+        self.dev.setMode('DC Voltage')
 
+    def test_sample_count(self):
+        SAMPLES = 10
+
+        self.dev.setSampleCount(SAMPLES)
+        self.assertEqual(self.dev.getSampleCount(), SAMPLES)
+
+        self.dev.setSampleCount(1)
