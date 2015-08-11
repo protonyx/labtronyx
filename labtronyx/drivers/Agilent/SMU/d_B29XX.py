@@ -3,6 +3,7 @@
 
 """
 from labtronyx.bases import Base_Driver
+from labtronyx.common.errors import *
 
 class d_B29XX(Base_Driver):
     """

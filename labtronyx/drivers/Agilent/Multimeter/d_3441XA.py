@@ -3,7 +3,8 @@
 
 
 """
-from labtronyx.bases import Base_Driver, DeviceError
+from labtronyx.bases import Base_Driver
+from labtronyx.common.errors import *
 
 import time
 import re

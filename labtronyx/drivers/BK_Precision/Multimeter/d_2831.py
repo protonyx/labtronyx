@@ -23,8 +23,7 @@ directions given in the
 
 """
 from labtronyx.bases import Base_Driver
-
-import time
+from labtronyx.common.errors import *
 
 class d_2831(Base_Driver):
     """

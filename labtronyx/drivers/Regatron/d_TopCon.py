@@ -11,6 +11,7 @@ local COM port to the operating system.
 
 """
 from labtronyx.bases import Base_Driver
+from labtronyx.common.errors import *
 
 import struct
 

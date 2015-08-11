@@ -10,6 +10,7 @@ of it.
 
 """
 from labtronyx.bases import Base_Driver
+from labtronyx.common.errors import *
 
 class d_XBL(Base_Driver):
     """

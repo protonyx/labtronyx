@@ -4,8 +4,6 @@ import time
 
 from . import m_BDPC_Base
 
-import common.status
-
 class Base_Serial(m_BDPC_Base):
     
     pkt_struct = struct.Struct("BBBBBBBB")

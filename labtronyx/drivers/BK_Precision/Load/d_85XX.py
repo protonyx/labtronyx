@@ -25,6 +25,7 @@ BK Precision provides a device for communicating with this class of DC load:
 
 """
 from labtronyx.bases import Base_Driver
+from labtronyx.common.errors import *
 
 class d_85XX(Base_Driver):
     """

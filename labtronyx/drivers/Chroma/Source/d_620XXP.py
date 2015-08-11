@@ -10,8 +10,9 @@ uses this driver.
 
 """
 from labtronyx.bases import Base_Driver
+from labtronyx.common.errors import *
 
-class m_620XXP(Base_Driver):
+class d_620XXP(Base_Driver):
     """
     Driver for Chroma 6200P Series DC Power Supplies
     """

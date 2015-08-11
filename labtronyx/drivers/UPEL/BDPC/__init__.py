@@ -1,4 +1,5 @@
 from labtronyx.bases import Base_Driver
+from labtronyx.common.errors import *
 
 import threading
 

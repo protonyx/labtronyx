@@ -24,6 +24,7 @@ Java-enabled web browser.
 
 """
 from labtronyx.bases import Base_Driver
+from labtronyx.common.errors import *
 
 class m_XLN(Base_Driver):
     """

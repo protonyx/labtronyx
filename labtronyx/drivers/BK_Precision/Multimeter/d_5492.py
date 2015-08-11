@@ -3,8 +3,7 @@
 
 """
 from labtronyx.bases import Base_Driver
-
-import time
+from labtronyx.common.errors import *
 
 class d_5492(Base_Driver):
     """
