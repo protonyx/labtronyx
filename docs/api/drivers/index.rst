@@ -12,7 +12,7 @@ Drivers
    drivers.BK_Precision.Multimeter.d_5492
    drivers.BK_Precision.Source.m_911X
    drivers.BK_Precision.Source.m_XLN
-   drivers.Chroma.Source.m_620XXP
+   drivers.Chroma.Source.d_620XXP
    drivers.Regatron.d_TopCon
    drivers.Sorensen.d_XFR
    drivers.TDI.d_XBL
