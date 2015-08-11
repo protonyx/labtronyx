@@ -1,5 +1,3 @@
-import time
-import threading
 import logging
 
 class Base_Interface(object):
@@ -21,7 +19,6 @@ class Base_Interface(object):
 
         # Instance variables
         self._resources = {}
-        self._error = ''
 
     @property
     def manager(self):
@@ -35,9 +32,9 @@ class Base_Interface(object):
     def resources(self):
         return self._resources
             
-    #===========================================================================
+    # ==========================================================================
     # Interface Methods
-    #===========================================================================
+    # ==========================================================================
 
     def getInterfaceName(self):
         return self.__class__.__name__
@@ -86,41 +83,12 @@ class Base_Interface(object):
         Alias for enumerate
         """
         return self.enumerate()
-    
-    def addResource(self, ResID, VID, PID):
+
+    def getResource(self, resID):
         """
-        Manually add a resource to the controller
-        
-        :param ResID: Resource Identifier
-        :type ResID: str
-        :param VID: Vendor Identifier
-        :type VID: str
-        :param PID: Product Identifier
-        :type PID: str
-        :returns: bool - True if successful, False otherwise
+
+        :param resID: Resource Identifier
+        :type resID: str
+        :return:
         """
         raise NotImplementedError
-    
-    def destroyResource(self, ResID):
-        """
-        Remove a manually added resource
-        
-        :param ResID: Resource Identifier
-        :type ResID: str
-        :returns: bool - True if successful, False otherwise
-        """
-        raise NotImplementedError
-
-    def getError(self):
-        """
-        Get the last error that occured during an interface operation.
-
-        :returns: str
-        """
-        return self._error
-
-class InterfaceError(RuntimeError):
-    pass
-
-class InterfaceTimeout(RuntimeError):
-    pass
