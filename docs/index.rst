@@ -35,6 +35,9 @@ User Guide
     | :doc:`remote`
     | Controlling instruments on other computers
     |
+    | :doc:`interfaces/index`
+    | List of supported instrument interfaces
+    |
     | :doc:`instruments/index`
     | See which instruments are currently supported
     |
@@ -65,6 +68,7 @@ Indices and tables
    installation
    intro
    remote
+   interfaces/index
    instruments/index
    examples
    api/index
