@@ -17,6 +17,7 @@ from . import interfaces
 
 __all__ = ['InstrumentManager']
 
+
 class InstrumentManager(object):
     """
     Labtronyx InstrumentManager
@@ -46,7 +47,7 @@ class InstrumentManager(object):
         # Initialize PYTHONPATH
         self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
         
-        if not self.rootPath in sys.path:
+        if self.rootPath not in sys.path:
             sys.path.append(self.rootPath)
 
         # Announce Version
@@ -69,11 +70,22 @@ class InstrumentManager(object):
         
         for interf in interface_info.keys():
             self.logger.debug("Found Interface: %s", interf)
-            self.enableInterface(interf)
+
+            interfaceModule = importlib.import_module(interf)
+
+            # Look for a class with the same name as the module
+            # TODO: Find a way to have multiple classes per file
+            className = interf.split('.')[-1]
+            interfaceClass = getattr(interfaceModule, className)
+
+            self.enableInterface(interfaceClass)
 
         #
-        # Start RPC Server
+        # RPC Server
         #
+        self.rpc_server = None
+        self.rpc_server_thread = None
+
         if kwargs.get('rpc', False):
             if not self.rpc_start():
                 raise RuntimeError("Unable to start RPC Server")
@@ -106,7 +118,7 @@ class InstrumentManager(object):
                     
                     # Check to make sure the correct class exists
                     if hasattr(testModule, class_name):
-                        testClass = getattr(testModule, class_name) # Will raise exception if doesn't exist
+                        testClass = getattr(testModule, class_name)  # Will raise exception if doesn't exist
                         
                         if testClass != {}:
                             info = copy.deepcopy(testClass.info)
@@ -116,7 +128,7 @@ class InstrumentManager(object):
                     # Missing dependencies, skip this plugin
                     self.logger.error("Unable to import %s", pkg_name)
                     
-                except Exception as e:
+                except:
                     self.logger.exception("Exception during module scan: %s", pkg_name)
 
         return plugins
@@ -134,9 +146,6 @@ class InstrumentManager(object):
         # Clean out old RPC server, if any exists
         if hasattr(self, 'rpc_server'):
             self.rpc_stop()
-
-        self.rpc_server = None
-        self.rpc_server_thread = None
 
         # Attempt to import ptx-rpc
         try:
@@ -167,7 +176,7 @@ class InstrumentManager(object):
             self.logger.error("RPC Port in use, shutting down...")
             return False
 
-        except Exception as e:
+        except:
             self.logger.exception("RPC Exception")
             return False
 
@@ -208,8 +217,9 @@ class InstrumentManager(object):
 
             self.rpc_server = None
             self.rpc_server_thread = None
-            
-    def getVersion(self):
+
+    @staticmethod
+    def getVersion():
         """
         Get the Labtronyx version
         
@@ -267,32 +277,40 @@ class InstrumentManager(object):
         """
         return self._interfaces.keys()
     
-    def enableInterface(self, interface):
-        if interface not in self._interfaces:
-            try:
-                interfaceModule = importlib.import_module(interface)
+    def enableInterface(self, cls_interface, **kwargs):
+        """
+        Enable an interface for use. Requires a class object that extends Base_Interface, NOT a class instance.
 
-                # Look for a class with the same name as the module
-                # TODO: Find a way to have multiple classes per file
-                className = interface.split('.')[-1]
-                interfaceClass = getattr(interfaceModule, className)
+        :param cls_interface: Interface class
+        :return:
+        """
+        try:
+            # Instantiate interface
+            inter = cls_interface(manager=self,
+                                  logger=self.logger,
+                                  **kwargs)
+            cls_name = inter.name
 
-                # Instantiate interface
-                inter = interfaceClass(manager=self,
-                                       logger=self.logger)
+            # Call the plugin hook to open the interface
+            inter.open()
 
-                # Call the plugin hook to open the interface
-                inter.open()
+            self.logger.info("Started Interface: %s" % cls_name)
+            self._interfaces[cls_name] = inter
 
-                self.logger.info("Started Interface: %s" % interface)
-                self._interfaces[interface] = inter
-            except:
-                self.logger.exception("Exception during interface open")
-                
-        else:
-            raise RuntimeError("Interface is already running!")
+        except NotImplementedError:
+            pass
+
+        except:
+            self.logger.exception("Exception during interface open")
+            raise
     
     def disableInterface(self, interface):
+        """
+        Disable an interface that is running.
+
+        :param interface: Interface name
+        :return:
+        """
         if interface in self._interfaces:
             try:
                 inter = self._interfaces.pop(interface)
@@ -301,12 +319,13 @@ class InstrumentManager(object):
                 inter.close()
 
                 self.logger.info("Stopped Interface: %s" % interface)
+
+            except NotImplementedError:
+                pass
                 
             except:
                 self.logger.exception("Exception during interface close")
-                
-        else:
-            raise RuntimeError("Interface is not running!")
+                raise
         
     #===========================================================================
     # Resource Operations
@@ -329,8 +348,9 @@ class InstrumentManager(object):
             for resID, res in interf.getResources().items():
                 try:
                     res.refresh()
-                except Exception as e:
+                except:
                     self.logger.exception("Unhandled exception during refresh of interface: %s", interf.name)
+                    raise
 
         self.rpc_refresh()
             
@@ -365,16 +385,15 @@ class InstrumentManager(object):
                 pass
         
         return ret
-    
-    def getResource(self, res_uuid):
+
+    def _getResource(self, res_uuid):
         """
         Returns a resource object given the Resource UUID
-                
+
         :param res_uuid: Unique Resource Identifier (UUID)
         :type res_uuid: str
         :returns: object
         """
-        # NON-SERIALIZABLE
         for interf in self._interfaces.values():
             try:
                 temp = interf.resources.get(res_uuid)
@@ -383,15 +402,24 @@ class InstrumentManager(object):
 
             except:
                 pass
-
-        return None
     
-    def getInstrument(self, res_uuid):
+    def getResource(self, interface, resID):
         """
-        Alias for :func:`getResource`
+        Get a resource by name from the specified interface. Not supported by all interfaces, see interface
+        documentation for more details.
+
+        :param interface: Interface name
+        :type interface: str
+        :param resID: Resource Identifier
+        :type resID: str
+        :returns: Resource object
         """
-        # NON-SERIALIZABLE
-        return self.getResource(res_uuid)
+        try:
+            int_obj = self._interfaces.get(interface)
+            return int_obj.getResource(resID)
+
+        except NotImplementedError:
+            pass
     
     def findResources(self, **kwargs):
         """
@@ -421,7 +449,7 @@ class InstrumentManager(object):
                     break
                 
             if match:
-                matching_instruments.append(self.getResource(uuid))
+                matching_instruments.append(self._getResource(uuid))
                 
         return matching_instruments
     
@@ -431,24 +459,6 @@ class InstrumentManager(object):
         """
         # NON-SERIALIZABLE
         return self.findResources(**kwargs)
-    
-    def getResource(self, interface, resID):
-        """
-        Get a resource by name from the specified interface. Not supported by all interfaces, see interface
-        documentation for more details.
-        
-        :param interface: Interface name
-        :type interface: str
-        :param resID: Resource Identifier
-        :type resID: str
-        :returns: Resource object
-        """
-        try:
-            int_obj = self._interfaces.get(interface)
-            return int_obj.getResource(resID)
-        
-        except NotImplementedError:
-            return None
 
     #===========================================================================
     # Driver Operations
