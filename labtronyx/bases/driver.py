@@ -178,9 +178,3 @@ class Base_Driver(object):
     
     def getProperties(self):
         return {}
-        
-class InvalidResponse(RuntimeError):
-    pass
-
-class DeviceError(RuntimeError):
-    pass

@@ -4,15 +4,16 @@ VISA Interface module for Labtronyx
 :codeauthor: Kevin Kennedy
 """
 
-from labtronyx.bases.interface import Base_Interface, InterfaceError, InterfaceTimeout
-from labtronyx.bases.resource import Base_Resource, ResourceNotOpen
-import labtronyx.common.status as resource_status
-import labtronyx.common.events as events
-import labtronyx.constants as constants
-
-import visa, pyvisa
-
 from traceback import format_exc
+
+import visa
+import pyvisa
+
+from labtronyx.bases.interface import Base_Interface
+from labtronyx.bases.resource import Base_Resource
+from labtronyx.common.errors import *
+import labtronyx.common as common
+
 
 class i_VISA(Base_Interface):
     """
@@ -60,7 +61,12 @@ class i_VISA(Base_Interface):
         Stops the VISA Interface. Frees all resources associated with the interface.
         """
         for resObj in self._resources.values():
-            resObj.close()
+            try:
+                resObj.close()
+            except visa.VisaIOError:
+                pass
+            except visa.InvalidSession:
+                pass
 
         self._resources.clear()
 
@@ -90,7 +96,7 @@ class i_VISA(Base_Interface):
                             self._resources[res] = new_resource
 
                             # Signal new resource event
-                            self.manager._event_signal(constants.ResourceEvents.created)
+                            self.manager._event_signal(common.constants.ResourceEvents.created)
 
                         except visa.VisaIOError as e:
                             if e.abbreviation in ["VI_ERROR_RSRC_BUSY",

@@ -1,6 +1,6 @@
-from labtronyx.bases.interface import Base_Interface, InterfaceError, InterfaceTimeout
-from labtronyx.bases.resource import Base_Resource, ResourceNotOpen
-import labtronyx.common.status as resource_status
+from labtronyx.bases.interface import Base_Interface
+from labtronyx.bases.resource import Base_Resource
+from labtronyx.common.errors import *
 
 import time
 import errno

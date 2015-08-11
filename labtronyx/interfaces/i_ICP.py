@@ -55,11 +55,10 @@ routing map. If none of those tasks requires attention, the thread will
 sleep for a small time interval to limit loading the processor excessively.
 """
 
-from labtronyx.bases.interface import Base_Interface, InterfaceError, InterfaceTimeout
-from labtronyx.bases.resource import Base_Resource, ResourceNotOpen
-import labtronyx.common.status as resource_status
+from labtronyx.bases.interface import Base_Interface
+from labtronyx.bases.resource import Base_Resource
+from labtronyx.common.errors import *
 
-import struct
 import time
 import socket
 import select
@@ -70,7 +69,7 @@ import errno
 
 import numpy
 
-import interfaces.icp as icp
+import icp
 
 #===========================================================================
 # data_types_pack = {

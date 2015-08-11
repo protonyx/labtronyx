@@ -28,7 +28,8 @@ def is_valid_ipv6_address(address):
 def resolve_hostname(hostname):
     return socket.gethostbyname(hostname)
 
+import constants
+import errors
 import events
-import status
 
-__all__ = ['events', 'status']
+__all__ = ['constants', 'errors', 'events']

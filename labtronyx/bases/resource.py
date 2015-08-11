@@ -1,8 +1,7 @@
 import uuid
 import importlib
-import socket
 
-import labtronyx.common.status as resource_status
+import labtronyx.common as common
 
 class Base_Resource(object):
     type = "Generic"
@@ -121,17 +120,6 @@ class Base_Resource(object):
             self._driver.close()
         else:
             raise NotImplementedError
-    
-    def checkResourceStatus(self):
-        """
-        Raise an error if the resource is not ready. Used in resources that
-        sub-class Base_Resource to prevent attempted data transfer when the
-        resource is in a bad state.
-        
-        :raises: common.resource_status.ResourceNotReady()
-        """
-        if self.getResourceStatus() != resource_status.READY:
-            raise resource_status.ResourceNotReady()
         
     def refresh(self):
         """
@@ -196,6 +184,9 @@ class Base_Resource(object):
             self._driver = testClass(self,
                                     logger=self.logger, 
                                     config=self.config)
+
+            # Signal the event
+            self.manager._event_signal(common.constants.ResourceEvents.driver_load)
             
             return True
 
@@ -222,11 +213,11 @@ class Base_Resource(object):
             self._driver = None
             
             self.logger.debug('Unloaded driver for resource [%s]', self.getResourceID())
+
+            # Signal the event
+            self.manager._event_signal(common.constants.ResourceEvents.driver_unload)
                
             return True
         
         else:
             return False
-
-class ResourceNotOpen(RuntimeError):
-    pass

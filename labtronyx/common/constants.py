@@ -16,9 +16,12 @@ class ResourceEvents(Enum):
 
     status_changed = "RESOURCE_STATUS"
 
+    driver_load = "DRIVER_LOADED"
+
+    driver_unload = "DRIVER_UNLOADED"
+
 class ResourceStatus(Enum):
 
+    initialize = -1
     ready = 100
-
     error = 101
-

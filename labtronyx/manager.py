@@ -35,8 +35,8 @@ class InstrumentManager(object):
     
     def __init__(self, **kwargs):
         # Initialize instance variables
-        self._interfaces = {} # Interface name -> interface object
-        self._drivers = {} # Module name -> Model info
+        self._interfaces = {}  # Interface name -> interface object
+        self._drivers = {}  # Module name -> Model info
         self.rpc_server = None
 
         # Configurable instance variables
@@ -59,7 +59,6 @@ class InstrumentManager(object):
         #
         
         # Load Drivers
-        #self.drivers = drivers.getAllDrivers()
         self._drivers = self.__scan(drivers)
         
         for driver in self._drivers.keys():
@@ -205,7 +204,7 @@ class InstrumentManager(object):
             self.rpc_server_thread.join()
 
             # Signal the event
-            self._event_signal(common.events.Manager_Shutdown())
+            self._event_signal(common.constants.ManagerEvents.shutdown)
 
             self.rpc_server = None
             self.rpc_server_thread = None
@@ -323,13 +322,15 @@ class InstrumentManager(object):
             try:
                 # Discover any new resources
                 interf.enumerate()
+            except NotImplementedError:
+                pass
 
-                # Refresh each resource
-                for res in interf.getResources():
+            # Refresh each resource
+            for resID, res in interf.getResources().items():
+                try:
                     res.refresh()
-
-            except Exception as e:
-                self.logger.exception("Unhandled exception during refresh of interface: %s", interf.name)
+                except Exception as e:
+                    self.logger.exception("Unhandled exception during refresh of interface: %s", interf.name)
 
         self.rpc_refresh()
             
@@ -431,26 +432,23 @@ class InstrumentManager(object):
         # NON-SERIALIZABLE
         return self.findResources(**kwargs)
     
-    def addResource(self, interface, ResID):
+    def getResource(self, interface, resID):
         """
-        Manually add a resource to a controller. Not supported by all controllers
-        
-        .. note::
-        
-            This will return False if manually adding resources is not supported.
+        Get a resource by name from the specified interface. Not supported by all interfaces, see interface
+        documentation for more details.
         
         :param interface: Interface name
         :type interface: str
-        :param ResID: Resource Identifier
-        :type ResID: str
-        :returns: True if successful, False otherwise
+        :param resID: Resource Identifier
+        :type resID: str
+        :returns: Resource object
         """
         try:
             int_obj = self._interfaces.get(interface)
-            return int_obj.addResource(ResID)
+            return int_obj.getResource(resID)
         
-        except:
-            return False
+        except NotImplementedError:
+            return None
 
     #===========================================================================
     # Driver Operations
