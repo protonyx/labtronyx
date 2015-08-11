@@ -37,5 +37,8 @@ class InstrumentManager_Tests(unittest.TestCase):
             
         else:
             return False
+
+    def test_refresh(self):
+        self.instr.refresh()
         
         

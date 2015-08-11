@@ -11,9 +11,15 @@ def main():
     # Instantiate an InstrumentManager
     man = labtronyx.InstrumentManager(rpc=True)
 
+    # Force a refresh
+    man.refresh()
+
     # Keep the main thread alive
-    while(1):
-        time.sleep(1.0)
+    try:
+        while(1):
+            time.sleep(1.0)
+    except KeyboardInterrupt:
+        man.rpc_stop()
 
 if __name__ == "__main__":
     main()
