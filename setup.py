@@ -118,12 +118,19 @@ def build_package():
         include_package_data=True,
 
         # Dependencies
+        install_requires=['ptx-rpc', 'enum34', 'numpy'],
+
         extras_require={
             'VISA': ['pyvisa>=1.6'],
             'Serial': ['pyserial']
         },
 
-        install_requires=['ptx-rpc', 'enum34', 'numpy'],
+        # Script entry points
+        entry_points={
+            'console_scripts': [
+                'labtronyx = labtronyx.cli:main',
+            ]
+        },
 
         # Can the project run from a zip file?
         zip_safe = False

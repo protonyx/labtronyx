@@ -75,7 +75,7 @@ class InstrumentManager(object):
         #
         # Start RPC Server
         #
-        if kwargs.get('rpc', True):
+        if kwargs.get('rpc', False):
             if not self.rpc_start():
                 raise RuntimeError("Unable to start RPC Server")
     
@@ -467,15 +467,3 @@ class InstrumentManager(object):
         :return: dict
         """
         return self._drivers
-    
-if __name__ == "__main__":
-    # Interactive Mode
-    import labtronyx
-    labtronyx.logConsole()
-
-    # Instantiate an InstrumentManager
-    man = labtronyx.InstrumentManager(rpc=True)
-    
-    # Keep the main thread alive
-    while(1):
-        time.sleep(1.0)
