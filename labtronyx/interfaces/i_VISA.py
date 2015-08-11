@@ -51,9 +51,13 @@ class i_VISA(Base_Interface):
 
             return True
 
-        except Exception as e:
-            self.logger.exception("Failed to initialize VISA Controller")
+        except OSError:
+            # No VISA library on the computer
+            self.logger.error("No VISA Library found on the computer")
+            return False
 
+        except:
+            self.logger.exception("Failed to initialize VISA Interface")
             return False
 
     def close(self):
