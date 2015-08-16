@@ -9,11 +9,16 @@ import importlib
 import threading
 
 # Local Imports
+from . import bases
 from . import logger
-from . import version
 from . import common
 from . import drivers
 from . import interfaces
+
+try:
+    from . import version
+except ImportError:
+    raise EnvironmentError("No Version file present, reinstall project")
 
 __all__ = ['InstrumentManager']
 
@@ -79,6 +84,21 @@ class InstrumentManager(object):
             interfaceClass = getattr(interfaceModule, className)
 
             self.enableInterface(interfaceClass)
+
+        from yapsy.PluginManager import PluginManager
+        plug_man = PluginManager()
+        plug_man.setPluginPlaces(['drivers', 'interfaces', 'plugtest'])
+        plug_man.collectPlugins()
+
+        for pluginInfo in plug_man.getAllPlugins():
+            plug_man.activatePluginByName(pluginInfo.name)
+            print pluginInfo.name
+
+        plug_man.setCategoriesFilter({
+            "drivers": bases.Base_Driver,
+            "interfaces": bases.Base_Interface,
+            "resources": bases.Base_Resource
+        })
 
         #
         # RPC Server

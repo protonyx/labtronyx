@@ -1,7 +1,9 @@
 import time
 import threading
 
-class Base_Driver(object):
+from yapsy.IPlugin import IPlugin
+
+class Base_Driver(IPlugin):
     """
     Driver Base Class
     """

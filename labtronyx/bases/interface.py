@@ -1,6 +1,8 @@
 import logging
 
-class Base_Interface(object):
+from yapsy.IPlugin import IPlugin
+
+class Base_Interface(IPlugin):
     """
     Interface Base Class
     """
