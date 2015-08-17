@@ -1,6 +1,10 @@
 import unittest
 
-from labtronyx import InstrumentManager
+import labtronyx
+InstrumentManager = labtronyx.InstrumentManager
+
+labtronyx.logConsole()
+
 
 class InstrumentManager_Init_Tests(unittest.TestCase):
 

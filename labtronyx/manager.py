@@ -85,9 +85,17 @@ class InstrumentManager(object):
 
             self.enableInterface(interfaceClass)
 
+        import yapsy
+        yapsy.log = self.logger
         from yapsy.PluginManager import PluginManager
         plug_man = PluginManager()
-        plug_man.setPluginPlaces(['drivers', 'interfaces', 'plugtest'])
+        plug_loc = plug_man.getPluginLocator()
+
+        # Directories to search
+        dirs = ['drivers', 'interfaces', 'plugtest']
+        dirs_res = map(lambda dir: os.path.join(self.rootPath, dir), dirs)
+        plug_loc.setPluginPlaces(dirs_res)
+
         plug_man.collectPlugins()
 
         for pluginInfo in plug_man.getAllPlugins():
