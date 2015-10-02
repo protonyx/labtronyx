@@ -1,8 +1,8 @@
 import logging
 
-from yapsy.IPlugin import IPlugin
+from labtronyx.common.plugin import PluginBase
 
-class Base_Interface(IPlugin):
+class Base_Interface(PluginBase):
     """
     Interface Base Class
     """

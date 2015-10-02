@@ -3,9 +3,9 @@ import importlib
 
 import labtronyx.common as common
 
-from yapsy.IPlugin import IPlugin
+from labtronyx.common.plugin import PluginBase
 
-class Base_Resource(IPlugin):
+class Base_Resource(PluginBase):
     type = "Generic"
     
     def __init__(self, manager, interface, resID, **kwargs):

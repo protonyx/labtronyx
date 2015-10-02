@@ -1,9 +1,9 @@
 import time
 import threading
 
-from yapsy.IPlugin import IPlugin
+from labtronyx.common.plugin import PluginBase
 
-class Base_Driver(IPlugin):
+class Base_Driver(PluginBase):
     """
     Driver Base Class
     """
@@ -11,6 +11,7 @@ class Base_Driver(IPlugin):
     info = {}
     
     def __init__(self, resource, **kwargs):
+        PluginBase.__init__(self)
 
         self._resource = resource
         self.logger = kwargs.get('logger')
