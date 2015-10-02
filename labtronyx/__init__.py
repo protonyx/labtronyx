@@ -43,3 +43,4 @@ from .lab import LabManager
 from . import bases
 from . import common
 
+__all__ = ['InstrumentManager']
