@@ -66,10 +66,11 @@ import threading
 import Queue
 from sets import Set
 import errno
+import struct
+import time
+import binascii
 
 import numpy
-
-import icp
 
 #===========================================================================
 # data_types_pack = {
@@ -211,7 +212,7 @@ class i_ICP(Base_Interface):
         """
         address = self.broadcastIP
         
-        packet = icp.packets.DiscoveryPacket()
+        packet = DiscoveryPacket()
         packet.setDestination(address)
         
         self.queuePacket(packet, 10.0)
@@ -228,7 +229,7 @@ class i_ICP(Base_Interface):
         :type resID: str
         :returns: bool. True if successful, False otherwise
         """
-        packet = icp.packets.DiscoveryPacket()
+        packet = DiscoveryPacket()
         packet.setDestination(resID)
         
         self.queuePacket(packet, 10.0)
@@ -268,9 +269,9 @@ class i_ICP(Base_Interface):
              
             except KeyError:
                 # No IDs available
-                raise Full
+                raise Queue.Full
              
-            except Full:
+            except Queue.Full:
                 # Failed to add to queue
                 raise
         
@@ -282,10 +283,10 @@ class i_ICP(Base_Interface):
                 sourceIP, sourcePort = address
             
                 try:
-                    resp_pkt = icp.packets.ICP_Packet(packet_data=data)
+                    resp_pkt = ICP_Packet(packet_data=data)
                     packetID = resp_pkt.getPacketID()
                     packetType = resp_pkt.getPacketType()
-                    packetTypeClass = icp.packet_types.get(packetType)
+                    packetTypeClass = packet_types.get(packetType)
                     
                     if packetTypeClass is not None:
                         pkt = packetTypeClass(packet_data=data, source=sourceIP)
@@ -300,7 +301,7 @@ class i_ICP(Base_Interface):
                     if packetTypeClass is None:
                         self.logger.error("ICP RX [ID:%i] INVALID PACKET TYPE: %s", packetType)
                         
-                    elif packetTypeClass == icp.EnumerationPacket:
+                    elif packetTypeClass == EnumerationPacket:
                         # Create new device if resource doesn't already exist
                         if sourceIP not in self._resources.keys():
                             self._resources[sourceIP] = r_ICP(manager=self.manager,
@@ -317,12 +318,12 @@ class i_ICP(Base_Interface):
                         # Let the resource process the packet
                         dev = self._resources.get(sourceIP)
                             
-                        dev._processResponse(pkt)
+                        dev._processResponse(resp_pkt)
                             
                     else:
                         self.logger.error("ICP RX [ID:%i] NO RESOURCE TO ROUTE", packetID)
                         
-                except icp.errors.ICP_Invalid_Packet:
+                except ICP_Invalid_Packet:
                     self.logger.error("ICP RX Invalid Packet")
                 
                 #except:
@@ -337,7 +338,7 @@ class i_ICP(Base_Interface):
             try:
                 packet_obj = self.__messageQueue.get_nowait()
                 
-                if issubclass(packet_obj.__class__, icp.packets.ICP_Packet):
+                if issubclass(packet_obj.__class__, ICP_Packet):
                     destination = packet_obj.getDestination()
                     
                     # Assign a packet ID
@@ -412,7 +413,7 @@ class r_ICP(Base_Resource):
         """
         packetID = pkt.PACKET_ID
         
-        if isinstance(pkt, icp.SerialDescriptorPacket):
+        if isinstance(pkt, SerialDescriptorPacket):
             new_data = pkt.getData()
             self.serialStream += str(new_data)
         
@@ -438,14 +439,14 @@ class r_ICP(Base_Resource):
                 if ret is not None:
                     return ret
                 
-            raise icp.ICP_Timeout()
+            raise ICP_Timeout()
         
         else:
             try:
                 pkt = self.incomingPackets.pop(packetID)
             
-                if isinstance(pkt, icp.ErrorPacket):
-                    raise icp.ICP_DeviceError(pkt)
+                if isinstance(pkt, ErrorPacket):
+                    raise ICP_DeviceError(pkt)
                 
                 else:
                     return pkt
@@ -507,7 +508,7 @@ class r_ICP(Base_Resource):
         
         :returns: int
         """
-        packet = icp.StateChangePacket(state=0,
+        packet = StateChangePacket(state=0,
                                        destination=self.address)
 
         try:
@@ -520,7 +521,7 @@ class r_ICP(Base_Resource):
             return None
         
     def setState(self, new_state):
-        packet = icp.StateChangePacket(state=new_state,
+        packet = StateChangePacket(state=new_state,
                                        destination=self.address)
         
         try:
@@ -569,12 +570,12 @@ class r_ICP(Base_Resource):
         return self.instrument.getSettingsDict()
     
     def write(self, data, termination='\n'):
-        packet = icp.SerialDescriptorPacket(destination=self.address,
+        packet = SerialDescriptorPacket(destination=self.address,
                                         data=(data+str(termination)))
         packetID = self.interface.queuePacket(packet, 1.0)
         
     def write_raw(self, data):
-        packet = icp.SerialDescriptorPacket(destination=self.address,
+        packet = SerialDescriptorPacket(destination=self.address,
                                         data=data)
         packetID = self.interface.queuePacket(packet, 1.0)
         
@@ -630,19 +631,19 @@ class r_ICP(Base_Resource):
         :type data: variable
         """
         try:
-            packet = icp.RegisterWritePacket(address=address, 
+            packet = RegisterWritePacket(address=address,
                                              data=data,
                                              destination=self.address)
         
             packetID = self.interface.queuePacket(packet, 10.0)
             
-        except icp.ICP_DeviceError as e:
+        except ICP_DeviceError as e:
             epkt = e.get_errorPacket()
             
             print epkt.getError()
             print epkt.getMessage()
                 
-        except icp.ICP_Timeout:
+        except ICP_Timeout:
             raise InterfaceTimeout()
         
     def register_read(self, address):
@@ -653,7 +654,7 @@ class r_ICP(Base_Resource):
         :type address: int
         :returns: str
         """
-        packet = icp.RegisterReadPacket(address=address,
+        packet = RegisterReadPacket(address=address,
                                         destination=self.address)
         
         packetID = self.interface.queuePacket(packet, 10.0)
@@ -663,11 +664,341 @@ class r_ICP(Base_Resource):
             
             return data.getData()
             
-        except icp.ICP_DeviceError as e:
+        except ICP_DeviceError as e:
             epkt = e.get_errorPacket()
             
             print epkt.getError()
             print epkt.getMessage()
                 
-        except icp.ICP_Timeout:
+        except ICP_Timeout:
             raise InterfaceTimeout()
+
+#===============================================================================
+# Exceptions
+#===============================================================================
+
+class ICP_Error(RuntimeError):
+    pass
+
+class ICP_Invalid_Packet(ICP_Error):
+    pass
+
+class ICP_Timeout(ICP_Error):
+    pass
+
+class ICP_DeviceError(ICP_Error):
+    def __init__(self, error_packet=None):
+        self.error_packet = error_packet
+
+    def get_errorPacket(self):
+        return self.error_packet
+
+status_codes = {
+    0x00: 'IDLE',
+    0x01: 'RUNNING',
+    0x02: 'STOP',
+    0x80: 'INIT',
+    0x81: 'RESET'
+    }
+
+data_format_codes = {
+    0x00: 'string',
+    0x01: 'int8',
+    0x02: 'int16',
+    0x03: 'int32',
+    0x04: 'int64',
+    0x05: 'uint8',
+    0x06: 'uint16',
+    0x07: 'uint32',
+    0x08: 'uint64',
+    0x10: 'float',
+    0x11: 'double'
+    }
+
+data_format_struct = {
+    'string': 's',
+    'int8': 'b',
+    'int16': 'h',
+    'int32': 'i',
+    'int64': 'q',
+    'uint8': 'B',
+    'uint16': 'H',
+    'uint32': 'I',
+    'uint64': 'Q',
+    'float': 'f',
+    'double': 'd'
+    }
+
+#===============================================================================
+# Packet Base Class
+#===============================================================================
+
+class ICP_Packet:
+    """
+    Base class for all ICP packets. Packs header information before transmission
+    """
+    header_format = 'IBBH'
+    header_size = struct.calcsize(header_format)
+
+    PACKET_ID = 0x0
+    PACKET_TYPE = 0x0
+
+    PAYLOAD = bytearray()
+
+    def __init__(self, **kwargs):
+        self.args = kwargs
+
+        self.source = kwargs.get('source')
+        self.destination = kwargs.get('destination')
+        self.timestamp = time.time()
+
+        data = kwargs.get('packet_data')
+        if data is not None and len(data) >= self.header_size:
+            # Unpack the data
+            header = data[:self.header_size]
+            header_up = struct.unpack(self.header_format, header)
+
+            identifier, self.PACKET_TYPE, self.PACKET_ID, pkt_payload_size = header_up
+
+            if identifier != 0x4C455055:
+                raise ICP_Invalid_Packet
+
+            if len(data) > self.header_size:
+                self.PAYLOAD = data[self.header_size:]
+
+            self._parse()
+
+        else:
+            self.PACKET_ID = kwargs.get('id', 1)
+
+            self._format()
+
+    def _format(self):
+        """
+        Called when the object was created empty
+        """
+        pass
+
+    def _parse(self):
+        """
+        Called when the object was created with packet data from the network
+        """
+        pass
+
+    def _strip(self, data):
+        # Strip control codes and null terminators from data
+        return ''.join([x for x in data if 31 < ord(x) < 127 or x in ['\r', '\n', '\t']])
+
+    def setPacketID(self, id):
+        self.PACKET_ID = id
+
+    def getPacketID(self):
+        return self.PACKET_ID
+
+    def getPacketType(self):
+        return self.PACKET_TYPE
+
+    def setSource(self, source):
+        self.source = source
+
+    def getSource(self):
+        return self.source
+
+    def setDestination(self, destination):
+        self.destination = destination
+
+    def getDestination(self):
+        return self.destination
+
+    def getPayload(self):
+        return self.PAYLOAD
+
+    def setPayload(self, data):
+        self.PAYLOAD = data
+
+    def getTimestamp(self):
+        return self.timestamp
+
+    def pack(self):
+        """
+        Pack the header and payload
+        """
+        # Enforce PAYLOAD type as bytearray
+        #if type(self.PAYLOAD) is not bytearray:
+        #    self.PAYLOAD = bytearray(self.PAYLOAD)
+
+        payloadSize = len(self.PAYLOAD)
+        headerFormat = self.header_format + str('%is' % (payloadSize))
+
+        header = struct.pack(self.header_format, 0x4C455055, self.PACKET_TYPE, self.PACKET_ID, payloadSize)
+        return header + str(self.PAYLOAD)
+
+#===============================================================================
+# Core Protocol Packet Types
+#===============================================================================
+
+class DiscoveryPacket(ICP_Packet):
+    PACKET_TYPE = 0x00
+
+class EnumerationPacket(ICP_Packet):
+    PACKET_TYPE = 0x01
+
+    def _parse(self):
+        # TODO: Should this try to parse as JSON data?
+        self.data = self.getPayload()
+
+        self.vendor = self._strip(str(self.data[0:31]))
+        self.model = self._strip(str(self.data[32:63]))
+
+        packet_types = self.data[64:]
+        if len(packet_types) == 64:
+            packet_types = struct.unpack('h'*32, packet_types)
+            self.packet_types = list(set(packet_types)) # Get unique values
+
+    def getEnumeration(self):
+        return (self.vendor, self.model)
+
+class HeartbeatPacket(ICP_Packet):
+    PACKET_TYPE = 0x02
+
+class StateChangePacket(ICP_Packet):
+    PACKET_TYPE = 0x03
+
+    payload_format = 'xxxB'
+
+    def _format(self):
+        self.state = self.args.get('state')
+        data = struct.pack(self.payload_format, self.state)
+        self.setPayload(data)
+
+    def _parse(self):
+        self.state = struct.unpack(self.payload_format, self.getPayload())
+
+    def getState(self):
+        return self.state
+
+class ErrorPacket(ICP_Packet):
+    PACKET_TYPE = 0x0F
+
+    payload_format = 'Is'
+
+    def _format(self):
+        self.error = int(self.args.get('error'))
+        self.msg = self.args.get('message')
+        data = struct.pack(self.payload_format, self.error, self.msg)
+        self.setPayload(data)
+
+    def _parse(self):
+        try:
+            self.error, self.msg = struct.unpack(self.payload_format, self.getPayload())
+        except:
+            self.error = 0xFFFFFFFF
+            self.msg = 'Unknown Error'
+
+    def getError(self):
+        return self.error
+
+    def getMessage(self):
+        return self.msg
+
+#===============================================================================
+# Device Packets
+#===============================================================================
+
+class ResponsePacket(ICP_Packet):
+    PACKET_TYPE = 0x80
+
+    payload_format = 'xBxB'
+
+    def _parse(self):
+        payload = self.getPayload()
+
+        self.format, elems = struct.unpack(self.payload_format, payload[0:4])
+        data = payload[4:]
+
+        if elems > 0:
+            try:
+                data_code = data_format_codes.get(self.format, 'string')
+                data_unpack_code = data_format_struct.get(data_code, 's')
+                fmt = data_unpack_code * elems
+
+                data_size = struct.calcsize(fmt)
+                self.data = struct.unpack(fmt, data[:data_size])
+
+            except:
+                self.data = self._strip(data)
+
+    def getData(self):
+        return self.data
+
+class CommandPacket(ICP_Packet):
+    PACKET_TYPE = 0x81
+
+    def _format(self):
+        self.setPayload(self.args.get('data'))
+
+class RegisterReadPacket(ICP_Packet):
+    PACKET_TYPE = 0x82
+
+    payload_format = 'H'
+
+    def _format(self):
+        data = struct.pack(self.payload_format, self.args.get('address'))
+        self.setPayload(data)
+
+class RegisterWritePacket(ICP_Packet):
+    PACKET_TYPE = 0x83
+
+    payload_format = 'HxxI'
+
+    def _format(self):
+        data = struct.pack(self.payload_format,
+                           self.args.get('address'),
+                           self.args.get('data'))
+        self.setPayload(data)
+
+class SerialDescriptorPacket(ICP_Packet):
+    PACKET_TYPE = 0x88
+
+    def _format(self):
+
+        self.setPayload(self.args.get('data'))
+
+    def getData(self):
+        return self._strip(self.getPayload())
+
+class CANDescriptorPacket(ICP_Packet):
+    PACKET_TYPE = 0x89
+
+    payload_format = 'IQ'
+
+    def _format(self):
+        self.message_id = self.args.get('message_id')
+        self.data = self.args.get('data')
+        data = struct.pack(self.payload_format,
+                           self.message_id,
+                           self.data)
+        self.setPayload(data)
+
+    def _parse(self):
+        self.message_id, self.data = struct.unpack(self.payload_format, self.getPayload())
+
+    def getMessageID(self):
+        return self.message_id
+
+    def getData(self):
+        return self.data
+
+packet_types = {
+    0x00: DiscoveryPacket,
+    0x01: EnumerationPacket,
+    0x02: HeartbeatPacket,
+    0x03: StateChangePacket,
+    0x0F: ErrorPacket,
+    0x80: ResponsePacket,
+    0x81: CommandPacket,
+    0x82: RegisterReadPacket,
+    0x83: RegisterWritePacket,
+    0x88: SerialDescriptorPacket,
+    0x89: CANDescriptorPacket
+}
