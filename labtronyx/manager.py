@@ -13,14 +13,11 @@ from . import bases
 from . import logger
 from . import common
 from . import drivers
-from . import interfaces
 
 try:
     from . import version
 except ImportError:
     raise EnvironmentError("No Version file present, reinstall project")
-
-__all__ = ['InstrumentManager']
 
 
 class InstrumentManager(object):
@@ -63,6 +60,22 @@ class InstrumentManager(object):
         #
         # Load Plugins
         #
+        from .common.plugin import PluginManager
+
+        # Directories to search
+        dirs = ['drivers', 'interfaces', 'plugtest']
+        dirs_res = map(lambda dir: os.path.join(self.rootPath, dir), dirs)
+        # dirs_res = [drivers, interfaces]
+
+        # Categorize plugins by base class
+        cat_filter = {
+            "drivers": bases.Base_Driver,
+            "interfaces": bases.Base_Interface,
+            "resources": bases.Base_Resource
+        }
+
+        self.plugin_manager = PluginManager(directories=dirs_res, categories=cat_filter, logger=self.logger)
+        self.plugin_manager.search()
         
         # Load Drivers
         self._drivers = self.__scan(drivers)
@@ -71,42 +84,8 @@ class InstrumentManager(object):
             self.logger.debug("Found Driver: %s", driver)
         
         # Load Interfaces
-        interface_info = self.__scan(interfaces)
-        
-        for interf in interface_info.keys():
-            self.logger.debug("Found Interface: %s", interf)
-
-            interfaceModule = importlib.import_module(interf)
-
-            # Look for a class with the same name as the module
-            # TODO: Find a way to have multiple classes per file
-            className = interf.split('.')[-1]
-            interfaceClass = getattr(interfaceModule, className)
-
-            self.enableInterface(interfaceClass)
-
-        import yapsy
-        yapsy.log = self.logger
-        from yapsy.PluginManager import PluginManager
-        plug_man = PluginManager()
-        plug_loc = plug_man.getPluginLocator()
-
-        # Directories to search
-        dirs = ['drivers', 'interfaces', 'plugtest']
-        dirs_res = map(lambda dir: os.path.join(self.rootPath, dir), dirs)
-        plug_loc.setPluginPlaces(dirs_res)
-
-        plug_man.collectPlugins()
-
-        for pluginInfo in plug_man.getAllPlugins():
-            plug_man.activatePluginByName(pluginInfo.name)
-            print pluginInfo.name
-
-        plug_man.setCategoriesFilter({
-            "drivers": bases.Base_Driver,
-            "interfaces": bases.Base_Interface,
-            "resources": bases.Base_Resource
-        })
+        for interface_name in self.plugin_manager.getPluginsByCategory('interfaces'):
+            self.enableInterface(interface_name)
 
         #
         # RPC Server
@@ -305,7 +284,7 @@ class InstrumentManager(object):
         """
         return self._interfaces.keys()
     
-    def enableInterface(self, cls_interface, **kwargs):
+    def enableInterface(self, interface_name, **kwargs):
         """
         Enable an interface for use. Requires a class object that extends Base_Interface, NOT a class instance.
 
@@ -313,17 +292,18 @@ class InstrumentManager(object):
         :return:
         """
         try:
+            int_cls = self.plugin_manager.getPlugin(interface_name)
+            assert int_cls is not None
+
             # Instantiate interface
-            inter = cls_interface(manager=self,
-                                  logger=self.logger,
-                                  **kwargs)
-            cls_name = inter.name
+            int_obj = int_cls(manager=self, logger=self.logger, **kwargs)
 
             # Call the plugin hook to open the interface
-            inter.open()
+            int_obj.open()
 
-            self.logger.info("Started Interface: %s" % cls_name)
-            self._interfaces[cls_name] = inter
+            self._interfaces[interface_name] = int_obj
+
+            self.logger.info("Started Interface: %s" % interface_name)
 
         except NotImplementedError:
             pass
