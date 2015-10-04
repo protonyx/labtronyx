@@ -619,15 +619,19 @@ class r_VISA(Base_Resource):
             # Search for a compatible model
             validModels = []
 
-            # Iterate through all Models to find compatible Models
-            for modelModule, modelInfo in self.manager.drivers.items():
+            # Iterate through all driver classes to find compatible driver
+            for driverName, driverCls in self.manager.drivers.items():
                 try:
-                    for resType in modelInfo.get('validResourceTypes'):
-                        if resType in ['VISA', 'visa']:
-                            if (self.VID in modelInfo.get('VISA_compatibleManufacturers') and
-                                self.PID in modelInfo.get('VISA_compatibleModels')):
-                                validModels.append(modelModule)
-                                self.logger.debug("Found match: %s", modelModule)
+                    if driverCls.VISA_validResource(self._identity):
+                        validModels.append(driverCls)
+                        self.logger.debug("Found match: %s", driverName)
+
+                    # for resType in modelInfo.get('validResourceTypes'):
+                    #     if resType in ['VISA', 'visa']:
+                    #         if (self.VID in modelInfo.get('VISA_compatibleManufacturers') and
+                    #             self.PID in modelInfo.get('VISA_compatibleModels')):
+                    #             validModels.append(modelModule)
+                    #             self.logger.debug("Found match: %s", modelModule)
 
                 except:
                     continue
