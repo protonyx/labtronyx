@@ -1,20 +1,30 @@
 """
 .. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
-Remote Interface
-----------------
-
-These loads feature a Ethernet connection that hosts a web-based interface from
-which you can control the load much like you would if you were sitting in front
-of it.
-
 """
 from labtronyx.bases import Base_Driver
 from labtronyx.common.errors import *
 
+info = {
+    # Plugin author
+    'author':               'KKENNEDY',
+    # Plugin version
+    'version':              '1.0',
+    # Last Revision Date
+    'date':                 '2015-10-04',
+}
+
+
 class d_XBL(Base_Driver):
     """
     Driver for TDI XBL Series DC Electronic Loads
+
+    Remote Interface
+    ----------------
+
+    These loads feature a Ethernet connection that hosts a web-based interface from
+    which you can control the load much like you would if you were sitting in front
+    of it.
     """
     
     info = {
@@ -42,16 +52,14 @@ class d_XBL(Base_Driver):
         'Constant Power': 'CW',
         'Constant Resistance': 'CR'}
     
-    def _onLoad(self):
-        self.instr = self.getResource()
-        
+    def open(self):
         # Turn off text mode (mangles queries)
         self.instr.write("TEXT OFF")
         
         # Turn off keyboard sounds
         self.instr.write("KEYOFF")
     
-    def _onUnload(self):
+    def close(self):
         pass
         
     def getProperties(self):
@@ -59,9 +67,9 @@ class d_XBL(Base_Driver):
         
         ret['deviceVendor'] = 'TDI'
         
-        ret['deviceModel'] = self.instr.query("MDL?")
-        ret['deviceSerial'] = self.instr.query("SERNO?")
-        ret['deviceFirmware'] = self.instr.query("VER?")
+        ret['deviceModel'] = self.query("MDL?")
+        ret['deviceSerial'] = self.query("SERNO?")
+        ret['deviceFirmware'] = self.query("VER?")
             
         return ret
     
@@ -69,146 +77,146 @@ class d_XBL(Base_Driver):
         """
         Turns the load on
         """
-        self.instr.write("LOAD ON")
+        self.write("LOAD ON")
     
     def powerOff(self):
         """
         Turns the load off
         """
-        self.instr.write("LOAD OFF")
+        self.write("LOAD OFF")
         
-    def SetMaster(self):
+    def setMaster(self):
         """
         Set load into master mode
         """
-        self.instr.write("MASTER")
+        self.write("MASTER")
         
-    def SetSlave(self):
+    def setSlave(self):
         """
         Set load into slave mode
         """
-        self.instr.write("SLAVE")
+        self.write("SLAVE")
     
-    def SetMaxCurrent(self, current):
+    def setMaxCurrent(self, current):
         """
         Sets the maximum current the load will sink
         
         :param current: Current in Amps
         :type current: float
         """
-        self.instr.write("IL %s" % str(current))
+        self.write("IL %s" % str(current))
     
-    def GetMaxCurrent(self):
+    def getMaxCurrent(self):
         """
         Returns the maximum current the load will sink
         
         :returns: float
         """
-        return float(self.instr.query("IL?"))
+        return float(self.query("IL?"))
     
-    def SetMaxVoltage(self, voltage):
+    def setMaxVoltage(self, voltage):
         """
         Sets the maximum voltage the load will allow
         
         :param voltage: Voltage in Volts
         :type voltage: float
         """
-        return self.instr.write("VL %s" % str(voltage))
+        return self.write("VL %s" % str(voltage))
     
-    def GetMaxVoltage(self):
+    def getMaxVoltage(self):
         """
         Gets the maximum voltage the load will allow
         
         :returns: float
         """
-        return float(self.instr.query("VL?"))
+        return float(self.query("VL?"))
     
-    def SetMaxPower(self, power):
+    def setMaxPower(self, power):
         """
         Sets the maximum power the load will allow
         
         :param power: Power in Watts
         :type power: float
         """
-        self.instr.write("PL %s" % str(power))
+        self.write("PL %s" % str(power))
     
-    def GetMaxPower(self):
+    def getMaxPower(self):
         """
         Gets the maximum power the load will allow
         
         :returns: float
         """
-        return float(self.instr.query("PL?"))
+        return float(self.query("PL?"))
     
-    def SetCurrent(self, current):
+    def setCurrent(self, current):
         """
         Sets the constant current mode's current level
         
         :param current: Current in Amps
         :type current: float
         """
-        self.instr.write("CI %s" % str(current))
+        self.write("CI %s" % str(current))
     
-    def GetCurrent(self):
+    def getCurrent(self):
         """
         Gets the constant current mode's current level
         
         :returns: float
         """
-        return float(self.instr.query("CI?"))
+        return float(self.query("CI?"))
     
-    def SetVoltage(self, voltage):
+    def setVoltage(self, voltage):
         """
         Sets the constant voltage mode's voltage level
         
         :param voltage: Voltage in Volts
         :type voltage: float
         """
-        self.instr.write("CV %s" % str(voltage))
+        self.write("CV %s" % str(voltage))
     
-    def GetVoltage(self):
+    def getVoltage(self):
         """
         Gets the constant voltage mode's voltage level
         
         :returns: float
         """
-        return float(self.instr.query("CV?"))
+        return float(self.query("CV?"))
     
-    def SetPower(self, power):
+    def setPower(self, power):
         """
         Sets the constant power mode's power level
         
         :param power: Power in Watts
         :type power: float
         """
-        self.instr.write("CP %s" % str(power))
+        self.write("CP %s" % str(power))
     
-    def GetPower(self):
+    def getPower(self):
         """
         Gets the constant power mode's power level
         
         :returns: float
         """
-        return float(self.instr.query("CP?"))
+        return float(self.query("CP?"))
     
-    def SetResistance(self, resistance):
+    def setResistance(self, resistance):
         """
         Sets the constant resistance mode's resistance level
         
         :param resistance: Resistance in Ohms
         :type resistance: str
         """
-        self.instr.write("CR %s" % str(resistance))
+        self.write("CR %s" % str(resistance))
     
-    def GetResistance(self):
+    def getResistance(self):
         """
         Gets the constant resistance mode's resistance level
         
         :returns: float
         """
-        return float(self.instr.query("CR?"))
+        return float(self.query("CR?"))
     
-    def ConfigureSlewRate(self, rate):
+    def configureSlewRate(self, rate):
         """
         Set the slew rate for a zero to full-scale transision.
         
@@ -216,12 +224,12 @@ class d_XBL(Base_Driver):
         :type rate: float
         """
         if rate > 10.0 and rate <= 4000.0:
-            self.instr.write("SF")
+            self.write("SF")
         elif rate > 4000.0:
-            self.instr.write("SS")
-        self.instr.write("SR %s" % str(rising))
+            self.write("SS")
+        self.write("SR %s" % str(rate))
     
-    def ConfigurePulsing(self, freq, duty, mode, base, peak):
+    def configurePulsing(self, freq, duty, mode, base, peak):
         """
         Mode can be one of:
         
@@ -231,62 +239,62 @@ class d_XBL(Base_Driver):
           * `cr`: Constant Resistance
         """
         if mode.lower() == 'cc':
-            self.instr.write("I1 %s" % base)
-            self.instr.write("I2 %s" % peak)
+            self.write("I1 %s" % base)
+            self.write("I2 %s" % peak)
         elif mode.lower() == 'cv':
-            self.instr.write("V1 %s" % base)
-            self.instr.write("V2 %s" % peak)
+            self.write("V1 %s" % base)
+            self.write("V2 %s" % peak)
         elif mode.lower() == 'cw':
-            self.instr.write("P1 %s" % base)
-            self.instr.write("P2 %s" % peak)
+            self.write("P1 %s" % base)
+            self.write("P2 %s" % peak)
         elif mode.lower() == 'cr':
-            self.instr.write("R1 %s" % base)
-            self.instr.write("R2 %s" % peak)
+            self.write("R1 %s" % base)
+            self.write("R2 %s" % peak)
         else:
             raise Exception("Invalid mode")
         # Frequency
-        self.instr.write("FQ %s" % float(freq))
+        self.write("FQ %s" % float(freq))
         
         # Duty
-        self.instr.write("DU %s" % float(duty))
+        self.write("DU %s" % float(duty))
         
         # Enable pulsing
-        self.instr.write("SW ON")
+        self.write("SW ON")
         
-    def EnableLocalControl(self):
+    def enableLocalControl(self):
         """
         Enable local control of the load
         """
-        self.instr.write("LOCK OFF")
+        self.write("LOCK OFF")
     
-    def DisableLocalControl(self):
+    def disableLocalControl(self):
         """
         Disable local control of the load. User will be unable to control load
         functions using the front panel.
         """
-        self.instr.write("LOCK ON")
+        self.write("LOCK ON")
         
-    def GetTerminalVoltage(self):
+    def getTerminalVoltage(self):
         """
         Returns the terminal voltage in Volts
         
         :returns: float
         """
-        return float(self.instr.query("V?"))
+        return float(self.query("V?"))
     
-    def GetTerminalCurrent(self):
+    def getTerminalCurrent(self):
         """
         Returns the terminal current in Amps
         
         :returns: float
         """
-        return float(self.instr.query("I?"))
+        return float(self.query("I?"))
     
-    def GetTerminalPower(self):
+    def getTerminalPower(self):
         """
         Returns the terminal power in Watts
         
         :returns: float
         """
-        return float(self.instr.query("P?"))
+        return float(self.query("P?"))
     

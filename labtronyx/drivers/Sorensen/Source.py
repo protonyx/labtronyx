@@ -5,6 +5,15 @@
 from labtronyx.bases import Base_Driver
 from labtronyx.common.errors import *
 
+info = {
+    # Plugin author
+    'author':               'KKENNEDY',
+    # Plugin version
+    'version':              '1.0',
+    # Last Revision Date
+    'date':                 '2015-10-04',
+}
+
 class d_XFR(Base_Driver):
     """
     Driver for Sorensen XFR Series DC Power Supplies
@@ -19,24 +28,20 @@ class d_XFR(Base_Driver):
         'deviceType':           'DC Power Supply',      
         
         # List of compatible resource types
-        'validResourceTypes':   ['VISA'],  
-        
-        #=======================================================================
-        # VISA Attributes        
-        #=======================================================================
-        # Compatible VISA Manufacturers
-        'VISA_compatibleManufacturers': ['Xantrex'],
-        # Compatible VISA Models
-        'VISA_compatibleModels':        ['XFR 600-4']
+        'validResourceTypes':   ['VISA']
     }
+
+    @classmethod
+    def VISA_validResource(cls, identity):
+        vendors = ['Xantrex', 'Sorensen']
+        models = ['XFR 600-4']
+        return identity[0] in vendors and identity[1] in models
     
-    def _onLoad(self):
-        self.instr = self.getResource()
-        
+    def open(self):
         self.setRemoteControl()
     
-    def _onUnload(self):
-        pass
+    def close(self):
+        self.setLocalControl()
     
     def setRemoteControl(self):
         """
@@ -44,24 +49,31 @@ class d_XFR(Base_Driver):
         """
         self.instr.write("SYST:REM:STAT REM")
         self.instr.write("SYST:REM:PON:STAT OFF")
+
+    def setLocalControl(self):
+        """
+        Set Local Control Mode
+        """
+        # TODO
+        pass
     
     def powerOn(self):
         """
         Enables the instrument to power the output
         """
-        self.instr.write("OUTP ON")
+        self.write("OUTP ON")
         
     def powerOff(self):
         """
         Disables the output power connections.
         """
-        self.instr.write("OUTP OFF")
+        self.write("OUTP OFF")
         
     def trigger(self):
         """
         Trigger the instrument
         """
-        self.instr.write("*TRG")
+        self.write("*TRG")
         
     def getError(self):
         """
@@ -69,7 +81,7 @@ class d_XFR(Base_Driver):
         
         :returns: str
         """
-        return self.instr.query("SYST:ERR?")
+        return self.query("SYST:ERR?")
         
     def setVoltage(self, voltage):
         """
@@ -78,7 +90,7 @@ class d_XFR(Base_Driver):
         :param voltage: Voltage (in Volts)
         :type voltage: float
         """
-        self.instr.write("SOUR:VOLT %f" % float(voltage))
+        self.write("SOUR:VOLT %f" % float(voltage))
         
     def getVoltage(self):
         """
@@ -86,7 +98,7 @@ class d_XFR(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.query("SOUR:VOLT?"))
+        return float(self.query("SOUR:VOLT?"))
         
     def setVoltageSlewRate(self, step, interval):
         """
@@ -125,8 +137,8 @@ class d_XFR(Base_Driver):
         :param current: time interval (seconds)
         :type current: float
         """
-        self.instr.write(":VOLT:SLEW:STEP %f" % float(voltage))
-        self.instr.write(":VOLT:SLEW:INT %f" % float(current))
+        self.write(":VOLT:SLEW:STEP %f" % float(step))
+        self.write(":VOLT:SLEW:INT %f" % float(interval))
         
     def getTerminalVoltage(self):
         """
@@ -134,7 +146,7 @@ class d_XFR(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.ask("MEAS:VOLT?"))
+        return float(self.ask("MEAS:VOLT?"))
     
     def setCurrent(self, current):
         """
@@ -143,7 +155,7 @@ class d_XFR(Base_Driver):
         :param current: Current (in Amps)
         :type current: float
         """
-        self.instr.write("CURR %f" % float(current))
+        self.write("CURR %f" % float(current))
         
     def getCurrent(self):
         """
@@ -151,7 +163,7 @@ class d_XFR(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.query("CURR?"))
+        return float(self.query("CURR?"))
         
     def getTerminalCurrent(self):
         """
@@ -159,7 +171,7 @@ class d_XFR(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.ask("MEAS:CURR?"))
+        return float(self.ask("MEAS:CURR?"))
     
     def getTerminalPower(self):
         """
@@ -167,7 +179,7 @@ class d_XFR(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.ask("MEAS:POW?"))
+        return float(self.ask("MEAS:POW?"))
         
     def setProtection(self, voltage=None, current=None):
         """
@@ -181,11 +193,11 @@ class d_XFR(Base_Driver):
         """
         # Voltage
         if voltage is not None:
-            self.instr.write("SOUR:VOLT:PROT %f" % float(voltage))
+            self.write("SOUR:VOLT:PROT %f" % float(voltage))
         
         # Current
         if current is not None:
-            self.instr.write("SOUR:CURR:PROT %f" % float(current))
+            self.write("SOUR:CURR:PROT %f" % float(current))
         
     def disableProtection(self):
         """
@@ -201,8 +213,8 @@ class d_XFR(Base_Driver):
         
         :returns: tuple (OVP, OCP)
         """
-        ovp = int(self.instr.query("SOUR:VOLT:PROT:OVER:TRIP?"))
-        ocp = int(self.instr.query("SOUR:CURR:PROT:OVER:TRIP?"))
+        ovp = int(self.query("SOUR:VOLT:PROT:OVER:TRIP?"))
+        ocp = int(self.query("SOUR:CURR:PROT:OVER:TRIP?"))
         
         return (ovp, ocp)
     

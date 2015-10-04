@@ -5,6 +5,15 @@
 from labtronyx.bases import Base_Driver
 from labtronyx.common.errors import *
 
+info = {
+    # Plugin author
+    'author':               'KKENNEDY',
+    # Plugin version
+    'version':              '1.0',
+    # Last Revision Date
+    'date':                 '2015-10-04',
+}
+
 class d_335XX(Base_Driver):
     """
     Driver for Agilent Function Generators
@@ -13,14 +22,7 @@ class d_335XX(Base_Driver):
 
        This driver is a stub and has no implemented functionality
     """
-    
     info = {
-        # Model revision author
-        'author':               'KKENNEDY',
-        # Model version
-        'version':              '1.0',
-        # Revision date of Model version
-        'date':                 '2015-03-11',
         # Device Manufacturer
         'deviceVendor':         'Agilent',
         # List of compatible device models
@@ -37,22 +39,9 @@ class d_335XX(Base_Driver):
         'deviceType':           'Function Generator',      
         
         # List of compatible resource types
-        'validResourceTypes':   ['VISA'],  
-        
-        #=======================================================================
-        # VISA Attributes        
-        #=======================================================================
-        # Compatible VISA Manufacturers
-        'VISA_compatibleManufacturers': ['Agilent Technologies'],
-        # Compatible VISA Models
-        'VISA_compatibleModels':        ['33509B', '33510B', '33511B',
-                                         '33512B', '33519B', '33520B',
-                                         '33521A', '33521B', '33522A', 
-                                         '33522B']
+        'validResourceTypes':   ['VISA']
     }
-    
-    def _onLoad(self):
-        self.instr = self.getResource()
-    
-    def _onUnload(self):
-        pass
+
+    @classmethod
+    def VISA_validResource(cls, identity):
+        return identity[0] == 'Agilent Technologies' and identity[1] in cls.info['deviceModel']

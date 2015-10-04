@@ -1,23 +1,32 @@
 """
 .. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
-
-Connecting to the Instrument
-----------------------------
-
-The Regatron sources can be outfitted with Ethernet-to-USB adapters for use
-with the TopCon software. In order to connect to the source with an adapter
-installed, you must install the drivers so that the device appears as a
-local COM port to the operating system.
-
 """
 from labtronyx.bases import Base_Driver
 from labtronyx.common.errors import *
 
 import struct
 
+info = {
+    # Plugin author
+    'author':               'KKENNEDY',
+    # Plugin version
+    'version':              '1.0',
+    # Last Revision Date
+    'date':                 '2015-10-04',
+}
+
+
 class d_TopCon(Base_Driver):
     """
     Driver for Regatron TopCon compatible Power Supplies
+
+    Connecting to the Instrument
+    ----------------------------
+
+    The Regatron sources can be outfitted with Ethernet-to-USB adapters for use
+    with the TopCon software. In order to connect to the source with an adapter
+    installed, you must install the drivers so that the device appears as a
+    local COM port to the operating system.
     """
     
     info = {
@@ -32,9 +41,7 @@ class d_TopCon(Base_Driver):
         'validResourceTypes':   ['Serial']
     }
     
-    def _onLoad(self):
-        self.instr = self.getResource()
-        
+    def open(self):
         # Configure the COM Port
         self.instr.baudrate = 38400
         self.instr.timeout = 1.0
@@ -42,7 +49,7 @@ class d_TopCon(Base_Driver):
         self.instr.parity = 'N'
         self.instr.stopbits = 1
     
-    def _onUnload(self):
+    def close(self):
         pass
     
     def getProperties(self):

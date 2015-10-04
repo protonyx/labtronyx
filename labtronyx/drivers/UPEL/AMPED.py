@@ -4,6 +4,16 @@ from labtronyx.common.errors import *
 import struct
 import time
 
+info = {
+    # Plugin author
+    'author':               'KKENNEDY',
+    # Plugin version
+    'version':              '1.0',
+    # Last Revision Date
+    'date':                 '2015-10-04',
+}
+
+
 class m_BMS(Base_Driver):
     """
     Model for the AMPED 2.2 BMS Converter
@@ -32,11 +42,7 @@ class m_BMS(Base_Driver):
         'enableSwitching_open': 0x73
         }
     
-    def _onLoad(self):
-        self.instr = self.getResource()
-        
-        self.instr.open()
-        
+    def open(self):
         # Configure the COM Port
         self.instr.configure(baudrate=1500000,
                              timeout=0.5,
@@ -46,13 +52,13 @@ class m_BMS(Base_Driver):
         
         self.status = 0
     
-    def _onUnload(self):
-        self.instr.close()
+    def close(self):
+        pass
     
     def getProperties(self):
         prop = Base_Driver.getProperties(self)
-        
-    	prop['deviceModel'] = self.info.get('deviceModel')[0]
+
+        prop['deviceModel'] = self.info.get('deviceModel')[0]
         
         # Add any additional properties here
         return prop
@@ -75,7 +81,7 @@ class m_BMS(Base_Driver):
         
         try:
             # Verify the acknowledgement
-            rx = self.instr.read_raw(10)
+            rx = self.read_raw(10)
             
             if (len(rx) == 10):
                 
@@ -103,7 +109,7 @@ class m_BMS(Base_Driver):
             fmt = 'BBBBi'
             tx = struct.pack(fmt, address, address, cmd, cmd, data)
             
-            self.instr.write_raw(tx)
+            self.write_raw(tx)
             
             return True
             
@@ -119,11 +125,11 @@ class m_BMS(Base_Driver):
         self.sendCommand_noAck(0xFA, cmd, 0)
         
         try:
-            self.instr.configure(timeout=3.0)
+            self.configure(timeout=3.0)
             
-            rx = self.instr.read_raw(10)
+            rx = self.read_raw(10)
 
-            self.instr.configure(timeout=0.5)
+            self.configure(timeout=0.5)
             
             if (len(rx) == 10):
 
@@ -244,7 +250,7 @@ class m_BMS(Base_Driver):
         self.sendCommand_noAck(address, cmd)
         
         try:
-            rx = self.instr.read_raw(10)
+            rx = self.read_raw(10)
             
             fmt = '>HHHHH' #note the big endian ">" in the format code - this is required if you don't want funky data
             phase, vout, vin, iin, status = struct.unpack(fmt, rx)
@@ -269,7 +275,7 @@ class m_BMS(Base_Driver):
         """
         for x in range(3):
             try:
-                _,_,_,_,status = self.getData(address)
+                _, _, _, _, status = self.getData(address)
         
                 if ((status & 0xFF08 == 0) and (status & 0x2 == 0x2)):
                     
@@ -301,7 +307,7 @@ class m_BMS(Base_Driver):
         """
         for x in range(3):
             try:
-                _,_,_,_,status = self.getData(address)
+                _, _, _, _, status = self.getData(address)
         
                 if ((status & 0xFF08 == 0) and (status & 0x2 == 0x2)):
                     
@@ -340,4 +346,3 @@ class m_BMS(Base_Driver):
         """
         cmd = self.commands.get('disableSwitching', 0x64)
         self.sendCommand(address, cmd)
-    

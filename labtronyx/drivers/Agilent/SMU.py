@@ -5,6 +5,15 @@
 from labtronyx.bases import Base_Driver
 from labtronyx.common.errors import *
 
+info = {
+    # Plugin author
+    'author':               'KKENNEDY',
+    # Plugin version
+    'version':              '1.0',
+    # Last Revision Date
+    'date':                 '2015-10-04',
+}
+
 class d_B29XX(Base_Driver):
     """
     Driver for Agilent B2901A and B2902A Source Measurement Units
@@ -19,37 +28,32 @@ class d_B29XX(Base_Driver):
         'deviceType':           'Source Measurement Unit',      
         
         # List of compatible resource types
-        'validResourceTypes':   ['VISA'],  
-        
-        #=======================================================================
-        # VISA Attributes        
-        #=======================================================================
-        # Compatible VISA Manufacturers
-        'VISA_compatibleManufacturers': ['AGILENT TECHNOLOGIES',
-                                         'Agilent Technologies'],
-        # Compatible VISA Models
-        'VISA_compatibleModels':        ['B2901A', 'B2902A']
+        'validResourceTypes':   ['VISA']
     }
-    
+
+    @classmethod
+    def VISA_validResource(cls, identity):
+        vendors = ['AGILENT TECHNOLOGIES', 'Agilent Technologies']
+        return identity[0] in vendors and identity[1] in cls.info['deviceModel']
+
+
     validSource = {'VOLTAGE': 'VOLT', 
                    'CURRENT': 'CURR'}
+
     validFunc = ['VOLT', 'CURR', 'RES']
+
     validMode = ['SWEEP', 'FIXED', 'LIST']
+
     validTrigger = ['AINT', 'BUS', 'TIMER', 'INT1', 'INT2', 'LAN', 'EXT1', 'EXT2',
                     'EXT3', 'EXT4', 'EXT5', 'EXT6', 'EXT7', 'EXT8', 'EXT9', 'EXT10',
                     'EXT11', 'EXT12', 'EXT13', 'EXT14']
 
-    def _onLoad(self):
-        self.instr = self.getResource()
-        
-    def _onUnload(self):
-        pass
         
     def defaultSetup(self):
         """
         Reset the SMU to factory default settings
         """
-        self.instr.write("*RST")
+        self.write("*RST")
         
     def setSourceSweep(self, source, start, stop, points):
         """
@@ -66,22 +70,22 @@ class d_B29XX(Base_Driver):
         """
         if source in self.validSource.keys():
             source_f = self.validSource.get(source)
-            self.instr.write(':SOUR:FUNC:MODE %s' % source_f)
-            self.instr.write(':SOUR:%s:MODE SWE' % source_f)
+            self.write(':SOUR:FUNC:MODE %s' % source_f)
+            self.write(':SOUR:%s:MODE SWE' % source_f)
 
-            self.instr.write(':SOUR:%s:START %f' % (source_f, float(start)))
-            self.instr.write(':SOUR:%s:STOP %f' % (source_f, float(stop)))
+            self.write(':SOUR:%s:START %f' % (source_f, float(start)))
+            self.write(':SOUR:%s:STOP %f' % (source_f, float(stop)))
             
             # Hard-coded number of points
             # It appears the length of the sweep is determined by the number
             # of points
-            self.instr.write(':SOUR:SWE:POIN %i' % int(points))
-            self.instr.write(':TRIG:COUN %i' % int(points))
+            self.write(':SOUR:SWE:POIN %i' % int(points))
+            self.write(':TRIG:COUN %i' % int(points))
                         
             if float(stop) > float(start):
-                self.instr.write(':SOUR:SWE:DIR UP')
+                self.write(':SOUR:SWE:DIR UP')
             else:
-                self.instr.write(':SOUR:SWE:DIR DOWN')
+                self.write(':SOUR:SWE:DIR DOWN')
         
     def setSourceFixed(self, source, base, peak):
         """
@@ -96,12 +100,13 @@ class d_B29XX(Base_Driver):
         """
         if source in self.validSource.keys():
             source_f = self.validSource.get(source)
-            self.instr.write(':SOUR:FUNC:MODE %s' % source_f)
+            self.write(':SOUR:FUNC:MODE %s' % source_f)
             
-            self.instr.write(':SOUR:%s %f' % (source_f, float(base)))
-            self.instr.write(':SOUR:%s:TRIG %f' % (source_f, float(peak)))
+            self.write(':SOUR:%s %f' % (source_f, float(base)))
+            self.write(':SOUR:%s:TRIG %f' % (source_f, float(peak)))
             
     def setSourceProgram(self):
+        # TODO
         pass
 
     def setPulseSetup(self, pulseEnable, pulseWidth, delay=0.0):
@@ -116,15 +121,15 @@ class d_B29XX(Base_Driver):
         :type delay: float
         """
         if pulseEnable:
-            self.instr.write(':SOUR:FUNC:SHAP PULS')
+            self.write(':SOUR:FUNC:SHAP PULS')
             
-            self.instr.write(':SOUR:PULS:WIDT %f' % float(pulseWidth))
+            self.write(':SOUR:PULS:WIDT %f' % float(pulseWidth))
                 
             if delay > 0.0:
-                self.instr.write(':SOUR:PULS:DEL %f' % float(delay))
+                self.write(':SOUR:PULS:DEL %f' % float(delay))
                 
         else:
-            self.instr.write(':SOUR:FUNC:SHAP DC')
+            self.write(':SOUR:FUNC:SHAP DC')
                 
     def setTriggerSetup(self, triggerSource, number, interval, delay=0):
         """
@@ -142,16 +147,16 @@ class d_B29XX(Base_Driver):
         :type delay: float 
         """
         if triggerSource in self.validTrigger:
-            self.instr.write(':TRIG:SOUR %s' % triggerSource)
-            self.instr.write(':TRIG:COUN %i' % number)
+            self.write(':TRIG:SOUR %s' % triggerSource)
+            self.write(':TRIG:COUN %i' % number)
             
             if triggerSource == 'TIMER':
-                self.instr.write(':TRIG:TIME %f' % float(interval))
+                self.write(':TRIG:TIME %f' % float(interval))
             
             if delay > 0.0:
-                self.instr.write(':TRIG:DEL %f' % float(delay))
+                self.write(':TRIG:DEL %f' % float(delay))
             else:
-                self.instr.write(':TRIG:DEL 0')
+                self.write(':TRIG:DEL 0')
     
     def setMeasurementSetup(self, **kwargs):
         """
@@ -162,6 +167,7 @@ class d_B29XX(Base_Driver):
             This function has not yet been implemented
             
         """
+        # TODO
         pass
     
     def setCurrentLimit(self, limit):
@@ -171,20 +177,32 @@ class d_B29XX(Base_Driver):
         :param limit: Current limit
         :type limit: float
         """
-        self.instr.write(':SENS:CURR:PROT %f' % float(limit))
+        self.write(':SENS:CURR:PROT %f' % float(limit))
     
     def powerOn(self):
-        self.instr.write(':OUTP ON')
+        """
+        Enable the SMU to the programmed output level
+        """
+        self.write(':OUTP ON')
         
     def powerOff(self):
-        self.instr.write(':OUTP OFF')
+        """
+        Power off the SMU using the previously programmed power-off mode
+        """
+        self.write(':OUTP OFF')
         
     def powerOffZero(self):
-        self.instr.write(':OUTP:OFF:MODE ZERO')
+        """
+        Power off the SMU, output is held at ground voltage
+        """
+        self.write(':OUTP:OFF:MODE ZERO')
         self.powerOff()
         
     def powerOffFloat(self):
-        self.instr.write(':OUTP:OFF:MODE HIZ')
+        """
+        Power off the SMU, output is left floating
+        """
+        self.write(':OUTP:OFF:MODE HIZ')
         self.powerOff()
         
     def startProgram(self, channel=1):
@@ -195,10 +213,10 @@ class d_B29XX(Base_Driver):
         :type channel: int
         """
         if channel == 1:
-            self.instr.write(':INIT (@1)')
+            self.write(':INIT (@1)')
             
         elif channel == 2:
-            self.instr.write(':INIT (@2)')
+            self.write(':INIT (@2)')
             
     def getMeasurement(self, **kwargs):
         """
@@ -208,6 +226,7 @@ class d_B29XX(Base_Driver):
 
             This function has not yet been implemented
         """
+        # TODO
         pass
 
     #===========================================================================
@@ -248,7 +267,5 @@ class d_B29XX(Base_Driver):
         
         self.setTriggerSetup('TIMER', points, interval, delay)
         
-        self.instr.write(":SOUR:FUNC:TRIG:CONT ON") # OUTPUT AFTER SWEEP - END VAL
+        self.write(":SOUR:FUNC:TRIG:CONT ON") # OUTPUT AFTER SWEEP - END VAL
         self.startProgram(1)
-
-    

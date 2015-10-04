@@ -4,15 +4,12 @@ from __future__ import absolute_import
 import os, sys
 import time
 import socket
-import copy
-import importlib
 import threading
 
 # Local Imports
 from . import bases
 from . import logger
 from . import common
-from . import drivers
 
 try:
     from . import version
@@ -30,6 +27,8 @@ class InstrumentManager(object):
     :type rpc: bool
     :param rpc_port: RPC endpoint port
     :type rpc_port: int
+    :param plugin_dirs: List of directories containing plugins
+    :type plugin_dirs: list
     :param logger: Logger instance if you wish to override the internal instance
     :type logger: Logging.logger
     """
@@ -63,9 +62,8 @@ class InstrumentManager(object):
         from .common.plugin import PluginManager
 
         # Directories to search
-        dirs = ['drivers', 'interfaces', 'plugtest']
-        dirs_res = map(lambda dir: os.path.join(self.rootPath, dir), dirs)
-        # dirs_res = [drivers, interfaces]
+        dirs = ['drivers', 'interfaces']
+        dirs_res = map(lambda dir: os.path.join(self.rootPath, dir), dirs) + kwargs.get('plugin_dirs', [])
 
         # Categorize plugins by base class
         cat_filter = {
@@ -78,10 +76,7 @@ class InstrumentManager(object):
         self.plugin_manager.search()
         
         # Load Drivers
-        self._drivers = self.__scan(drivers)
-        
-        for driver in self._drivers.keys():
-            self.logger.debug("Found Driver: %s", driver)
+        self._drivers = self.plugin_manager.getPluginsByCategory('drivers')
         
         # Load Interfaces
         for interface_name in self.plugin_manager.getPluginsByCategory('interfaces'):
@@ -99,46 +94,6 @@ class InstrumentManager(object):
     
     def __del__(self):
         self.rpc_stop()
-
-    def __scan(self, pkg):
-        """
-        Scan a package for valid plug-in modules. Plugin modules have a class with the same name as the module and
-        each class has an attribute "info" (dict) that is cataloged.
-        
-        :param pkg: Package to scan
-        :type pkg: package
-        """
-        import pkgutil
-        plugins = {}
-        
-        for pkg_iter in pkgutil.walk_packages(path=pkg.__path__,
-                                              prefix=pkg.__name__+'.'):
-            pkg_imp, pkg_name, is_pkg = pkg_iter
-        
-            if not is_pkg:
-                try:
-                    # Use the filename as the class name
-                    class_name = pkg_name.split('.')[-1]
-                    
-                    # Import the module
-                    testModule = importlib.import_module(pkg_name)
-                    
-                    # Check to make sure the correct class exists
-                    if hasattr(testModule, class_name):
-                        testClass = getattr(testModule, class_name)  # Will raise exception if doesn't exist
-                        
-                        if testClass != {}:
-                            info = copy.deepcopy(testClass.info)
-                            plugins[pkg_name] = info
-
-                except ImportError:
-                    # Missing dependencies, skip this plugin
-                    self.logger.error("Unable to import %s", pkg_name)
-                    
-                except:
-                    self.logger.exception("Exception during module scan: %s", pkg_name)
-
-        return plugins
 
     #===========================================================================
     # RPC Server

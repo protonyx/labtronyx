@@ -1,60 +1,67 @@
 """
 .. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
-
-Driver
-------
-
-The BK Precision Multimeters use a Silicon Labs `CP210x USB to UART Bridge`. This 
-requires a third party driver that must be downloaded from the BK Precision 
-website before connecting the device.
-
-That driver can be downloaded from 
-`here <https://bkpmedia.s3.amazonaws.com/downloads/software/Bench_Multimeter_USB_Drivers.zip>`_
-
-The driver officially supports Windows XP, Vista, 7
-
-Configuration
--------------
-
-In order to be recognized by the VISA driver, the instrument must be configured
-with a baudrate of `9600`. This must be done on the instrument following the
-directions given in the 
-`user's guide <https://bkpmedia.s3.amazonaws.com/downloads/manuals/en-us/2831Eand5491B_manual.pdf>`_
-
 """
 from labtronyx.bases import Base_Driver
 from labtronyx.common.errors import *
 
+info = {
+    # Plugin author
+    'author':               'KKENNEDY',
+    # Plugin version
+    'version':              '1.0',
+    # Last Revision Date
+    'date':                 '2015-10-04',
+}
+
+
 class d_2831(Base_Driver):
     """
     Driver for BK Precision 2831E and 5491B Digital Multimeters
+
+    Driver
+    ------
+
+    The BK Precision Multimeters use a Silicon Labs `CP210x USB to UART Bridge`. This
+    requires a third party driver that must be downloaded from the BK Precision
+    website before connecting the device.
+
+    That driver can be downloaded from
+    `here <https://bkpmedia.s3.amazonaws.com/downloads/software/Bench_Multimeter_USB_Drivers.zip>`_
+
+    The driver officially supports Windows XP, Vista, 7
+
+    Configuration
+    -------------
+
+    In order to be recognized by the VISA driver, the instrument must be configured
+    with a baudrate of `9600`. This must be done on the instrument following the
+    directions given in the
+    `user's guide <https://bkpmedia.s3.amazonaws.com/downloads/manuals/en-us/2831Eand5491B_manual.pdf>`_
+
     """
     
     info = {
         # Device Manufacturer
         'deviceVendor':         'BK Precision',
         # List of compatible device models
-        'deviceModel':          ['2831E', '5491B'],
+        'deviceModel':          ['2831E', '5491B', '5492B', '5492BGPIB'],
         # Device type    
         'deviceType':           'Multimeter',      
         
         # List of compatible resource types
-        'validResourceTypes':   ['VISA'],  
-        
-        #=======================================================================
-        # VISA Attributes        
-        #=======================================================================
-        # Compatible VISA Manufacturers
-        'VISA_compatibleManufacturers': [''],
-        # Compatible VISA Models
-        'VISA_compatibleModels':        ['2831E  Multimeter', 
-                                         '5491B Digital Multimeter']
+        'validResourceTypes':   ['VISA']
     }
+
+    @classmethod
+    def VISA_validResource(cls, identity):
+        models = ['2831E  Multimeter', '5491B Digital Multimeter']
+        return identity[0] in models
     
     modes = {
         'AC Voltage': 'VOLT:AC',
         'DC Voltage': 'VOLT:DC',
         'Resistance': 'RES',
+        '4-wire Resistance': 'FRES',
         'AC Current': 'CURR:AC',
         'DC Current': 'CURR:DC',
         'Frequency': 'FREQ',
@@ -67,27 +74,24 @@ class d_2831(Base_Driver):
         'Bus': 'BUS', 
         'External': 'MAN'}
     
-    def _onLoad(self):
-        self.instr = self.getResource()
-        self.instr.open()
-        
-        self.getFunction()
+    def open(self):
+        self.func = self.getFunction()
     
-    def _onUnload(self):
-        self.instr.close()
+    def close(self):
+        pass
         
     def getProperties(self):
         prop = Base_Driver.getProperties(self)
         
         prop['deviceVendor'] = self.info.get('deviceVendor')
-        prop['deviceModel'] = self.instr.getVISA_model().split(' ')[0]
+        prop['deviceModel'] = self.getVISA_model().split(' ')[0]
         prop['validModes'] = self.modes
         prop['validTriggerSources'] = self.trigger_sources
         
         return prop
     
     def query(self, command):
-        resp = str(self.instr.query(command))
+        resp = str(self.query(command))
         resp = resp.strip() # Strip whitespace
         
         # Check that the SCPI header was not retuned
@@ -102,7 +106,7 @@ class d_2831(Base_Driver):
         """
         Reset the instrument
         """
-        self.instr.write("*RST")
+        self.write("*RST")
         
     def getError(self):
         """
@@ -116,7 +120,7 @@ class d_2831(Base_Driver):
         """
         Enables the front panel display if it was previously disabled.
         """
-        self.instr.write(":DISP:ENAB 1")
+        self.write(":DISP:ENAB 1")
         
     def disableFrontPanel(self):
         """
@@ -128,7 +132,7 @@ class d_2831(Base_Driver):
            When the front panel is disabled, the instrument runs faster
         
         """
-        self.instr.write(":DISP:ENAB 0")
+        self.write(":DISP:ENAB 0")
 
     def setMode(self, func):
         """
@@ -151,7 +155,8 @@ class d_2831(Base_Driver):
         """
         if func in self.modes:
             value = self.modes.get(func)
-            self.instr.write(":FUNC %s" % str(value))
+            self.write(":FUNC %s" % str(value))
+            self.func = value
         else:
             raise RuntimeError("Invalid Function")
         
@@ -208,13 +213,13 @@ class d_2831(Base_Driver):
         :type value: str
         """
         if self.func.upper() in ['FREQ', 'PER']:
-            self.instr.write(":%s:THR:VOLT:RANG %s" % (self.func, value))
+            self.write(":%s:THR:VOLT:RANG %s" % (self.func, value))
         else:
-            if str(value).upper() == 'AUTO':
-                self.instr.write(":%s:RANG:AUTO ON" % self.func)
+            if value in ['auto', 'AUTO']:
+                self.write(":%s:RANG:AUTO ON" % self.func)
             else:
-                self.instr.write(":%s:RANG:AUTO OFF" % self.func)
-                self.instr.write(":%s:RANG %s" % (self.func, str(value)))
+                self.write(":%s:RANG:AUTO OFF" % self.func)
+                self.write(":%s:RANG %s" % (self.func, str(value)))
 
     def getRange(self):
         """
@@ -238,7 +243,7 @@ class d_2831(Base_Driver):
         :param value: Integration rate
         :type value: 
         """
-        self.instr.write(":%s:NPLC %s" % (self.func, str(value)))
+        self.write(":%s:NPLC %s" % (self.func, str(value)))
     
     def getIntegrationRate(self):
         """
@@ -249,7 +254,7 @@ class d_2831(Base_Driver):
         """
         return float(self.query(":%s:NPLC?" % (self.func)))
     
-    def setMeasurementOffset(self, value):
+    def setMeasurementOffset(self, value=None):
         """
         Establish a reference value for the measurement. When the offset is
         set, the result of a measurement will be the algebraic difference
@@ -266,11 +271,11 @@ class d_2831(Base_Driver):
         :type value: float
         """
         if value is None:
-            self.instr.write(":%s:REF:ACQ" % self.func)
+            self.write(":%s:REF:ACQ" % self.func)
         elif float(value) == 0.0:
-            self.instr.write(":%s:REF:STATE OFF" % self.func)
+            self.write(":%s:REF:STATE OFF" % self.func)
         else:
-            self.instr.write(":%s:REF %s" % (self.func, str(value)))
+            self.write(":%s:REF %s" % (self.func, str(value)))
             
     def getMeasurementOffset(self):
         """
@@ -301,7 +306,7 @@ class d_2831(Base_Driver):
         """
         
         if value in self.trigger_sources:
-            self.instr.write(":TRIG:SOUR %s" % self.trigger_sources.get(value))
+            self.write(":TRIG:SOUR %s" % self.trigger_sources.get(value))
         else:
             raise ValueError('Invalid trigger source')
     
@@ -323,7 +328,7 @@ class d_2831(Base_Driver):
         """
         Triggers the measurement if trigger source is set to `Bus`
         """
-        self.instr.write("*TRG")
+        self.write("*TRG")
         
     def getMeasurement(self):
         """

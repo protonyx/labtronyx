@@ -9,6 +9,15 @@ from labtronyx.common.errors import *
 import time
 import re
 
+info = {
+    # Plugin author
+    'author':               'KKENNEDY',
+    # Plugin version
+    'version':              '1.0',
+    # Last Revision Date
+    'date':                 '2015-10-04',
+}
+
 class d_3441XA(Base_Driver):
     """
     Driver for Agilent 34410A and 34411A Digital Multimeter
@@ -23,17 +32,13 @@ class d_3441XA(Base_Driver):
         'deviceType':           'Multimeter',      
         
         # List of compatible resource types
-        'validResourceTypes':   ['VISA'],  
-        
-        #=======================================================================
-        # VISA Attributes        
-        #=======================================================================
-        # Compatible VISA Manufacturers
-        'VISA_compatibleManufacturers': ['AGILENT TECHNOLOGIES',
-                                         'Agilent Technologies'],
-        # Compatible VISA Models
-        'VISA_compatibleModels':        ['34410A', '34411A', 'L4411A']
+        'validResourceTypes':   ['VISA']
     }
+
+    @classmethod
+    def VISA_validResource(cls, identity):
+        vendors = ['AGILENT TECHNOLOGIES', 'Agilent Technologies']
+        return identity[0] in vendors and identity[1] in cls.info['deviceModel']
     
     modes = {
         'Capacitance': 'CAP',

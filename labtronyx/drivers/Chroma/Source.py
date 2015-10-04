@@ -1,20 +1,30 @@
 """
 .. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
-Limitations
------------
-
-This driver does not include any of the device programming functionality,
-it is assumed that an automated program would be designed in a script that
-uses this driver.
-
 """
 from labtronyx.bases import Base_Driver
 from labtronyx.common.errors import *
 
+info = {
+    # Plugin author
+    'author':               'KKENNEDY',
+    # Plugin version
+    'version':              '1.0',
+    # Last Revision Date
+    'date':                 '2015-10-04',
+}
+
+
 class d_620XXP(Base_Driver):
     """
     Driver for Chroma 6200P Series DC Power Supplies
+
+    Limitations
+    -----------
+
+    This driver does not include any of the device programming functionality,
+    it is assumed that an automated program would be designed in a script that
+    uses this driver.
     """
     
     info = {
@@ -29,33 +39,19 @@ class d_620XXP(Base_Driver):
         'deviceType':           'DC Power Supply',      
         
         # List of compatible resource types
-        'validResourceTypes':   ['VISA'],  
-        
-        #=======================================================================
-        # VISA Attributes        
-        #=======================================================================
-        # Compatible VISA Manufacturers
-        'VISA_compatibleManufacturers': ['CHROMA', 'Chroma'],
-        # Compatible VISA Models
-        'VISA_compatibleModels':        ['62006P-30-80', '62006P-100-25', 
-                                         '62006P-300-8', '62012P-40-120', 
-                                         '62012P-80-60', '62012P-100-50', 
-                                         '62012P-600-8', '62024P-40-120', 
-                                         '62024P-80-60', '62024P-100-50', 
-                                         '62024P-600-8', '62052P-100-100']
+        'validResourceTypes':   ['VISA']
     }
+
+    @classmethod
+    def VISA_validResource(cls, identity):
+        vendors = ['CHROMA', 'Chroma']
+        return identity[0] in vendors and identity[1] in cls.info['deviceModel']
     
-    def _onLoad(self):
-        self.instr = self.getResource()
-        
-        self.instr.open()
-        
+    def open(self):
         self.setRemoteControl()
     
-    def _onUnload(self):
+    def close(self):
         self.setLocalControl()
-        
-        self.instr.close()
         
     def getProperties(self):
         prop = Base_Driver.getProperties(self)
@@ -74,26 +70,26 @@ class d_620XXP(Base_Driver):
         """
         Sets the instrument in remote control mode
         """
-        self.instr.write("CONF:REM ON")
+        self.write("CONF:REM ON")
     
     def setLocalControl(self):
         """
         Sets the instrument in local control mode
         """
-        self.instr.write("CONF:REM OFF")
+        self.write("CONF:REM OFF")
     
     def powerOn(self):
         """
         Enables the instrument to power the output
         """
-        self.instr.write("CONF:OUTP ON")
+        self.write("CONF:OUTP ON")
         
     def powerOff(self):
         """
         Disables the output power connections.
         """
-        self.instr.write("CONF:OUTP OFF")
-        #self.instr.write("ABORT")
+        self.write("CONF:OUTP OFF")
+        #self.write("ABORT")
         
     def getError(self):
         """
@@ -101,20 +97,20 @@ class d_620XXP(Base_Driver):
         
         :returns str
         """
-        return self.instr.query("SYST:ERR?")
+        return self.query("SYST:ERR?")
     
     def enableRemoteInhibit(self):
         """
         Enables the remote inhibit pin. This behaves as an external ON/OFF
         control.
         """
-        self.instr.write("CONF:INH LIVE")
+        self.write("CONF:INH LIVE")
         
     def disableRemoteInhibit(self):
         """
         Disables the remote inhibit pin.
         """
-        self.instr.write("CONF:INH OFF")
+        self.write("CONF:INH OFF")
         
     def setMeasurementSpeed(self, speed):
         """
@@ -128,7 +124,7 @@ class d_620XXP(Base_Driver):
                        120: 1,
                        240: 0}
         if speed in valid_speed:
-            self.instr.write("CONF:MEAS:SP %i" % valid_speed.get(speed))
+            self.write("CONF:MEAS:SP %i" % valid_speed.get(speed))
             
         else:
             raise ValueError("Invalid Parameter")
@@ -145,7 +141,7 @@ class d_620XXP(Base_Driver):
                      4: 2,
                      8: 3}
         if avg in valid_avg:
-            self.instr.write("CONF:AVG:TIMES %i" % valid_avg.get(avg))
+            self.write("CONF:AVG:TIMES %i" % valid_avg.get(avg))
             
         else:
             raise ValueError("Invalid Parameter")
@@ -162,7 +158,7 @@ class d_620XXP(Base_Driver):
                      4: 2,
                      8: 3}
         if avg in valid_avg:
-            self.instr.write("CONF:AVG:TIMES %i" % valid_avg.get(avg))
+            self.write("CONF:AVG:TIMES %i" % valid_avg.get(avg))
             
         else:
             raise ValueError("Invalid Parameter")
@@ -174,7 +170,7 @@ class d_620XXP(Base_Driver):
         :param voltage: Voltage (in Volts)
         :type voltage: float
         """
-        self.instr.write("SOUR:VOLT %f" % float(voltage))
+        self.write("SOUR:VOLT %f" % float(voltage))
         
     def getVoltage(self):
         """
@@ -182,7 +178,7 @@ class d_620XXP(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.query("SOUR:VOLT?"))
+        return float(self.query("SOUR:VOLT?"))
     
     def setMaxVoltage(self, voltage):
         """
@@ -202,8 +198,8 @@ class d_620XXP(Base_Driver):
         :param upper: Maximum Voltage (in Volts)
         :type upper: float
         """
-        self.instr.write("SOUR:VOLT:LIM:LOW %f" % float(lower))
-        self.instr.write("SOUR:VOLT:LIM:HIGH %f" % float(upper))
+        self.write("SOUR:VOLT:LIM:LOW %f" % float(lower))
+        self.write("SOUR:VOLT:LIM:HIGH %f" % float(upper))
     
     def getVoltageRange(self):
         """
@@ -211,8 +207,8 @@ class d_620XXP(Base_Driver):
         
         :returns: tuple (lower, upper)
         """
-        lower = self.instr.query("SOUR:VOLT:LIM:LOW?")
-        upper = self.instr.query("SOUR:VOLT:LIM:HIGH?")
+        lower = self.query("SOUR:VOLT:LIM:LOW?")
+        upper = self.query("SOUR:VOLT:LIM:HIGH?")
         return (lower, upper)
     
     def setCurrent(self, current):
@@ -222,7 +218,7 @@ class d_620XXP(Base_Driver):
         :param current: Current (in Amps)
         :type current: float
         """
-        self.instr.write("SOUR:CURR %f" % float(current))
+        self.write("SOUR:CURR %f" % float(current))
         
     def getCurrent(self):
         """
@@ -230,7 +226,7 @@ class d_620XXP(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.query("SOUR:CURR?"))
+        return float(self.query("SOUR:CURR?"))
            
     def setMaxCurrent(self, current):
         """
@@ -250,17 +246,17 @@ class d_620XXP(Base_Driver):
         :param upper: Maximum Current (in Amps)
         :type upper: float
         """
-        self.instr.write("SOUR:CURR:LIM:LOW %f" % float(lower))
-        self.instr.write("SOUR:CURR:LIM:HIGH %f" % float(upper))
+        self.write("SOUR:CURR:LIM:LOW %f" % float(lower))
+        self.write("SOUR:CURR:LIM:HIGH %f" % float(upper))
         
-    def getVoltageRange(self):
+    def getCurrentRange(self):
         """
         Get the configured output current range
         
         :returns: tuple (lower, upper)
         """
-        lower = float(self.instr.query("SOUR:CURR:LIM:LOW?"))
-        upper = float(self.instr.query("SOUR:CURR:LIM:HIGH?"))
+        lower = float(self.query("SOUR:CURR:LIM:LOW?"))
+        upper = float(self.query("SOUR:CURR:LIM:HIGH?"))
         return (lower, upper)
     
     def getTerminalVoltage(self):
@@ -269,7 +265,7 @@ class d_620XXP(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.query("FETC:VOLT?"))
+        return float(self.query("FETC:VOLT?"))
     
     def getTerminalCurrent(self):
         """
@@ -277,7 +273,7 @@ class d_620XXP(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.query("FETC:CURR?"))
+        return float(self.query("FETC:CURR?"))
     
     def getTerminalPower(self):
         """
@@ -285,7 +281,7 @@ class d_620XXP(Base_Driver):
         
         :returns: float
         """
-        return float(self.instr.query("FETC:POW?"))
+        return float(self.query("FETC:POW?"))
     
     def setSlewRate(self, voltage=None, current=None):
         """
@@ -298,15 +294,15 @@ class d_620XXP(Base_Driver):
         :type current: float
         """
         if voltage is not None:
-            self.instr.write("SOUR:VOLT:SLEW %f" % float(voltage))
+            self.write("SOUR:VOLT:SLEW %f" % float(voltage))
         else:
-            self.instr.write("SOU")
+            self.write("SOU")
             
         if current is not None:
-            self.instr.write("SOUR:CURR:SLEWINF DISABLE")
-            self.instr.write("SOUR:CURR:SLEW %f" % float(current))
+            self.write("SOUR:CURR:SLEWINF DISABLE")
+            self.write("SOUR:CURR:SLEW %f" % float(current))
         else:
-            self.instr.write("SOUR:CURR:SLEWINF ENABLE")
+            self.write("SOUR:CURR:SLEWINF ENABLE")
     
     def setProtection(self, voltage=None, current=None, power=None):
         """
@@ -323,15 +319,15 @@ class d_620XXP(Base_Driver):
         
         # Voltage
         if voltage is not None:
-            self.instr.write("SOUR:VOLT:PROT:HIGH %f" % float(voltage))
+            self.write("SOUR:VOLT:PROT:HIGH %f" % float(voltage))
                 
         # Current
         if current is not None:
-            self.instr.write("SOUR:CURR:PROT:HIGH %f" % float(current))
+            self.write("SOUR:CURR:PROT:HIGH %f" % float(current))
     
         # Power
         if power is not None:
-            self.instr.write("SOUR:POW:PROT:HIGH %f" % float(power))
+            self.write("SOUR:POW:PROT:HIGH %f" % float(power))
     
     def getProtection(self):
         """
@@ -341,9 +337,9 @@ class d_620XXP(Base_Driver):
         """
         ret = {}
         
-        ret['Voltage'] = self.instr.query('SOUR:VOLT:PROT:HIGH?')
-        ret['Current'] = self.instr.query('SOUR:CURR:PROT:HIGH?')
-        ret['Power']   = self.instr.query('SOUR:POW:PROT:HIGH?')
+        ret['Voltage'] = self.query('SOUR:VOLT:PROT:HIGH?')
+        ret['Current'] = self.query('SOUR:CURR:PROT:HIGH?')
+        ret['Power']   = self.query('SOUR:POW:PROT:HIGH?')
         
         return ret
     
