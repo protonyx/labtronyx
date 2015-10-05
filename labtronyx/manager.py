@@ -243,52 +243,56 @@ class InstrumentManager(object):
         """
         Enable an interface for use. Requires a class object that extends Base_Interface, NOT a class instance.
 
-        :param cls_interface: Interface class
-        :return:
+        :param interface_name: Interface plugin name
+        :return: bool
         """
-        try:
-            int_cls = self.plugin_manager.getPlugin(interface_name)
-            assert int_cls is not None
+        int_cls = self.plugin_manager.getPlugin(interface_name)
 
-            # Instantiate interface
-            int_obj = int_cls(manager=self, logger=self.logger, **kwargs)
+        if int_cls is not None:
+            try:
+                # Instantiate interface
+                int_obj = int_cls(manager=self, logger=self.logger, **kwargs)
 
-            # Call the plugin hook to open the interface
-            int_obj.open()
+                # Call the plugin hook to open the interface
+                int_obj.open()
 
-            self._interfaces[interface_name] = int_obj
+                self._interfaces[interface_name] = int_obj
 
-            self.logger.info("Started Interface: %s" % interface_name)
+                self.logger.info("Started Interface: %s" % interface_name)
 
-        except NotImplementedError:
-            pass
+                return True
 
-        except:
-            self.logger.exception("Exception during interface open")
-            raise
+            except NotImplementedError:
+                return False
+
+            except:
+                self.logger.exception("Exception during interface open")
+                return False
     
-    def disableInterface(self, interface):
+    def disableInterface(self, interface_name):
         """
         Disable an interface that is running.
 
-        :param interface: Interface name
+        :param interface_name: Interface plugin name
         :return:
         """
-        if interface in self._interfaces:
+        if interface_name in self._interfaces:
             try:
-                inter = self._interfaces.pop(interface)
+                inter = self._interfaces.pop(interface_name)
 
                 # Call the plugin hook to close the interface
                 inter.close()
 
-                self.logger.info("Stopped Interface: %s" % interface)
+                self.logger.info("Stopped Interface: %s" % interface_name)
+
+                return True
 
             except NotImplementedError:
-                pass
+                return False
                 
             except:
                 self.logger.exception("Exception during interface close")
-                raise
+                return False
         
     #===========================================================================
     # Resource Operations
