@@ -187,6 +187,10 @@ class Base_Resource(PluginBase):
                                     logger=self.logger, 
                                     config=self.config)
 
+            # Call the driver open if the resource is already open
+            if self.isOpen():
+                self._driver.open()
+
             # Signal the event
             self.manager._event_signal(common.constants.ResourceEvents.driver_load)
             
@@ -207,6 +211,7 @@ class Base_Resource(PluginBase):
         """
         if self._driver is not None:
             try:
+                self._driver.close()
                 self.close()
                 
             except:
