@@ -3,8 +3,6 @@ from nose.tools import * # PEP8 asserts
 
 import labtronyx
 
-labtronyx.logConsole()
-
 def test_init_time_no_rpc():
     import time
     start = time.clock()
@@ -32,7 +30,14 @@ class InstrumentManager_Tests(unittest.TestCase):
         else:
             return False
 
+    def test_get_hostname(self):
+        self.assertIsNotNone(self.instr.getHostname())
+
+    def test_get_address(self):
+        self.assertIsNotNone(self.instr.getAddress())
+
     def test_refresh(self):
         self.instr.refresh()
         
-        
+    def test_get_drivers(self):
+        self.assertIsNotNone(self.instr.getDrivers())

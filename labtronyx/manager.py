@@ -111,7 +111,11 @@ class InstrumentManager(object):
         # Attempt to import ptx-rpc
         try:
             import ptxrpc as rpc
+        except ImportError:
+            return False
 
+        # Instantiate an rpc server
+        try:
             self.rpc_server = rpc.PtxRpcServer(host='localhost',
                                                port=self.rpc_port,
                                                logger=self.logger)
@@ -129,9 +133,6 @@ class InstrumentManager(object):
             self.rpc_server_thread.start()
 
             return True
-
-        except ImportError:
-            return False
 
         except rpc.RpcServerPortInUse:
             self.logger.error("RPC Port in use, shutting down...")
@@ -228,7 +229,6 @@ class InstrumentManager(object):
     @property
     def interfaces(self):
         return self._interfaces
-
 
     def getInterfaces(self):
         """
@@ -336,9 +336,9 @@ class InstrumentManager(object):
         """
         ret = {}
 
-        for interf in self._interfaces.values():
+        for interface, interface_obj in self._interfaces.items():
             try:
-                for uuid, res in interf.resources.items():
+                for uuid, res in interface_obj.resources.items():
                     ret[uuid] = res.getProperties()
 
                     ret[uuid].setdefault('deviceType', '')
@@ -440,4 +440,4 @@ class InstrumentManager(object):
 
         :return: dict
         """
-        return self._drivers
+        return self._drivers.keys()
