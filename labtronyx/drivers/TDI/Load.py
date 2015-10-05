@@ -1,6 +1,12 @@
 """
 .. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
+Remote Interface
+----------------
+
+These loads feature a Ethernet connection that hosts a web-based interface from
+which you can control the load much like you would if you were sitting in front
+of it.
 """
 from labtronyx.bases import Base_Driver
 from labtronyx.common.errors import *
@@ -18,13 +24,6 @@ info = {
 class d_XBL(Base_Driver):
     """
     Driver for TDI XBL Series DC Electronic Loads
-
-    Remote Interface
-    ----------------
-
-    These loads feature a Ethernet connection that hosts a web-based interface from
-    which you can control the load much like you would if you were sitting in front
-    of it.
     """
     
     info = {

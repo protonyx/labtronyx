@@ -14,6 +14,10 @@ LIB_DIR = "labtronyx"
 DRIVER_SRC = "labtronyx.drivers"
 DRIVER_DOC = "api/drivers"
 
+# Interfaces
+INTERF_SRC = "labtronyx.interfaces"
+INTERF_DOC = "api/interfaces"
+
 # Supported Instruments
 INSTRUMENT_DOC = "instruments"
 
@@ -99,7 +103,7 @@ def build_driver_docs():
         except Exception, e:
             print e
     
-    # Create RST file for each driver
+    # Create RST file for each driver module
     toc_list = []
     for driver_name, driver_cls in plugin_manager.getPluginsByCategory('drivers').items():
         driver_info = driver_cls.info
@@ -109,16 +113,16 @@ def build_driver_docs():
         if driver_info == {}:
             continue
 
-        if driver_name not in toc_list:
-            toc_list.append(driver_name)
+        if driver_module not in toc_list:
+            toc_list.append(driver_module)
         
-        print "Processing: {0}".format(driver_name)
-        driver_filename = os.path.join(driver_folder, str(driver_name) + ".rst")
+        print "Processing: {0}".format(driver_module)
+        driver_filename = os.path.join(driver_folder, str(driver_module) + ".rst")
 
         with file(driver_filename, "w+") as f:
-            f.write(gen_sphinx_header(driver_name, "="))
+            f.write(gen_sphinx_header(driver_module, "="))
             
-            f.write(gen_sphinx_autoclass('labtronyx.drivers.' + driver_name, ['members']))
+            f.write(gen_sphinx_automodule(DRIVER_SRC + '.' + driver_module, ['members']))
 
     print "Generating driver toctree..."
     
@@ -129,17 +133,17 @@ def build_driver_docs():
     with file(toc_filename, "w+") as f:
         f.write(gen_sphinx_header("Drivers", "="))
          
-        f.write(gen_sphinx_toctree(toc_list, 1))
-    
-def build_instrument_docs():
-    print "Generating Supported Instruments..."
+        f.write(gen_sphinx_toctree(toc_list, 2))
 
-    instr_folder = os.path.join(canpath, INSTRUMENT_DOC)
-    
-    # Clear out old driver files
-    files = os.listdir(instr_folder)
+def build_interface_docs():
+    print "Generating interface documentation..."
+
+    interf_folder = os.path.join(canpath, INTERF_DOC)
+
+    # Clear out old files
+    files = os.listdir(interf_folder)
     for filename in files:
-        file_path = os.path.join(instr_folder, filename)
+        file_path = os.path.join(interf_folder, filename)
 
         try:
             if os.path.isfile(file_path):
@@ -147,6 +151,43 @@ def build_instrument_docs():
                 os.unlink(file_path)
         except Exception, e:
             print e
+
+    # Create RST file for each interface module
+    toc_list = []
+    for plugin_name, plugin_cls in plugin_manager.getPluginsByCategory('interfaces').items():
+        plugin_info = plugin_cls.info
+        plugin_class = plugin_name.split('.')[-1]
+        plugin_module = plugin_name[:-1*(len(plugin_class)+1)]
+
+        if plugin_info == {}:
+            continue
+
+        if plugin_name not in toc_list:
+            toc_list.append(plugin_name)
+
+        print "Processing: {0}".format(plugin_name)
+        interf_filename = os.path.join(interf_folder, str(plugin_name) + ".rst")
+
+        with file(interf_filename, "w+") as f:
+            f.write(gen_sphinx_header(plugin_info.get('interfaceName'), "="))
+
+            f.write(gen_sphinx_automodule(INTERF_SRC + '.' + plugin_module, ['members']))
+
+    print "Generating interface toctree..."
+
+    # Create index with TOCtree
+    toc_list.sort()
+
+    toc_filename = os.path.realpath(os.path.join(canpath, INTERF_DOC, 'index.rst'))
+    with file(toc_filename, "w+") as f:
+        f.write(gen_sphinx_header("Interfaces", "="))
+
+        f.write(gen_sphinx_toctree(toc_list, 1))
+
+def build_instrument_docs():
+    print "Generating Supported Instruments..."
+
+    instr_folder = os.path.join(canpath, INSTRUMENT_DOC)
 
     instruments = []
 
@@ -164,7 +205,7 @@ def build_instrument_docs():
     instruments.sort(key=lambda x: x[2])
     instruments.sort(key=lambda x: x[0])
 
-    filename = os.path.realpath(os.path.join(instr_folder, 'index.rst'))
+    filename = os.path.realpath(os.path.join(canpath, 'instruments.rst'))
     with file(filename, "w+") as f:
         cur_vendor = ''
 
@@ -178,9 +219,12 @@ def build_instrument_docs():
                 f.write("\n")
                 f.write(gen_sphinx_header(d_vendor, "-"))
 
-            f.write("  * :doc:`{0} {1} <../../{2}/{3}>`\n".format(d_model, d_type, DRIVER_DOC, d_name))
+            f.write("  * :class:`{0} {1} <{2}>`\n".format(d_model, d_type, DRIVER_SRC + '.' + d_name))
 
+def main():
+    build_driver_docs()
+    build_interface_docs()
+    build_instrument_docs()
 
 if __name__ == "__main__":
-    build_driver_docs()
-    build_instrument_docs()
+    main()

@@ -154,6 +154,9 @@ class PluginManager(object):
                 if obj not in self._category_filter.values() and obj not in self._plugins.values():
                     fq_plug_name = plugin_module + '.' + name
 
+                    if not hasattr(obj, 'info'):
+                        obj.info = {}
+
                     # Store the class (not an instance) in the plugin store
                     self._plugins[fq_plug_name] = obj
 

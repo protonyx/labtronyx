@@ -22,6 +22,18 @@ sys.path.insert(1, os.path.abspath('.'))
 
 import labtronyx
 
+# -- Build labtronyx ------------------------------------------------------
+
+import build
+
+build.build_all()
+
+# -- Build dynamic documentation ------------------------------------------
+
+import docbuild
+
+docbuild.main()
+
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 # -- General configuration ------------------------------------------------
@@ -115,17 +127,6 @@ pygments_style = 'sphinx'
 
 # If true, keep warnings as "system message" paragraphs in the built documents.
 #keep_warnings = False
-
-# Intersphinx configuration
-intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None)}
-
-# -- Build driver documentation -------------------------------------------
-
-import build
-build.build_driver_docs()
-
-# Build Supported Instruments List
-build.build_instrument_docs()
 
 # -- Options for HTML output ----------------------------------------------
 

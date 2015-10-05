@@ -1,5 +1,31 @@
 """
 .. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
+
+Driver
+------
+
+The BK Precision 9110 Series DC Power Sources use the default USB Test and
+Measurement driver and should be recognized without problems when plugged in.
+If the device is not recognized, it is likely because there is a problem with
+the VISA driver installation.
+
+The XLN Series DC Sources use a Silicon Labs `CP210x USB to UART Bridge`. This
+requires a third party driver that must be downloaded from the BK Precision
+website before connecting the device.
+
+That driver can be downloaded from
+`here <https://bkpmedia.s3.amazonaws.com/downloads/software/CP210X_USB_Driver.zip>`_
+
+Remote Interface
+----------------
+
+The XLN series DC sources feature a remote web interface using the Ethernet
+connection, that can be accessed by typing in the instrument IP address into a
+Java-enabled web browser.
+
+.. note:
+
+   The default admin password is 123456
 """
 from labtronyx.bases import Base_Driver
 from labtronyx.common.errors import *
@@ -17,14 +43,6 @@ info = {
 class d_911X(Base_Driver):
     """
     Driver for BK Precision 9110 Series DC Power Sources
-
-    Driver
-    ------
-
-    The BK Precision 9110 Series DC Power Sources use the default USB Test and
-    Measurement driver and should be recognized without problems when plugged in.
-    If the device is not recognized, it is likely because there is a problem with
-    the VISA driver installation.
     """
     
     info = {
@@ -313,27 +331,6 @@ class d_911X(Base_Driver):
 class d_XLN(Base_Driver):
     """
     Driver for BK Precision XLN Series DC Sources
-
-    Driver
-    ------
-
-    The XLN Series DC Sources use a Silicon Labs `CP210x USB to UART Bridge`. This
-    requires a third party driver that must be downloaded from the BK Precision
-    website before connecting the device.
-
-    That driver can be downloaded from
-    `here <https://bkpmedia.s3.amazonaws.com/downloads/software/CP210X_USB_Driver.zip>`_
-
-    Remote Interface
-    ----------------
-
-    The XLN series DC sources feature a remote web interface using the Ethernet
-    connection, that can be accessed by typing in the instrument IP address into a
-    Java-enabled web browser.
-
-    .. note:
-
-       The default admin password is 123456
     """
 
     info = {

@@ -9,15 +9,20 @@ import serial
 import serial.tools.list_ports
 from serial.serialutil import SerialException
 
+info = {
+    # Interface Author
+    'author':               'KKENNEDY',
+    # Interface Version
+    'version':              '1.0',
+    # Revision date
+    'date':                 '2015-10-05'
+}
+
 class i_Serial(Base_Interface):
     
     info = {
-        # Interface Author
-        'author':               'KKENNEDY',
-        # Interface Version
-        'version':              '1.0',
-        # Revision date
-        'date':                 '2015-03-06'
+        # Interface Name
+        'interfaceName':    'Serial'
     }
     
     # Dict: ResID -> (VID, PID)

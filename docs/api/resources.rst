@@ -7,12 +7,6 @@ If you need to send commands directly to the device, the resource API documents
 the available functions. This is necessary if the driver does not support a 
 particular function or a driver does not exist for the device you are 
 interacting with.
-
-The Resource types that are currently supported are:
-
-   - :class:`interfaces.i_VISA.r_VISA`
-   - :class:`interfaces.i_Serial.r_Serial`
-   - :class:`interfaces.i_ICP.r_ICP`
    
 Status
 ------
@@ -146,28 +140,22 @@ through the entirety of possible device addresses to find a device.
 
 For controllers that support manually adding resources::
 
-	from labtronyx import InstrumentManager
-   	instr = InstrumentManager()
+    from labtronyx import InstrumentManager
+    instr = InstrumentManager()
    	
-   	new_uuid = instr.addResource('i_ICP', 'ACME', 'ABC 2000')
+    new_uuid = instr.addResource('i_ICP', 'ACME', 'ABC 2000')
    	
-   	# Refresh the resources list to find the new resource
+    # Refresh the resources list to find the new resource
    	instr.refreshManager()
    	
-   	widget = instr.getInstrument_model('ABC 2000')
+    widget = instr.getInstrument_model('ABC 2000')
    	
 To destroy a resource, provide the Resource UUID::
 
-	instr.destroyResource('c_CAN', '360ba14f-19be-11e4-95bf-a0481c94faff')
+    instr.destroyResource('c_CAN', '360ba14f-19be-11e4-95bf-a0481c94faff')
    
-Resource APIs
--------------
+Resource API
+------------
 
-.. autoclass:: interfaces.i_VISA.r_VISA
-   :members:
-
-.. autoclass:: interfaces.i_Serial.r_Serial
-   :members:
-
-.. autoclass:: interfaces.i_ICP.r_ICP
+.. autoclass:: labtronyx.bases.resource.Base_Resource
    :members:

@@ -14,6 +14,15 @@ from labtronyx.bases.resource import Base_Resource
 from labtronyx.common.errors import *
 import labtronyx.common as common
 
+info = {
+    # Interface Author
+    'author':               'KKENNEDY',
+    # Interface Version
+    'version':              '1.0',
+    # Revision date
+    'date':                 '2015-10-05'
+}
+
 
 class i_VISA(Base_Interface):
     """
@@ -22,7 +31,10 @@ class i_VISA(Base_Interface):
     Wraps PyVISA. Requires a VISA driver to be installed on the system.
     """
 
-    info = {}
+    info = {
+        # Interface Name
+        'interfaceName':    'VISA'
+    }
 
     resource_manager = None
 

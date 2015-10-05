@@ -13,10 +13,13 @@ Labtronyx Python Library API
     | Managing instruments connected to other computers
     |
     | :doc:`resources`
-    | API Documentation for each resource type
+    | API Documentation for general resources
     |
     | :doc:`drivers/index`
     | API documentation for all drivers
+    |
+    | :doc:`interfaces/index`
+    | API documentation for all interfaces and associated resource types
 
 .. toctree::
    :hidden:
@@ -26,4 +29,4 @@ Labtronyx Python Library API
    labmanager
    resources
    drivers/index
-   
+   interfaces/index

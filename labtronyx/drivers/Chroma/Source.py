@@ -1,6 +1,12 @@
 """
 .. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
+Limitations
+-----------
+
+This driver does not include any of the device programming functionality,
+it is assumed that an automated program would be designed in a script that
+uses this driver.
 """
 from labtronyx.bases import Base_Driver
 from labtronyx.common.errors import *
@@ -18,13 +24,6 @@ info = {
 class d_620XXP(Base_Driver):
     """
     Driver for Chroma 6200P Series DC Power Supplies
-
-    Limitations
-    -----------
-
-    This driver does not include any of the device programming functionality,
-    it is assumed that an automated program would be designed in a script that
-    uses this driver.
     """
     
     info = {

@@ -1,5 +1,27 @@
 """
 .. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
+
+Supported Interfaces
+--------------------
+
+* USB
+* Ethernet (2000 Series requires the DPO2CONN Module)
+
+Ethernet Interface
+------------------
+
+Tektronix oscilloscopes support Ethernet communication using the VXI extensions for VISA. The VISA driver should be
+used to detect the oscilloscope on the network, it is outside of the capabilities of the Labtronyx framework to
+discover VXI devices. For 2000 series oscilloscopes, the `DPO2CONN Connectivity Module` is required for ethernet
+communication.
+
+5000, 7000 and 70000 Series Limitations
+---------------------------------------
+
+The oscilloscopes supported by this driver all run Windows and do not support
+the HARD COPY command to get screenshot data from the oscilloscope application.
+Screenshots can be saved to the oscilloscope hard drive and must be retrieved
+using other means.
 """
 from labtronyx.bases import Base_Driver
 from labtronyx.common.errors import *
@@ -25,19 +47,6 @@ info = {
 class d_2XXX(Base_Driver):
     """
     Driver for Tektronix 2000 Series Oscilloscopes
-
-    Supported Interfaces
-    --------------------
-
-    * USB
-    * Ethernet (With DPO2CONN Module)
-
-    Ethernet Interface
-    ------------------
-
-    If the optional `DPO2CONN Connectivity Module` is installed, these oscilloscopes
-    can also support Ethernet communication using the VXI extensions for VISA. The
-    VISA driver should be able to detect the oscilloscope on the network.
     """
     
     info = {
@@ -237,14 +246,6 @@ class d_2XXX(Base_Driver):
 class d_5XXX7XXX(Base_Driver):
     """
     Driver for Tektronix 5000, 7000 and 70000 Series Oscilloscopes
-
-    Limitations
-    -----------
-
-    The oscilloscopes supported by this driver all run Windows and do not support
-    the HARD COPY command to get screenshot data from the oscilloscope application.
-    Screenshots can be saved to the oscilloscope hard drive and must be retrieved
-    using other means.
     """
 
     info = {

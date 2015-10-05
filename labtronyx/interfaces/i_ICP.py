@@ -2,11 +2,8 @@
 Instrument Control Protocol (ICP)
 =================================
 
-The Instrument Control Protocol was developed by Kevin Kennedy as a protocol for 
-communication with instruments over an Ethernet network.
-
-   * Low Overhead
-   * Flexible
+The Instrument Control Protocol was developed as a low-overhead, flexible protocol for use  with instruments over an
+Ethernet network.
 
 Detailed Operation
 ------------------
@@ -72,6 +69,15 @@ import binascii
 
 import numpy
 
+info = {
+    # Interface Author
+    'author':               'KKENNEDY',
+    # Interface Version
+    'version':              '1.0',
+    # Revision date
+    'date':                 '2015-10-05'
+}
+
 #===========================================================================
 # data_types_pack = {
 #     'int8': lambda data: struct.pack('!b', int(data)),
@@ -92,18 +98,12 @@ import numpy
 
 class i_ICP(Base_Interface):
     """
-    Conforms to Rev 1.0 of the Instrument Control Protocol
-
-    :author: Kevin Kennedy
+    Instrument Control Protocol (ICP) Interface
     """
-    
+
     info = {
-        # Interface Author
-        'author':               'KKENNEDY',
-        # Interface Version
-        'version':              '1.0',
-        # Revision date
-        'date':                 '2015-03-06'
+        # Interface Name
+        'interfaceName':    'ICP'
     }
     
     DEBUG_INTERFACE_ICP = True
