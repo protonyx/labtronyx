@@ -59,7 +59,6 @@ class InstrumentManager(object):
         #
         # Load Plugins
         #
-        from .common.plugin import PluginManager
 
         # Directories to search
         dirs = ['drivers', 'interfaces']
@@ -72,7 +71,7 @@ class InstrumentManager(object):
             "resources": bases.Base_Resource
         }
 
-        self.plugin_manager = PluginManager(directories=dirs_res, categories=cat_filter, logger=self.logger)
+        self.plugin_manager = common.plugin.PluginManager(directories=dirs_res, categories=cat_filter, logger=self.logger)
         self.plugin_manager.search()
         
         # Load Drivers
