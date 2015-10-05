@@ -136,10 +136,6 @@ def build_package():
         zip_safe = False
     )
 
-    # Additional dependencies for CI and test builds
-    if os.environ.get('CI') == 'true' or 'test' in sys.argv:
-        setup_meta['install_requires'] += ['pyvisa-sim', 'mock']
-
     try:
         from setuptools import setup
     except ImportError:
