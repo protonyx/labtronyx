@@ -179,6 +179,8 @@ class r_VISA(Base_Resource):
 
         Base_Resource.__init__(self, manager, interface, resID, **kwargs)
 
+        self._identity = []
+
         # Instrument is created in the open state, but we do not want to lock the VISA instrument
         self.close()
 
@@ -278,6 +280,9 @@ class r_VISA(Base_Resource):
             self.close()
 
         self.ready = True
+
+    def getIdentity(self):
+        return self._identity
 
     def getVISA_vendor(self):
         if not self.ready:
