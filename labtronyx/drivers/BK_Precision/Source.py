@@ -368,12 +368,10 @@ class d_XLN(Base_Driver):
         pass
 
     def getProperties(self):
-        prop = Base_Driver.getProperties(self)
-
-        prop['protectionModes'] = ['Voltage', 'Current', 'Power']
-        prop['terminalSense'] = ['Voltage', 'Current', 'Power']
-
-        return prop
+        return {
+            'protectionModes': ['Voltage', 'Current', 'Power'],
+            'terminalSense':   ['Voltage', 'Current', 'Power']
+        }
 
     def setRemoteControl(self):
         """

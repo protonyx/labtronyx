@@ -48,19 +48,20 @@ class d_TopCon(Base_Driver):
         self.instr.bytesize = 8
         self.instr.parity = 'N'
         self.instr.stopbits = 1
+
+        self._serial = self.getSerialNumber()
+        self._fw = self.getFirmwareVersion()
     
     def close(self):
         pass
     
     def getProperties(self):
-        ret = Base_Driver.getProperties(self)
-        
-        ret['deviceVendor'] = 'Regatron'
-        #ret['deviceModel'] = ''
-        ret['deviceSerial'] = self.getSerialNumber()
-        ret['deviceFirmware'] = self.getFirmwareVersion()
-            
-        return ret
+        return {
+            'deviceVendor':     self.info['deviceVendor'],
+            'deviceModel':      self.info['deviceModel'][0],
+            'deviceSerial':     self._serial,
+            'deviceFirmware':   self._fw
+        }
     
     def _sendFrame(self, frame):
         """

@@ -54,17 +54,15 @@ class d_620XXP(Base_Driver):
         self.setLocalControl()
         
     def getProperties(self):
-        prop = Base_Driver.getProperties(self)
+        return {
+            # Chroma seems to have a different way of responding to *IDN?
+            'deviceSerial':         self.getIdentity()[3],
+            'deviceFirmware':       self.getIdentity()[2],
         
-        # Chroma seems to have a different way of responding to *IDN?
-        prop['deviceSerial'] = self.instr.identity[3]
-        prop['deviceFirmware'] = self.instr.identity[2]
-        
-        prop['protectionModes'] = ['Voltage', 'Current', 'Power']
-        prop['terminalSense'] = ['Voltage', 'Current', 'Power']
-        prop['controlModes'] = ['Voltage', 'Current']
-        
-        return prop
+            'protectionModes':      ['Voltage', 'Current', 'Power'],
+            'terminalSense':        ['Voltage', 'Current', 'Power'],
+            'controlModes':         ['Voltage', 'Current']
+        }
     
     def setRemoteControl(self):
         """

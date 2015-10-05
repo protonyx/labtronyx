@@ -517,12 +517,9 @@ class Base_Serial(m_BDPC_Base):
         'AuxD': 'PHI_AUXD'
         }
 
-    def _onLoad(self):
-        self.resource = self.getResource()
-
+    def open(self):
         # Configure the COM Port
-        self.resource.open()
-        self.resource.configure(baudrate=115200,
+        self.configure(baudrate=115200,
                                 timeout=0.25,
                                 bytesize=8,
                                 parity='E',
@@ -531,16 +528,14 @@ class Base_Serial(m_BDPC_Base):
         # Attempt to get the status
         self.getStatus()
 
-    def _onUnload(self):
-        self.resource.close()
+    def close(self):
+        pass
 
     def getProperties(self):
-        prop = m_BDPC_Base.getProperties(self)
-
-        prop['deviceVendor'] = 'UPEL'
-        prop['deviceModel'] = 'BDPC Serial'
-
-        return prop
+        return {
+            'deviceVendor':     'UPEL',
+            'deviceModel':      'BDPC Serial'
+        }
 
      #==========================================================================
      # Helper Functions
@@ -590,7 +585,7 @@ class Base_Serial(m_BDPC_Base):
         :type data: int
         """
         packet = self._SRC_pack(addr, data)
-        self.resource.write_raw(packet)
+        self.write_raw(packet)
         self.logger.debug("SRC TX: %s", packet.encode('hex'))
 
     def _SRC_read_packet(self):
@@ -600,15 +595,15 @@ class Base_Serial(m_BDPC_Base):
 
         :returns: tuple (address, data) if found, None otherwise
         """
-        while (self.resource.inWaiting() > 0):
+        while (self.inWaiting() > 0):
             # Read the next byte in the serial buffer
-            buf = self.resource.read_raw(1)
+            buf = self.read_raw(1)
             # Check if the byte is a START_SYNC
             if (buf == chr(0x24)):
-                bytesWaiting = self.resource.inWaiting()
+                bytesWaiting = self.inWaiting()
                 if (bytesWaiting >= (self.pkt_struct.size - 1)):
                     # Retrieve the rest of the packet
-                    buf = buf + self.resource.read_raw(self.pkt_struct.size - 1)
+                    buf = buf + self.read_raw(self.pkt_struct.size - 1)
 
                     # Is there an END_SYNC at the end of the packet?
                     if buf[-1] == chr(0x1E):
@@ -632,13 +627,13 @@ class Base_Serial(m_BDPC_Base):
                         # Keep searching for a valid packet
                 else:
                     # START_SYNC but not full packet in the queue
-                    buf = buf + self.resource.read_raw(self.resource.inWaiting())
+                    buf = buf + self.read_raw(self.inWaiting())
                     self.logger.error("SRC RX Incomplete Packet: %s", buf.encode('hex'))
 
         return None
 
     def read_register(self, address):
-        if self.resource.getResourceStatus() != common.status.error:
+        if self.getResourceStatus() != common.status.error:
             address = address & 0x7F
 
             for attempt in range(3):
@@ -660,7 +655,7 @@ class Base_Serial(m_BDPC_Base):
             self.logger.error("Unable to read register %s", address)
 
             # Flag the resource as unresponsive
-            self.resource.setResourceStatus(common.status.error)
+            self.setResourceStatus(common.status.error)
 
             raise RuntimeError()
 
@@ -668,7 +663,7 @@ class Base_Serial(m_BDPC_Base):
             raise RuntimeError()
 
     def write_register(self, address, data):
-        if self.resource.getResourceStatus() != common.status.error:
+        if self.getResourceStatus() != common.status.error:
             address_write = int(address) | 0x80
             data = int(data)
 
@@ -691,7 +686,7 @@ class Base_Serial(m_BDPC_Base):
             self.logger.error("Unable to write register %s", address)
 
             # Flag the resource as unresponsive
-            self.resource.setResourceStatus(common.status.unresponsive)
+            self.setResourceStatus(common.status.unresponsive)
 
             raise RuntimeError()
 
@@ -994,13 +989,10 @@ class m_BDPC_BR2(Base_Driver, Base_ICP):
     }
 
     def getProperties(self):
-        prop = Base_ICP.getProperties(self)
-
-        prop['deviceVendor'] = 'UPEL'
-        prop['deviceModel'] = 'BDPC Dual 2kW'
-
-        # Add any additional properties here
-        return prop
+        return {
+            'deviceVendor':     self.info['deviceVendor'],
+            'deviceModel':      'BDPC Dual 2kW'
+        }
 
 
 class m_BDPC_BR32(Base_Driver, Base_Serial):
@@ -1022,13 +1014,13 @@ class m_BDPC_BR32(Base_Driver, Base_Serial):
 
     def open(self):
         # Set the controller into passthrough mode
-        #self.instr.write("mode 2\n")
+        #self.write("mode 2\n")
         pass
 
     def close(self):
         # Set the controller into debug mode
         #magic = struct.pack('BB', 0x24, 0x1E)
-        #self.instr.write(magic)
+        #self.write(magic)
         pass
 
     def _SRC_comm_reset(self):
@@ -1039,12 +1031,10 @@ class m_BDPC_BR32(Base_Driver, Base_Serial):
         self.write("mode 2\n")
 
     def getProperties(self):
-        prop = Base_Serial.getProperties(self)
-
-        prop['deviceVendor'] = 'UPEL'
-        prop['deviceModel'] = 'BDPC 32kW'
-
-        return prop
+        return {
+            'deviceVendor':     self.info['deviceVendor'],
+            'deviceModel':      'BDPC 32kW'
+        }
 
 
 class m_BDPC_SRC6(Base_Driver, Base_Serial):
@@ -1065,10 +1055,7 @@ class m_BDPC_SRC6(Base_Driver, Base_Serial):
     }
 
     def getProperties(self):
-        prop = Base_Serial.getProperties(self)
-
-        prop['deviceVendor'] = 'UPEL'
-        prop['deviceModel'] = 'BDPC Dual 2kW'
-
-        # Add any additional properties here
-        return prop
+        return {
+            'deviceVendor':     self.info['deviceVendor'],
+            'deviceModel':      'BDPC Dual 2kW'
+        }

@@ -81,14 +81,14 @@ class d_2831(Base_Driver):
         pass
         
     def getProperties(self):
-        prop = Base_Driver.getProperties(self)
-        
-        prop['deviceVendor'] = self.info.get('deviceVendor')
-        prop['deviceModel'] = self.getVISA_model().split(' ')[0]
-        prop['validModes'] = self.modes
-        prop['validTriggerSources'] = self.trigger_sources
-        
-        return prop
+        return {
+            # Override VISA defaults, this device is different
+            'deviceVendor':        self.info.get('deviceVendor'),
+            'deviceModel':         self.getIdentity()[0].split(' ')[0],
+
+            'validModes':          self.modes,
+            'validTriggerSources': self.trigger_sources
+        }
     
     def query(self, command):
         resp = str(self.query(command))

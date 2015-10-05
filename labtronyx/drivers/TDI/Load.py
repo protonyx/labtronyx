@@ -58,20 +58,21 @@ class d_XBL(Base_Driver):
         
         # Turn off keyboard sounds
         self.instr.write("KEYOFF")
+
+        self._model = self.query("MDL?")
+        self._serial = self.query("SERNO?")
+        self._fw = self.query("VER?")
     
     def close(self):
         pass
         
     def getProperties(self):
-        ret = Base_Driver.getProperties(self)
-        
-        ret['deviceVendor'] = 'TDI'
-        
-        ret['deviceModel'] = self.query("MDL?")
-        ret['deviceSerial'] = self.query("SERNO?")
-        ret['deviceFirmware'] = self.query("VER?")
-            
-        return ret
+        return {
+            'deviceVendor':     self.info['deviceVendor'],
+            'deviceModel':      self._model,
+            'deviceSerial':     self._serial,
+            'deviceFirmware':   self._fw
+        }
     
     def powerOn(self):
         """

@@ -56,12 +56,9 @@ class m_BMS(Base_Driver):
         pass
     
     def getProperties(self):
-        prop = Base_Driver.getProperties(self)
-
-        prop['deviceModel'] = self.info.get('deviceModel')[0]
-        
-        # Add any additional properties here
-        return prop
+        return {
+            'deviceModel':  self.info.get('deviceModel')[0]
+        }
     
     def getLastStatus(self):
         """
