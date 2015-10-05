@@ -151,7 +151,7 @@ class PluginManager(object):
         for name, obj in inspect.getmembers(module):
             if inspect.isclass(obj) and issubclass(obj, PluginBase):
                 # Check that the class is not one of the base plugin classes
-                if obj not in self._category_filter.values():
+                if obj not in self._category_filter.values() and obj not in self._plugins.values():
                     fq_plug_name = plugin_module + '.' + name
 
                     # Store the class (not an instance) in the plugin store
