@@ -1,34 +1,22 @@
 import unittest
+from nose.tools import * # PEP8 asserts
 
 import labtronyx
-InstrumentManager = labtronyx.InstrumentManager
 
 labtronyx.logConsole()
 
-
-class InstrumentManager_Init_Tests(unittest.TestCase):
-
-    def test_init_time_no_rpc(self):
-        import time
-        start = time.clock()
-        instr = InstrumentManager(rpc=False)
-        delta = time.clock() - start
-        self.assertLessEqual(delta, 1.0, "No RPC Init time must be less than 1.0 second(s)")
-
-    def test_init_time_rpc(self):
-        import time
-        start = time.clock()
-        instr = InstrumentManager(rpc=True)
-        delta = time.clock() - start
-        self.assertLessEqual(delta, 2.0, "RPC Init time must be less than 2.0 second(s)")
-
-        instr.rpc_stop()
+def test_init_time_no_rpc():
+    import time
+    start = time.clock()
+    instr = labtronyx.InstrumentManager(rpc=False)
+    delta = time.clock() - start
+    assert_less_equal(delta, 1.0, "No RPC Init time must be less than 1.0 second(s)")
 
 class InstrumentManager_Tests(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.instr = InstrumentManager(rpc=False)
+        self.instr = labtronyx.InstrumentManager(rpc=False)
 
     def test_get_version(self):
         self.assertIsNotNone(self.instr.getVersion())

@@ -1,42 +1,33 @@
 import unittest
-import nose.tools as nose # PEP8 asserts
+from nose.tools import * # PEP8 asserts
 
 import labtronyx
 
-instr = labtronyx.InstrumentManager()
+def setUpModule():
+    global instr
+    instr = labtronyx.InstrumentManager(rpc=False)
 
 def test_drivers():
+    global instr
     for driverName, driverCls in instr.drivers.items():
-        print driverName
         yield check_driver_api, driverCls
 
 def check_driver_api(driverCls):
-    nose.assert_true(hasattr(driverCls, 'info'))
-    nose.assert_in('deviceVendor', driverCls.info)
-    nose.assert_in('deviceModel', driverCls.info)
-    nose.assert_in('deviceType', driverCls.info)
-    nose.assert_in('validResourceTypes', driverCls.info)
+    assert_true(hasattr(driverCls, 'info'))
+    assert_in('deviceVendor', driverCls.info)
+    assert_in('deviceModel', driverCls.info)
+    assert_in('deviceType', driverCls.info)
+    assert_in('validResourceTypes', driverCls.info)
+
+    # Regression test
+    assert_false(hasattr(driverCls, '_onLoad'))
+    assert_false(hasattr(driverCls, '_onUnload'))
 
     if 'VISA' in driverCls.info['validResourceTypes']:
         check_visa_api(driverCls)
 
 def check_visa_api(driverCls):
-    nose.assert_true(hasattr(driverCls, 'VISA_validResource'))
-    nose.assert_equal(type(driverCls.VISA_validResource(['','','',''])), bool)
+    assert_true(hasattr(driverCls, 'VISA_validResource'))
+    assert_equal(type(driverCls.VISA_validResource(['','','',''])), bool)
 
-
-class DriverUnitTests(unittest.TestCase):
-    """
-
-    """
-
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
-
-
-if __name__ == '__main__':
-    unittest.main()
+# TODO: Write Integration tests for drivers

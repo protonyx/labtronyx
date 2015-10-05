@@ -1,10 +1,22 @@
 import unittest
+from nose.tools import * # PEP8 asserts
+
 import mock
 
 import labtronyx
 from labtronyx.bases import Base_Resource, Base_Interface
 
-class Interface_Tests(unittest.TestCase):
+def test_interfaces():
+    # Nose test generator to run unittests on discovered interfaces
+    instr = labtronyx.InstrumentManager(rpc=False)
+
+    for interName, interCls in instr.interfaces.items():
+        yield check_interface_api, interCls
+
+def check_interface_api(interfaceCls):
+    assert_true(hasattr(interfaceCls, 'info'))
+
+class Interface_Integration_Tests(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
@@ -20,8 +32,11 @@ class Interface_Tests(unittest.TestCase):
                                  interface=self.interf,
                                  resID='DEBUG')
         self.res.getProperties = mock.Mock(return_value=dict(resourceID= 'DEBUG'))
+
+        # Inject the resource into the fake interface
         self.interf._resources = {'DEBUG': self.res}
 
+        # Inject the fake interface into the manager instance
         self.instr._interfaces['interfaces.i_Debug'] = self.interf
         
     def test_resource(self):
@@ -30,4 +45,46 @@ class Interface_Tests(unittest.TestCase):
         self.assertEqual(len(self.dev), 1)
 
         self.dev = self.dev[0]
-        
+
+class Interface_VISA_Tests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # Setup a mock manager
+        cls.manager = labtronyx.InstrumentManager(rpc=False)
+
+        import importlib
+        cls.m_visa = importlib.import_module('labtronyx.interfaces.i_VISA')
+
+        import os
+        lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'default.yaml')
+        # lib_path = ''
+        cls.i_visa = cls.m_visa.i_VISA(manager=cls.manager, library='%s@sim'%lib_path)
+
+        if not cls.i_visa.open():
+            print cls.i_visa.getError()
+            raise EnvironmentError("VISA Library did not initialize properly")
+
+        cls.manager._interfaces['labtronyx.interfaces.i_VISA'] = cls.i_visa
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.i_visa.close()
+
+    def test_interface_visa_enumerate_time(self):
+        import time
+        start = time.clock()
+        self.i_visa.enumerate()
+        self.assertLessEqual(time.clock() - start, 1.0, "VISA refresh time must be less than 1.0 second(s)")
+
+    def test_interface_visa_get_resources(self):
+        ret = self.i_visa.getResources()
+
+        self.assertEqual(type(ret), dict)
+
+    def test_interface_find_instruments(self):
+        dev_list = self.manager.findInstruments()
+        self.assertGreater(len(dev_list), 0)
+
+    def test_interface_get_properties(self):
+        self.manager.getProperties()

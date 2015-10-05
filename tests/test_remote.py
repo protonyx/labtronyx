@@ -1,21 +1,21 @@
 import unittest
+from nose.tools import * # PEP8 asserts
 
 from labtronyx import InstrumentManager, RemoteManager
 
-class RemoteManager_Tests(unittest.TestCase):
+def test_init_time_rpc():
+    import time
+    start = time.clock()
+    instr = InstrumentManager(rpc=True)
+    delta = time.clock() - start
+    assert_less_equal(delta, 2.0, "RPC Init time must be less than 2.0 second(s)")
 
-    @classmethod
-    def setUpClass(self):
-        # Setup an InstrumentManager with RPC
-        self.instr = InstrumentManager(rpc=True)
+    instr.rpc_stop()
 
-        # Create a fake resource
+def test_remote_connect():
+    # Setup an InstrumentManager with RPC
+    instr = InstrumentManager(rpc=True)
 
-        self.client = RemoteManager(uri='http://localhost:6780/')
+    client = RemoteManager(uri='http://localhost:6780/')
 
-    @classmethod
-    def tearDownClass(self):
-        self.instr.rpc_stop()
-
-    def test_remote_connect(self):
-        self.assertEqual(self.client.getVersion(), self.instr.getVersion())
+    assert_equal(client.getVersion(), instr.getVersion())
