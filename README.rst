@@ -11,17 +11,30 @@ it is flexible and extensible as to interface with any kind of instrument.
 Documentation
 -------------
 
-For full documentation including installation instructions, see 'doc'.
+Documentation is written in RestructuredText and compiled using Sphinx. It is also hosted at `docs`_.
+
+.. _docs: http://labtronyx.readthedocs.org/en/latest/index.html
+
+Building documentation requires Sphinx. To build documentation::
+
+   python setup.py build_sphinx
+
+Running Tests
+-------------
+
+Labtronyx includes a test suite that can be run using::
+
+   python setup.py nosetests
 
 Authors
 -------
 
 Kevin Kennedy (protonyx)
 
-Changelog
----------
+Changes
+-------
 
-Still in early development
+See CHANGES
 
 .. |build-status| image:: https://travis-ci.org/protonyx/labtronyx.svg?branch=master
    :target: https://travis-ci.org/protonyx/labtronyx

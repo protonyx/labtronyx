@@ -4,13 +4,18 @@ Remote Control
 Listening for Remote Connections
 --------------------------------
 
-The Labtronyx InstrumentManager runs locally by default. To listen for remote 
-connections, call::
+The Labtronyx InstrumentManager runs locally by default. To listen for remote connections, call::
 
    import labtronyx
    
    manager = labtronyx.InstrumentManager()
    manager.start()
+
+If you just want to run Labtronyx in server mode, it can be called from the command line::
+
+   labtronyx
+
+While in server mode, the terminal window will be unavailable for use, but all logging events will be displayed there.
 
 Connect to a Remote InstrumentManager
 -------------------------------------

@@ -2,6 +2,18 @@
 VISA Interface module for Labtronyx
 
 :codeauthor: Kevin Kennedy
+
+Dependencies
+------------
+
+In order to use the VISA interface, a proper VISA driver must be installed.
+
+The latest version of NI-VISA can be downloaded from `nivisa`_ .
+
+.. _nivisa: http://www.ni.com/visa
+
+Install NI-VISA using the instructions and ReadMe file included with the installer. NI-VISA is compatible with Windows,
+Mac and Linux.
 """
 
 from traceback import format_exc
@@ -663,4 +675,3 @@ class r_VISA(Base_Resource):
 
         else:
             return Base_Resource.loadDriver(self, driverName)
-

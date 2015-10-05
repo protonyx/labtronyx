@@ -7,31 +7,9 @@ If you need to send commands directly to the device, the resource API documents
 the available functions. This is necessary if the driver does not support a 
 particular function or a driver does not exist for the device you are 
 interacting with.
-   
-Status
-------
 
-The status of a resource can be queried by calling 
-:func:`getResourceStatus`. Resource status can be in
-any of these states:
-
-   * INIT - Resource does not have a driver loaded
-   * READY - Resource has a driver loaded and is ready
-   * ERROR - An error has occurred
-   
-To get additional information about an error, call
-:func:`getResourceError`. Errors include any of the
-following:
-
-   * UNAVAILABLE - The Resource is locked by the system or is busy and cannot be 
-     used
-   * NOTFOUND - The Interface denies knowing anything about the Resource. It may
-     have been disconnected. A Resource with this error will likely be deleted
-     soon
-   * UNRESPONSIVE - The Resource is available, but there are no responses from
-     any connected instruments or devices
-   * UNKNOWN - Some other error has occurred that could not be explained. Good
-     luck.
+Some resource type may provide additional functionality not covered here. For documentation on additional features,
+see the docs for the interface for that particular resource.
 
 Properties
 ----------
@@ -55,15 +33,11 @@ the following keys in the property dictionary:
 +---------------+-------------------------------------------------+
 | uuid          | Resource UUID                                   |
 +---------------+-------------------------------------------------+
-| interface     | The module name for the interface               |
+| interface     | The name of the associated interface            |
 +---------------+-------------------------------------------------+
 | resourceID    | Resource ID specific for that interface         |
 +---------------+-------------------------------------------------+
 | resourceType  | Resource type string for driver identification  |
-+---------------+-------------------------------------------------+
-| status        | Resource status string                          |
-+---------------+-------------------------------------------------+
-| error         | Resource error string                           |
 +---------------+-------------------------------------------------+
 | address       | RPC server address                              |
 +---------------+-------------------------------------------------+
@@ -118,41 +92,6 @@ are to be handled:
 +------------------+-----------------------------------------------------------+
 | DeviceError      | The device reported an error                              |
 +------------------+-----------------------------------------------------------+
-
-Manually Managing Resources
----------------------------
-
-.. note::
-
-   This is an experimental feature and has not been well tested, since there
-   are no devices currently that would need this support. Its possible it won't
-   work at all. This section should give you an idea of how it will work...
-   someday.
-
-The ability to manage resources is dependent on the nature of a controller.
-Most controllers accessed a fixed set of system resources that are known.
-A serial controller is an example of this, as the system only allows connection
-to a known COM port and provides a list of available ports. Some controllers
-may not always be aware of available resources. For example, if a controller
-interfaces with a CAN bus, it may need additional information like a device
-address in order to establish communication. It is not always practical to scan
-through the entirety of possible device addresses to find a device.
-
-For controllers that support manually adding resources::
-
-    from labtronyx import InstrumentManager
-    instr = InstrumentManager()
-   	
-    new_uuid = instr.addResource('i_ICP', 'ACME', 'ABC 2000')
-   	
-    # Refresh the resources list to find the new resource
-   	instr.refreshManager()
-   	
-    widget = instr.getInstrument_model('ABC 2000')
-   	
-To destroy a resource, provide the Resource UUID::
-
-    instr.destroyResource('c_CAN', '360ba14f-19be-11e4-95bf-a0481c94faff')
    
 Resource API
 ------------

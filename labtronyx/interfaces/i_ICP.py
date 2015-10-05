@@ -1,8 +1,5 @@
 """
-Instrument Control Protocol (ICP)
-=================================
-
-The Instrument Control Protocol was developed as a low-overhead, flexible protocol for use  with instruments over an
+The Instrument Control Protocol (ICP) was developed as a low-overhead, flexible protocol for use  with instruments over an
 Ethernet network.
 
 Detailed Operation
@@ -78,23 +75,6 @@ info = {
     'date':                 '2015-10-05'
 }
 
-#===========================================================================
-# data_types_pack = {
-#     'int8': lambda data: struct.pack('!b', int(data)),
-#     'int16': lambda data: struct.pack('!h', int(data)),
-#     'int32': lambda data: struct.pack('!i', int(data)),
-#     'int64': lambda data: struct.pack('!q', int(data)),
-#     'float': lambda data: struct.pack('!f', float(data)),
-#     'double': lambda data: struct.pack('!d', float(data)) }
-# 
-# data_types_unpack = {
-#     'int8': lambda data: struct.unpack('!b', data)[0],
-#     'int16': lambda data: struct.unpack('!h', data)[0],
-#     'int32': lambda data: struct.unpack('!i', data)[0],
-#     'int64': lambda data: struct.unpack('!q', data)[0],
-#     'float': lambda data: struct.unpack('!f', data)[0],
-#     'double': lambda data: struct.unpack('!d', data)[0] }
-#===========================================================================
 
 class i_ICP(Base_Interface):
     """
@@ -107,9 +87,6 @@ class i_ICP(Base_Interface):
     }
     
     DEBUG_INTERFACE_ICP = True
-    
-    # Dict: ResID -> Resource Object
-    _resources = {}
     
     # Config
     # TODO: Find a way to generate the broadcast IP
@@ -160,6 +137,8 @@ class i_ICP(Base_Interface):
             pass
         
         self.e_conf.clear()
+
+        return True
         
     def run(self):
         self.last_update = 0

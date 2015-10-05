@@ -96,5 +96,3 @@ When a driver is loaded for an instrument, additional methods are made available
 methods, see :doc:`Supported Instruments <instruments/index>` for the desired driver. It is also possible to send
 commands directly to the instrument using the :doc:`Resource API <api/resources>` for the interface where the instrument
 is connected.
-
-	

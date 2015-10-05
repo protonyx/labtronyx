@@ -1,3 +1,7 @@
+"""
+The Serial interface is a wrapper for the pyserial library.
+"""
+
 from labtronyx.bases.interface import Base_Interface
 from labtronyx.bases.resource import Base_Resource
 from labtronyx.common.errors import *
@@ -18,15 +22,18 @@ info = {
     'date':                 '2015-10-05'
 }
 
+
 class i_Serial(Base_Interface):
+    """
+    Serial Interface
+
+    Wraps PySerial.
+    """
     
     info = {
         # Interface Name
         'interfaceName':    'Serial'
     }
-    
-    # Dict: ResID -> (VID, PID)
-    _resources = {}
     
     REFRESH_RATE = 5.0 # Seconds
 
