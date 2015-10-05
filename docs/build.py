@@ -18,57 +18,35 @@ DRIVER_DOC = "api/drivers"
 INSTRUMENT_DOC = "instruments"
 
 canpath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir))) # Resolves symbolic links
-print canpath
-rootpath = os.path.realpath(os.path.join(canpath, ROOT_DIR))
-print rootpath
-libpath = os.path.realpath(os.path.join(rootpath, LIB_DIR))
-print libpath
-sys.path.append(canpath)
-sys.path.append(rootpath)
-sys.path.append(libpath)
+rootPath = os.path.realpath(os.path.join(canpath, ROOT_DIR))
+libPath = os.path.realpath(os.path.join(rootPath, LIB_DIR))
+
+sys.path.append(rootPath)
 
 import labtronyx
 
-def scan(pkg, prefix=None):
-    """
-    Scan a package for valid plug-in modules.
-    
-    :param pkg: Package to scan
-    :type pkg: package
-    """
-    import pkgutil
-    plugins = {}
-    
-    if prefix is None:
-        prefix = pkg.__name__
-    
-    for pkg_iter in pkgutil.walk_packages(path=pkg.__path__,
-                                          prefix=prefix+'.'):
-        pkg_imp, pkg_name, is_pkg = pkg_iter
-    
-        if not is_pkg:
-            try:
-                # Use the filename as the class name
-                class_name = pkg_name.split('.')[-1]
-                
-                # Import the module
-                testModule = importlib.import_module(pkg_name)
-                
-                # Check to make sure the correct class exists
-                if hasattr(testModule, class_name):
-                    testClass = getattr(testModule, class_name) # Will raise exception if doesn't exist
-                    
-                    if testClass != {}:
-                        info = copy.deepcopy(testClass.info)
-                        plugins[pkg_name] = info
-                
-            except Exception as e:
-                raise
-            
-    return plugins
+# Load Plugins
 
-import labtronyx.drivers as drivers
-driver_dict = scan(drivers, 'drivers')
+# Directories to search
+dirs = ['drivers', 'interfaces']
+dirs_res = map(lambda dir: os.path.join(libPath, dir), dirs)
+
+# Categorize plugins by base class
+cat_filter = {
+    "drivers": labtronyx.bases.Base_Driver,
+    "interfaces": labtronyx.bases.Base_Interface,
+    "resources": labtronyx.bases.Base_Resource
+}
+
+plugin_manager = labtronyx.common.plugin.PluginManager(directories=dirs_res, categories=cat_filter)
+plugin_manager.search()
+
+# # Load Drivers
+# self._drivers = plugin_manager.getPluginsByCategory('drivers')
+#
+# # Load Interfaces
+# for interface_name in self.plugin_manager.getPluginsByCategory('interfaces'):
+#     self.enableInterface(interface_name)
 
 #===============================================================================
 # Build Documentation
@@ -83,6 +61,14 @@ def gen_sphinx_automodule(module, options):
         ret += '   :{0}:\n'.format(opt)
     ret += '\n'
     
+    return ret
+
+def gen_sphinx_autoclass(cls, options):
+    ret = '.. autoclass:: {0}\n'.format(cls)
+    for opt in options:
+        ret += '   :{0}:\n'.format(opt)
+    ret += '\n'
+
     return ret
 
 def gen_sphinx_toctree(elems, depth=2):
@@ -115,19 +101,24 @@ def build_driver_docs():
     
     # Create RST file for each driver
     toc_list = []
-    for driver_module, driver_info in driver_dict.items():
+    for driver_name, driver_cls in plugin_manager.getPluginsByCategory('drivers').items():
+        driver_info = driver_cls.info
+        driver_class = driver_name.split('.')[-1]
+        driver_module = driver_name[:-1*(len(driver_class)+1)]
+
         if driver_info == {}:
             continue
 
-        toc_list.append(driver_module)
+        if driver_name not in toc_list:
+            toc_list.append(driver_name)
         
-        print "Processing: {0}".format(driver_module)
-        driver_filename = os.path.join(driver_folder, str(driver_module) + ".rst")
+        print "Processing: {0}".format(driver_name)
+        driver_filename = os.path.join(driver_folder, str(driver_name) + ".rst")
 
         with file(driver_filename, "w+") as f:
-            f.write(gen_sphinx_header(driver_module, "="))
+            f.write(gen_sphinx_header(driver_name, "="))
             
-            f.write(gen_sphinx_automodule(driver_module, ['show-inheritance', 'members']))
+            f.write(gen_sphinx_autoclass('labtronyx.drivers.' + driver_name, ['members']))
 
     print "Generating driver toctree..."
     
@@ -157,49 +148,39 @@ def build_instrument_docs():
         except Exception, e:
             print e
 
-    # Get list of vendors
-    vendors = list(set([x.get('deviceVendor') for x in driver_dict.values()]))
-    if None in vendors:
-        vendors.remove(None)
-    vendors.sort()
+    instruments = []
 
-    # Create RST file for each vendor
-    for vendor in vendors:
-        print "Processing vendor {0}...".format(vendor)
+    # Iterate drivers and scrape instrument information
+    for driver_name, driver_cls in plugin_manager.getPluginsByCategory('drivers').items():
+        driver_info = driver_cls.info
+        # driver_class = driver_name.split('.')[-1]
+        # driver_module = driver_name[:-1*(len(driver_class)+1)]
 
-        # Get dict of drivers from this vendor
-        vendor_drivers = {}
-        for driver, driver_info in driver_dict.items():
-            if driver_info.get('deviceVendor') == vendor:
-                vendor_drivers[driver] = driver_info
+        for driver_model in driver_info.get('deviceModel'):
+            entry = (driver_info.get('deviceVendor'), driver_info.get('deviceType'), driver_model, driver_name)
+            instruments.append(entry)
 
-        # Get list of unique device types from this vendor
-        vendor_types = list(set([x.get('deviceType') for x in vendor_drivers.values()]))
-        if None in vendor_types:
-            vendor_types.remove(None)
-        vendor_types.sort()
+    # Sort by model, vendor
+    instruments.sort(key=lambda x: x[2])
+    instruments.sort(key=lambda x: x[0])
 
-        vendor_filename = os.path.realpath(os.path.join(instr_folder, str(vendor) + '.rst'))
-        with file(vendor_filename, "w+") as f:
-            f.write(gen_sphinx_header(vendor, "="))
+    filename = os.path.realpath(os.path.join(instr_folder, 'index.rst'))
+    with file(filename, "w+") as f:
+        cur_vendor = ''
 
-            for dev_type in vendor_types:
-                f.write(gen_sphinx_header(dev_type, '-'))
-
-                for driver, driver_info in vendor_drivers.items():
-                    if driver_info.get('deviceType') == dev_type:
-
-                        for model in driver_info.get('deviceModel', []):
-                            f.write("  * :doc:`{0} <../../{1}/{2}>`\n".format(model, DRIVER_DOC, driver))
-
-                        f.write("\n")
-
-    # Create index with TOCtree
-    toc_filename = os.path.realpath(os.path.join(instr_folder, 'index.rst'))
-    with file(toc_filename, "w+") as f:
         f.write(gen_sphinx_header("Supported Instruments", "="))
-        
-        f.write(gen_sphinx_toctree(vendors))
+
+        for instr in instruments:
+            d_vendor, d_type, d_model, d_name = instr
+
+            if cur_vendor != d_vendor:
+                cur_vendor = d_vendor
+                f.write("\n")
+                f.write(gen_sphinx_header(d_vendor, "-"))
+
+            f.write("  * :doc:`{0} {1} <../../{2}/{3}>`\n".format(d_model, d_type, DRIVER_DOC, d_name))
+
 
 if __name__ == "__main__":
     build_driver_docs()
+    build_instrument_docs()
