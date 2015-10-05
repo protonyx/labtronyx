@@ -8,12 +8,17 @@ __author__ = 'kkennedy'
 # -----------------------------------------------------------------------
 
 import sys, os, time
+from pip.req import parse_requirements
 
 import build
 
 def build_package():
     # Generate version file
     version, full_version = build.generate_ver()
+
+    # Dependencies
+    install_reqs = parse_requirements('requirements.txt')
+    reqs = [str(ir.req) for ir in install_reqs]
 
     # Setup Metadata
     setup_meta = dict(
@@ -69,12 +74,7 @@ def build_package():
         include_package_data=True,
 
         # Dependencies
-        install_requires=['ptx-rpc', 'enum34', 'numpy'],
-
-        extras_require={
-            'VISA': ['pyvisa>=1.6'],
-            'Serial': ['pyserial']
-        },
+        install_requires=reqs,
 
         # Script entry points
         entry_points={
