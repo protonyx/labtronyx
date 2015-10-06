@@ -33,103 +33,246 @@ class d_B29XX(Base_Driver):
 
     @classmethod
     def VISA_validResource(cls, identity):
-        vendors = ['AGILENT TECHNOLOGIES', 'Agilent Technologies']
-        return identity[0] in vendors and identity[1] in cls.info['deviceModel']
+        return identity[0].upper() == 'AGILENT TECHNOLOGIES' and identity[1] in cls.info['deviceModel']
+
+    def open(self):
+        prop = self.resource.getProperties()
+
+        # Identify the number of channels available
+        if prop.get('deviceModel') == 'B2901A':
+            self.NUM_CHANNELS = 1
+        elif prop.get('deviceModel') == 'B2902A':
+            self.NUM_CHANNELS = 2
+        else:
+            self.NUM_CHANNELS = 1
+
+        # Get the current device mode
+        self._mode_source = {}
+        self._mode_measure = {}
+        for idx in range(1, self.NUM_CHANNELS + 1):
+            self.getSourceMode(idx)
+            self.getMeasureMode(idx)
 
 
-    validSource = {'VOLTAGE': 'VOLT', 
-                   'CURRENT': 'CURR'}
 
-    validFunc = ['VOLT', 'CURR', 'RES']
+    validMode = ['VOLT', 'CURR', 'RES']
 
-    validMode = ['SWEEP', 'FIXED', 'LIST']
+    validMode2 = ['SWEEP', 'FIXED', 'LIST']
 
     validTrigger = ['AINT', 'BUS', 'TIMER', 'INT1', 'INT2', 'LAN', 'EXT1', 'EXT2',
                     'EXT3', 'EXT4', 'EXT5', 'EXT6', 'EXT7', 'EXT8', 'EXT9', 'EXT10',
                     'EXT11', 'EXT12', 'EXT13', 'EXT14']
 
-        
-    def defaultSetup(self):
-        """
-        Reset the SMU to factory default settings
-        """
-        self.write("*RST")
-        
-    def setSourceSweep(self, source, start, stop, points):
-        """
-        Configure the SMU to Sweep a range of points.
-        
-        :param source: Voltage or Current Source - ['VOLTAGE', 'CURRENT']
-        :type source: str
-        :param start: Starting Voltage/Current
-        :type start: float
-        :param stop: Final Voltage/Current
-        :type stop: float
-        :param points: Number of Points
-        :type points: int
-        """
-        if source in self.validSource.keys():
-            source_f = self.validSource.get(source)
-            self.write(':SOUR:FUNC:MODE %s' % source_f)
-            self.write(':SOUR:%s:MODE SWE' % source_f)
+    # Instrument Constants
+    MIN_APERTURE_TIME = 0.000008
+    MAX_APERTURE_TIME = 2.0
 
-            self.write(':SOUR:%s:START %f' % (source_f, float(start)))
-            self.write(':SOUR:%s:STOP %f' % (source_f, float(stop)))
-            
-            # Hard-coded number of points
-            # It appears the length of the sweep is determined by the number
-            # of points
-            self.write(':SOUR:SWE:POIN %i' % int(points))
-            self.write(':TRIG:COUN %i' % int(points))
-                        
-            if float(stop) > float(start):
-                self.write(':SOUR:SWE:DIR UP')
+    def getError(self):
+        err = self.query(':SYST:ERR?')
+        return err.split(',')
+
+    def getErrors(self):
+        """
+        Retrieve any queued errors on the instrument
+
+        :return:                list
+        """
+        # TODO: Replace with ERR:ALL on the real device, this is just for sim
+        errors = [] # self.query(':SYST:ERR:ALL?')
+
+        while (1):
+            err_num, err_msg = self.getError()
+            if float(err_num) == 0:
+                break
             else:
-                self.write(':SOUR:SWE:DIR DOWN')
-        
-    def setSourceFixed(self, source, base, peak):
-        """
-        Configure the SMU to output a fixed voltage or current
-        
-        :param source: Voltage or Current Source - ['VOLTAGE', 'CURRENT']
-        :type source: str
-        :param base: Base Voltage/Current
-        :type base: float
-        :param peak: Peak Voltage/Current when triggered
-        :type peak: float
-        """
-        if source in self.validSource.keys():
-            source_f = self.validSource.get(source)
-            self.write(':SOUR:FUNC:MODE %s' % source_f)
-            
-            self.write(':SOUR:%s %f' % (source_f, float(base)))
-            self.write(':SOUR:%s:TRIG %f' % (source_f, float(peak)))
-            
-    def setSourceProgram(self):
-        # TODO
-        pass
+                errors.append((err_num, err_msg,))
 
-    def setPulseSetup(self, pulseEnable, pulseWidth, delay=0.0):
+        return errors
+
+    def setSourceMode(self, channel, output_mode='VOLT'):
         """
-        Set SMU Pulse settings
+        Sets the instrument source mode.
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param output_mode:     Source output mode. Current ('CURR') or Voltage ('VOLT')
+        :type output_mode:      str
+        :raises:                RuntimeError on verification failure
+        """
+        validSource = {'VOLTAGE': 'VOLT',
+                       'VOLTAGE:DC': 'VOLT',
+                       'CURRENT': 'CURR',
+                       'CURRENT:DC': 'CURR'}
+
+        mode = validSource.get(output_mode.upper(), output_mode.upper())
+
+        self.write(':SOUR{0}:FUNC:MODE {1}'.format(channel, mode))
+
+        # Verify
+        if self.getSourceMode(channel).upper() != mode.upper():
+            raise RuntimeError('Set value failed verification')
+
+    def getSourceMode(self, channel):
+        """
+        Get the instrument source mode. Returns 'VOLT' (Voltage) or 'CURR' (Current)
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :return:                str
+        """
+        return self.query(':SOUR{0}:FUNC:MODE?'.format(channel))
+
+    def setSourceVoltage(self, channel, voltage_base, voltage_trig=None):
+        """
+        Set the source output voltage. `voltage_trig` is used to specify a voltage level when the instrument is
+        triggered
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param voltage_base:    Base voltage when power output is enabled
+        :type voltage_base:     float
+        :param voltage_trig:    Voltage when power output is enabled and instrument is triggered
+        :type voltage_trig:     float
+        :raises:                RuntimeError on verification failure
+        """
+        if voltage_trig is None:
+            voltage_trig = voltage_base
+
+        self.setSourceMode(channel, 'VOLT')
+
+        self.write(':SOUR{0}:VOLT {1}'.format(channel, voltage_base))
+        self.write(':SOUR{0}:VOLT:TRIG {1}'.format(channel, voltage_trig))
+
+        # Verify
+        if self.getSourceVoltage(channel) != voltage_base:
+            raise RuntimeError('Set value failed verification')
+
+    def getSourceVoltage(self, channel):
+        """
+        Get the source output voltage
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :return:                float
+        """
+        return float(self.query(':SOUR{0}:VOLT?'.format(channel)))
+
+    def setSourceCurrent(self, channel, current_base, current_trig=None):
+        """
+        Set the source output current. `current_trig` is used to specify a current level when the instrument is
+        triggered
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param current_base:    Base current when power output is enabled
+        :type current_base:     float
+        :param current_trig:    Current when power output is enabled and instrument is triggered
+        :type current_trig:     float
+        :raises:                RuntimeError on verification failure
+        """
+        if current_trig is None:
+            current_trig = current_base
+
+        self.setSourceMode(channel, 'CURR')
+
+        self.write(':SOUR{0}:CURR {1}'.format(channel, current_base))
+        self.write(':SOUR{0}:CURR:TRIG {1}'.format(channel, current_base))
+
+        # Verify
+        if self.getSourceCurrent(channel) != current_base:
+            raise RuntimeError('Set value failed verification')
+
+    def getSourceCurrent(self, channel):
+        """
+        Get the source output current
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :return:                float
+        """
+        return float(self.query(':SOUR{0}:CURR?'.format(channel)))
+
+    def setMeasureMode(self, channel, measure_mode):
+        """
+        Enable measurement functions. Instrument can measure Voltage ('VOLT'), Current ('CURR') or Resistance ('RES')
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param measure_mode:    Measurement function
+        :type measure_mode:     str
+        :raises:                RuntimeError on verification failure
+        """
+        validMeas = {'VOLTAGE': 'VOLT',
+                       'VOLTAGE:DC': 'VOLT',
+                       'CURRENT': 'CURR',
+                       'CURRENT:DC': 'CURR',
+                       'RESISTANCE': 'RES'}
+
+        mode = validMeas.get(measure_mode.upper(), measure_mode.upper())
+
+        self.write(':SENS{0}:FUNC {1}'.format(channel, mode))
+
+        # Verify
+        if self.getMeasureMode(channel).upper() != mode.upper():
+            raise RuntimeError('Set value failed verification')
+
+    def getMeasureMode(self, channel):
+        """
+        Get the enabled measurement functions
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :return:                str
+        """
+        return self.query(':SENS{0}:FUNC:ON?'.format(channel))
+
+    def setApertureTime(self, channel, apertureTime):
+        """
+        Sets the integration time for one point measurement. Aperture time must be between 8e-6 to 2 seconds. If the
+        value specified is less than MIN or greater than MAX, the value is automatically set to MIN or MAX.
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param apertureTime:    Aperture Integration time in seconds
+        :type apertureTime:     float
+        :raises:                RuntimeError on verification failure
+        """
+        if apertureTime < self.MIN_APERTURE_TIME or apertureTime > self.MAX_APERTURE_TIME:
+            self.logger.warning("Aperture time should be between {0} and {1}".format(self.MIN_APERTURE_TIME, self.MAX_APERTURE_TIME))
+
+        mode = self._mode_measure.get(channel, 'VOLT')
+        self.write(':SENS{0}:{1}:APER {2}'.format(channel, mode, apertureTime))
+
+        # Verify
+        if self.getApertureTime(channel) != apertureTime:
+            raise RuntimeError('Set value failed verification')
+
+    def getApertureTime(self, channel):
+        mode = self._mode_measure.get(channel, 'VOLT')
+        return float(self.query(':SENS{0}:{1}:APER?'.format(channel, mode)))
+
+    def enableAutoAperture(self, channel):
+        """
+        Enables the auto aperture function. When enabled, the instrument automatically sets the integration time
+        suitable for the measurement range.
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        """
+        mode = self._mode_measure.get(channel, 'VOLT')
+        self.write(':SENS{0}:{1}:APER:AUTO 1'.format(channel, mode))
+
+    def disableAutoAperture(self, channel):
+        """
+        Disables the auto aperture function.
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        """
+        mode = self._mode_measure.get(channel, 'VOLT')
+        self.write(':SENS{0}:{1}:APER:AUTO 0'.format(channel, mode))
         
-        :param pulseEnable: Enable/Disable Pulsing
-        :type pulseEnable: bool
-        :param pulseWidth: Pulse width in seconds - must be greater than 20E-6
-        :type pulseWidth: float
-        :param delay: Delay before first pulse in seconds
-        :type delay: float
-        """
-        if pulseEnable:
-            self.write(':SOUR:FUNC:SHAP PULS')
-            
-            self.write(':SOUR:PULS:WIDT %f' % float(pulseWidth))
-                
-            if delay > 0.0:
-                self.write(':SOUR:PULS:DEL %f' % float(delay))
-                
-        else:
-            self.write(':SOUR:FUNC:SHAP DC')
+
                 
     def setTriggerSetup(self, triggerSource, number, interval, delay=0):
         """
@@ -157,18 +300,6 @@ class d_B29XX(Base_Driver):
                 self.write(':TRIG:DEL %f' % float(delay))
             else:
                 self.write(':TRIG:DEL 0')
-    
-    def setMeasurementSetup(self, **kwargs):
-        """
-        Set SMU Measurement settings.
-        
-        .. warning::
-        
-            This function has not yet been implemented
-            
-        """
-        # TODO
-        pass
     
     def setCurrentLimit(self, limit):
         """
@@ -217,17 +348,6 @@ class d_B29XX(Base_Driver):
             
         elif channel == 2:
             self.write(':INIT (@2)')
-            
-    def getMeasurement(self, **kwargs):
-        """
-        Takes a spot measurement
-
-        .. warning::
-
-            This function has not yet been implemented
-        """
-        # TODO
-        pass
 
     #===========================================================================
     # Helper Functions
@@ -269,3 +389,79 @@ class d_B29XX(Base_Driver):
         
         self.write(":SOUR:FUNC:TRIG:CONT ON") # OUTPUT AFTER SWEEP - END VAL
         self.startProgram(1)
+
+    def setSourceSweep(self, source, start, stop, points):
+        """
+        Configure the SMU to Sweep a range of points.
+
+        :param source: Voltage or Current Source - ['VOLTAGE', 'CURRENT']
+        :type source: str
+        :param start: Starting Voltage/Current
+        :type start: float
+        :param stop: Final Voltage/Current
+        :type stop: float
+        :param points: Number of Points
+        :type points: int
+        """
+        if source in self.validSource.keys():
+            source_f = self.validSource.get(source)
+            self.write(':SOUR:FUNC:MODE %s' % source_f)
+            self.write(':SOUR:%s:MODE SWE' % source_f)
+
+            self.write(':SOUR:%s:START %f' % (source_f, float(start)))
+            self.write(':SOUR:%s:STOP %f' % (source_f, float(stop)))
+
+            # Hard-coded number of points
+            # It appears the length of the sweep is determined by the number
+            # of points
+            self.write(':SOUR:SWE:POIN %i' % int(points))
+            self.write(':TRIG:COUN %i' % int(points))
+
+            if float(stop) > float(start):
+                self.write(':SOUR:SWE:DIR UP')
+            else:
+                self.write(':SOUR:SWE:DIR DOWN')
+
+    def setSourceFixed(self, source, base, peak):
+        """
+        Configure the SMU to output a fixed voltage or current
+
+        :param source: Voltage or Current Source - ['VOLTAGE', 'CURRENT']
+        :type source: str
+        :param base: Base Voltage/Current
+        :type base: float
+        :param peak: Peak Voltage/Current when triggered
+        :type peak: float
+        """
+        if source in self.validSource.keys():
+            source_f = self.validSource.get(source)
+            self.write(':SOUR:FUNC:MODE %s' % source_f)
+
+            self.write(':SOUR:%s %f' % (source_f, float(base)))
+            self.write(':SOUR:%s:TRIG %f' % (source_f, float(peak)))
+
+    def setSourceProgram(self):
+        # TODO
+        pass
+
+    def setPulseSetup(self, pulseEnable, pulseWidth, delay=0.0):
+        """
+        Set SMU Pulse settings
+
+        :param pulseEnable: Enable/Disable Pulsing
+        :type pulseEnable: bool
+        :param pulseWidth: Pulse width in seconds - must be greater than 20E-6
+        :type pulseWidth: float
+        :param delay: Delay before first pulse in seconds
+        :type delay: float
+        """
+        if pulseEnable:
+            self.write(':SOUR:FUNC:SHAP PULS')
+
+            self.write(':SOUR:PULS:WIDT %f' % float(pulseWidth))
+
+            if delay > 0.0:
+                self.write(':SOUR:PULS:DEL %f' % float(delay))
+
+        else:
+            self.write(':SOUR:FUNC:SHAP DC')

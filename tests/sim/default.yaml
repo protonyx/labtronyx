@@ -1,39 +1,106 @@
-spec: "1.0"
+spec: "1.1"
 devices:
   agilent b2901:
     eom:
       USB INSTR:
         q: "\r\n"
         r: "\r"
+
     error:
-      response:
-        command_error: "ERROR"
+      # response:
+      #   command_error: "ERROR"
       status_register:
         - q: "*ESR?"
           command_error: 32
           query_error: 4
-#      error_queue:
-#        - q: ':SYST:ERR?'
-#          default: '+0,"No error"'
-#          command_error: '-100,"Command error"'
-#          query_error: '-102,"Syntax error"'
+      error_queue:
+        - q: ':SYST:ERR?'
+          default: '+0,"No error"'
+          command_error: '-100,"Command error"'
+          query_error: '-102,"Syntax error"'
+
     dialogues:
       - q: "*IDN?"
         r: "AGILENT TECHNOLOGIES,B2901A,12345,SIM"
       - q: ":READ?"
         r: "{:.2f}"
+
+# Properties
     properties:
-      voltage:
-        default: 1.0
+
+      mode:
+        default: 'VOLT'
         getter:
-          q: ":VOLT:IMM:AMPL?"
+          q: ":SOUR1:FUNC:MODE?"
+          r: "{}"
+        setter:
+          q: ":SOUR1:FUNC:MODE {}"
+        specs:
+          valid: [VOLT, CURR]
+          type: str
+
+      source_current:
+        default: 0.0
+        getter:
+          q: ":SOUR1:CURR?"
+          r: "{:+.3E}"
+        setter:
+          q: ":SOUR1:CURR {:.3f}"
+        specs:
+          type: float
+
+      source_current_trig:
+        default: 0.0
+        getter:
+          q: ":SOUR1:CURR:TRIG?"
+          r: "{:+.3E}"
+        setter:
+          q: ":SOUR1:CURR:TRIG {:.3f}"
+        specs:
+          type: float
+
+      source_voltage:
+        default: 0.0
+        getter:
+          q: ":SOUR1:VOLT?"
+          r: "{:+.3E}"
+        setter:
+          q: ":SOUR1:VOLT {:.3f}"
+        specs:
+          type: float
+
+      source_voltage_trig:
+        default: 0.0
+        getter:
+          q: ":SOUR1:VOLT:TRIG?"
+          r: "{:+.3E}"
+        setter:
+          q: ":SOUR1:VOLT:TRIG {:.3f}"
+        specs:
+          type: float
+
+      aperture:
+        default: 2e-3
+        getter:
+          q: ":SENS1:VOLT:APER?"
           r: "{:+.8E}"
         setter:
-          q: ":VOLT:IMM:AMPL {:.3f}"
+          q: ":SENS1:VOLT:APER {:.3f}"
         specs:
-          min: 1
-          max: 6
+          min: 8e-6
+          max: 2
           type: float
+
+      auto_aperture:
+        default: 1
+        getter:
+          q: ":SENS1:VOLT:APER:AUTO?"
+          r: "{}"
+        setter:
+          q: ":SENS1:VOLT:APER:AUTO {}"
+        specs:
+          valid: [1, 0]
+          type: str
 
 resources:
   USB::2391::12345::SIM::0::INSTR:
