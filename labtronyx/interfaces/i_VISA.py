@@ -407,6 +407,9 @@ class r_VISA(Base_Resource):
 
         :returns: True if successful, False otherwise
         """
+        if not self.isOpen():
+            return True
+
         try:
             if self._driver is not None:
                 try:
