@@ -48,13 +48,14 @@ class i_VISA(Base_Interface):
         'interfaceName':    'VISA'
     }
 
-    resource_manager = None
-
     def __init__(self, manager, **kwargs):
         # Allow the use of a custom library for testing
         self._lib = kwargs.pop('library', '')
 
         Base_Interface.__init__(self, manager, **kwargs)
+
+        # Instance variables
+        self.resource_manager = None
 
     def open(self):
         """
@@ -75,12 +76,12 @@ class i_VISA(Base_Interface):
 
             return True
 
-        except OSError:
+        except OSError as e:
             # No VISA library on the computer
             self.logger.error("No VISA Library found on the computer")
             return False
 
-        except:
+        except Exception as e:
             self.logger.exception("Failed to initialize VISA Interface")
             return False
 
@@ -332,6 +333,27 @@ class r_VISA(Base_Resource):
 
         return self.firmware
 
+    def getStatusByte(self):
+        """
+        Read the Status Byte Register (STB). Interpretation of the status byte varies by instrument
+
+        :return:
+        """
+        return self.query('*STB?')
+
+    def trigger(self):
+        """
+        Trigger the instrument using the common trigger command (*TRG). Behavior varies by instrument
+        """
+        self.write('*TRG')
+
+    def reset(self):
+        """
+        Reset the instrument. Behavior varies by instrument, typically this will reset the instrument to factory
+        default settings.
+        """
+        self.write('*RST')
+
     #===========================================================================
     # Resource State
     #===========================================================================
@@ -417,8 +439,13 @@ class r_VISA(Base_Resource):
 
     def configure(self, **kwargs):
         """
-        Configure Serial port parameters for the resource.
-        
+        Configure resource.
+
+        All VISA Resources
+        :param timeout:             Command timeout
+        :type timeout:              int
+
+        Serial Resources
         :param baudrate: Serial - Baudrate. Default 9600
         :param timeout: Read timeout
         :param bytesize: Serial - Number of bits per frame. Default 8.
@@ -427,6 +454,15 @@ class r_VISA(Base_Resource):
         :param termination: Write termination
         """
         # if self.instrument.interface_type == pyvisa.constants.InterfaceType.usb:
+
+        if 'timeout' in kwargs and self.isOpen():
+            # Timeout must be in milliseconds
+            timeout = kwargs.get('timeout')
+            if type(timeout) == float:
+                # assume this is seconds
+                timeout = int(timeout * 100)
+
+            self.instrument.timeout = timeout
 
         if type(self.instrument) == pyvisa.resources.serial.SerialInstrument:
             if 'baudrate' in kwargs:
@@ -452,7 +488,14 @@ class r_VISA(Base_Resource):
                 self.instrument.write_termination = kwargs.get('termination')
 
     def getConfiguration(self):
+        """
+        Get the resource configuration
+
+        :return: dict
+        """
         ret = {}
+
+        ret['timeout'] = self.instrument.timeout
 
         if type(self.instrument) == pyvisa.resources.serial.SerialInstrument:
             ret['baudrate'] = self.instrument.baud_rate
@@ -649,18 +692,11 @@ class r_VISA(Base_Resource):
             validModels = []
 
             # Iterate through all driver classes to find compatible driver
-            for driverName, driverCls in self.manager.drivers.items():
+            for driver, driverCls in self.manager.drivers.items():
                 try:
                     if driverCls.VISA_validResource(self._identity):
-                        validModels.append(driverCls)
-                        self.logger.debug("Found match: %s", driverName)
-
-                    # for resType in modelInfo.get('validResourceTypes'):
-                    #     if resType in ['VISA', 'visa']:
-                    #         if (self.VID in modelInfo.get('VISA_compatibleManufacturers') and
-                    #             self.PID in modelInfo.get('VISA_compatibleModels')):
-                    #             validModels.append(modelModule)
-                    #             self.logger.debug("Found match: %s", modelModule)
+                        validModels.append(driver)
+                        self.logger.debug("Found match: %s", driver)
 
                 except:
                     continue
@@ -671,6 +707,7 @@ class r_VISA(Base_Resource):
 
                 return True
 
+            self.logger.debug("Unable to load driver, more than one match found")
             return False
 
         else:
