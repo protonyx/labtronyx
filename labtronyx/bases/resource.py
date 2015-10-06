@@ -29,7 +29,13 @@ class Base_Resource(PluginBase):
     def __getattr__(self, name):
         if self._driver is not None:
             if hasattr(self._driver, name):
-                return getattr(self._driver, name)
+                # Only call driver functions if the resource is open
+                if self.isOpen():
+                    return getattr(self._driver, name)
+                else:
+                    # TODO: Raise the correct exception on failure here
+                    raise RuntimeError("Resource not open, unable to call driver function")
+
             else:
                 raise AttributeError
             
@@ -174,27 +180,28 @@ class Base_Resource(PluginBase):
         
         try:
             # Check if the specified model is valid
-            testModule = importlib.import_module(driverName)
-            reload(testModule) # Reload the module in case anything has changed
-            
-            className = driverName.split('.')[-1]
-            testClass = getattr(testModule, className)
-            
-            self.logger.debug('Loading driver [%s] for resource [%s]', driverName, self.getResourceID())
-            
-            # Instantiate driver
-            self._driver = testClass(self,
-                                    logger=self.logger, 
-                                    config=self.config)
+            if driverName in self.manager.drivers:
+                self.logger.debug('Loading driver [%s] for resource [%s]', driverName, self.getResourceID())
 
-            # Call the driver open if the resource is already open
-            if self.isOpen():
-                self._driver.open()
-
-            # Signal the event
-            self.manager._event_signal(common.constants.ResourceEvents.driver_load)
+                testClass = self.manager.drivers.get(driverName)
             
-            return True
+                # Instantiate driver
+                self._driver = testClass(self,
+                                        logger=self.logger,
+                                        config=self.config)
+                self._driver.name = driverName
+
+                # Call the driver open if the resource is already open
+                if self.isOpen():
+                    try:
+                        self._driver.open()
+                    except NotImplementedError:
+                        pass
+
+                # Signal the event
+                self.manager._event_signal(common.constants.ResourceEvents.driver_load)
+
+                return True
 
         except:
             self.logger.exception('Exception during driver load: %s', driverName)
@@ -212,10 +219,12 @@ class Base_Resource(PluginBase):
         if self._driver is not None:
             try:
                 self._driver.close()
-                self.close()
-                
+            except NotImplementedError:
+                pass
             except:
                 self.logger.exception('Exception while unloading driver')
+            finally:
+                self.close()
                 
             self._driver = None
             

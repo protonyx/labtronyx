@@ -13,6 +13,7 @@ class Base_Driver(PluginBase):
     def __init__(self, resource, **kwargs):
         PluginBase.__init__(self)
 
+        self._name = None
         self._resource = resource
         self.logger = kwargs.get('logger')
 
@@ -32,9 +33,16 @@ class Base_Driver(PluginBase):
     def resource(self):
         return self._resource
 
-    @property
-    def name(self):
-        return self.__class__.__module__
+    def get_name(self):
+        if self._name is None:
+            return self.__class__.__module__ + '.' + self.__class__.__name__
+        else:
+            return self._name
+
+    def set_name(self, value):
+        self._name = value
+
+    name = property(get_name, set_name)
 
     #===========================================================================
     # Collector Functionality

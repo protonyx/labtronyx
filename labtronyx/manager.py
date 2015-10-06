@@ -247,10 +247,21 @@ class InstrumentManager(object):
         """
         int_cls = self.plugin_manager.getPlugin(interface_name)
 
+        if int_cls is None:
+            # Search by interface name in the plugin info
+            for interf_name, interf_cls in self.plugin_manager.getPluginsByCategory('interfaces').items():
+                if interf_cls.info.get('interfaceName') == interface_name:
+                    interface_name = interf_name
+                    int_cls = interf_cls
+                    break
+
         if int_cls is not None:
             try:
                 # Instantiate interface
-                int_obj = int_cls(manager=self, logger=self.logger, **kwargs)
+                int_obj = int_cls(manager=self, logger=self.logger, **kwargs) # kwargs allows passing parameters to libs
+
+                # If the interface is already enabled, disable the existing one
+                self.disableInterface(interface_name)
 
                 # Call the plugin hook to open the interface
                 int_obj.open()
