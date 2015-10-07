@@ -37,10 +37,9 @@ class d_3441XA(Base_Driver):
 
     @classmethod
     def VISA_validResource(cls, identity):
-        vendors = ['AGILENT TECHNOLOGIES', 'Agilent Technologies']
-        return identity[0] in vendors and identity[1] in cls.info['deviceModel']
+        return identity[0].upper() == 'AGILENT TECHNOLOGIES' and identity[1] in cls.info['deviceModel']
     
-    modes = {
+    VALID_MODES = {
         'Capacitance': 'CAP',
         'Continuity': 'CONT',
         'AC Current': 'CURR:AC',
@@ -54,13 +53,13 @@ class d_3441XA(Base_Driver):
         'AC Voltage': 'VOLT:AC',
         'DC Voltage': 'VOLT'}
     
-    trigger_sources = {
+    VALID_TRIGGER_SOURCES = {
         'Continual': 'IMM',
         'Bus': 'BUS', 
         'External': 'EXT'
     }
     
-    errors = {
+    ERROR_CODES = {
         0: "No error",
         # Execution Errors
         -102: "Syntax error",
@@ -108,22 +107,28 @@ class d_3441XA(Base_Driver):
         624: "Unable to sense line frequency"}
     
     def open(self):
-        self.getFunction()
+        self._mode = ''
+        self.getMode()
 
     def close(self):
         self.enableFrontPanel()
         
     def getProperties(self):
+        """
+        Driver property keys:
+
+        * validModes
+        * validTriggerSources
+        * errorCodes
+
+        :return:
+        """
+        # TODO: Expand docstring
         return dict(
-            validModes=self.modes,
-            validTriggerSources=self.trigger_sources
+            validModes=self.VALID_MODES,
+            validTriggerSources=self.VALID_TRIGGER_SOURCES,
+            errorCodes=self.ERROR_CODES
         )
-    
-    def reset(self):
-        """
-        Reset the instrument
-        """
-        self.write("*RST")
 
     def trigger(self):
         """
@@ -187,30 +192,33 @@ class d_3441XA(Base_Driver):
 
         if len(errors) == 1:
             code, msg = errors[0]
-            raise DeviceError(msg)
+            raise DeviceError(msg.strip('"'))
         elif len(errors) > 1:
             raise DeviceError("Multiple errors")
 
-    def _getError(self):
-        # Get a single error
-        ret = self.query("SYST:ERR?")
-        code, msg = ret.split(',')
-        code = int(code)
-        msg = str(msg).strip()[1:-1]
-        return (code, msg)
+    def getError(self):
+        """
+        Get the last recorded error from the instrument
+
+        :return: error code, error message
+        """
+        err = self.query('SYST:ERR?')
+        return err.split(',')
         
     def getErrors(self):
         """
-        Get the last error
-        
-        :returns: tuple (code, msg)
+        Retrieve any queued errors on the instrument
+
+        :return:                list
         """
         errors = []
 
-        code, msg = self._getError()
-        while code != 0:
-            errors.append((code, msg))
-            code, msg = self._getError()
+        while True:
+            err_num, err_msg = self.getError()
+            if float(err_num) == 0:
+                break
+            else:
+                errors.append((err_num, err_msg,))
 
         return errors
 
@@ -277,11 +285,18 @@ class d_3441XA(Base_Driver):
         :param func: Configuration mode
         :type func: str
         """
-        if func in self.modes:
-            value = self.modes.get(func)
-            self.write("CONF:%s" % value)
-        else:
-            raise ValueError("Invalid Function")
+        # Convert to instrument mode if needed
+        func = self.VALID_MODES.get(func, func)
+
+        if func not in self.VALID_MODES.values():
+            raise ValueError("Invalid Mode")
+
+        self.write("CONF:{0}".format(func))
+
+        # Verify
+        self.getMode()
+        if self._mode.upper() != func.upper():
+            raise RuntimeError('Set value failed verification')
     
     def getMode(self):
         """
@@ -291,28 +306,20 @@ class d_3441XA(Base_Driver):
         """
         mode = self.query("CONF?")
 
-        mode = re.search(r'"([A-Z:]+)\s?([A-Z0-9,+\-.]*)"', mode)
+        # Returns mode and a series of comma-separated fields indicating the preset function, range and resolution
+        # We are only interested in the mode at the beginning. Use a regex to get the mode out of the string
+        import re
+        re_mode = re.compile(r'([A-Z:]+)\s?([A-Z0-9,+\-.]*)')
+        re_srch = re.search(re_mode, mode)
 
-        self.mode = mode.group(1)
+        if re_srch is not None:
+            self._mode = re_srch.group(1)
         
-        for desc, code in self.modes.items():
-            if self.mode == code:
-                self.func = code
-                return desc
+            for desc, code in self.VALID_MODES.items():
+                if self._mode == code:
+                    return desc
             
         return 'Unknown'
-    
-    def setFunction(self, value):
-        """
-        Alias for `setMode`
-        """
-        return self.setMode(value)
-    
-    def getFunction(self):
-        """
-        Alias for `getMode`
-        """
-        return self.getMode()
     
     def getRange(self):
         """
@@ -326,28 +333,25 @@ class d_3441XA(Base_Driver):
         """
         Set the range for the measurement. The range is selected by specifying
         the expected reading as an absolute value. The instrument will then
-        go to the most ideal range that will accomodate the expected reading
+        go to the most ideal range that will accommodate the expected reading
         
-        Possible values for `value`:
-        
+        Possible value ranges:
+
            * 'AUTO'
-           
-        Expected value ranges:
-        
            * DC Voltage: 0 to 1000 Volts
            * AC Voltage: 0 to 750 Volts
            * Current: 0 to 20 Amps
            * Resistance: 0 to 20e6 ohms
            * Frequency or Period: 0 to 1010 Volts
         
-        :param value: Measurement Range
-        :type value: str
+        :param new_range: Measurement Range
+        :type new_range: str
         """
         if str(new_range).upper() == 'AUTO':
             self.write('SENS:%s:RANGE:AUTO ON' % self.func)
         else:
             self.write('SENS:%s:RANGE:AUTO OFF' % self.func)
-            
+
     def getMeasurement(self):
         """
         Get the last available reading from the instrument. This command does
@@ -399,7 +403,7 @@ class d_3441XA(Base_Driver):
         
         :returns: float
         """
-        return float(self.query(":%s:NPLC?" % (self.func)))
+        return float(self.query(":{0}:NPLC?".format(self.func)))
         
     def setTriggerCount(self, count):
         """
@@ -457,7 +461,7 @@ class d_3441XA(Base_Driver):
         :param source: Trigger source
         :type source: str
         """
-        if source in self.trigger_sources.values():
+        if source in self.VALID_TRIGGER_SOURCES.values():
             self.write("TRIG:SOUR %s" % source)
         else:
             raise ValueError('Invalid trigger source')

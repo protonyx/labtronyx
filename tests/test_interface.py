@@ -1,5 +1,6 @@
 import unittest
 from nose.tools import * # PEP8 asserts
+import os
 
 import mock
 
@@ -48,28 +49,19 @@ class Interface_Integration_Tests(unittest.TestCase):
 
 class Interface_VISA_Tests(unittest.TestCase):
 
+    SIM = True
+
     @classmethod
     def setUpClass(cls):
         # Setup a mock manager
         cls.manager = labtronyx.InstrumentManager(rpc=False)
 
-        import importlib
-        cls.m_visa = importlib.import_module('labtronyx.interfaces.i_VISA')
+        if 'TRAVIS' in os.environ or cls.SIM:
+            lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'default.yaml')
 
-        import os
-        lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'default.yaml')
-        # lib_path = ''
-        cls.i_visa = cls.m_visa.i_VISA(manager=cls.manager, library='%s@sim'%lib_path)
+            cls.manager.enableInterface('VISA', library='%s@sim'%lib_path)
 
-        if not cls.i_visa.open():
-            print cls.i_visa.getError()
-            raise EnvironmentError("VISA Library did not initialize properly")
-
-        cls.manager._interfaces['labtronyx.interfaces.i_VISA'] = cls.i_visa
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.i_visa.close()
+        cls.i_visa = cls.manager._getInterface('VISA')
 
     def test_interface_visa_enumerate_time(self):
         import time

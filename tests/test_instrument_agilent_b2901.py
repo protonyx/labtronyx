@@ -3,6 +3,7 @@ import importlib
 import os
 
 import labtronyx
+labtronyx.logConsole()
 
 class Agilent_B2901_Functional_Tests(unittest.TestCase):
 
@@ -14,7 +15,7 @@ class Agilent_B2901_Functional_Tests(unittest.TestCase):
         self.manager = labtronyx.InstrumentManager(rpc=False)
 
         if 'TRAVIS' in os.environ or self.SIM:
-            lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'default.yaml')
+            lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'agilent_b2901.yaml')
 
             self.manager.enableInterface('VISA', library='%s@sim'%lib_path)
 
@@ -23,7 +24,6 @@ class Agilent_B2901_Functional_Tests(unittest.TestCase):
 
         if len(dev_list) == 1:
             self.dev = dev_list[0]
-
 
         else:
             self.dev = None
@@ -45,17 +45,13 @@ class Agilent_B2901_Functional_Tests(unittest.TestCase):
     def tearDown(self):
         self.dev.close()
 
-    @unittest.skip("not needed")
-    def test_sim_identify(self):
-        self.assertEqual(self.dev.query('*IDN?'), "AGILENT TECHNOLOGIES,B2901A,12345,SIM")
-
-    def test_error(self):
-        try:
-            self.dev.query('BAD COMMAND')
-        except Exception as e:
-            pass
+    def test_bad_command(self):
+        self.assertRaises(labtronyx.common.errors.InterfaceTimeout, self.dev.query, 'BAD COMMAND')
 
         self.assertEqual(len(self.dev.getErrors()), 1)
+
+    def test_configuration(self):
+        conf = self.dev.getConfiguration()
 
     def test_aperture(self):
         self.dev.setSourceMode(1, 'VOLT')

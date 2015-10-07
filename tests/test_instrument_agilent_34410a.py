@@ -3,54 +3,68 @@ import importlib
 import time
 import os
 
-from labtronyx import InstrumentManager
+import labtronyx
 
-class InstrumentManager_Instrument_Agilent_34410A(unittest.TestCase):
+class Agilent_34410A_Functional_Tests(unittest.TestCase):
 
-    SIM = False
+    SIM = True
 
     @classmethod
     def setUpClass(self):
         # Setup a mock manager
-        self.manager = InstrumentManager(rpc=False)
+        self.manager = labtronyx.InstrumentManager(rpc=False)
 
         if 'TRAVIS' in os.environ or self.SIM:
-            self.m_visa = importlib.import_module('labtronyx.interfaces.i_VISA')
-            lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'default.yaml')
+            lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'agilent_34410a.yaml')
 
-            self.manager.enableInterface(self.m_visa.i_VISA, library='%s@sim'%lib_path)
+            self.manager.enableInterface('VISA', library='%s@sim'%lib_path)
+
+        # Find the instrument by model number
+        dev_list = self.manager.findInstruments(deviceVendor='Agilent', deviceModel='34410A')
+
+        if len(dev_list) == 1:
+            self.dev = dev_list[0]
+
+        else:
+            self.dev = None
 
     def setUp(self):
-        # Find the instrument by model number
-        dev_list = self.manager.findInstruments(deviceModel="34410A")
-
-        if len(dev_list) == 0:
+        if self.dev is None:
             self.skipTest("Instrument not present")
             return
-
-        self.dev = dev_list[0]
 
         # Open the instrument
         self.dev.open()
 
+        # Shorten timeout
+        self.dev.configure(timeout=0.5)
+
+        # Clear errors
+        self.dev.getErrors()
+
     def tearDown(self):
         self.dev.close()
 
-    @unittest.skip("")
-    def test_sweep_modes(self):
-        for mode, code in self.dev.modes.items():
+    def test_bad_command(self):
+        self.assertRaises(labtronyx.common.errors.InterfaceTimeout, self.dev.query, 'BAD COMMAND')
+
+        self.assertEqual(len(self.dev.getErrors()), 1)
+
+    def test_modes(self):
+        validModes = self.dev.getProperties().get('validModes')
+
+        for mode in validModes:
             self.dev.setMode(mode)
 
-            time.sleep(0.5)
+            self.assertEqual(self.dev.getMode(), mode)
 
-            self.assertNotEqual(self.dev.getMode(), 'Unknown')
+        self.assertEqual(len(self.dev.getErrors()), 0)
 
-        self.dev.setMode('DC Voltage')
-
+    @unittest.skip("Not yet supported")
     def test_sample_count(self):
         SAMPLES = 10
 
         self.dev.setSampleCount(SAMPLES)
         self.assertEqual(self.dev.getSampleCount(), SAMPLES)
 
-        self.dev.setSampleCount(1)
+        self.assertEqual(len(self.dev.getErrors()), 0)

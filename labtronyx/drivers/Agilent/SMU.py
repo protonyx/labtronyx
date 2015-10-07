@@ -35,6 +35,26 @@ class d_B29XX(Base_Driver):
     def VISA_validResource(cls, identity):
         return identity[0].upper() == 'AGILENT TECHNOLOGIES' and identity[1] in cls.info['deviceModel']
 
+    VALID_MODES = {
+        'Voltage':       'VOLT',
+        'Current':       'CURR',
+        'Resistance':    'RES'
+    }
+
+    VALID_SOURCE_MODES = {
+        'Sweep': 'SWEEP',
+        'Fixed': 'FIXED',
+        'List':  'LIST'
+    }
+
+    VALID_TRIGGER_SOURCES = ['AINT', 'BUS', 'TIMER', 'INT1', 'INT2', 'LAN', 'EXT1', 'EXT2',
+                    'EXT3', 'EXT4', 'EXT5', 'EXT6', 'EXT7', 'EXT8', 'EXT9', 'EXT10',
+                    'EXT11', 'EXT12', 'EXT13', 'EXT14']
+
+    # Instrument Constants
+    MIN_APERTURE_TIME = 0.000008
+    MAX_APERTURE_TIME = 2.0
+
     def open(self):
         prop = self.resource.getProperties()
 
@@ -53,21 +73,21 @@ class d_B29XX(Base_Driver):
             self.getSourceMode(idx)
             self.getMeasureMode(idx)
 
+    def close(self):
+        pass
 
-
-    validMode = ['VOLT', 'CURR', 'RES']
-
-    validMode2 = ['SWEEP', 'FIXED', 'LIST']
-
-    validTrigger = ['AINT', 'BUS', 'TIMER', 'INT1', 'INT2', 'LAN', 'EXT1', 'EXT2',
-                    'EXT3', 'EXT4', 'EXT5', 'EXT6', 'EXT7', 'EXT8', 'EXT9', 'EXT10',
-                    'EXT11', 'EXT12', 'EXT13', 'EXT14']
-
-    # Instrument Constants
-    MIN_APERTURE_TIME = 0.000008
-    MAX_APERTURE_TIME = 2.0
+    def getProperties(self):
+        return dict(
+            validModes=self.VALID_MODES,
+            validTriggerSources=self.VALID_TRIGGER_SOURCES
+        )
 
     def getError(self):
+        """
+        Get the last recorded error from the instrument
+
+        :return: error code, error message
+        """
         err = self.query(':SYST:ERR?')
         return err.split(',')
 
@@ -80,7 +100,7 @@ class d_B29XX(Base_Driver):
         # TODO: Replace with ERR:ALL on the real device, this is just for sim
         errors = [] # self.query(':SYST:ERR:ALL?')
 
-        while (1):
+        while True:
             err_num, err_msg = self.getError()
             if float(err_num) == 0:
                 break
@@ -120,7 +140,10 @@ class d_B29XX(Base_Driver):
         :type channel:          int
         :return:                str
         """
-        return self.query(':SOUR{0}:FUNC:MODE?'.format(channel))
+        mode = self.query(':SOUR{0}:FUNC:MODE?'.format(channel))
+        self._mode_source[channel] = mode
+
+        return mode
 
     def setSourceVoltage(self, channel, voltage_base, voltage_trig=None):
         """
@@ -176,7 +199,7 @@ class d_B29XX(Base_Driver):
         self.setSourceMode(channel, 'CURR')
 
         self.write(':SOUR{0}:CURR {1}'.format(channel, current_base))
-        self.write(':SOUR{0}:CURR:TRIG {1}'.format(channel, current_base))
+        self.write(':SOUR{0}:CURR:TRIG {1}'.format(channel, current_trig))
 
         # Verify
         if self.getSourceCurrent(channel) != current_base:
@@ -202,11 +225,13 @@ class d_B29XX(Base_Driver):
         :type measure_mode:     str
         :raises:                RuntimeError on verification failure
         """
-        validMeas = {'VOLTAGE': 'VOLT',
-                       'VOLTAGE:DC': 'VOLT',
-                       'CURRENT': 'CURR',
-                       'CURRENT:DC': 'CURR',
-                       'RESISTANCE': 'RES'}
+        validMeas = {
+            'VOLTAGE':    'VOLT',
+            'VOLTAGE:DC': 'VOLT',
+            'CURRENT':    'CURR',
+            'CURRENT:DC': 'CURR',
+            'RESISTANCE': 'RES'
+        }
 
         mode = validMeas.get(measure_mode.upper(), measure_mode.upper())
 
@@ -224,7 +249,10 @@ class d_B29XX(Base_Driver):
         :type channel:          int
         :return:                str
         """
-        return self.query(':SENS{0}:FUNC:ON?'.format(channel))
+        mode = self.query(':SENS{0}:FUNC:ON?'.format(channel))
+        self._mode_measure[channel] = mode
+
+        return mode
 
     def setApertureTime(self, channel, apertureTime):
         """
@@ -238,7 +266,9 @@ class d_B29XX(Base_Driver):
         :raises:                RuntimeError on verification failure
         """
         if apertureTime < self.MIN_APERTURE_TIME or apertureTime > self.MAX_APERTURE_TIME:
-            self.logger.warning("Aperture time should be between {0} and {1}".format(self.MIN_APERTURE_TIME, self.MAX_APERTURE_TIME))
+            self.logger.warning("Aperture time should be between {0} and {1}".format(
+                self.MIN_APERTURE_TIME, self.MAX_APERTURE_TIME)
+            )
 
         mode = self._mode_measure.get(channel, 'VOLT')
         self.write(':SENS{0}:{1}:APER {2}'.format(channel, mode, apertureTime))
@@ -248,6 +278,13 @@ class d_B29XX(Base_Driver):
             raise RuntimeError('Set value failed verification')
 
     def getApertureTime(self, channel):
+        """
+        Get the instrument aperture time.
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :return:                float
+        """
         mode = self._mode_measure.get(channel, 'VOLT')
         return float(self.query(':SENS{0}:{1}:APER?'.format(channel, mode)))
 
@@ -271,9 +308,7 @@ class d_B29XX(Base_Driver):
         """
         mode = self._mode_measure.get(channel, 'VOLT')
         self.write(':SENS{0}:{1}:APER:AUTO 0'.format(channel, mode))
-        
 
-                
     def setTriggerSetup(self, triggerSource, number, interval, delay=0):
         """
         Set SMU Trigger settings
@@ -289,7 +324,11 @@ class d_B29XX(Base_Driver):
         :param delay: Delay before first trigger in seconds
         :type delay: float 
         """
-        if triggerSource in self.validTrigger:
+        validTriggers = ['AINT', 'BUS', 'TIMER', 'INT1', 'INT2', 'LAN', 'EXT1', 'EXT2',
+            'EXT3', 'EXT4', 'EXT5', 'EXT6', 'EXT7', 'EXT8', 'EXT9', 'EXT10',
+            'EXT11', 'EXT12', 'EXT13', 'EXT14']
+
+        if triggerSource in validTriggers:
             self.write(':TRIG:SOUR %s' % triggerSource)
             self.write(':TRIG:COUN %i' % number)
             
