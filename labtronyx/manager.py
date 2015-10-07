@@ -230,7 +230,23 @@ class InstrumentManager(object):
     def interfaces(self):
         return self._interfaces
 
-    def getInterfaces(self):
+    def _getInterface(self, interface_name):
+        """
+        Get an interface object with a given interface name. Used primarily in testing and debug, but can also be
+        useful to access interface methods.
+
+        :param interface_name: Interface plugin name or InterfaceName attribute
+        :type interface_name: str
+        :return:
+        """
+        if interface_name not in self._interfaces:
+            for interf_name, interf_cls in self._interfaces.items():
+                if interf_cls.info.get('interfaceName') == interface_name:
+                    interface_name = interf_name
+
+        return self._interfaces.get(interface_name)
+
+    def getInterfaceList(self):
         """
         Get a list of interfaces that are enabled
         
@@ -243,6 +259,7 @@ class InstrumentManager(object):
         Enable an interface for use. Requires a class object that extends Base_Interface, NOT a class instance.
 
         :param interface_name: Interface plugin name
+        :type interface_name: str
         :return: bool
         """
         int_cls = self.plugin_manager.getPlugin(interface_name)
