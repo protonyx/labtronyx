@@ -3,7 +3,6 @@ import importlib
 import os
 
 import labtronyx
-labtronyx.logConsole()
 
 class Agilent_B2901_Functional_Tests(unittest.TestCase):
 

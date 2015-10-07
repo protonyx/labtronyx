@@ -17,9 +17,12 @@ Mac and Linux.
 """
 
 from traceback import format_exc
+import time
 
 import visa
 import pyvisa
+import pyvisa.constants
+import pyvisa.resources
 
 from labtronyx.bases.interface import Base_Interface
 from labtronyx.bases.resource import Base_Resource
@@ -196,6 +199,9 @@ class r_VISA(Base_Resource):
 
     type = "VISA"
 
+    CONFIG_KEYS = ['timeout', 'chunk_size', 'encoding', 'query_delay', 'read_termination', 'write_termination',
+        'baud_rate', 'break_length', 'data_bits', 'discard_null', 'parity', 'stop_bits', 'allow_dma', 'send_end']
+
     def __init__(self, manager, interface, resID, **kwargs):
         self.instrument = kwargs.pop('visa_instrument')
 
@@ -310,6 +316,11 @@ class r_VISA(Base_Resource):
         self.ready = True
 
     def getIdentity(self):
+        """
+        Get the comma-delimited identity string returned from `*IDN?` command on resource enumeration
+
+        :return:    str
+        """
         return self._identity
 
     def getVISA_vendor(self):
@@ -357,9 +368,37 @@ class r_VISA(Base_Resource):
         """
         self.write('*RST')
 
-    #===========================================================================
+    # ===========================================================================
+    # Serial Specific
+    # ===========================================================================
+
+    def inWaiting(self):
+        """
+        Return the number of bytes in the receive buffer for a Serial VISA
+        Instrument. All other VISA instrument types will return 0.
+
+        :returns: int
+        """
+        if type(self.instrument) == pyvisa.resources.serial.SerialInstrument:
+            return self.instrument.bytes_in_buffer
+        else:
+            return 0
+
+    def lineBreak(self, length):
+        """
+        Suspends character transmission and places the transmission line in a break state
+
+        :param length:  Length of time to break
+        :type length:   int
+        """
+        if type(self.instrument) == pyvisa.resources.serial.SerialInstrument:
+            self.instrument.break_state = pyvisa.constants.LineState.asserted
+            time.sleep(length)
+            self.instrument.break_state = pyvisa.constants.LineState.unasserted
+
+    # ===========================================================================
     # Resource State
-    #===========================================================================
+    # ===========================================================================
 
     def open(self):
         """
@@ -432,26 +471,48 @@ class r_VISA(Base_Resource):
     def unlock(self):
         self.instrument.unlock()
 
-    #===========================================================================
+    # ===========================================================================
     # Configuration
-    #===========================================================================
+    # ===========================================================================
 
     def configure(self, **kwargs):
         """
-        Configure resource.
+        Configure resource parameters to alter transmission characteristics or data interpretation
 
         All VISA Resources
         :param timeout:             Command timeout
         :type timeout:              int
+        :param write_termination:   Write termination
+        :type write_termination:    str
+        :param read_termination:    Read termination
+        :type read_termination:     str
+        :param query_delay:         Delay between write and read commands in a query
+        :type query_delay:          int
 
         Serial Resources
-        :param baudrate:            Serial Baudrate. Default 9600
-        :param bytesize: Serial - Number of bits per frame. Default 8.
-        :param parity: Serial - Parity
-        :param stopbits: Serial - Number of stop bits
-        :param termination: Write termination
+        :param baud_rate:           Serial Baudrate. Default 9600
+        :type baud_rate:            int
+        :param data_bits:           Number of bits per frame. Default 8.
+        :type data_bits:            int
+        :param parity:              Data frame parity (`N`one, `E`ven, `O`dd, `M`ark or `S`pace)
+        :type parity:               str
+        :param stop_bits:           Number of stop bits. Default 1
+        :type stop_bits:            int
+        :param break_length:        Duration of the break signal in milliseconds
+        :type break_length:         int
+        :param discard_null:        Discard NUL characters
+        :type discard_null:         bool
+        :param send_end:            Assert END during the transfer of the last byte of data in the buffer
+        :type send_end:             bool
+
+        Resource type dependent
+        :param allow_dma:           Allow DMA transfer
+        :type allow_dma:            bool
+        :param chunk_size:          Data chunk size
+        :type chunk_size:           int
+        :param encoding:            Data encoding
+        :type encoding:             str
         """
-        # if self.instrument.interface_type == pyvisa.constants.InterfaceType.usb:
 
         # Apply any necessary conversions
         if 'timeout' in kwargs:
@@ -498,21 +559,17 @@ class r_VISA(Base_Resource):
 
         :return: dict
         """
-        possible_keys = ['timeout', 'chunk_size', 'encoding', 'query_delay', 'read_termination', 'write_termination',
-                         'baud_rate', 'break_length', 'break_state', 'data_bits', 'discard_null', 'parity', 'stop_bits',
-                         'allow_dma', 'send_end']
-
         ret = {}
 
-        for key in possible_keys:
+        for key in self.CONFIG_KEYS:
             if hasattr(self.instrument, key):
                 ret[key] = getattr(self.instrument, key)
 
         return ret
 
-    #===========================================================================
+    # ===========================================================================
     # Data Transmission
-    #===========================================================================
+    # ===========================================================================
 
     def write(self, data):
         """
@@ -600,7 +657,6 @@ class r_VISA(Base_Resource):
         try:
             if type(self.instrument) == pyvisa.resources.serial.SerialInstrument:
                 # There is a bug in PyVISA that forces a low-level call (hgrecco/pyvisa #93)
-                import pyvisa
                 with self.instrument.ignore_warning(pyvisa.constants.VI_SUCCESS_MAX_CNT):
                     if size is None:
                         num_bytes = self.instrument.bytes_in_buffer
@@ -655,55 +711,38 @@ class r_VISA(Base_Resource):
             else:
                 raise InterfaceError(e.description)
 
-    def inWaiting(self):
-        """
-        Return the number of bytes in the receive buffer for a Serial VISA
-        Instrument. All other VISA instrument types will return 0.
-        
-        :returns: int
-        """
-        if type(self.instrument) == pyvisa.resources.serial.SerialInstrument:
-            return self.instrument.bytes_in_buffer
-        else:
-            return 0
-
-    #===========================================================================
+    # ===========================================================================
     # Drivers
-    #===========================================================================
+    # ===========================================================================
 
     def loadDriver(self, driverName=None):
         """
-        Load a Model. VISA supports enumeration and will thus search for a
-        compatible model. A Model name can be specified to load a specific model,
-        even if it may not be compatible with this resource. Reloads model
-        when importing, in case an update has occurred. If more than one
-        compatible model is found, no model will be loaded
-        
-        `driverName` must be an importable module on the remote system. The
-        base folder used to locate the module is the `models` folder.
-        
-        On startup, the resource will attempt to load a valid Model 
-        automatically. This function only needs to be called to
-        override the default model. :func:`unloadModel` must be called before
-        loading a new model for a resource.
-        
-        :returns: True if successful, False otherwise
-        """
-        self.logger.debug("Searching for suitable drivers")
+        Load a Driver.
 
+        VISA supports enumeration and will thus search for a compatible driver. A `driverName` can be specified to load
+        a specific driver, even if it may not be compatible with this resource. If more than one compatible driver is
+        found, no driver will be loaded.
+        
+        On startup, the resource will attempt to load a valid driver automatically. This function only needs to be
+        called to override the default driver. :func:`unloadDriver` must be called before loading a new driver for a
+        resource.
+
+        :param driverName:      Driver name to load
+        :type driverName:       str
+        :returns:               True if successful, False otherwise
+        """
         if driverName is None:
+            self.logger.debug("Searching for suitable drivers")
+
             # Search for a compatible model
             validModels = []
 
             # Iterate through all driver classes to find compatible driver
             for driver, driverCls in self.manager.drivers.items():
-                try:
+                if hasattr(driverCls, 'VISA_validResource'):
                     if driverCls.VISA_validResource(self._identity):
                         validModels.append(driver)
                         self.logger.debug("Found match: %s", driver)
-
-                except:
-                    pass
 
             # Only auto-load a model if a single model was found
             if len(validModels) == 1:

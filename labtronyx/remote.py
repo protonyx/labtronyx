@@ -16,9 +16,7 @@ class RemoteManager(PtxRpcClient):
     
     .. note::
        
-       InstrumentManager must be running on the computer that you
-       are trying to connect to. :func:`InstrumentControl.startManager` can be
-       used to spawn a new process of InstrumentManager.
+       InstrumentManager must be running with RPC enabled on the computer that you are trying to connect to.
     """
     resources = {}
     
@@ -42,7 +40,9 @@ class RemoteManager(PtxRpcClient):
             if res_uuid not in self.resources:
                 address = res_dict.get('address')
                 port = res_dict.get('port')
-                instr = RemoteResource(address=address, port=port)
+                uri = "http://{0}:{1}/{2}".format(address, port, res_uuid)
+
+                instr = RemoteResource(uri)
                 self.resources[res_uuid] = instr
         
         # Purge resources that are no longer in remote
@@ -68,11 +68,11 @@ class RemoteManager(PtxRpcClient):
             self.refreshResources()
             return self.resources.get(res_uuid)
     
-    def getInstrument(self):
+    def getInstrument(self, res_uuid):
         """
         Alias for :func:`getResource`
         """
-        return self.getResource()
+        return self.getResource(res_uuid)
     
     def findResources(self, **kwargs):
         """

@@ -75,10 +75,11 @@ class i_Serial(Base_Interface):
                     try:
                         instrument = serial.Serial(port=resID, timeout=0)
                         
-                        new_resource = r_Serial(resID, self,
+                        new_resource = r_Serial(manager=self.manager,
+                                                interface=self,
+                                                resID=resID,
                                                 instrument=instrument,
-                                                logger=self.logger,
-                                                enableRpc=self.manager.enableRpc)
+                                                logger=self.logger)
                         self._resources[resID] = new_resource
                         
                         self.manager._cb_new_resource()    
@@ -192,31 +193,37 @@ class r_Serial(Base_Resource):
     def configure(self, **kwargs):
         """
         Configure Serial port parameters for the resource.
-        
-        :param baudrate: Serial - Baudrate. Default 9600
-        :param timeout: Read timeout
-        :param bytesize: Serial - Number of bits per frame. Default 8.
-        :param parity: Serial - Parity
-        :param stopbits: Serial - Number of stop bits
-        :param termination: Write termination
+
+        :param timeout:             Command timeout
+        :type timeout:              int
+        :param write_termination:   Write termination
+        :type write_termination:    str
+        :param baud_rate:           Serial Baudrate. Default 9600
+        :type baud_rate:            int
+        :param data_bits:           Number of bits per frame. Default 8.
+        :type data_bits:            int
+        :param parity:              Data frame parity (`N`one, `E`ven, `O`dd, `M`ark or `S`pace)
+        :type parity:               str
+        :param stop_bits:           Number of stop bits. Default 1
+        :type stop_bits:            int
         """
-        if 'baudrate' in kwargs:
-            self.instrument.setBaudrate(int(kwargs.get('baudrate')))
+        if 'baud_rate' in kwargs:
+            self.instrument.setBaudrate(int(kwargs.get('baud_rate')))
             
         if 'timeout' in kwargs:
             self.instrument.setTimeout(float(kwargs.get('timeout')))
             
-        if 'bytesize' in kwargs:
-            self.instrument.setByteSize(int(kwargs.get('bytesize')))
+        if 'data_bits' in kwargs:
+            self.instrument.setByteSize(int(kwargs.get('data_bits')))
             
         if 'parity' in kwargs:
             self.instrument.setParity(kwargs.get('parity'))
             
-        if 'stopbits' in kwargs:
-            self.instrument.setStopbits(int(kwargs.get('stopbits')))
+        if 'stop_bits' in kwargs:
+            self.instrument.setStopbits(int(kwargs.get('stop_bits')))
             
-        if 'termination' in kwargs:
-            self.termination = kwargs.get('termination')
+        if 'write_termination' in kwargs:
+            self.termination = kwargs.get('write_termination')
             
     def getConfiguration(self):
         return self.instrument.getSettingsDict()

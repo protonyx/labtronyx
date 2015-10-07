@@ -27,8 +27,7 @@ class InstrumentManager_Tests(unittest.TestCase):
             if res.get('resID') == 'DEBUG':
                 return True
             
-        else:
-            return False
+        return False
 
     def test_get_hostname(self):
         self.assertIsNotNone(self.instr.getHostname())

@@ -88,59 +88,46 @@ class d_85XX(Base_Driver):
     
     def open(self):
         # Configure the COM Port
-        self.instr.configure(bytesize=8,
-                             parity='N',
-                             stopbits=1,
-                             timeout=0.5)
+        self.configure(parity='N', stop_bits=1, timeout=0.5)
         
         # Try multiple times to force the load into remote mode
         # If any stray data was received, it could be stuck in a bad state, this
         # should flush it out
         for attempt in range(3):
             try:
+                self.prodInfo = self._GetProductInformation()
+
                 self.setRemoteControl()
-                break
+                return True
             
             except:
                 pass
-        else:
-            self.instr.setResourceStatus('ERROR')
-            # INSTRUMENT NOT PRESENT
-            # This must be the wrong driver
             
-        return True
+        return False
     
     def close(self):
         self.setLocalControl()
         
     def getProperties(self):
-        prop = Base_Driver.getProperties(self)
-        
-        prop['deviceVendor'] = 'BK Precision'
-        
-        if hasattr(self, 'prodInfo'):
-            prop['deviceModel'] = self.prodInfo[0]
-            prop['deviceSerial'] = self.prodInfo[1]
-            prop['deviceFirmware'] = self.prodInfo[2]
-        else:
-            try:
-                self.prodInfo = self._GetProductInformation()
-                prop['deviceModel'] = self.prodInfo[0]
-                prop['deviceSerial'] = self.prodInfo[1]
-                prop['deviceFirmware'] = self.prodInfo[2]
-            except:
-                self.logger.exception('Get prod info exception')
-            
-        prop['validModes'] = self.modes
-        prop['validTriggerSources'] = self.trigger_sources
-        prop['controlModes'] = ['Voltage', 'Current', 'Power', 'Resistance']
-        prop['terminalSense'] = ['Voltage', 'Current', 'Power']
-            
-        return prop
+        return {
+            'deviceVendor':        self.info.get('deviceVendor'),
+            'deviceModel':         self.prodInfo[0],
+            'deviceSerial':        self.prodInfo[1],
+            'deviceFirmware':      self.prodInfo[2],
+            'validModes':          self.modes,
+            'validTriggerSources': self.trigger_sources,
+            'controlModes':        ['Voltage', 'Current', 'Power', 'Resistance'],
+            'terminalSense':       ['Voltage', 'Current', 'Power']
+        }
     
     def _CommandProperlyFormed(self, cmd):
-        '''Return 1 if a command is properly formed; otherwise, return 0.
-        '''
+        """
+        Check if a command is properly formatted.
+
+        :param cmd:     Command packet
+        :return:        True if properly formed
+        :raises:        ValueError if improperly formed
+        """
         commands = (
             0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29,
             0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33,
@@ -153,28 +140,24 @@ class d_85XX(Base_Driver):
         )
         # Must be proper length
         if len(cmd) != self.length_packet:
-            out("Command length = " + str(len(cmd)) + "-- should be " + \
-                str(self.length_packet) + nl)
-            return 0
+            raise ValueError("Command length = {0} -- should be {1}".format(str(len(cmd)), str(self.length_packet)))
         # First character must be 0xaa
         if ord(cmd[0]) != 0xaa:
-            out("First byte should be 0xaa" + nl)
-            return 0
+            raise ValueError("First byte should be 0xaa")
         # Second character (address) must not be 0xff
         if ord(cmd[1]) == 0xff:
-            out("Second byte cannot be 0xff" + nl)
-            return 0
+            raise ValueError("Second byte cannot be 0xff")
         # Third character must be valid command
         byte3 = "%02X" % ord(cmd[2])
         if ord(cmd[2]) not in commands:
-            out("Third byte not a valid command:  %s\n" % byte3)
-            return 0
+            raise ValueError("Third byte not a valid command:  %s\n" % byte3)
+
         # Calculate checksum and validate it
         checksum = self._CalculateChecksum(cmd)
         if checksum != ord(cmd[-1]):
-            out("Incorrect checksum" + nl)
-            return 0
-        return 1
+            raise ValueError("Incorrect checksum")
+
+        return True
     
     def _CalculateChecksum(self, cmd):
         '''Return the sum of the bytes in cmd modulo 256.
@@ -538,21 +521,22 @@ class d_85XX(Base_Driver):
         """
         Sets up the transient operation mode.  
         
-        :param A: Amplitude B
-        :type A: float
-        :param A_time_s: Width of A (in seconds)
-        :type A_time_s: float
-        :param B: Amplitude of B
-        :type B: float
-        :param B: Width of B (in seconds)
-        :type B_time_s: float
-        :param operation: Transient Mode (one of "continuous", "pulse", "toggled")
-        :type operation: str
+        :param A:           Amplitude A
+        :type A:            float
+        :param A_time_s:    Width of A (in seconds)
+        :type A_time_s:     float
+        :param B:           Amplitude of B
+        :type B:            float
+        :param B:           Width of B (in seconds)
+        :type B_time_s:     float
+        :param operation:   Transient Mode (one of "continuous", "pulse", "toggled")
+        :type operation:    str
         """
-        if mode.lower() not in self.modes:
-            raise Exception("Unknown mode")
         opcodes = {"cc":0x32, "cv":0x34, "cw":0x36, "cr":0x38}
+        transient_operations = {"continuous":0, "pulse":1, "toggled":2}
+
         mode = self.GetMode()
+
         if mode.lower() == "cc":
             const = self.convert_current
         elif mode.lower() == "cv":
@@ -561,12 +545,12 @@ class d_85XX(Base_Driver):
             const = self.convert_power
         else:
             const = self.convert_resistance
+
         cmd = self._StartCommand(opcodes[mode.lower()])
-        cmd += self._CodeInteger(A*const, num_bytes=4)
-        cmd += self._CodeInteger(A_time_s*self.to_ms, num_bytes=2)
-        cmd += self._CodeInteger(B*const, num_bytes=4)
-        cmd += self._CodeInteger(B_time_s*self.to_ms, num_bytes=2)
-        transient_operations = {"continuous":0, "pulse":1, "toggled":2}
+        cmd += self._CodeInteger(float(A)*const, num_bytes=4)
+        cmd += self._CodeInteger(float(A_time_s)*self.to_ms, num_bytes=2)
+        cmd += self._CodeInteger(float(B)*const, num_bytes=4)
+        cmd += self._CodeInteger(float(B_time_s)*self.to_ms, num_bytes=2)
         cmd += self._CodeInteger(transient_operations[operation.lower()], num_bytes=1)
         cmd += self._Reserved(16)
         cmd += chr(self._CalculateChecksum(cmd))

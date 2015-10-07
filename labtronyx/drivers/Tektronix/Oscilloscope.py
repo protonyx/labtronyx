@@ -537,9 +537,6 @@ class d_5XXX7XXX(Base_Driver):
 
         return True
 
-        # TODO: Make this not a static delay
-        time.sleep(1.0)
-
     def setHorizontalSetup(self, **kwargs):
         """
         Set Horizontal configuration
