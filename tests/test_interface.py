@@ -63,6 +63,10 @@ class Interface_VISA_Tests(unittest.TestCase):
 
         cls.i_visa = cls.manager._getInterface('VISA')
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.manager.disableInterface('VISA')
+
     def test_interface_visa_enumerate_time(self):
         import time
         start = time.clock()

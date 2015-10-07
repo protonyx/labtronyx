@@ -5,6 +5,7 @@ The Serial interface is a wrapper for the pyserial library.
 from labtronyx.bases.interface import Base_Interface
 from labtronyx.bases.resource import Base_Resource
 from labtronyx.common.errors import *
+import labtronyx.common as common
 
 import time
 import errno
@@ -52,82 +53,70 @@ class i_Serial(Base_Interface):
             res.stop()
             
         return True
-    
-    def getResources(self):
-        return self._resources
-    
-    #===========================================================================
-    # Optional - Automatic Controllers
-    #===========================================================================
 
-    def refresh(self):
+    def enumerate(self):
         """
         Scans system for new resources and creates resource objects for them.
         """
-        try:
-            res_list = list(serial.tools.list_ports.comports()) 
+        res_list = list(serial.tools.list_ports.comports())
+
+        # Check for new resources
+        for res in res_list:
+            resID, _, _ = res
+
+            if resID not in self._resources:
+                try:
+                    instrument = serial.Serial(port=resID, timeout=0)
+
+                    new_resource = r_Serial(manager=self.manager,
+                                            interface=self,
+                                            resID=resID,
+                                            instrument=instrument,
+                                            logger=self.logger)
+                    self._resources[resID] = new_resource
+
+                    # Signal new resource event
+                    self.manager._event_signal(common.constants.ResourceEvents.created)
+
+                except serial.SerialException as e:
+                    # Seems to be thrown on Windows systems
+                    self.logger.exception("Serial Error %s: %s", e.errno, e.message)
+
+                except OSError as e:
+                    # Seems to be thrown on POSIX systems
+                    if e.errno in [errno.EACCES, errno.EBUSY]:
+                        pass
+                        #self.logger.error("Serial OSError %s", e.errno)
+
+                    else:
+                        self.logger.exception("Unknown OSError Exception")
+
+                except:
+                    self.logger.exception("Unhandled Serial Exception while creating new resource %s", resID)
             
-            # Check for new resources
-            for res in res_list:
-                resID, _, _ = res
-                    
-                if resID not in self._resources:
-                    try:
-                        instrument = serial.Serial(port=resID, timeout=0)
-                        
-                        new_resource = r_Serial(manager=self.manager,
-                                                interface=self,
-                                                resID=resID,
-                                                instrument=instrument,
-                                                logger=self.logger)
-                        self._resources[resID] = new_resource
-                        
-                        self.manager._cb_new_resource()    
-                        
-                    except serial.SerialException as e:
-                        # Seems to be thrown on Windows systems
-                        self.logger.exception("Serial Error %s: %s", e.errno, e.message)
-            
-                    except OSError as e:
-                        # Seems to be thrown on POSIX systems
-                        if e.errno in [errno.EACCES, errno.EBUSY]:
-                            pass
-                            #self.logger.error("Serial OSError %s", e.errno)
-                        
-                        else:
-                            self.logger.exception("Unknown OSError Exception")
-                        
-                    except:
-                        self.logger.exception("Unhandled Serial Exception while creating new resource %s", resID)
-    
-        except:
-            # Exception thrown when there are no resources
-            self.logger.exception("Unhandled Exception occurred while creating new Serial resource: %s", resID)
-            
-    #===========================================================================
-    #     if sys.platform.startswith('win'):
-    #         ports = ['COM' + str(i + 1) for i in range(256)]
-    # 
-    #     elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
-    #         # this is to exclude your current terminal "/dev/tty"
-    #         ports = glob.glob('/dev/tty[A-Za-z]*')
-    # 
-    #     elif sys.platform.startswith('darwin'):
-    #         ports = glob.glob('/dev/tty.*')
-    # 
-    #     else:
-    #         raise EnvironmentError('Unsupported platform')
-    # 
-    #     result = []
-    #     for port in ports:
-    #         try:
-    #             s = serial.Serial(port)
-    #             s.close()
-    #             self.resources[port] = ('', '')
-    #             self.logger.debug('Found Serial Device %s', port)
-    #         except (OSError, serial.SerialException):
-    #             pass
-    #===========================================================================
+    def prune(self):
+        """
+        Remove any resources that are no longer found on the system
+        """
+        res_list = list(serial.tools.list_ports.comports())
+
+        to_remove = []
+
+        for resID in self._resources:
+            if resID not in res_list:
+                # Close this resource and remove from the list
+                res = self._resources.get(resID)
+                to_remove.append(resID)
+
+                try:
+                    # Resource is gone, so this will probably error
+                    res.close()
+                except:
+                    pass
+
+        for resID in to_remove:
+            del self._resources[resID]
+
         
 class r_Serial(Base_Resource):
     type = "Serial"

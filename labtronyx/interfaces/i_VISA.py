@@ -152,19 +152,26 @@ class i_VISA(Base_Interface):
 
     def prune(self):
         """
-        Close any resources that are no longer known to the VISA driver
+        Close any resources that are no longer known to the VISA interface
         """
+        to_remove = []
+
         if self.resource_manager is not None:
             try:
                 # Get a fresh list of resources
                 res_list = self.resource_manager.list_resources()
 
-                # Check for new resources
-                for res in self._resources:
-                    if res not in res_list:
-                        resource = self._resources.get(res)
+                for resID in self._resources:
+                    if resID not in res_list:
+                        # Close this resource and remove from the list
+                        resource = self._resources.get(resID)
+                        to_remove.append(resID)
 
-                        resource.close()
+                        try:
+                            # Resource is gone, so this will probably error
+                            resource.close()
+                        except:
+                            pass
 
             except visa.VisaIOError:
                 # Exception thrown when there are no resources
@@ -173,6 +180,9 @@ class i_VISA(Base_Interface):
             except:
                 self.logger.exception("Unhandled VISA Exception while pruning resources")
                 raise
+
+            for resID in to_remove:
+                del self._resources[resID]
 
 class r_VISA(Base_Resource):
     """
@@ -235,6 +245,10 @@ class r_VISA(Base_Resource):
         return def_prop
 
     def refresh(self):
+        """
+        Refresh the resource. Attempts to re-identify the instrument and load a driver. If a driver is already loaded,
+        it will not be unloaded.
+        """
         self.identify()
 
         if self._driver is None:

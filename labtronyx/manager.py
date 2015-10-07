@@ -94,6 +94,10 @@ class InstrumentManager(object):
     def __del__(self):
         self.rpc_stop()
 
+        # Disable all interfaces, close all resources
+        for interface_name in self._interfaces:
+            self.disableInterface(interface_name)
+
     #===========================================================================
     # RPC Server
     #===========================================================================
@@ -321,20 +325,21 @@ class InstrumentManager(object):
                 self.logger.exception("Exception during interface close")
                 return False
         
-    #===========================================================================
+    # ===========================================================================
     # Resource Operations
-    #===========================================================================
+    # ===========================================================================
     
     def refresh(self):
         """
-        Signal all resources to refresh
+        Refresh all interfaces and resources. Attempts enumeration on all interfaces, then calls the `refresh`
+        method for all resources.
 
         :returns: bool
         """
         for interf in self._interfaces.values():
             try:
                 # Discover any new resources
-                interf.enumerate()
+                interf.refresh()
             except NotImplementedError:
                 pass
 
@@ -342,6 +347,8 @@ class InstrumentManager(object):
             for resID, res in interf.getResources().items():
                 try:
                     res.refresh()
+                except NotImplementedError:
+                    pass
                 except:
                     self.logger.exception("Unhandled exception during refresh of interface: %s", interf.name)
                     raise

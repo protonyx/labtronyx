@@ -80,11 +80,26 @@ class Base_Interface(PluginBase):
         """
         raise NotImplementedError
 
+    def prune(self):
+        """
+        Close any resources that are no longer known to the interface
+        """
+        raise NotImplementedError
+
     def refresh(self):
         """
-        Alias for enumerate
+        Macro for interfaces that support enumeration. Calls `enumerate` then `prune` to get an updated list of
+        resources available to the interface
         """
-        return self.enumerate()
+        try:
+            self.enumerate()
+        except NotImplementedError:
+            pass
+
+        try:
+            self.prune()
+        except NotImplementedError:
+            pass
 
     def getResource(self, resID):
         """
