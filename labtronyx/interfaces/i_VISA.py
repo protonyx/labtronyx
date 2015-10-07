@@ -198,13 +198,16 @@ class r_VISA(Base_Resource):
 
     def __init__(self, manager, interface, resID, **kwargs):
         self.instrument = kwargs.pop('visa_instrument')
-        self.instrument.read_termination = self._read_termination = kwargs.pop('read_termination', '\r')
-        self.instrument.write_termination = self._write_termination = kwargs.pop('write_termination', '\r\n')
-        self.instrument.timeout = self._timeout = kwargs.pop('timeout', 2000)
 
         Base_Resource.__init__(self, manager, interface, resID, **kwargs)
 
+        # Instance variables
         self._identity = []
+        self._conf = { # Default configuration
+                      'read_termination': '\r',
+                      'write_termination': '\r\n',
+                      'timeout': 2000
+                      }
 
         # Instrument is created in the open state, but we do not want to lock the VISA instrument
         self.close()
@@ -370,9 +373,7 @@ class r_VISA(Base_Resource):
             self.instrument.open()
 
             # Restore instrument context
-            self.instrument.read_termination = self._read_termination
-            self.instrument.write_termination = self._write_termination
-            self.instrument.timeout = self._timeout
+            self.configure()
 
             if self._driver is not None:
                 try:
@@ -417,11 +418,6 @@ class r_VISA(Base_Resource):
                 except NotImplementedError:
                     pass
 
-            # Save instrument context before closing
-            self._read_termination = self.instrument.read_termination
-            self._write_termination = self.instrument.write_termination
-            self._timeout = self.instrument.timeout
-
             # Close the instrument
             self.instrument.close()
             return True
@@ -449,8 +445,7 @@ class r_VISA(Base_Resource):
         :type timeout:              int
 
         Serial Resources
-        :param baudrate: Serial - Baudrate. Default 9600
-        :param timeout: Read timeout
+        :param baudrate:            Serial Baudrate. Default 9600
         :param bytesize: Serial - Number of bits per frame. Default 8.
         :param parity: Serial - Parity
         :param stopbits: Serial - Number of stop bits
@@ -458,37 +453,44 @@ class r_VISA(Base_Resource):
         """
         # if self.instrument.interface_type == pyvisa.constants.InterfaceType.usb:
 
-        if 'timeout' in kwargs and self.isOpen():
+        # Apply any necessary conversions
+        if 'timeout' in kwargs:
             # Timeout must be in milliseconds
             timeout = kwargs.get('timeout')
             if type(timeout) == float:
                 # assume this is seconds
                 timeout = int(timeout * 100)
+                kwargs['timeout'] = timeout
 
-            self.instrument.timeout = timeout
+        if 'parity' in kwargs:
+            import pyvisa.constants as pvc
+            parity_convert = {
+                'N': pvc.Parity.none,
+                'E': pvc.Parity.even,
+                'M': pvc.Parity.mark,
+                'O': pvc.Parity.odd,
+                'S': pvc.Parity.space}
+            kwargs['parity'] = parity_convert.get(kwargs.get('parity', 'N'))
 
-        if type(self.instrument) == pyvisa.resources.serial.SerialInstrument:
-            if 'baudrate' in kwargs:
-                self.instrument.baud_rate = int(kwargs.get('baudrate'))
+        if 'baudrate' in kwargs:
+            kwargs['baudrate'] = int(kwargs.get('baudrate'))
 
-            if 'bytesize' in kwargs:
-                self.instrument.data_bits = int(kwargs.get('bytesize'))
+        if 'bytesize' in kwargs:
+            kwargs['bytesize'] = int(kwargs.get('bytesize'))
 
-            if 'parity' in kwargs:
-                import pyvisa.constants as pvc
-                parity_convert = {
-                    'N': pvc.Parity.none,
-                    'E': pvc.Parity.even,
-                    'M': pvc.Parity.mark,
-                    'O': pvc.Parity.odd,
-                    'S': pvc.Parity.space}
-                self.instrument.parity = parity_convert.get(kwargs.get('parity'))
+        if 'stopbits' in kwargs:
+            kwargs['stopbits'] = int(kwargs.get('stopbits'))
 
-            if 'stopbits' in kwargs:
-                self.instrument.stopbits = int(kwargs.get('stopbits'))
+        # Save any new configuration keys
+        self._conf.update(kwargs)
 
-            if 'termination' in kwargs:
-                self.instrument.write_termination = kwargs.get('termination')
+        # If resource is open, apply configuration
+        if self.isOpen():
+            for key, value in self._conf.items():
+                if hasattr(self.instrument, key):
+                    setattr(self.instrument, key, value)
+                else:
+                    self._conf.pop(key)
 
     def getConfiguration(self):
         """
@@ -496,16 +498,15 @@ class r_VISA(Base_Resource):
 
         :return: dict
         """
+        possible_keys = ['timeout', 'chunk_size', 'encoding', 'query_delay', 'read_termination', 'write_termination',
+                         'baud_rate', 'break_length', 'break_state', 'data_bits', 'discard_null', 'parity', 'stop_bits',
+                         'allow_dma', 'send_end']
+
         ret = {}
 
-        ret['timeout'] = self.instrument.timeout
-
-        if type(self.instrument) == pyvisa.resources.serial.SerialInstrument:
-            ret['baudrate'] = self.instrument.baud_rate
-            ret['bytesize'] = self.instrument.data_bits
-            ret['parity'] = self.instrument.parity
-            ret['stopbits'] = self.instrument.stopbits
-            ret['termination'] = self.instrument.write_termination
+        for key in possible_keys:
+            if hasattr(self.instrument, key):
+                ret[key] = getattr(self.instrument, key)
 
         return ret
 
@@ -702,7 +703,7 @@ class r_VISA(Base_Resource):
                         self.logger.debug("Found match: %s", driver)
 
                 except:
-                    continue
+                    pass
 
             # Only auto-load a model if a single model was found
             if len(validModels) == 1:
