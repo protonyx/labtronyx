@@ -16,7 +16,7 @@ def main():
 
     # Keep the main thread alive
     try:
-        while(1):
+        while True:
             time.sleep(1.0)
     except KeyboardInterrupt:
         man.rpc_stop()

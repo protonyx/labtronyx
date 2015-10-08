@@ -3,10 +3,6 @@ Setuptools build file
 """
 __author__ = 'kkennedy'
 
-# -----------------------------------------------------------------------
-# DO NOT CHANGE ANYTHING BELOW THIS LINE
-# -----------------------------------------------------------------------
-
 import sys, os, time
 
 import build
@@ -86,7 +82,7 @@ def build_package():
         },
 
         # Can the project run from a zip file?
-        zip_safe = False
+        zip_safe=False
     )
 
     try:

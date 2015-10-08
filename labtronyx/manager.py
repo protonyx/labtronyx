@@ -62,7 +62,7 @@ class InstrumentManager(object):
 
         # Directories to search
         dirs = ['drivers', 'interfaces']
-        dirs_res = map(lambda dir: os.path.join(self.rootPath, dir), dirs) + kwargs.get('plugin_dirs', [])
+        dirs_res = [os.path.join(self.rootPath, dir) for dir in dirs] + kwargs.get('plugin_dirs', [])
 
         # Categorize plugins by base class
         cat_filter = {
