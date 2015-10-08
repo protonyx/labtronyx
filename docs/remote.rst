@@ -4,14 +4,18 @@ Remote Control
 Listening for Remote Connections
 --------------------------------
 
-The Labtronyx InstrumentManager runs locally by default. To listen for remote connections, call::
+The Labtronyx InstrumentManager runs locally by default. To run Labtronyx in server mode, run the console script::
+
+   python labtronyx/cli.py
+
+To start the server programmatically, use::
 
    import labtronyx
    
    manager = labtronyx.InstrumentManager()
-   manager.start()
+   manager.rpc_start()
 
-If you just want to run Labtronyx in server mode, it can be called from the command line::
+If Labtronyx was properly installed, it can be called from the command line::
 
    labtronyx
 
@@ -26,21 +30,8 @@ Connections to remote InstrumentManager instances is done using the
    import labtronyx
    
    remote = labtronyx.RemoteManager(address='192.168.0.1')
-   
-Transmission of data is over UDP ports with JSON-RPC formatted data.
 
 Error Handling
 --------------
 
-Error handling with remote instruments is slightly more difficult than with
-local resources due to the JSON-RPC layer being used to send requests over the
-network. All server-side exceptions are translated for network transmission
-and then must be reassembled on the client side.
-
-.. note::
-
-   TODO
-   
-   This feature is still a work in progress and tied to an issue in the project
-   GitHub repository (#19). Currently, all server-side exceptions are raised as
-   RpcServerException objects on the client side.
+All errors that occur using a Remote InstrumentManager are raised as RuntimeError objects.

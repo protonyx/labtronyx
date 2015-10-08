@@ -161,15 +161,8 @@ class Base_Resource(PluginBase):
     
     def loadDriver(self, driverName):
         """
-        Load a Driver for a resource. A driver name can be specified to load a 
-        specific module, even if it may not be compatible with this resource. 
-        Reloads driver when importing, in case an update has occured.
-        
-        Example::
-        
-            instr = manager.findInstruments(resourceID='COM5')[0]
-            
-            instr.loadDriver('drivers.BK_Precision.Load.m_85XX')
+        Load a Driver for a resource. A driver name can be specified, even if it may not be compatible with this
+        resource.
         
         :param driverName: Module name of the desired Model
         :type driverName: str

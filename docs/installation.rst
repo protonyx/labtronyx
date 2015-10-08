@@ -12,13 +12,6 @@ Additional instructions and help can be found at http://python.org
 Installing Labtronyx
 --------------------
 
-Using Pip
-^^^^^^^^^
-
-Labtronyx can be installed using pip with the command::
-
-   pip install labtronyx
-
 From Source
 ^^^^^^^^^^^
 

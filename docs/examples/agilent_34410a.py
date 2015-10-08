@@ -4,10 +4,10 @@ import labtronyx
 labtronyx.logConsole()
 
 # Instantiate an InstrumentManager
-im = labtronyx.InstrumentManager(rpc=False)
+im = labtronyx.InstrumentManager()
 
 # Find the instrument by model number
-dev_list = im.findInstruments(deviceModel="34410A")
+dev_list = im.findInstruments(deviceVendor="Agilent", deviceModel="34410A")
 dev = dev_list[0]
 
 # Open the instrument

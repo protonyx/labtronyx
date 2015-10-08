@@ -494,6 +494,7 @@ class r_VISA(Base_Resource):
         Configure resource parameters to alter transmission characteristics or data interpretation
 
         All VISA Resources
+
         :param timeout:             Command timeout
         :type timeout:              int
         :param write_termination:   Write termination
@@ -504,11 +505,12 @@ class r_VISA(Base_Resource):
         :type query_delay:          int
 
         Serial Resources
+
         :param baud_rate:           Serial Baudrate. Default 9600
         :type baud_rate:            int
         :param data_bits:           Number of bits per frame. Default 8.
         :type data_bits:            int
-        :param parity:              Data frame parity (`N`one, `E`ven, `O`dd, `M`ark or `S`pace)
+        :param parity:              Data frame parity (None, Even, Odd, Mark or Space)
         :type parity:               str
         :param stop_bits:           Number of stop bits. Default 1
         :type stop_bits:            int
@@ -520,6 +522,7 @@ class r_VISA(Base_Resource):
         :type send_end:             bool
 
         Resource type dependent
+
         :param allow_dma:           Allow DMA transfer
         :type allow_dma:            bool
         :param chunk_size:          Data chunk size
