@@ -159,17 +159,21 @@ class Base_Resource(PluginBase):
     def hasDriver(self):
         return self._driver is not None
     
-    def loadDriver(self, driverName):
+    def loadDriver(self, driverName, force=False):
         """
         Load a Driver for a resource. A driver name can be specified, even if it may not be compatible with this
-        resource.
+        resource. Existing driver is no unloaded unless the `force` parameter is set to True.
         
-        :param driverName: Module name of the desired Model
-        :type driverName: str
-        :returns: True if successful, False otherwise
+        :param driverName:      Module name of the desired Model
+        :type driverName:       str
+        :param force:           Force load driver by unloading existing driver
+        :returns:               True if successful, False otherwise
         """
-        if self._driver is not None:
+        if self._driver is not None and not force:
             return False
+
+        if force:
+            self.unloadDriver()
         
         try:
             # Check if the specified model is valid
