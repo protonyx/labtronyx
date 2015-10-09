@@ -47,7 +47,7 @@ class Interface_Integration_Tests(unittest.TestCase):
 
         self.dev = self.dev[0]
 
-class Interface_VISA_Tests(unittest.TestCase):
+class VISA_Tests(unittest.TestCase):
 
     SIM = True
 
@@ -63,10 +63,6 @@ class Interface_VISA_Tests(unittest.TestCase):
 
         cls.i_visa = cls.manager._getInterface('VISA')
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.manager.disableInterface('VISA')
-
     def test_interface_visa_enumerate_time(self):
         import time
         start = time.clock()
@@ -75,12 +71,59 @@ class Interface_VISA_Tests(unittest.TestCase):
 
     def test_interface_visa_get_resources(self):
         ret = self.i_visa.resources
-
         self.assertEqual(type(ret), dict)
 
+        self.assertRaises(labtronyx.errors.ResourceUnavailable, self.manager.getResource, 'VISA', 'INVALID')
+
     def test_interface_find_instruments(self):
-        dev_list = self.manager.findInstruments()
+        dev_list = self.manager.findInstruments(interface='VISA')
         self.assertGreater(len(dev_list), 0)
 
     def test_interface_get_properties(self):
         self.manager.getProperties()
+
+class Serial_Tests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.manager = labtronyx.InstrumentManager(rpc=False)
+
+    def test_interface_open(self):
+        self.assertIsNotNone(self.manager._getInterface('Serial'))
+
+    def test_get_resources(self):
+        self.assertRaises(labtronyx.errors.ResourceUnavailable, self.manager.getResource, 'Serial', 'INVALID')
+
+    def test_open_resource(self):
+        res_list = self.manager.findResources(interface='Serial')
+
+        if len(res_list) == 0:
+            self.skipTest("No serial resources found")
+
+        test_res = res_list[0]
+
+        test_res.open()
+        self.assertTrue(test_res.isOpen())
+
+        test_res.close()
+        self.assertFalse(test_res.isOpen())
+
+    def test_configure(self):
+        res_list = self.manager.findResources(interface='Serial')
+
+        if len(res_list) == 0:
+            self.skipTest("No serial resources found")
+
+        test_res = res_list[0]
+
+        conf = dict(
+            baud_rate=9600,
+            data_bits=8,
+            parity='N',
+            stop_bits=1,
+            write_termination='\n',
+            timeout=0.5
+        )
+
+        test_res.configure(**conf)
+
+        self.assertDictContainsSubset(conf, test_res.getConfiguration())

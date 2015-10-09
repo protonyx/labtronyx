@@ -1,15 +1,16 @@
-from __future__ import absolute_import
 
 # System Imports
 import os, sys
-import time
 import socket
 import threading
 
 # Local Imports
-from . import bases
 from . import logger
-from . import common
+
+from . import bases
+from .common import *
+from .common.errors import *
+
 
 try:
     from . import version
@@ -23,14 +24,14 @@ class InstrumentManager(object):
 
     Facilitates communication with instruments using all available interfaces.
 
-    :param rpc: Enable RPC endpoint
-    :type rpc: bool
-    :param rpc_port: RPC endpoint port
-    :type rpc_port: int
+    :param rpc:         Enable RPC endpoint
+    :type rpc:          bool
+    :param rpc_port:    RPC endpoint port
+    :type rpc_port:     int
     :param plugin_dirs: List of directories containing plugins
-    :type plugin_dirs: list
-    :param logger: Logger instance if you wish to override the internal instance
-    :type logger: Logging.logger
+    :type plugin_dirs:  list
+    :param logger:      Logger instance if you wish to override the internal instance
+    :type logger:       Logging.logger object
     """
     name = 'Labtronyx'
     longname = 'Labtronyx Instrumentation Control Framework'
@@ -47,7 +48,6 @@ class InstrumentManager(object):
 
         # Initialize PYTHONPATH
         self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
-        
         if self.rootPath not in sys.path:
             sys.path.append(self.rootPath)
 
@@ -56,11 +56,7 @@ class InstrumentManager(object):
         self.logger.info("Version: %s", version.ver_full)
         self.logger.debug("Build Date: %s", version.build_date)
 
-        #
-        # Load Plugins
-        #
-
-        # Directories to search
+        # Directories to search for plugins
         dirs = ['drivers', 'interfaces']
         dirs_res = [os.path.join(self.rootPath, dir) for dir in dirs] + kwargs.get('plugin_dirs', [])
 
@@ -71,7 +67,8 @@ class InstrumentManager(object):
             "resources": bases.Base_Resource
         }
 
-        self.plugin_manager = common.plugin.PluginManager(directories=dirs_res, categories=cat_filter, logger=self.logger)
+        # Load Plugins
+        self.plugin_manager = plugin.PluginManager(directories=dirs_res, categories=cat_filter, logger=self.logger)
         self.plugin_manager.search()
         
         # Load Drivers
@@ -111,12 +108,6 @@ class InstrumentManager(object):
         # Clean out old RPC server, if any exists
         if hasattr(self, 'rpc_server'):
             self.rpc_stop()
-
-        # Attempt to import ptx-rpc
-        try:
-            import ptxrpc as rpc
-        except ImportError:
-            return False
 
         # Instantiate an rpc server
         try:
@@ -179,7 +170,7 @@ class InstrumentManager(object):
             self.rpc_server_thread.join()
 
             # Signal the event
-            self._event_signal(common.constants.ManagerEvents.shutdown)
+            self._event_signal(constants.ManagerEvents.shutdown)
 
             self.rpc_server = None
             self.rpc_server_thread = None
@@ -196,12 +187,16 @@ class InstrumentManager(object):
     def getAddress(self):
         """
         Get the local IP Address
+
+        :returns: str
         """
         return socket.gethostbyname(self.getHostname())
     
     def getHostname(self):
         """
         Get the local hostname
+
+        :returns: str
         """
         return socket.gethostname()
 
@@ -214,21 +209,14 @@ class InstrumentManager(object):
         Private method called internally to signal events. Calls handlers and dispatches event signal to subscribed
         clients
 
-        :param event: event object
-        :param kwargs: arguments
-        :return:
+        :param event:   event object
+        :param kwargs:  arguments
         """
         pass
 
-    def addEventHandler(self, event, handler):
-        pass
-
-    def removeEventHandler(self, event):
-        pass
-
-    #===========================================================================
+    # ===========================================================================
     # Interface Operations
-    #===========================================================================
+    # ===========================================================================
 
     @property
     def interfaces(self):
@@ -239,9 +227,9 @@ class InstrumentManager(object):
         Get an interface object with a given interface name. Used primarily in testing and debug, but can also be
         useful to access interface methods.
 
-        :param interface_name: Interface plugin name or InterfaceName attribute
-        :type interface_name: str
-        :return:
+        :param interface_name:  Interface plugin name or InterfaceName attribute
+        :type interface_name:   str
+        :return:                object
         """
         if interface_name not in self._interfaces:
             for interf_name, interf_cls in self._interfaces.items():
@@ -262,9 +250,9 @@ class InstrumentManager(object):
         """
         Enable an interface for use. Requires a class object that extends Base_Interface, NOT a class instance.
 
-        :param interface_name: Interface plugin name
-        :type interface_name: str
-        :return: bool
+        :param interface_name:  Interface plugin name
+        :type interface_name:   str
+        :returns:               bool
         """
         int_cls = self.plugin_manager.getPlugin(interface_name)
 
@@ -284,14 +272,16 @@ class InstrumentManager(object):
                 # If the interface is already enabled, disable the existing one
                 self.disableInterface(interface_name)
 
-                # Call the plugin hook to open the interface
-                int_obj.open()
+                # Call the plugin hook to open the interface. Ensure interface opens correctly
+                if int_obj.open():
+                    self._interfaces[interface_name] = int_obj
 
-                self._interfaces[interface_name] = int_obj
+                    self.logger.info("Started Interface: %s", interface_name)
+                    return True
 
-                self.logger.info("Started Interface: %s" % interface_name)
-
-                return True
+                else:
+                    self.logger.error("Interface %s failed to open", interface_name)
+                    return False
 
             except NotImplementedError:
                 return False
@@ -304,8 +294,8 @@ class InstrumentManager(object):
         """
         Disable an interface that is running.
 
-        :param interface_name: Interface plugin name
-        :return:
+        :param interface_name:  Interface plugin name
+        :returns:               bool
         """
         if interface_name in self._interfaces:
             try:
@@ -357,12 +347,6 @@ class InstrumentManager(object):
             
         return True
     
-    def refreshResources(self):
-        """
-        Alias for :func:`refresh`
-        """
-        return self.refresh()
-    
     def getProperties(self):
         """
         Returns the property dictionaries for all resources
@@ -391,9 +375,9 @@ class InstrumentManager(object):
         """
         Returns a resource object given the Resource UUID
 
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: object
+        :param res_uuid:        Unique Resource Identifier (UUID)
+        :type res_uuid:         str
+        :returns:               object
         """
         for interf in self._interfaces.values():
             try:
@@ -416,27 +400,37 @@ class InstrumentManager(object):
         :param driverName:      Driver to load for resource
         :type driverName:       str
         :returns:               Resource object
+        :raises:                InterfaceUnavailable
+        :raises:                ResourceUnavailable
+        :raises:                InterfaceError
         """
+        int_obj = self._getInterface(interface)
+
+        if int_obj is None:
+            raise InterfaceUnavailable('Interface not found')
+
         try:
-            int_obj = self._interfaces.get(interface)
+            # Call the interface getResource hook
             res = int_obj.getResource(resID)
+
+            # Attempt to load the specified driver, but do not force
             res.loadDriver(driverName)
 
         except NotImplementedError:
-            pass
+            raise InterfaceError('Operation not support by interface %s' % interface)
     
     def findResources(self, **kwargs):
         """
-        Get a list of instruments that match the parameters specified.
-        Parameters can be any key found in the resource property dictionary.
+        Get a list of resources/instruments that match the parameters specified.
+        Parameters can be any key found in the resource property dictionary, such as these:
 
-        :param uuid: Unique Resource Identifier (UUID)
-        :param interface: Interface
-        :param resourceID: Interface Resource Identifier (Port, Address, etc.)
-        :param resourceType: Resource Type (Serial, VISA, etc.)
-        :param deviceVendor: Instrument Vendor
-        :param deviceModel: Instrument Model Number
-        :param deviceSerial: Instrument Serial Number
+        :param uuid:            Unique Resource Identifier (UUID)
+        :param interface:       Interface
+        :param resourceID:      Interface Resource Identifier (Port, Address, etc.)
+        :param resourceType:    Resource Type (Serial, VISA, etc.)
+        :param deviceVendor:    Instrument Vendor
+        :param deviceModel:     Instrument Model Number
+        :param deviceSerial:    Instrument Serial Number
         :returns: list of objects
         """
         # NON-SERIALIZABLE
@@ -464,9 +458,9 @@ class InstrumentManager(object):
         # NON-SERIALIZABLE
         return self.findResources(**kwargs)
 
-    #===========================================================================
+    # ===========================================================================
     # Driver Operations
-    #===========================================================================
+    # ===========================================================================
 
     @property
     def drivers(self):
@@ -474,8 +468,8 @@ class InstrumentManager(object):
                 
     def getDrivers(self):
         """
-        Get a list of valid drivers found during the initial driver scan.
+        Get a list of loaded drivers
 
-        :return: dict
+        :return: list
         """
         return self._drivers.keys()

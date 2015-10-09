@@ -134,16 +134,16 @@ class Base_Resource(PluginBase):
         
     def open(self):
         """
-        Open the resource
+        Open the resource. If a driver is loaded, the driver `open` method will also be called
         
         :returns:   True if open was successful, False otherwise
         :raises:    ResourceUnavailable
         """
         if self._driver is not None:
-            self._driver.open()
+            return self._driver.open()
 
         else:
-            raise NotImplementedError
+            return True
     
     def close(self):
         """
@@ -152,10 +152,10 @@ class Base_Resource(PluginBase):
         :returns: True if close was successful, False otherwise
         """
         if self._driver is not None:
-            self._driver.close()
+            return self._driver.close()
 
         else:
-            raise NotImplementedError
+            return True
         
     def refresh(self):
         """

@@ -92,12 +92,12 @@ class i_VISA(Base_Interface):
         """
         Stops the VISA Interface. Frees all resources associated with the interface.
         """
-        for resObj in self._resources.values():
+        for resID, res in self._resources.items():
             try:
-                resObj.close()
-            except visa.VisaIOError:
-                pass
-            except visa.InvalidSession:
+                if res.isOpen():
+                    res.close()
+
+            except:
                 pass
 
         self._resources.clear()
@@ -115,7 +115,11 @@ class i_VISA(Base_Interface):
                 # Check for new resources
                 for res in res_list:
                     if res not in self._resources.keys():
-                        self.getResource(res)
+                        try:
+                            self.getResource(res)
+
+                        except ResourceUnavailable:
+                            pass
 
             except visa.VisaIOError as e:
                 # Exception thrown when there are no resources
@@ -166,6 +170,8 @@ class i_VISA(Base_Interface):
         the object is returned.
 
         :return:        object
+        :raises:        ResourceUnavailable
+        :raises:        InterfaceError
         """
         try:
             instrument = self.resource_manager.open_resource(resID)
@@ -184,16 +190,19 @@ class i_VISA(Base_Interface):
 
             return new_resource
 
+        except AttributeError:
+            raise ResourceUnavailable('Invalid VISA Resource Identifier: %s' % resID)
+
         except visa.VisaIOError as e:
             if e.abbreviation in ["VI_ERROR_RSRC_BUSY",
                                   "VI_ERROR_RSRC_NFOUND",
                                   "VI_ERROR_TMO",
                                   "VI_ERROR_INV_RSRC_NAME"]: # Returned by TekVISA
-                # Ignore these errors and move on
-                pass
+
+                raise ResourceUnavailable('VISA Resource Error: %s' % e.abbreviation)
 
             else:
-                self.logger.exception("Unable to open VISA resource, unhandled error: %s" % e.abbreviation)
+                raise InterfaceError('VISA Interface Error: %s' % e.abbreviation)
 
 
 class r_VISA(Base_Resource):
@@ -428,11 +437,10 @@ class r_VISA(Base_Resource):
 
     def open(self):
         """
-        Open the resource and prepare to receive commands.
+        Open the resource and prepare to receive commands. If a driver is loaded, the driver will also be opened
 
-        If an error occurs, call :func:`getError` to get more information about the error
-
-        :returns: True if successful, False otherwise
+        :returns:       True if successful, False otherwise
+        :raises:        ResourceUnavailable
         """
         try:
             self.instrument.open()
@@ -440,17 +448,11 @@ class r_VISA(Base_Resource):
             # Restore instrument context
             self.configure()
 
-            if self._driver is not None:
-                try:
-                    self._driver.open()
-                except NotImplementedError:
-                    pass
-
-            return True
-
         except visa.VisaIOError as e:
-            self._error = format_exc()
-            return False
+            raise ResourceUnavailable('VISA resource error: %s' % e.abbreviation)
+
+        # Call the base resource open function to call driver hooks
+        return Base_Resource.open(self)
 
     def isOpen(self):
         """
@@ -462,34 +464,30 @@ class r_VISA(Base_Resource):
             sess = self.instrument.session
             return True
 
-        except pyvisa.errors.InvalidSession:
+        except visa.InvalidSession:
             return False
 
     def close(self):
         """
-        Close the resource.
-
-        If an error occurs, call :func:`getError` to get more information about the error
+        Close the resource. If a driver is loaded, that driver is also closed
 
         :returns: True if successful, False otherwise
         """
-        if not self.isOpen():
+        if self.isOpen():
+            try:
+                # Close the driver
+                Base_Resource.close(self)
+
+                # Close the instrument
+                self.instrument.close()
+
+                return True
+
+            except:
+                return False
+
+        else:
             return True
-
-        try:
-            if self._driver is not None:
-                try:
-                    self._driver.close()
-                except NotImplementedError:
-                    pass
-
-            # Close the instrument
-            self.instrument.close()
-            return True
-
-        except visa.VisaIOError:
-            self._error = format_exc()
-            return False
 
     def lock(self):
         self.instrument.lock()
@@ -508,7 +506,7 @@ class r_VISA(Base_Resource):
         All VISA Resources
 
         :param timeout:             Command timeout
-        :type timeout:              int
+        :type timeout:              float
         :param write_termination:   Write termination
         :type write_termination:    str
         :param read_termination:    Read termination

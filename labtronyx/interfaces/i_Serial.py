@@ -8,6 +8,7 @@ from labtronyx.common.errors import *
 import labtronyx.common as common
 
 import time
+import os
 import errno
 
 import serial
@@ -35,13 +36,23 @@ class i_Serial(Base_Interface):
         # Interface Name
         'interfaceName':    'Serial'
     }
-    
-    REFRESH_RATE = 5.0 # Seconds
 
     def open(self):
+        """
+        Open the serial interface and enumerate all system serial ports
+
+        :return:        bool
+        """
+        self.enumerate()
+
         return True
     
     def close(self):
+        """
+        Close all serial resources
+
+        :return:        bool
+        """
         for resID, res in self._resources.items():
             try:
                 if res.isOpen():
@@ -49,8 +60,8 @@ class i_Serial(Base_Interface):
                     
             except:
                 pass
-            
-            res.stop()
+
+        self._resources.clear()
             
         return True
 
@@ -66,33 +77,10 @@ class i_Serial(Base_Interface):
 
             if resID not in self._resources:
                 try:
-                    instrument = serial.Serial(port=resID, timeout=0)
+                    self.getResource(resID)
 
-                    new_resource = r_Serial(manager=self.manager,
-                                            interface=self,
-                                            resID=resID,
-                                            instrument=instrument,
-                                            logger=self.logger)
-                    self._resources[resID] = new_resource
-
-                    # Signal new resource event
-                    self.manager._event_signal(common.constants.ResourceEvents.created)
-
-                except serial.SerialException as e:
-                    # Seems to be thrown on Windows systems
-                    self.logger.exception("Serial Error %s: %s", e.errno, e.message)
-
-                except OSError as e:
-                    # Seems to be thrown on POSIX systems
-                    if e.errno in [errno.EACCES, errno.EBUSY]:
-                        pass
-                        #self.logger.error("Serial OSError %s", e.errno)
-
-                    else:
-                        self.logger.exception("Unknown OSError Exception")
-
-                except:
-                    self.logger.exception("Unhandled Serial Exception while creating new resource %s", resID)
+                except ResourceUnavailable:
+                    pass
             
     def prune(self):
         """
@@ -117,8 +105,53 @@ class i_Serial(Base_Interface):
         for resID in to_remove:
             del self._resources[resID]
 
+    def getResource(self, resID):
+        """
+        Attempt to open a Serial instrument. If successful, a serial resource is added to the list of known resources
+        and the object is returned.
+
+        :return:        object
+        :raises:        ResourceUnavailable
+        :raises:        InterfaceError
+        """
+        try:
+            instrument = serial.Serial(port=resID, timeout=0)
+
+            new_resource = r_Serial(manager=self.manager,
+                                    interface=self,
+                                    resID=resID,
+                                    instrument=instrument,
+                                    logger=self.logger)
+            self._resources[resID] = new_resource
+
+            # Signal new resource event
+            self.manager._event_signal(common.constants.ResourceEvents.created)
+
+            return new_resource
+
+        except (serial.SerialException, OSError) as e:
+            if os.name == 'nt':
+                # Windows implementation of PySerial does not set errno correctly
+                import ctypes
+                e.errno = ctypes.WinError().errno
+
+            if e.errno in [errno.ENOENT, errno.EACCES, errno.EBUSY]:
+                raise ResourceUnavailable('Serial resource error: %s' % resID)
+
+            else:
+                raise InterfaceError('Serial interface error [%i]: %s' % (e.errno, e.message))
+
         
 class r_Serial(Base_Resource):
+    """
+    Serial Resource Base class.
+
+    Wraps PySerial
+
+    Resource API is compatible with VISA resources, so any driver written for a VISA resource should also work for
+    serial resources in the case that a VISA library is not available.
+    """
+
     type = "Serial"
     
     CR = '\r'
@@ -140,44 +173,65 @@ class r_Serial(Base_Resource):
     #===========================================================================
         
     def open(self):
+        """
+        Open the resource and prepare to receive commands. If a driver is loaded, the driver will also be opened
+
+        :returns:       True if successful, False otherwise
+        :raises:        ResourceUnavailable
+        """
         try:
             self.instrument.open()
-            
+
+            # Restore instrument context
+            self.configure()
+
         except SerialException as e:
             #if e.errno in [errno.EACCES]:
             # Access Denied, the port is probably open somewhere else
-            raise InterfaceError(e.message)
-        
-        except:
-            raise InterfaceError("Unhandled Exception")
+            raise ResourceUnavailable('Serial resource error: %s' % e.strerror)
+
+        # Call the base resource open function to call driver hooks
+        return Base_Resource.open(self)
         
     def isOpen(self):
+        """
+        Query the serial resource to find if it is open
+
+        :return: bool
+        """
         try:
             return self.instrument._isOpen
         except:
             return False
     
     def close(self):
-        try:
-            self.instrument.close()
-            
-        except SerialException as e:
-            #if e.errno in [errno.EACCES]:
-            # Access Denied, the port is probably open somewhere else
-            raise InterfaceError(e.message)
-        
-        except:
-            raise InterfaceError("Unhandled Exception")
-        
+        """
+        Close the resource. If a driver is loaded, that driver is also closed
+
+        :returns: True if successful, False otherwise
+        """
+        if self.isOpen():
+            # Close the driver
+            Base_Resource.close(self)
+
+            try:
+                # Close the instrument
+                self.instrument.close()
+
+            except SerialException:
+                return False
+
+        return True
+
     def lock(self):
-        pass
-        
+        return False
+
     def unlock(self):
-        pass
+        return False
     
-    #===========================================================================
+    # ===========================================================================
     # Configuration
-    #===========================================================================
+    # ===========================================================================
     
     def configure(self, **kwargs):
         """
@@ -215,24 +269,37 @@ class r_Serial(Base_Resource):
             self.termination = kwargs.get('write_termination')
             
     def getConfiguration(self):
-        return self.instrument.getSettingsDict()
+        """
+        Get the resource configuration
+
+        :return: dict
+        """
+        settings = self.instrument.getSettingsDict()
+
+        return {
+            'baud_rate':    settings.get('baudrate'),
+            'data_bits':    settings.get('bytesize'),
+            'parity':       settings.get('parity'),
+            'stop_bits':    settings.get('stopbits'),
+            'write_termination': self.termination,
+            'timeout':      settings.get('timeout')
+        }
         
-    #===========================================================================
+    # ===========================================================================
     # Data Transmission
-    #===========================================================================
+    # ===========================================================================
     
     def write(self, data):
         """
-        Send String data to the instrument. Includes termination
-        character.
+        Send ASCII-encoded data to the instrument. Includes termination character.
         
-        Raises exception if the resource is not ready. 
+        Raises exception if the resource is not open
         
-        To get the error condition, call `getResourceError`
-        
-        :param data: Data to send
-        :type data: str
-        :raises: ResourceNotReady
+        :param data:    Data to send
+        :type data:     str
+        :raises:        ResourceNotOpen
+        :raises:        InterfaceTimeout
+        :raises:        InterfaceError
         """
         try:
             self.logger.debug("Serial Write: %s", data)
@@ -241,17 +308,23 @@ class r_Serial(Base_Resource):
         except SerialException as e:
             if e == serial.portNotOpenError:
                 raise ResourceNotOpen()
+
+            elif e == serial.writeTimeoutError:
+                raise InterfaceTimeout()
+
             else:
-                raise InterfaceError()
+                raise InterfaceError(e.strerror)
             
     def write_raw(self, data):
         """
         Send Binary-encoded data to the instrument. Termination character is
         not included
         
-        :param data: Data to send
-        :type data: str
-        :raises: ResourceNotReady
+        :param data:    Data to send
+        :type data:     str
+        :raises:        ResourceNotOpen
+        :raises:        InterfaceTimeout
+        :raises:        InterfaceError
         """
         try:
             self.instrument.write(data)
@@ -259,8 +332,12 @@ class r_Serial(Base_Resource):
         except SerialException as e:
             if e == serial.portNotOpenError:
                 raise ResourceNotOpen()
+
+            elif e == serial.writeTimeoutError:
+                raise InterfaceTimeout()
+
             else:
-                raise InterfaceError()
+                raise InterfaceError(e.strerror)
     
     def read(self, termination=None):
         """
@@ -270,6 +347,8 @@ class r_Serial(Base_Resource):
         characters sequence was detected.
         
         All line-ending characters are stripped from the end of the string.
+
+        :raises:        ResourceNotOpen
         """
         try:
             ret = ''
@@ -290,8 +369,7 @@ class r_Serial(Base_Resource):
             if e == serial.portNotOpenError:
                 raise ResourceNotOpen()
             else:
-                raise InterfaceError()
-                
+                raise InterfaceError(e.strerror)
     
     def read_raw(self, size=None):
         """
@@ -299,9 +377,10 @@ class r_Serial(Base_Resource):
         
         No termination characters are stripped.
         
-        :param size: Number of bytes to read
-        :type size: int
-        :returns: bytes
+        :param size:    Number of bytes to read
+        :type size:     int
+        :returns:       bytes
+        :raises:        ResourceNotOpen
         """
         try:
             ret = bytes()
@@ -317,9 +396,9 @@ class r_Serial(Base_Resource):
         
         except SerialException as e:
             if e == serial.portNotOpenError:
-                raise ResourceNotOpen
+                raise ResourceNotOpen()
             else:
-                raise InterfaceError
+                raise InterfaceError(e.strerror)
     
     def query(self, data, delay=None):
         """
@@ -327,12 +406,14 @@ class r_Serial(Base_Resource):
         
         A combination of write(data) and read()
         
-        :param data: Data to send
-        :type data: str
-        :param delay: delay (in seconds) between write and read operations.
-        :type delay: float
-        :returns: str
-        :raises: ResourceNotOpen
+        :param data:    Data to send
+        :type data:     str
+        :param delay:   delay (in seconds) between write and read operations.
+        :type delay:    float
+        :returns:       str
+        :raises:        ResourceNotOpen
+        :raises:        InterfaceTimeout
+        :raises:        InterfaceError
         """
         self.write(data)
         if delay is not None:
@@ -343,8 +424,11 @@ class r_Serial(Base_Resource):
         """
         Return the number of bytes in the receive buffer
         
-        :returns: int
+        :returns:       int
+        :raises:        InterfaceError
         """
-        return self.instrument.inWaiting()
-    
-        
+        try:
+            return self.instrument.inWaiting()
+
+        except serial.SerialException as e:
+            raise InterfaceError(e.strerror)
