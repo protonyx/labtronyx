@@ -24,8 +24,7 @@ import pyvisa
 import pyvisa.constants
 import pyvisa.resources
 
-from labtronyx.bases.interface import Base_Interface
-from labtronyx.bases.resource import Base_Resource
+from labtronyx.bases import Base_Interface, Base_Resource
 from labtronyx.common.errors import *
 import labtronyx.common as common
 

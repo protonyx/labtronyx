@@ -49,6 +49,10 @@ class Agilent_B2901_Functional_Tests(unittest.TestCase):
 
         self.assertEqual(len(self.dev.getErrors()), 1)
 
+    def test_driver_name(self):
+        # Regression test
+        self.assertEqual(self.dev.getProperties()['driver'], 'Agilent.SMU.d_B29XX')
+
     def test_configuration(self):
         conf = self.dev.getConfiguration()
 

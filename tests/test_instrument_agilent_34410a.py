@@ -45,6 +45,10 @@ class Agilent_34410A_Functional_Tests(unittest.TestCase):
     def tearDown(self):
         self.dev.close()
 
+    def test_driver_name(self):
+        # Regression test
+        self.assertEqual(self.dev.getProperties()['driver'], 'Agilent.Multimeter.d_3441XA')
+
     def test_bad_command(self):
         self.assertRaises(labtronyx.common.errors.InterfaceTimeout, self.dev.query, 'BAD COMMAND')
 

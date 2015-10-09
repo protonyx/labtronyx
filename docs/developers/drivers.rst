@@ -88,4 +88,4 @@ Base Driver API
 ---------------
 
 .. autoclass:: labtronyx.bases.Base_Driver
-   :members: _onLoad, _onUnload, getProperties
+   :members: open, close, getProperties

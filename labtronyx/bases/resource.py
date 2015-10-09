@@ -1,22 +1,98 @@
+"""
+Getting started
+---------------
+
+All resources are subclasses of the :class:`labtronyx.bases.Base_Resource` class. Creating a resource is simple::
+
+    from labtronyx.bases import Base_Interface, Base_Resource
+
+    class RESOURCE_CLASS_NAME(Base_Resource):
+        pass
+
+Errors
+------
+
+Labtronyx has a number of build-in exception types that can be raised from resources. To import them::
+
+   from labtronyx.common.errors import *
+
+Packaging
+---------
+
+Interfaces and Resources are typically packaged together in a single plugin, as the interface is responsible for
+instantiating and maintaining resource objects.
+
+Instantiation
+-------------
+
+Resources are instantiated by an interface, not InstrumentManager.
+
+When resources are created, they should be in the closed state. This is to prevent any locking issues if multiple
+instances of Labtronyx are open. Resources should typically only be open if they are actively in use.
+
+Usage Model
+-----------
+
+Resources may implement more functions than just those which are defined in the API below. When a driver is loaded, all
+of the driver functions are linked at runtime to the resource object. They essentially become a single object and all
+functions are available between both classes with one exception: if there is a naming conflict between a method in the
+resource and a method in the driver, the resource resolve the conflict by calling the resource method.
+
+.. note::
+
+   In order to support proper operation using Remote Resources and Instruments, some limitations should be imposed to
+   ensure maximum compatibility. All methods within a resource or driver must return serializable data.
+   Serializable data types include:
+
+       * str
+       * unicode
+       * int
+       * long
+       * float
+       * bool
+       * list
+       * tuple
+       * dict
+       * None
+
+   If a method returns an object that is not serializable, an exception will be passed back to the remote host. If the
+   method returns a non-serializable data type, the method should be prefixed with an underscore ('_') to mark it as a
+   protected function that cannot be accessed remotely.
+"""
+
 import uuid
-import importlib
+import logging
 
 import labtronyx.common as common
 
 from labtronyx.common.plugin import PluginBase
 
 class Base_Resource(PluginBase):
+    """
+    Resource Base Class
+    """
+
     type = "Generic"
     
     def __init__(self, manager, interface, resID, **kwargs):
-        self.config = kwargs.get('config')
-        self.logger = kwargs.get('logger')
+        """
+        :param manager:         Reference to the InstrumentManager instance
+        :type manager:          InstrumentManager object
+        :param interface:       Reference to the interface instance
+        :type interface:        object
+        :param resID:           Resource Identifier
+        :type resID:            str
+        """
+        PluginBase.__init__(self)
 
         self._manager = manager
         self._interface = interface
-        self._uuid = str(uuid.uuid4())
         self._resID = resID
-        
+
+        self.logger = kwargs.get('logger', logging)
+
+        # Instance variables
+        self._uuid = str(uuid.uuid4())
         self._driver = None
             
     def __del__(self):
@@ -260,38 +336,36 @@ class Base_Resource(PluginBase):
 
         if force:
             self.unloadDriver()
-        
-        try:
-            # Check if the specified model is valid
-            if driverName in self.manager.drivers:
-                self.logger.debug('Loading driver [%s] for resource [%s]', driverName, self.getResourceID())
 
-                testClass = self.manager.drivers.get(driverName)
-            
-                # Instantiate driver
-                self._driver = testClass(self,
-                                        logger=self.logger,
-                                        config=self.config)
+        # Check if the specified model is valid
+        if driverName in self.manager.drivers:
+            self.logger.debug('Loading driver [%s] for resource [%s]', driverName, self._resID)
+
+            testClass = self.manager.drivers.get(driverName)
+
+            # Instantiate driver
+            try:
+                self._driver = testClass(self, logger=self.logger)
                 self._driver.name = driverName
-
-                # Call the driver open if the resource is already open
-                if self.isOpen():
-                    try:
-                        self._driver.open()
-                    except NotImplementedError:
-                        pass
 
                 # Signal the event
                 self.manager._event_signal(common.constants.ResourceEvents.driver_load)
 
-                return True
+                # Call the driver open if the resource is already open
+                if self.isOpen():
+                    self._driver.open()
 
-        except:
-            self.logger.exception('Exception during driver load: %s', driverName)
-            
-            self.unloadDriver()
-            
-            return False
+            except NotImplementedError:
+                pass
+
+            except:
+                self.logger.exception('Exception during driver load: %s', driverName)
+
+                self.unloadDriver()
+
+                return False
+
+            return True
     
     def unloadDriver(self):
         """

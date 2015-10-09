@@ -16,11 +16,11 @@ Required API Implementations
 ----------------------------
 
 .. autoclass:: labtronyx.bases.Base_Interface
-   :members: open, close, getResources
+   :members: open, close
 
 Optional API Implementations
 ----------------------------
 
 .. autoclass:: labtronyx.bases.Base_Interface
-   :members: refresh
+   :members: enumerate, prune, getResource
    

@@ -7,14 +7,15 @@ class Base_Interface(PluginBase):
     Interface Base Class
     """
 
-    # TODO: Interface will have hooks into the persistence config to "remember" how a particular device is configured
-    # when the program is run in the future.
+    info = {}
     
     def __init__(self, manager, **kwargs):
         """
         :param manager: Reference to the InstrumentManager instance
         :type manager: InstrumentManager object
         """
+        PluginBase.__init__(self)
+
         self._manager = manager
 
         self.logger = kwargs.get('logger', logging)
@@ -29,10 +30,6 @@ class Base_Interface(PluginBase):
     @property
     def resources(self):
         return self._resources
-            
-    # ==========================================================================
-    # Interface Methods
-    # ==========================================================================
 
     def getInterfaceName(self):
         """
@@ -46,6 +43,25 @@ class Base_Interface(PluginBase):
             return self.__class__.__name__
 
     name = property(getInterfaceName)
+
+    def refresh(self):
+        """
+        Macro for interfaces that support enumeration. Calls `enumerate` then `prune` to get an updated list of
+        resources available to the interface
+        """
+        try:
+            self.enumerate()
+        except NotImplementedError:
+            pass
+
+        try:
+            self.prune()
+        except NotImplementedError:
+            pass
+
+    # ==========================================================================
+    # Interface Methods
+    # ==========================================================================
 
     def open(self):
         """
@@ -67,6 +83,10 @@ class Base_Interface(PluginBase):
         """
         raise NotImplementedError
 
+    # ===========================================================================
+    # Optional Functions
+    # ===========================================================================
+
     def enumerate(self):
         """
         Refreshes the resource list by enumerating all of the available devices on the interface.
@@ -78,21 +98,6 @@ class Base_Interface(PluginBase):
         Clear out any resources that are no longer known to the interface
         """
         raise NotImplementedError
-
-    def refresh(self):
-        """
-        Macro for interfaces that support enumeration. Calls `enumerate` then `prune` to get an updated list of
-        resources available to the interface
-        """
-        try:
-            self.enumerate()
-        except NotImplementedError:
-            pass
-
-        try:
-            self.prune()
-        except NotImplementedError:
-            pass
 
     def getResource(self, resID):
         """
