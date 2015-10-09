@@ -109,6 +109,50 @@ class d_B29XX(Base_Driver):
 
         return errors
 
+    def enableFrontPanel(self):
+        """
+        Enables the front panel display if it was previously disabled.
+        """
+        self.write(":DISP:ENAB 1")
+        self.write(":DISP:WIND1:TEXT:STAT 0")
+        self.write(":DISP:WIND2:TEXT:STAT 0")
+
+    def disableFrontPanel(self):
+        """
+        Disables the front panel display. Display can be re-enabled by calling
+        `enableFrontPanel` or pressing the `LOCAL` button on the instrument.
+
+        .. note:
+
+           When the front panel is disabled, the instrument runs faster
+
+        """
+        self.write(":DISP:ENAB 0")
+
+    def frontPanelText(self, text_top, text_bottom):
+        """
+        Set the text on the front panel of the instrument. The top line is limited to 12 characters, the bottom line to
+        18 characters. You can use letters (A-Z), numbers (0-9), and special characters like "@", "%", "*", etc.
+        Use "#" character to display a degree symbol.
+
+        :param text_top: Top text (up to 12 characters)
+        :type text_top: str
+        :param text_bottom: Bottom text (up to 18 characters)
+        :type text_bottom: str
+        """
+        if len(text_top) > 12:
+            text_top = text_top[0:12]
+        if len(text_bottom) > 18:
+            text_bottom = text_bottom[0:18]
+
+        if len(text_top) > 0:
+            self.write(":DISP:WIND1:TEXT:STAT 1")
+            self.write(':DISP:WIND1:TEXT:DATA "%s"' % text_top)
+
+        if len(text_bottom) > 0:
+            self.write(":DISP:WIND2:TEXT:STAT 1")
+            self.write(':DISP:WIND2:TEXT:DATA "%s"' % text_bottom)
+
     def setSourceMode(self, channel, output_mode='VOLT'):
         """
         Sets the instrument source mode.
@@ -309,6 +353,106 @@ class d_B29XX(Base_Driver):
         mode = self._mode_measure.get(channel, 'VOLT')
         self.write(':SENS{0}:{1}:APER:AUTO 0'.format(channel, mode))
 
+    def enableRemoteSense(self, channel):
+        pass
+
+    def disableRemoteSense(self, channel):
+        pass
+
+    def setMeasurementRange(self, channel, range):
+        pass
+
+    def getMeasurementRange(self, channel):
+        pass
+
+    def setTraceBufferPoints(self, channel, data_points):
+        """
+        Sets the size of the instrument trace buffer. The maximum number of data points in the trace buffer is 100,000.
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param data_points:     Number of data points to record in the trace buffer
+        :type data_points:      int
+        """
+        self.write(":TRAC{0}:POIN {1}".format(channel, data_points))
+        # TODO: Should we verify this?
+
+    def getTraceBufferPoints(self, channel):
+        """
+        Get the size of the instrument trace buffer, and the number of data points currently in the buffer
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :return:                Buffer size, number of points in the buffer
+        """
+        buf_size = self.query(":TRAC{0}:POIN?".format(channel))
+        buf_act = self.query(":TRAC{0}:POIN:ACT?".format(channel))
+
+        return buf_size, buf_act
+
+    def enableTraceBuffer(self, channel):
+        """
+        Enables the trace buffer to start collecting data points. Buffer size is set using `setTraceBufferPoints`.
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        """
+        self.write(":FORM:ELEM:SENS VOLT,CURR,TIME")
+        self.write(":TRAC{0}:FEED SENS".format(channel)) # Get data from the measurement unit
+        self.write(":TRAC{0}:TST:FORM ABS".format(channel)) # Absolute timestamps
+
+        # Enable the trace buffer
+        self.write(":TRAC{0}:FEED:CONT NEXT".format(channel))
+
+    def clearTraceBuffer(self, channel):
+        """
+        Clears the trace buffer of the specified channel.
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        """
+        # Disable the trace buffer
+        self.write(":TRAC{0}:FEED:CONT NEV".format(channel))
+
+        # Clear the buffer
+        self.write(":TRAC{0}:CLE".format(channel))
+
+    def getTraceBuffer(self, channel, offset=0, size=None):
+        """
+        Returns data in the trace buffer of the specified channel.
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param offset:          Indicates the beginning index of the data
+        :type offset:           int
+        :param size:            Number of data bytes to retrieve
+        :type size:             int
+        :return:
+        """
+        # TODO: Validate
+        return self.query(":TRAC{0}:DATA?".format(channel))
+
+    def setTriggerSource(self, channel, triggerSource):
+        pass
+
+    def setTriggerCount(self, channel, number):
+        """
+        Set the trigger count for the specified device action
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param number:          Number of triggers
+        :type number:           int
+        :return:
+        """
+        self.write(":TRIG{0}:COUN {1}".format(channel, number))
+
+    def setTriggerDelay(self, channel, delay):
+        pass
+
+    def setTriggerInterval(self, channel, interval):
+        pass
+
     def setTriggerSetup(self, triggerSource, number, interval, delay=0):
         """
         Set SMU Trigger settings
@@ -339,16 +483,39 @@ class d_B29XX(Base_Driver):
                 self.write(':TRIG:DEL %f' % float(delay))
             else:
                 self.write(':TRIG:DEL 0')
-    
-    def setCurrentLimit(self, limit):
+
+    def setVoltageLimit(self, channel, limit):
+        pass
+
+    def setCurrentLimit(self, channel, limit):
         """
-        Set SMU current limit
-        
-        :param limit: Current limit
-        :type limit: float
+        Set current protection limit
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param limit:           Current limit
+        :type limit:            float
         """
-        self.write(':SENS:CURR:PROT %f' % float(limit))
-    
+        self.write(":SENS{0}:CURR:PROT {1}".format(channel, limit))
+
+    def enableHighCapacitanceOutput(self, channel):
+        """
+        Enables the high capacitance mode. This mode is effective for high capacitance DUT
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        """
+        self.write(":OUTP{0}:HCAP ON".format(channel))
+
+    def disableHighCapacitanceOutput(self, channel):
+        """
+        Disables the high capacitance mode.
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        """
+        self.write(":OUTP{0}:HCAP OFF".format(channel))
+
     def powerOn(self):
         """
         Enable the SMU to the programmed output level
@@ -360,20 +527,43 @@ class d_B29XX(Base_Driver):
         Power off the SMU using the previously programmed power-off mode
         """
         self.write(':OUTP OFF')
+
+    def setPowerOffMode(self, channel, mode):
+        """
+        Set the power off mode
+
+          * `NORMAL` - Normal (0V, output relay off)
+          * `ZERO` - Ground output (0V, output relay on)
+          * `HIZ` - Float output (Floating, output relay off)
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param mode:            Power output mode
+        :type mode:             str
+        :return:
+        """
+        self.write(":OUTP{0}:OFF:MODE {1}".format(channel, mode))
         
-    def powerOffZero(self):
+    def setPowerOffModeZero(self, channel):
         """
         Power off the SMU, output is held at ground voltage
+
+        :param channel:         SMU Channel
+        :type channel:          int
         """
-        self.write(':OUTP:OFF:MODE ZERO')
-        self.powerOff()
+        self.setPowerOffMode(channel, 'ZERO')
         
-    def powerOffFloat(self):
+    def setPowerOffModeFloat(self, channel):
         """
         Power off the SMU, output is left floating
+
+        :param channel:         SMU Channel
+        :type channel:          int
         """
-        self.write(':OUTP:OFF:MODE HIZ')
-        self.powerOff()
+        self.setPowerOffMode(channel, 'HIZ')
+
+    def trigger(self, channel):
+        pass
         
     def startProgram(self, channel=1):
         """
@@ -428,6 +618,9 @@ class d_B29XX(Base_Driver):
         
         self.write(":SOUR:FUNC:TRIG:CONT ON") # OUTPUT AFTER SWEEP - END VAL
         self.startProgram(1)
+
+    def sampleMeasurements(self, channel, numSamples, sampleTime, startDelay):
+        pass
 
     def setSourceSweep(self, source, start, stop, points):
         """
