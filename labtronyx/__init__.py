@@ -42,5 +42,6 @@ from .remote import RemoteManager, RemoteResource
 from .lab import LabManager
 from . import bases
 from . import common
+from .common import errors
 
 __all__ = ['InstrumentManager']

@@ -40,3 +40,6 @@ class InstrumentManager_Tests(unittest.TestCase):
         
     def test_get_drivers(self):
         self.assertIsNotNone(self.instr.getDrivers())
+
+    def test_get_resource(self):
+        self.assertRaises(labtronyx.errors.InterfaceUnavailable, self.instr.getResource, 'INVALID', 'NOPE')
