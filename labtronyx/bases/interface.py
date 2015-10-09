@@ -27,10 +27,6 @@ class Base_Interface(PluginBase):
         return self._manager
 
     @property
-    def name(self):
-        return self.__class__.__name__
-
-    @property
     def resources(self):
         return self._resources
             
@@ -39,26 +35,26 @@ class Base_Interface(PluginBase):
     # ==========================================================================
 
     def getInterfaceName(self):
-        return self.__class__.__name__
+        """
+        Returns the interface name as defined by the `interfaceName` attribute in the info dictionary
 
-    def getResources(self):
-        return self._resources
+        :return: str
+        """
+        if hasattr(self, 'info'):
+            return self.info.get('interfaceName')
+        else:
+            return self.__class__.__name__
 
-    # Inheriting classes must implement these functions:
+    name = property(getInterfaceName)
+
     def open(self):
         """
         Interface Initialization
         
-        Make any system driver calls necessary to initialize communication. If
-        any kind of exception occurs that will inhibit communication, this
-        function should return False to indicate an error to the 
-        InstrumentManager.
+        Make any system driver calls necessary to initialize communication. If any kind of exception occurs that will
+        inhibit communication, this function should return False to indicate an error to the InstrumentManager.
         
-        Any exceptions raised will be caught by the InstrumentManager, and it
-        will be assumed that the interface failed to initialize. A subsequent
-        call to :func:`close` will be made in this case.
-        
-        :returns: bool - True if ready, False if error occurred
+        :returns: True if ready, False if error occurred
         """
         raise NotImplementedError
     
@@ -66,11 +62,8 @@ class Base_Interface(PluginBase):
         """
         Interface clean-up
         
-        Make any system driver calls necessary to clean-up interface
-        operations. This function should explicitly free any system resources
-        to prevent locking errors.
-        
-        Any exceptions raised will be caught by the InstrumentManager.
+        Make any system driver calls necessary to clean-up interface operations. This function should explicitly free
+        any system resources to prevent locking errors.
         """
         raise NotImplementedError
 
@@ -82,7 +75,7 @@ class Base_Interface(PluginBase):
 
     def prune(self):
         """
-        Close any resources that are no longer known to the interface
+        Clear out any resources that are no longer known to the interface
         """
         raise NotImplementedError
 
@@ -103,9 +96,12 @@ class Base_Interface(PluginBase):
 
     def getResource(self, resID):
         """
+        Get a resource that may not be previously known to the interface. Attempts to open the resource using the given
+        identifier. A `ResourceUnavailable` exception will be raised if the resource could not be located or opened.
 
-        :param resID: Resource Identifier
-        :type resID: str
-        :return:
+        :param resID:   Resource Identifier
+        :type resID:    str
+        :return:        object
+        :raises:        ResourceUnavailable
         """
         raise NotImplementedError

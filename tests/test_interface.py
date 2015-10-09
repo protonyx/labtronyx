@@ -74,7 +74,7 @@ class Interface_VISA_Tests(unittest.TestCase):
         self.assertLessEqual(time.clock() - start, 1.0, "VISA refresh time must be less than 1.0 second(s)")
 
     def test_interface_visa_get_resources(self):
-        ret = self.i_visa.getResources()
+        ret = self.i_visa.resources
 
         self.assertEqual(type(ret), dict)
 

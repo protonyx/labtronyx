@@ -15,6 +15,9 @@ Labtronyx Python Library API
     | :doc:`resources`
     | API Documentation for general resources
     |
+    | :doc:`exceptions`
+    | Errors and Exceptions
+    |
     | :doc:`drivers/index`
     | API documentation for all drivers
     |
@@ -28,5 +31,6 @@ Labtronyx Python Library API
    remotemanager
    labmanager
    resources
+   exceptions
    drivers/index
    interfaces/index
