@@ -115,31 +115,7 @@ class i_VISA(Base_Interface):
                 # Check for new resources
                 for res in res_list:
                     if res not in self._resources.keys():
-                        try:
-                            instrument = self.resource_manager.open_resource(res)
-
-                            # Instantiate the resource object
-                            new_resource = r_VISA(manager=self.manager,
-                                                  interface=self,
-                                                  resID=res,
-                                                  visa_instrument=instrument,
-                                                  logger=self.logger)
-
-                            self._resources[res] = new_resource
-
-                            # Signal new resource event
-                            self.manager._event_signal(common.constants.ResourceEvents.created)
-
-                        except visa.VisaIOError as e:
-                            if e.abbreviation in ["VI_ERROR_RSRC_BUSY",
-                                                  "VI_ERROR_RSRC_NFOUND",
-                                                  "VI_ERROR_TMO",
-                                                  "VI_ERROR_INV_RSRC_NAME"]: # Returned by TekVISA
-                                # Ignore these errors and move on
-                                pass
-
-                            else:
-                                self.logger.exception("Unable to open VISA resource, unhandled error: %s" % e.abbreviation)
+                        self.getResource(res)
 
             except visa.VisaIOError as e:
                 # Exception thrown when there are no resources
@@ -183,6 +159,42 @@ class i_VISA(Base_Interface):
 
             for resID in to_remove:
                 del self._resources[resID]
+
+    def getResource(self, resID):
+        """
+        Attempt to open a VISA instrument. If successful, a VISA resource is added to the list of known resources and
+        the object is returned.
+
+        :return:        object
+        """
+        try:
+            instrument = self.resource_manager.open_resource(resID)
+
+            # Instantiate the resource object
+            new_resource = r_VISA(manager=self.manager,
+                                  interface=self,
+                                  resID=resID,
+                                  visa_instrument=instrument,
+                                  logger=self.logger)
+
+            self._resources[resID] = new_resource
+
+            # Signal new resource event
+            self.manager._event_signal(common.constants.ResourceEvents.created)
+
+            return new_resource
+
+        except visa.VisaIOError as e:
+            if e.abbreviation in ["VI_ERROR_RSRC_BUSY",
+                                  "VI_ERROR_RSRC_NFOUND",
+                                  "VI_ERROR_TMO",
+                                  "VI_ERROR_INV_RSRC_NAME"]: # Returned by TekVISA
+                # Ignore these errors and move on
+                pass
+
+            else:
+                self.logger.exception("Unable to open VISA resource, unhandled error: %s" % e.abbreviation)
+
 
 class r_VISA(Base_Resource):
     """
@@ -590,16 +602,13 @@ class r_VISA(Base_Resource):
 
     def write(self, data):
         """
-        Send String data to the instrument. Includes termination
-        character.
+        Send ASCII-encoded data to the instrument. Termination character is appended automatically, according to
+        `write_termination` property.
         
-        Raises exception if the resource is not ready. 
-        
-        To get the error condition, call `getResourceError`
-        
-        :param data: Data to send
-        :type data: str
-        :raises: ResourceNotOpen
+        :param data:        Data to send
+        :type data:         str
+        :raises:            ResourceNotOpen
+        :raises:            InterfaceError
         """
         try:
             self.instrument.write(data)
@@ -614,12 +623,12 @@ class r_VISA(Base_Resource):
 
     def write_raw(self, data):
         """
-        Send Binary-encoded data to the instrument. Termination character is
-        not included
+        Send Binary-encoded data to the instrument without modification
         
-        :param data: Data to send
-        :type data: str
-        :raises: ResourceNotReady
+        :param data:        Data to send
+        :type data:         str
+        :raises:            ResourceNotOpen
+        :raises:            InterfaceError
         """
         try:
             self.instrument.write_raw(data)
@@ -634,15 +643,17 @@ class r_VISA(Base_Resource):
         """
         Read ASCII-formatted data from the instrument.
         
-        Reading stops when the device stops sending, or the termination 
-        characters sequence was detected.
-        
-        All line-ending characters are stripped from the end of the string.
+        Reading stops when the device stops sending, or the termination characters sequence was detected. All
+        line-ending characters are stripped from the end of the string.
         
         :param termination: Line termination
-        :type termination: str
-        :param encoding: Encoding
-        :type encoding: Unknown
+        :type termination:  str
+        :param encoding:    Encoding
+        :type encoding:     str
+        :return:            str
+        :raises:            ResourceNotOpen
+        :raises:            InterfaceTimeout
+        :raises:            InterfaceError
         """
         try:
             data = self.instrument.read(termination, encoding)
@@ -662,12 +673,13 @@ class r_VISA(Base_Resource):
 
     def read_raw(self, size=None):
         """
-        Read Binary-encoded data from the instrument.
+        Read Binary-encoded data directly from the instrument.
         
-        No termination characters are stripped.
-        
-        :param size: Number of bytes to read
-        :type size: int
+        :param size:        Number of bytes to read
+        :type size:         int
+        :raises:            ResourceNotOpen
+        :raises:            InterfaceTimeout
+        :raises:            InterfaceError
         """
         ret = bytes()
 
@@ -701,15 +713,18 @@ class r_VISA(Base_Resource):
 
     def query(self, data, delay=None):
         """
-        Retreive ASCII-encoded data from the device given a prompt.
+        Retrieve ASCII-encoded data from the device given a prompt.
         
         A combination of write(data) and read()
         
-        :param data: Data to send
-        :type data: str
-        :param delay: delay (in seconds) between write and read operations.
-        :type delay: float
-        :returns: str
+        :param data:        Data to send
+        :type data:         str
+        :param delay:       delay (in seconds) between write and read operations.
+        :type delay:        float
+        :returns:           str
+        :raises:            ResourceNotOpen
+        :raises:            InterfaceTimeout
+        :raises:            InterfaceError
         """
         try:
             ret_data = self.instrument.query(data)
@@ -732,7 +747,7 @@ class r_VISA(Base_Resource):
     # Drivers
     # ===========================================================================
 
-    def loadDriver(self, driverName=None):
+    def loadDriver(self, driverName=None, force=False):
         """
         Load a Driver.
 
@@ -763,7 +778,7 @@ class r_VISA(Base_Resource):
 
             # Only auto-load a model if a single model was found
             if len(validModels) == 1:
-                Base_Resource.loadDriver(self, validModels[0])
+                Base_Resource.loadDriver(self, validModels[0], force)
 
                 return True
 
@@ -771,4 +786,4 @@ class r_VISA(Base_Resource):
             return False
 
         else:
-            return Base_Resource.loadDriver(self, driverName)
+            return Base_Resource.loadDriver(self, driverName, force)

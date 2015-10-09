@@ -344,7 +344,7 @@ class InstrumentManager(object):
                 pass
 
             # Refresh each resource
-            for resID, res in interf.getResources().items():
+            for resID, res in interf.resources.items():
                 try:
                     res.refresh()
                 except NotImplementedError:
@@ -404,20 +404,23 @@ class InstrumentManager(object):
             except:
                 pass
     
-    def getResource(self, interface, resID):
+    def getResource(self, interface, resID, driverName=None):
         """
         Get a resource by name from the specified interface. Not supported by all interfaces, see interface
         documentation for more details.
 
-        :param interface: Interface name
-        :type interface: str
-        :param resID: Resource Identifier
-        :type resID: str
-        :returns: Resource object
+        :param interface:       Interface name
+        :type interface:        str
+        :param resID:           Resource Identifier
+        :type resID:            str
+        :param driverName:      Driver to load for resource
+        :type driverName:       str
+        :returns:               Resource object
         """
         try:
             int_obj = self._interfaces.get(interface)
-            return int_obj.getResource(resID)
+            res = int_obj.getResource(resID)
+            res.loadDriver(driverName)
 
         except NotImplementedError:
             pass

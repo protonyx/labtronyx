@@ -172,9 +172,6 @@ class i_ICP(Base_Interface):
             except:
                 self.logger.exception("ICP Thread Exception")
     
-    def getResources(self):
-        return self._resources
-    
     def getAddress(self):
         return self.__socket.getsockname()
     
