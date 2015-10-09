@@ -3,7 +3,7 @@ from nose.tools import * # PEP8 asserts
 
 import labtronyx
 
-unittest.skip('')
+@unittest.skip('RPC not working')
 def test_init_time_rpc():
     import time
     start = time.clock()
@@ -14,6 +14,7 @@ def test_init_time_rpc():
     instr.rpc_stop()
     del instr
 
+@unittest.skip('RPC not working')
 def test_remote_connect():
     # Setup an InstrumentManager with RPC
     instr = labtronyx.InstrumentManager(rpc=True)

@@ -2,7 +2,7 @@
 
 # Local Imports
 try:
-    from ptxrpc import PtxRpcClient, RpcServerNotFound
+    from labtronyx.common.rpc import PtxRpcClient, RpcServerNotFound
 except ImportError:
     raise
 

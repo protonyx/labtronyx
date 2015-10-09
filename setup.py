@@ -65,8 +65,7 @@ def build_package():
         include_package_data=True,
 
         # Dependencies
-        install_requires=['ptx-rpc',
-                          'enum34',
+        install_requires=['enum34',
                           'numpy'],
 
         extras_require={
