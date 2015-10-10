@@ -151,7 +151,7 @@ class r_Serial(Base_Resource):
     serial resources in the case that a VISA library is not available.
     """
 
-    type = "Serial"
+    resourceType = "Serial"
     
     CR = '\r'
     LF = '\n'

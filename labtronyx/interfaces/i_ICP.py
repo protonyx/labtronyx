@@ -356,7 +356,7 @@ class r_ICP(Base_Resource):
     devices over the network. 
     """
     
-    type = "ICP"
+    resourceType = "ICP"
     
     CR = '\r'
     LF = '\n'

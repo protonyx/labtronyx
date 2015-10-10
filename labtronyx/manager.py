@@ -266,11 +266,11 @@ class InstrumentManager(object):
 
         if int_cls is not None:
             try:
-                # Instantiate interface
-                int_obj = int_cls(manager=self, logger=self.logger, **kwargs) # kwargs allows passing parameters to libs
-
                 # If the interface is already enabled, disable the existing one
                 self.disableInterface(interface_name)
+
+                # Instantiate interface
+                int_obj = int_cls(manager=self, logger=self.logger, **kwargs) # kwargs allows passing parameters to libs
 
                 # Call the plugin hook to open the interface. Ensure interface opens correctly
                 if int_obj.open():

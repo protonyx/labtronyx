@@ -72,7 +72,7 @@ class Base_Resource(PluginBase):
     Resource Base Class
     """
 
-    type = "Generic"
+    resourceType = "Generic"
     
     def __init__(self, manager, interface, resID, **kwargs):
         """
@@ -131,43 +131,17 @@ class Base_Resource(PluginBase):
     def interface(self):
         return self._interface
 
-    def getResourceID(self):
-        """
-        Returns the resource identifier that identifies the resource to the interface within the system. May describe
-        the port, address or location of the resource.
-
-        :return: str
-        """
+    @property
+    def resID(self):
         return self._resID
 
-    resID = property(getResourceID)
-
-    def getUUID(self):
-        """
-        Returns an identifier for the resource that is unique to the current instance. This identifier will change if
-        the resource is removed and added again to the system.
-
-        :return: str
-        """
+    @property
+    def uuid(self):
         return self._uuid
 
-    uuid = property(getUUID)
-    
-    def getResourceType(self):
-        """
-        Returns the resource type
-
-        :return: str
-        """
-        return self.type
-    
-    def getInterfaceName(self):
-        """
-        Returns the Resource's Controller class name
-        
-        :returns: str
-        """
-        return self._interface.getInterfaceName()
+    @property
+    def driver(self):
+        return self._driver
     
     def getProperties(self):
         """
@@ -186,11 +160,11 @@ class Base_Resource(PluginBase):
             driver_prop.setdefault('deviceVendor', self._driver.info.get('deviceVendor', ''))
         
         res_prop = {
-            'uuid': self.getUUID(),
-            'interface': self.getInterfaceName(),
-            'resourceID': self.getResourceID(),
-            'resourceType': self.getResourceType()
-            }
+            'uuid': self._uuid,
+            'interface': self._interface.name,
+            'resourceID': self._resID,
+            'resourceType': self.resourceType
+        }
           
         driver_prop.update(res_prop)
         
@@ -306,13 +280,9 @@ class Base_Resource(PluginBase):
         raise NotImplementedError
 
     #===========================================================================
-    # Driver
+    # Driver Helpers
     #===========================================================================
 
-    @property
-    def driver(self):
-        return self._driver
-    
     def hasDriver(self):
         """
         Check if the resource has a driver loaded
@@ -385,7 +355,7 @@ class Base_Resource(PluginBase):
                 
             self._driver = None
             
-            self.logger.debug('Unloaded driver for resource [%s]', self.getResourceID())
+            self.logger.debug('Unloaded driver for resource [%s]', self._resID)
 
             # Signal the event
             self.manager._event_signal(common.constants.ResourceEvents.driver_unload)

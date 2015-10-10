@@ -31,7 +31,8 @@ class Base_Interface(PluginBase):
     def resources(self):
         return self._resources
 
-    def getInterfaceName(self):
+    @property
+    def name(self):
         """
         Returns the interface name as defined by the `interfaceName` attribute in the info dictionary
 
@@ -41,8 +42,6 @@ class Base_Interface(PluginBase):
             return self.info.get('interfaceName')
         else:
             return self.__class__.__name__
-
-    name = property(getInterfaceName)
 
     def refresh(self):
         """

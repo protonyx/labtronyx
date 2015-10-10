@@ -1,15 +1,23 @@
 Resources
 =========
 
-Resources are objects that represent a physical device connected to the system.
+Resources are objects that represent a physical device connected to the system. Resources are managed by a particular
+interface and contain the functionality to communicate with a single device or instrument. Resources do not, by
+themselves, contain any information about how to communicate with a particular instrument. `Drivers` are used to give a
+resource identity and a set of commands specific to the connected instrument.
 
-If you need to send commands directly to the device, the resource API documents 
-the available functions. This is necessary if the driver does not support a 
-particular function or a driver does not exist for the device you are 
-interacting with.
+Drivers
+-------
 
-Some resource type may provide additional functionality not covered here. For documentation on additional features,
-see the docs for the interface for that particular resource.
+Drivers are responsible for high-level communication with devices. Drivers send and receive commands from the physical
+device. When a driver is loaded, all of the driver methods are available from the resource object. See
+:doc:`drivers/index` for details about the methods available for each driver.
+
+Reading and Writing to an Instrument
+------------------------------------
+
+If you need to send commands directly to the instrument, see :doc:`interfaces/index`. This is necessary if the driver
+does not support a particular command or a driver does not exist for the device.
 
 Properties
 ----------
@@ -65,36 +73,3 @@ always be provided:
 +---------------+-------------------------------------------------+
 | deviceFirmware| Device firmware revision number                 |
 +---------------+-------------------------------------------------+
-
-Error Handling
---------------
-
-If an error is encountered during communication with an instrument or device,
-an exception will be raised that must be caught downstream.
-
-Interface related exceptions are generated when a problem occurs during a
-device-level function call like :func:`write`, :func:`read` or :func:`query`:
-
-+------------------+-----------------------------------------------------------+
-| InterfaceError   | An exception was caught that could not be corrected       |
-+------------------+-----------------------------------------------------------+
-| InterfaceTimeout | The device took too long to respond to a request          |
-+------------------+-----------------------------------------------------------+
-| ResourceNotOpen  | The resource was not open                                 |
-+------------------+-----------------------------------------------------------+
-
-Driver-specific exceptions are generated based on data received from an
-instrument. The documentation for each driver will specify how these exceptions
-are to be handled:
-
-+------------------+-----------------------------------------------------------+
-| InvalidData      | The device returned data that didnt make sense            |
-+------------------+-----------------------------------------------------------+
-| DeviceError      | The device reported an error                              |
-+------------------+-----------------------------------------------------------+
-   
-Resource API
-------------
-
-.. autoclass:: labtronyx.bases.resource.Base_Resource
-   :members:

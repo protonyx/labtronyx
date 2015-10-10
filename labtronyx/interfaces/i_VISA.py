@@ -227,7 +227,7 @@ class r_VISA(Base_Resource):
        * deviceFirmware
     """
 
-    type = "VISA"
+    resourceType = "VISA"
 
     CONFIG_KEYS = ['timeout', 'chunk_size', 'encoding', 'query_delay', 'read_termination', 'write_termination',
         'baud_rate', 'break_length', 'data_bits', 'discard_null', 'parity', 'stop_bits', 'allow_dma', 'send_end']
