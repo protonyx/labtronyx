@@ -35,7 +35,12 @@ class d_B29XX(Base_Driver):
     def VISA_validResource(cls, identity):
         return identity[0].upper() == 'AGILENT TECHNOLOGIES' and identity[1] in cls.info['deviceModel']
 
-    VALID_MODES = {
+    VALID_SOURCE_OUTPUT_MODES = {
+        'Voltage':       'VOLT',
+        'Current':       'CURR'
+    }
+
+    VALID_MEASURE_MODES = {
         'Voltage':       'VOLT',
         'Current':       'CURR',
         'Resistance':    'RES'
@@ -47,9 +52,37 @@ class d_B29XX(Base_Driver):
         'List':  'LIST'
     }
 
-    VALID_TRIGGER_SOURCES = ['AINT', 'BUS', 'TIMER', 'INT1', 'INT2', 'LAN', 'EXT1', 'EXT2',
-                    'EXT3', 'EXT4', 'EXT5', 'EXT6', 'EXT7', 'EXT8', 'EXT9', 'EXT10',
-                    'EXT11', 'EXT12', 'EXT13', 'EXT14']
+    VALID_TRIGGER_SOURCES = {
+        'Automatic interval':   'AINT',
+        'Remote':               'BUS',
+        'Timer':                'TIM',
+        'Internal bus 1':       'INT1',
+        'Internal bus 2':       'INT2',
+        'LXI':                  'LAN',
+        'LAN (LXI) 0':          'LAN0',
+        'LAN (LXI) 1':          'LAN1',
+        'LAN (LXI) 2':          'LAN2',
+        'LAN (LXI) 3':          'LAN3',
+        'LAN (LXI) 4':          'LAN4',
+        'LAN (LXI) 5':          'LAN5',
+        'LAN (LXI) 6':          'LAN6',
+        'LAN (LXI) 7':          'LAN7',
+        'EXT0':                 'EXT0',
+        'EXT1':                 'EXT1',
+        'EXT2':                 'EXT2',
+        'EXT3':                 'EXT3',
+        'EXT4':                 'EXT4',
+        'EXT5':                 'EXT5',
+        'EXT6':                 'EXT6',
+        'EXT7':                 'EXT7',
+        'EXT8':                 'EXT8',
+        'EXT9':                 'EXT9',
+        'EXT10':                'EXT10',
+        'EXT11':                'EXT11',
+        'EXT12':                'EXT12',
+        'EXT13':                'EXT13',
+        'EXT14':                'EXT14'
+    }
 
     # Instrument Constants
     MIN_APERTURE_TIME = 0.000008
@@ -70,7 +103,7 @@ class d_B29XX(Base_Driver):
         self._mode_source = {}
         self._mode_measure = {}
         for idx in range(1, self.NUM_CHANNELS + 1):
-            self.getSourceMode(idx)
+            self.getSourceOutputMode(idx)
             self.getMeasureMode(idx)
 
     def close(self):
@@ -153,9 +186,9 @@ class d_B29XX(Base_Driver):
             self.write(":DISP:WIND2:TEXT:STAT 1")
             self.write(':DISP:WIND2:TEXT:DATA "%s"' % text_bottom)
 
-    def setSourceMode(self, channel, output_mode='VOLT'):
+    def _setSourceOutputMode(self, channel, output_mode='VOLT'):
         """
-        Sets the instrument source mode.
+        Sets the source output mode.
 
         :param channel:         SMU Channel
         :type channel:          int
@@ -167,18 +200,18 @@ class d_B29XX(Base_Driver):
                        'VOLTAGE:DC': 'VOLT',
                        'CURRENT': 'CURR',
                        'CURRENT:DC': 'CURR'}
+        output_mode = validSource.get(output_mode, output_mode)
+        output_mode = self.VALID_SOURCE_OUTPUT_MODES.get(output_mode, output_mode)
 
-        mode = validSource.get(output_mode.upper(), output_mode.upper())
-
-        self.write(':SOUR{0}:FUNC:MODE {1}'.format(channel, mode))
+        self.write(':SOUR{0}:FUNC:MODE {1}'.format(channel, output_mode))
 
         # Verify
-        if self.getSourceMode(channel).upper() != mode.upper():
+        if self.getSourceOutputMode(channel) != output_mode:
             raise RuntimeError('Set value failed verification')
 
-    def getSourceMode(self, channel):
+    def getSourceOutputMode(self, channel):
         """
-        Get the instrument source mode. Returns 'VOLT' (Voltage) or 'CURR' (Current)
+        Get the source output mode. Returns 'VOLT' (Voltage) or 'CURR' (Current)
 
         :param channel:         SMU Channel
         :type channel:          int
@@ -189,7 +222,25 @@ class d_B29XX(Base_Driver):
 
         return mode
 
-    def setSourceVoltage(self, channel, voltage_base, voltage_trig=None):
+    def _setSourceMode(self, channel, mode):
+        """
+        Set the source mode: `FIX` - Constant current or voltage, `LIST` - User-specified list source, `SWE` - Sweep
+        current or voltage
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param mode:            Source mode
+        :type mode:             str
+        :return:
+        """
+        mode = self.VALID_SOURCE_MODES.get(mode, mode)
+
+        # Get source output mode
+        outp_mode = self.getSourceOutputMode(channel)
+
+        self.write(":SOUR{0}:{1}:MODE {2}".format(channel, outp_mode, mode))
+
+    def setSourceVoltageFixed(self, channel, voltage_base, voltage_trig=None):
         """
         Set the source output voltage. `voltage_trig` is used to specify a voltage level when the instrument is
         triggered
@@ -205,7 +256,8 @@ class d_B29XX(Base_Driver):
         if voltage_trig is None:
             voltage_trig = voltage_base
 
-        self.setSourceMode(channel, 'VOLT')
+        self._setSourceOutputMode(channel, 'VOLT')
+
 
         self.write(':SOUR{0}:VOLT {1}'.format(channel, voltage_base))
         self.write(':SOUR{0}:VOLT:TRIG {1}'.format(channel, voltage_trig))
@@ -213,6 +265,68 @@ class d_B29XX(Base_Driver):
         # Verify
         if self.getSourceVoltage(channel) != voltage_base:
             raise RuntimeError('Set value failed verification')
+
+    def setSourceFixed(self, channel):
+        self._setSourceMode(channel, 'FIX')
+
+    def setSourceSweep(self, channel, start, stop, points=2500):
+        """
+        Set the source to sweep mode. Must set to current or voltage mode first. Sweeps from `start` to `stop` with
+        `points` number of points. Timing between each sweep point is controlled by the trigger settings. Trigger
+        points should match `points`. Sweep is initiated using the `startProgram` method. To set a fixed timing between
+        sweep points, consider this example::
+
+           setTriggerSource(1, 'TIM') # Timer
+           setTriggerInterval(1, 1e-3) # 1ms between sweep points
+           powerOn(1)
+           startProgram(1)
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param start:           Start voltage/current
+        :type start:            float
+        :param stop:            Stop voltage/current
+        :type stop:             float
+        :param points:          Points to sweep
+        :type points:           int
+        """
+        # Sweep mode
+        self._setSourceMode(channel, 'SWE')
+
+        outp_mode = self._mode_source.get(channel)
+
+        self.write(":SOUR{0}:{1}:START {2}".format(channel, outp_mode, start))
+        self.write(":SOUR{0}:{1}:STOP {2}".format(channel, outp_mode, stop))
+        self.write(":SOUR{0}:{1}:POIN {2}".format(channel, outp_mode, points))
+
+        # Direction is UP (start -> stop)
+        self.write(":SOUR{0}:SWE:DIR UP".format(channel))
+
+    def setSourceList(self, channel, source_points=[]):
+        """
+        Set the source to list mode. Must set to current or voltage output mode first. Timing between each point is
+        controlled by the trigger settings. Trigger points should equal the number of items in `source_points`. List
+        mode is initiated by using the `startProgram` method. To set a fixed timing between list points, consider this
+        example::
+
+           setTriggerSource(1, 'TIM') # Timer
+           setTriggerInterval(1, 1e-3) # 1ms between sweep points
+           powerOn(1)
+           startProgram(1)
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param source_points:   List of points to traverse
+        :type source_points:    list
+        """
+        # Sweep mode
+        self._setSourceMode(channel, 'LIST')
+
+        outp_mode = self._mode_source.get(channel)
+        str_points = [str(x) for x in source_points]
+        flat_points = ','.join(str_points)
+
+        self.write(":SOUR{0}:LIST:{1} {2}".format(channel, outp_mode, flat_points))
 
     def getSourceVoltage(self, channel):
         """
@@ -240,7 +354,7 @@ class d_B29XX(Base_Driver):
         if current_trig is None:
             current_trig = current_base
 
-        self.setSourceMode(channel, 'CURR')
+        self._setSourceOutputMode(channel, 'CURR')
 
         self.write(':SOUR{0}:CURR {1}'.format(channel, current_base))
         self.write(':SOUR{0}:CURR:TRIG {1}'.format(channel, current_trig))
@@ -354,15 +468,30 @@ class d_B29XX(Base_Driver):
         self.write(':SENS{0}:{1}:APER:AUTO 0'.format(channel, mode))
 
     def enableRemoteSense(self, channel):
-        pass
+        """
+        Enable Remote Sense (4-wire) measurements
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        """
+        self.write(":SENS{0}:REM ON".format(channel))
 
     def disableRemoteSense(self, channel):
-        pass
+        """
+        Disable Remote Sense (4-wire) measurements
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        """
+        self.write(":SENS{0}:REM OFF".format(channel))
 
     def setMeasurementRange(self, channel, range):
         pass
 
     def getMeasurementRange(self, channel):
+        pass
+
+    def getMeasurementData(self, channel):
         pass
 
     def setTraceBufferPoints(self, channel, data_points):
@@ -375,7 +504,10 @@ class d_B29XX(Base_Driver):
         :type data_points:      int
         """
         self.write(":TRAC{0}:POIN {1}".format(channel, data_points))
-        # TODO: Should we verify this?
+
+        # Verify
+        if self.getTraceBufferPoints(channel) != data_points:
+            raise RuntimeError('Set value failed verification')
 
     def getTraceBufferPoints(self, channel):
         """
@@ -429,11 +561,38 @@ class d_B29XX(Base_Driver):
         :type size:             int
         :return:
         """
-        # TODO: Validate
         return self.query(":TRAC{0}:DATA?".format(channel))
 
     def setTriggerSource(self, channel, triggerSource):
-        pass
+        """
+        Set the trigger source. See `VALID_TRIGGER_SOURCES` attribute for valid values for parameter `triggerSource`
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param triggerSource:   Trigger source
+        :type triggerSource:    str
+        """
+        triggerSource = self.VALID_TRIGGER_SOURCES.get(triggerSource, triggerSource)
+
+        if triggerSource not in self.VALID_TRIGGER_SOURCES.values():
+            raise ValueError('Invalid Trigger Source')
+
+        self.write(":TRIG{0}:SOUR {1}".format(channel, triggerSource))
+
+        # Verify
+        if self.getTriggerSource(channel) != triggerSource:
+            raise RuntimeError('Set value failed verification')
+
+    def getTriggerSource(self, channel):
+        """
+        Get current trigger source.
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :return:                Trigger source
+        :rtype:                 str
+        """
+        return self.query(":TRIG{0}:SOUR?".format(channel))
 
     def setTriggerCount(self, channel, number):
         """
@@ -443,49 +602,50 @@ class d_B29XX(Base_Driver):
         :type channel:          int
         :param number:          Number of triggers
         :type number:           int
-        :return:
         """
         self.write(":TRIG{0}:COUN {1}".format(channel, number))
 
+        # TODO: Verify
+
     def setTriggerDelay(self, channel, delay):
-        pass
+        """
+        Set the time delay before the first trigger
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param delay:           Trigger delay (seconds)
+        :type delay:            float
+        """
+        self.write(":TRIG{0}:DEL {1}".format(channel, delay))
+
+        # TODO: Verify
 
     def setTriggerInterval(self, channel, interval):
-        pass
-
-    def setTriggerSetup(self, triggerSource, number, interval, delay=0):
         """
-        Set SMU Trigger settings
-        
-        :param triggerSource: Trigger Source - ['AINT', 'BUS', 'TIMER', 'INT1', 'INT2', 'LAN', 'EXT1', 'EXT2',\
-                    'EXT3', 'EXT4', 'EXT5', 'EXT6', 'EXT7', 'EXT8', 'EXT9', 'EXT10',\
-                    'EXT11', 'EXT12', 'EXT13', 'EXT14']
-        :type triggerSource: str
-        :param number: Number of Triggers per sequence - 1 to 100000 or 2147483647 (INF)
-        :type number: int
-        :param interval: Timing interval in seconds - must be greater than 20E-6
-        :type interval: float
-        :param delay: Delay before first trigger in seconds
-        :type delay: float 
-        """
-        validTriggers = ['AINT', 'BUS', 'TIMER', 'INT1', 'INT2', 'LAN', 'EXT1', 'EXT2',
-            'EXT3', 'EXT4', 'EXT5', 'EXT6', 'EXT7', 'EXT8', 'EXT9', 'EXT10',
-            'EXT11', 'EXT12', 'EXT13', 'EXT14']
+        Set the time interval between triggers. `interval` is the number of seconds, must be between 1E-5 and 1E+5.
 
-        if triggerSource in validTriggers:
-            self.write(':TRIG:SOUR %s' % triggerSource)
-            self.write(':TRIG:COUN %i' % number)
-            
-            if triggerSource == 'TIMER':
-                self.write(':TRIG:TIME %f' % float(interval))
-            
-            if delay > 0.0:
-                self.write(':TRIG:DEL %f' % float(delay))
-            else:
-                self.write(':TRIG:DEL 0')
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param interval:        Trigger timer interval (seconds)
+        :float interval:        float
+        """
+        # Requires TIMER trigger source
+        self.setTriggerSource(channel, 'TIM')
+        self.write(":TRIG{0}:TIME {1}".format(channel, interval))
+
+        # TODO: Verify
 
     def setVoltageLimit(self, channel, limit):
-        pass
+        """
+        Set voltage protection limit
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param limit:           Voltage limit
+        :type limit:            float
+        """
+        self.write(":SENS{0}:VOLT:PROT {1}".format(channel, limit))
+        self.write(":OUTP:PROT ON")
 
     def setCurrentLimit(self, channel, limit):
         """
@@ -497,6 +657,7 @@ class d_B29XX(Base_Driver):
         :type limit:            float
         """
         self.write(":SENS{0}:CURR:PROT {1}".format(channel, limit))
+        self.write(":OUTP:PROT ON")
 
     def enableHighCapacitanceOutput(self, channel):
         """
@@ -516,17 +677,23 @@ class d_B29XX(Base_Driver):
         """
         self.write(":OUTP{0}:HCAP OFF".format(channel))
 
-    def powerOn(self):
+    def powerOn(self, channel):
         """
         Enable the SMU to the programmed output level
+
+        :param channel:         SMU Channel
+        :type channel:          int
         """
-        self.write(':OUTP ON')
+        self.write(":OUTP{0} ON".format(channel))
         
-    def powerOff(self):
+    def powerOff(self, channel):
         """
         Power off the SMU using the previously programmed power-off mode
+
+        :param channel:         SMU Channel
+        :type channel:          int
         """
-        self.write(':OUTP OFF')
+        self.write(":OUTP{0} OFF".format(channel))
 
     def setPowerOffMode(self, channel, mode):
         """
@@ -561,39 +728,35 @@ class d_B29XX(Base_Driver):
         :type channel:          int
         """
         self.setPowerOffMode(channel, 'HIZ')
-
-    def trigger(self, channel):
-        pass
         
-    def startProgram(self, channel=1):
+    def startProgram(self, channel):
         """
         Start a program sequence / Force trigger.
         
-        :param channel: Channel (1 or 2)
-        :type channel: int
+        :param channel:         SMU Channel
+        :type channel:          int
         """
-        if channel == 1:
-            self.write(':INIT (@1)')
-            
-        elif channel == 2:
-            self.write(':INIT (@2)')
+        self.write(":INIT (@{0})".format(channel))
 
     #===========================================================================
     # Helper Functions
     #===========================================================================
     
-    def rampVoltage(self, startVoltage, stopVoltage, time, delay=0):
+    def rampVoltage(self, channel, startVoltage, stopVoltage, time, delay=0):
         """
-        Automated voltage ramp
-        
-        :param startVoltage: Starting Voltage
-        :type startVoltage: float
-        :param stopVoltage: Stop Voltage
-        :type stopVoltage: float
-        :param time: Rise/Fall Time (seconds)
-        :type time: float
-        :param delay: Time (seconds) before ramp is started
-        :type delay: float
+        Automated voltage ramp. Enables power output, sweeps from startVoltage to stopVoltage and keeps power enabled
+        after ramp is complete.
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param startVoltage:    Starting Voltage
+        :type startVoltage:     float
+        :param stopVoltage:     Stop Voltage
+        :type stopVoltage:      float
+        :param time:            Rise/Fall Time (seconds)
+        :type time:             float
+        :param delay:           Time (seconds) before ramp is started
+        :type delay:            float
         """
         if float(time) < 0.05:
             # Minimum Interval
@@ -605,95 +768,22 @@ class d_B29XX(Base_Driver):
             points = 2500
             interval = float(time) / float(points)
         
-        #interv = float(time) / float(points)
-        
         # Set default parameters and enable
-        self.setSourceFixed('VOLTAGE', startVoltage, startVoltage)
-        self.powerOn()
+        self.setSourceVoltageFixed(channel, startVoltage)
+
+        # Start power output
+        self.powerOn(channel)
         
         # Setup sweep params
-        self.setSourceSweep('VOLTAGE', startVoltage, stopVoltage, points)
-        
-        self.setTriggerSetup('TIMER', points, interval, delay)
-        
-        self.write(":SOUR:FUNC:TRIG:CONT ON") # OUTPUT AFTER SWEEP - END VAL
-        self.startProgram(1)
+        self.setSourceSweep(channel, startVoltage, stopVoltage, points)
 
-    def sampleMeasurements(self, channel, numSamples, sampleTime, startDelay):
-        pass
+        self.setTriggerSource(channel, 'TIM')
+        self.setTriggerCount(channel, points)
+        self.setTriggerInterval(channel, interval)
+        self.setTriggerDelay(channel, delay)
 
-    def setSourceSweep(self, source, start, stop, points):
-        """
-        Configure the SMU to Sweep a range of points.
+        # OUTPUT AFTER SWEEP - END VAL
+        self.write(":SOUR:FUNC:TRIG:CONT ON")
 
-        :param source: Voltage or Current Source - ['VOLTAGE', 'CURRENT']
-        :type source: str
-        :param start: Starting Voltage/Current
-        :type start: float
-        :param stop: Final Voltage/Current
-        :type stop: float
-        :param points: Number of Points
-        :type points: int
-        """
-        if source in self.validSource.keys():
-            source_f = self.validSource.get(source)
-            self.write(':SOUR:FUNC:MODE %s' % source_f)
-            self.write(':SOUR:%s:MODE SWE' % source_f)
-
-            self.write(':SOUR:%s:START %f' % (source_f, float(start)))
-            self.write(':SOUR:%s:STOP %f' % (source_f, float(stop)))
-
-            # Hard-coded number of points
-            # It appears the length of the sweep is determined by the number
-            # of points
-            self.write(':SOUR:SWE:POIN %i' % int(points))
-            self.write(':TRIG:COUN %i' % int(points))
-
-            if float(stop) > float(start):
-                self.write(':SOUR:SWE:DIR UP')
-            else:
-                self.write(':SOUR:SWE:DIR DOWN')
-
-    def setSourceFixed(self, source, base, peak):
-        """
-        Configure the SMU to output a fixed voltage or current
-
-        :param source: Voltage or Current Source - ['VOLTAGE', 'CURRENT']
-        :type source: str
-        :param base: Base Voltage/Current
-        :type base: float
-        :param peak: Peak Voltage/Current when triggered
-        :type peak: float
-        """
-        if source in self.validSource.keys():
-            source_f = self.validSource.get(source)
-            self.write(':SOUR:FUNC:MODE %s' % source_f)
-
-            self.write(':SOUR:%s %f' % (source_f, float(base)))
-            self.write(':SOUR:%s:TRIG %f' % (source_f, float(peak)))
-
-    def setSourceProgram(self):
-        # TODO
-        pass
-
-    def setPulseSetup(self, pulseEnable, pulseWidth, delay=0.0):
-        """
-        Set SMU Pulse settings
-
-        :param pulseEnable: Enable/Disable Pulsing
-        :type pulseEnable: bool
-        :param pulseWidth: Pulse width in seconds - must be greater than 20E-6
-        :type pulseWidth: float
-        :param delay: Delay before first pulse in seconds
-        :type delay: float
-        """
-        if pulseEnable:
-            self.write(':SOUR:FUNC:SHAP PULS')
-
-            self.write(':SOUR:PULS:WIDT %f' % float(pulseWidth))
-
-            if delay > 0.0:
-                self.write(':SOUR:PULS:DEL %f' % float(delay))
-
-        else:
-            self.write(':SOUR:FUNC:SHAP DC')
+        # Start program
+        self.startProgram(channel)

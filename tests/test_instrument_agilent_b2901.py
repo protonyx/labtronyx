@@ -57,7 +57,7 @@ class Agilent_B2901_Functional_Tests(unittest.TestCase):
         conf = self.dev.getConfiguration()
 
     def test_aperture(self):
-        self.dev.setSourceMode(1, 'VOLT')
+        self.dev._setSourceOutputMode(1, 'VOLT')
 
         self.dev.setApertureTime(1, 1.0)
         self.dev.enableAutoAperture(1)
