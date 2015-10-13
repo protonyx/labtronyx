@@ -142,6 +142,14 @@ class d_B29XX(Base_Driver):
 
         return errors
 
+    def checkBusy(self):
+        """
+        Check if the instrument is busy
+
+        :rtype: bool
+        """
+        return bool(self.query("*OPC?"))
+
     def enableFrontPanel(self):
         """
         Enables the front panel display if it was previously disabled.
@@ -240,7 +248,7 @@ class d_B29XX(Base_Driver):
 
         self.write(":SOUR{0}:{1}:MODE {2}".format(channel, outp_mode, mode))
 
-    def setSourceVoltageFixed(self, channel, voltage_base, voltage_trig=None):
+    def setSourceVoltage(self, channel, voltage_base, voltage_trig=None):
         """
         Set the source output voltage. `voltage_trig` is used to specify a voltage level when the instrument is
         triggered
@@ -258,75 +266,12 @@ class d_B29XX(Base_Driver):
 
         self._setSourceOutputMode(channel, 'VOLT')
 
-
         self.write(':SOUR{0}:VOLT {1}'.format(channel, voltage_base))
         self.write(':SOUR{0}:VOLT:TRIG {1}'.format(channel, voltage_trig))
 
         # Verify
         if self.getSourceVoltage(channel) != voltage_base:
             raise RuntimeError('Set value failed verification')
-
-    def setSourceFixed(self, channel):
-        self._setSourceMode(channel, 'FIX')
-
-    def setSourceSweep(self, channel, start, stop, points=2500):
-        """
-        Set the source to sweep mode. Must set to current or voltage mode first. Sweeps from `start` to `stop` with
-        `points` number of points. Timing between each sweep point is controlled by the trigger settings. Trigger
-        points should match `points`. Sweep is initiated using the `startProgram` method. To set a fixed timing between
-        sweep points, consider this example::
-
-           setTriggerSource(1, 'TIM') # Timer
-           setTriggerInterval(1, 1e-3) # 1ms between sweep points
-           powerOn(1)
-           startProgram(1)
-
-        :param channel:         SMU Channel
-        :type channel:          int
-        :param start:           Start voltage/current
-        :type start:            float
-        :param stop:            Stop voltage/current
-        :type stop:             float
-        :param points:          Points to sweep
-        :type points:           int
-        """
-        # Sweep mode
-        self._setSourceMode(channel, 'SWE')
-
-        outp_mode = self._mode_source.get(channel)
-
-        self.write(":SOUR{0}:{1}:START {2}".format(channel, outp_mode, start))
-        self.write(":SOUR{0}:{1}:STOP {2}".format(channel, outp_mode, stop))
-        self.write(":SOUR{0}:{1}:POIN {2}".format(channel, outp_mode, points))
-
-        # Direction is UP (start -> stop)
-        self.write(":SOUR{0}:SWE:DIR UP".format(channel))
-
-    def setSourceList(self, channel, source_points=[]):
-        """
-        Set the source to list mode. Must set to current or voltage output mode first. Timing between each point is
-        controlled by the trigger settings. Trigger points should equal the number of items in `source_points`. List
-        mode is initiated by using the `startProgram` method. To set a fixed timing between list points, consider this
-        example::
-
-           setTriggerSource(1, 'TIM') # Timer
-           setTriggerInterval(1, 1e-3) # 1ms between sweep points
-           powerOn(1)
-           startProgram(1)
-
-        :param channel:         SMU Channel
-        :type channel:          int
-        :param source_points:   List of points to traverse
-        :type source_points:    list
-        """
-        # Sweep mode
-        self._setSourceMode(channel, 'LIST')
-
-        outp_mode = self._mode_source.get(channel)
-        str_points = [str(x) for x in source_points]
-        flat_points = ','.join(str_points)
-
-        self.write(":SOUR{0}:LIST:{1} {2}".format(channel, outp_mode, flat_points))
 
     def getSourceVoltage(self, channel):
         """
@@ -372,6 +317,74 @@ class d_B29XX(Base_Driver):
         :return:                float
         """
         return float(self.query(':SOUR{0}:CURR?'.format(channel)))
+
+    def setSourceFixed(self, channel):
+        """
+        Set the source to fixed voltage/current mode.
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        """
+        self._setSourceMode(channel, 'FIX')
+
+    def setSourceSweep(self, channel, start, stop, points=2500):
+        """
+        Set the source to sweep mode. Must set to current or voltage mode first. Sweeps from `start` to `stop` with
+        `points` number of points. Timing between each sweep point is controlled by the trigger settings. Trigger
+        points should match `points`. Sweep is initiated using the `startProgram` method. To set a fixed timing between
+        sweep points, consider this example::
+
+           setTriggerSource(1, 'TIM') # Timer
+           setTriggerInterval(1, 1e-3) # 1ms between sweep points
+           powerOn(1)
+           startProgram(1)
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param start:           Start voltage/current
+        :type start:            float
+        :param stop:            Stop voltage/current
+        :type stop:             float
+        :param points:          Points to sweep
+        :type points:           int
+        """
+        # Sweep mode
+        self._setSourceMode(channel, 'SWE')
+
+        outp_mode = self._mode_source.get(channel)
+
+        self.write(":SOUR{0}:{1}:START {2}".format(channel, outp_mode, start))
+        self.write(":SOUR{0}:{1}:STOP {2}".format(channel, outp_mode, stop))
+        self.write(":SOUR{0}:{1}:POIN {2}".format(channel, outp_mode, points))
+
+        # Direction is UP (start -> stop)
+        self.write(":SOUR{0}:SWE:DIR UP".format(channel))
+
+    def setSourceList(self, channel, source_points=()):
+        """
+        Set the source to list mode. Must set to current or voltage output mode first. Timing between each point is
+        controlled by the trigger settings. Trigger points should equal the number of items in `source_points`. List
+        mode is initiated by using the `startProgram` method. To set a fixed timing between list points, consider this
+        example::
+
+           setTriggerSource(1, 'TIM') # Timer
+           setTriggerInterval(1, 1e-3) # 1ms between sweep points
+           powerOn(1)
+           startProgram(1)
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param source_points:   List of points to traverse
+        :type source_points:    list
+        """
+        # Sweep mode
+        self._setSourceMode(channel, 'LIST')
+
+        outp_mode = self._mode_source.get(channel)
+        str_points = [str(x) for x in source_points]
+        flat_points = ','.join(str_points)
+
+        self.write(":SOUR{0}:LIST:{1} {2}".format(channel, outp_mode, flat_points))
 
     def setMeasureMode(self, channel, measure_mode):
         """
@@ -485,14 +498,93 @@ class d_B29XX(Base_Driver):
         """
         self.write(":SENS{0}:REM OFF".format(channel))
 
-    def setMeasurementRange(self, channel, range):
-        pass
+    def setMeasurementRange(self, channel, meas_range):
+        """
+        Set the measurement range.
+
+        Voltage Measurement Range
+        +=============+===========================+============+
+        | Range Value | Voltage Measurement Value | Resolution |
+        +=============+===========================+============+
+        | 0.2 V       | 0 < Voltage < 0.212       | 0.1 uV     |
+        | 2.0 V       | 0 < Voltage < 2.12        | 1.0 uV     |
+        | 20  V       | 0 < Voltage < 21.2        | 10  uV     |
+        | 200 V       | 0 < Voltage < 212         | 100 uV     |
+        +-------------+---------------------------+------------+
+
+        Current Measurement Range
+        +=============+===========================+============+
+        | Range Value | Voltage Measurement Value | Resolution |
+        +=============+===========================+============+
+        | 100 nA      | 0 < Current < 106 nA      | 100 fA     |
+        | 1 uA        | 0 < Current < 1.06 uA     | 1 pA       |
+        | 10 uA       | 0 < Current < 10.6 uA     | 10 pA      |
+        | 100 uA      | 0 < Current < 106 uA      | 100 pA     |
+        | 1 mA        | 0 < Current < 1.06 mA     | 1 nA       |
+        | 10 mA       | 0 < Current < 10.6 mA     | 10 nA      |
+        | 100 mA      | 0 < Current < 106 mA      | 100 nA     |
+        | 1 A         | 0 < Current < 1.06 A      | 1 uA       |
+        | 1.5 A       | 0 < Current < 1.53 A      | 1 uA       |
+        | 3 A         | 0 < Current < 3.06 A      | 10 uA      |
+        +-------------+---------------------------+------------+
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        :param meas_range:      Measurement range
+        :type meas_range:       float
+        """
+        meas_mode = self.getMeasureMode(channel)
+
+        self.write(":SENS{0}:{1}:RANG {2}".format(channel, meas_mode, meas_range))
 
     def getMeasurementRange(self, channel):
-        pass
+        """
+        Get the measurement range.
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        """
+        meas_mode = self._mode_measure.get(channel)
+
+        return self.query(":SENS{0}:{1}:RANG?".format(channel, meas_mode))
+
+    def setMeasurementRangeAuto(self, channel):
+        """
+        Set the measurement range mode to `auto`
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        """
+        meas_mode = self.getMeasureMode(channel)
+
+        self.write(":SENS{0}:{1}:RANG:AUTO ON".format(channel, meas_mode))
 
     def getMeasurementData(self, channel):
-        pass
+        """
+        Get the measurement data from the instrument
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        """
+        self.write(":FORM:ELEM:SENS VOLT,CURR,TIME")
+
+        # Use binary data format for speed
+        self.write(":FORM REAL64")
+
+        try:
+            import numpy as np
+
+            data = self.query_binary_values(":FETCH:ARR? (@{0})".format(channel), datatype='d', container=np.array)
+            np.reshape(data, (3, -1))
+
+            return data
+
+        except ImportError:
+            data = self.query_binary_values(":FETCH:ARR? (@{0})".format(channel), datatype='d')
+
+            import itertools
+            args = [iter(data)] * 3
+            return list(itertools.izip_longest(*args, fillvalue=0.0))
 
     def setTraceBufferPoints(self, channel, data_points):
         """
@@ -594,6 +686,15 @@ class d_B29XX(Base_Driver):
         """
         return self.query(":TRIG{0}:SOUR?".format(channel))
 
+    def setTriggerSourceTimer(self, channel):
+        """
+        Use the timer as the trigger source
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        """
+        self.setTriggerSource(channel, 'TIM')
+
     def setTriggerCount(self, channel, number):
         """
         Set the trigger count for the specified device action
@@ -605,7 +706,18 @@ class d_B29XX(Base_Driver):
         """
         self.write(":TRIG{0}:COUN {1}".format(channel, number))
 
-        # TODO: Verify
+        # Verify
+        if self.getTriggerCount(channel) != number:
+            raise RuntimeError('Set value failed verification')
+
+    def getTriggerCount(self, channel):
+        """
+        Get the trigger count
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        """
+        return self.query(":TRIG{0}:COUN?".format(channel))
 
     def setTriggerDelay(self, channel, delay):
         """
@@ -618,7 +730,18 @@ class d_B29XX(Base_Driver):
         """
         self.write(":TRIG{0}:DEL {1}".format(channel, delay))
 
-        # TODO: Verify
+        # Verify
+        if self.getTriggerDelay(channel) != delay:
+            raise RuntimeError('Set value failed verification')
+
+    def getTriggerDelay(self, channel):
+        """
+        Get the time delay before the first trigger
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        """
+        return self.query(":TRIG{0}:DEL?".format(channel))
 
     def setTriggerInterval(self, channel, interval):
         """
@@ -633,11 +756,22 @@ class d_B29XX(Base_Driver):
         self.setTriggerSource(channel, 'TIM')
         self.write(":TRIG{0}:TIME {1}".format(channel, interval))
 
-        # TODO: Verify
+        # Verify
+        if self.getTriggerInterval(channel) != interval:
+            raise RuntimeError('Set value failed verification')
+
+    def getTriggerInterval(self, channel):
+        """
+        Get the time interval between triggers.
+
+        :param channel:         SMU Channel
+        :type channel:          int
+        """
+        return self.query(":TRIG{0}:TIME?".format(channel))
 
     def setVoltageLimit(self, channel, limit):
         """
-        Set voltage protection limit
+        Set voltage protection limit. Automatically enables voltage protection mode
 
         :param channel:         SMU Channel
         :type channel:          int
@@ -649,7 +783,7 @@ class d_B29XX(Base_Driver):
 
     def setCurrentLimit(self, channel, limit):
         """
-        Set current protection limit
+        Set current protection limit. Automatically enables current protection mode
 
         :param channel:         SMU Channel
         :type channel:          int
@@ -658,6 +792,12 @@ class d_B29XX(Base_Driver):
         """
         self.write(":SENS{0}:CURR:PROT {1}".format(channel, limit))
         self.write(":OUTP:PROT ON")
+
+    def disableOutputProtection(self):
+        """
+        Disable output voltage and current protection
+        """
+        self.write(":OUTP:PROT OFF")
 
     def enableHighCapacitanceOutput(self, channel):
         """
@@ -741,6 +881,31 @@ class d_B29XX(Base_Driver):
     #===========================================================================
     # Helper Functions
     #===========================================================================
+
+    def getScreenshot(self, filename):
+        """
+        Save a screenshot of the instrument. Supported picture formats are JPG, BMP, PNG, WMF.
+
+        :param filename:        Filename for saved screenshot
+        :type filename:         str
+        """
+        validFormats = ['JPG', 'BMP', 'PNG', 'WMF']
+
+        import os
+        root, ext = os.path.splitext(filename)
+
+        if ext.upper() not in validFormats:
+            raise ValueError("Invalid format")
+
+        # Set the screen dump format
+        self.write(":HCOPY:SDUMP:FORM {0}".format(ext))
+
+        # Get screen dump data
+        self.write(":HCOPY:SDUMP:DATA?")
+        data = self.read_raw()
+
+        with open(filename, 'wb') as f:
+            f.write(data)
     
     def rampVoltage(self, channel, startVoltage, stopVoltage, time, delay=0):
         """
@@ -769,7 +934,7 @@ class d_B29XX(Base_Driver):
             interval = float(time) / float(points)
         
         # Set default parameters and enable
-        self.setSourceVoltageFixed(channel, startVoltage)
+        self.setSourceVoltage(channel, startVoltage)
 
         # Start power output
         self.powerOn(channel)
@@ -777,7 +942,8 @@ class d_B29XX(Base_Driver):
         # Setup sweep params
         self.setSourceSweep(channel, startVoltage, stopVoltage, points)
 
-        self.setTriggerSource(channel, 'TIM')
+        # Setup trigger params
+        self.setTriggerSourceTimer(channel)
         self.setTriggerCount(channel, points)
         self.setTriggerInterval(channel, interval)
         self.setTriggerDelay(channel, delay)
