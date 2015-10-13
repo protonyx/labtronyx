@@ -90,6 +90,10 @@ class Serial_Tests(unittest.TestCase):
     def setUpClass(cls):
         cls.manager = labtronyx.InstrumentManager(rpc=False)
 
+    def setUp(self):
+        if self.manager._getInterface('Serial') is None:
+            self.skipTest('Serial library not installed')
+
     def test_interface_open(self):
         self.assertIsNotNone(self.manager._getInterface('Serial'))
 
