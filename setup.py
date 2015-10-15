@@ -3,7 +3,7 @@ Setuptools build file
 """
 __author__ = 'kkennedy'
 
-import sys, os, time
+from setuptools import setup, find_packages
 
 import build
 
@@ -57,7 +57,7 @@ def build_package():
         test_suite="tests.test_suite",
 
         # Packages
-        packages=['labtronyx'],
+        packages=find_packages(exclude=['tests']),
 
         # Package data - e.g. non-python modules
         # package_data = {},
@@ -83,11 +83,6 @@ def build_package():
         # Can the project run from a zip file?
         zip_safe=False
     )
-
-    try:
-        from setuptools import setup
-    except ImportError:
-        from distutils.core import setup
 
     # Setuptools
     setup(**setup_meta)
