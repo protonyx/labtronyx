@@ -2,6 +2,8 @@ spec: "1.1"
 resources:
   USB::2391::12345::SIM::0::INSTR:
     device: test
+  ASRL3::INSTR:
+    device: test2
     
 devices:
   test:
@@ -17,3 +19,15 @@ devices:
     dialogues:
       - q: "*IDN?"
         r: "TASTY TESTER,ALPHA-1,12345,SIM"
+
+  test2:
+    eom:
+      ASRL INSTR:
+        q: "\r\n"
+        r: "\n"
+
+    error: ERROR
+
+    dialogues:
+      - q: "*IDN?"
+        r: "gfadgjhwtyw5634"

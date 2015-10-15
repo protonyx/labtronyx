@@ -296,7 +296,7 @@ class r_VISA(Base_Resource):
         try:
             # Set the timeout really low
             start_timeout = self.instrument.timeout
-            self.instrument.timeout = 100
+            self.instrument.timeout = 250
             #self.instrument.
 
             scpi_ident = self.query("*IDN?")
@@ -306,8 +306,7 @@ class r_VISA(Base_Resource):
             self.instrument.timeout = start_timeout
 
         except InterfaceTimeout:
-            self.logger.debug("No response to SCPI Identify")
-            self.logger.error('Unable to identify VISA Resource: %s', self.resID)
+            self.logger.debug("Resource did not respond to Identify: %s", self.resID)
 
 
         if len(self._identity) >= 4:
@@ -769,9 +768,12 @@ class r_VISA(Base_Resource):
             # Iterate through all driver classes to find compatible driver
             for driver, driverCls in self.manager.drivers.items():
                 if hasattr(driverCls, 'VISA_validResource'):
-                    if driverCls.VISA_validResource(self._identity):
-                        validModels.append(driver)
-                        self.logger.debug("Found match: %s", driver)
+                    try:
+                        if driverCls.VISA_validResource(self._identity):
+                            validModels.append(driver)
+                            self.logger.debug("Found match: %s", driver)
+                    except:
+                        pass
 
             # Only auto-load a model if a single model was found
             if len(validModels) == 1:

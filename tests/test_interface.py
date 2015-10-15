@@ -49,14 +49,12 @@ class Interface_Integration_Tests(unittest.TestCase):
 
 class VISA_Tests(unittest.TestCase):
 
-    SIM = True
-
     @classmethod
     def setUpClass(cls):
         # Setup a mock manager
         cls.manager = labtronyx.InstrumentManager(rpc=False)
 
-        if 'TRAVIS' in os.environ or cls.SIM:
+        if 'TRAVIS' in os.environ or cls.manager._getInterface('VISA') is None:
             lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'default.yaml')
 
             cls.manager.enableInterface('VISA', library='%s@sim'%lib_path)
