@@ -66,6 +66,7 @@ def build_package():
 
         # Dependencies
         install_requires=['enum34',
+                          'flask',
                           'numpy'],
 
         extras_require={
