@@ -3,4 +3,4 @@ import constants
 import errors
 import events
 
-__all__ = ['constants', 'errors', 'events', 'plugin', 'rpc']
+__all__ = ['constants', 'errors', 'events', 'plugin', 'server', 'rpc']

@@ -8,6 +8,8 @@ import threading
 from . import logger
 
 from . import bases
+from . import common
+
 from .common import *
 from .common.errors import *
 
@@ -40,10 +42,8 @@ class InstrumentManager(object):
         # Initialize instance variables
         self._interfaces = {}  # Interface name -> interface object
         self._drivers = {}  # Module name -> Model info
-        self.rpc_server = None
 
         # Configurable instance variables
-        self.rpc_port = kwargs.get('rpc_port', 6780)
         self.logger = kwargs.get('logger', logger)
 
         # Initialize PYTHONPATH
@@ -79,53 +79,62 @@ class InstrumentManager(object):
             self.enableInterface(interface_name)
 
         #
-        # RPC Server
+        # Server
         #
-        self.rpc_server = None
-        self.rpc_server_thread = None
+        self._server = None
+        self._server_port = kwargs.get('server_port', 6780)
 
-        if kwargs.get('rpc', False):
-            if not self.rpc_start():
-                raise RuntimeError("Unable to start RPC Server")
+        if kwargs.get('server', False):
+            if not self.server_start():
+                raise RuntimeError("Unable to start Labtronyx Server")
     
     def __del__(self):
-        self.rpc_stop()
+        try:
+            self.server_stop()
+        except:
+            self.logger.exception('Error during deconstructor')
 
         # Disable all interfaces, close all resources
         for interface_name in self._interfaces:
             self.disableInterface(interface_name)
 
     #===========================================================================
-    # RPC Server
+    # Labtronyx Server
     #===========================================================================
 
-    def rpc_start(self):
+    def server_start(self):
         """
         Start the RPC Server and being listening for remote connections.
 
         :returns: True if successful, False otherwise
         """
         # Clean out old RPC server, if any exists
-        if hasattr(self, 'rpc_server'):
-            self.rpc_stop()
+        if self._server is not None:
+            self.server_stop()
 
         # Instantiate an rpc server
         try:
-            self.rpc_server = rpc.PtxRpcServer(host='localhost',
-                                               port=self.rpc_port,
-                                               logger=self.logger)
+            import threading
+            from werkzeug.serving import run_simple
 
-            # Register InstrumentManager in the base path
-            self.rpc_server.register_path('/', self)
-            self.logger.debug("RPC Server starting...")
+            self._server = common.server.create_server(self, self._server_port)
+            server_thread = threading.Thread(name='Labtronyx-Server', target=lambda: run_simple(
+                hostname='localhost', port=self._server_port, application=self._server,
+                threaded=True, use_debugger=True
+            ))
+            server_thread.start()
 
-            # Register all resources with the RPC server
-            self.rpc_refresh()
-
-            # Start the server in a new thread
-            self.rpc_server_thread = threading.Thread(name='Labtronyx-InstrumentManager',
-                                                      target=self.rpc_server.serve_forever)
-            self.rpc_server_thread.start()
+            # # Register InstrumentManager in the base path
+            # self.rpc_server.register_path('/', self)
+            # self.logger.debug("RPC Server starting...")
+            #
+            # # Register all resources with the RPC server
+            # self.rpc_refresh()
+            #
+            # # Start the server in a new thread
+            # self.rpc_server_thread = threading.Thread(name='Labtronyx-InstrumentManager',
+            #                                           target=self.rpc_server.serve_forever)
+            # self.rpc_server_thread.start()
 
             return True
 
@@ -143,37 +152,27 @@ class InstrumentManager(object):
 
         :return: None
         """
-        if self.rpc_server is not None:
+        if self._server is not None:
             for interf in self._interfaces.values():
                 try:
                     for res_uuid, res_obj in interf.getResources.items():
-                        self.rpc_server.register_path(res_uuid, res_obj)
+                        self._server.register_path(res_uuid, res_obj)
 
                 except:
                     pass
 
-    def rpc_stop(self):
+    def server_stop(self):
         """
-        Stop the RPC Server. Attempts to shutdown and free
-        all resources.
+        Stop the Server
         """
-        if self.rpc_server is not None:
-            self.logger.debug("RPC Server stopping...")
-
-            # Close all interfaces
-            for interface in self._interfaces.keys():
-                self.disableInterface(interface)
-
-            # Stop the InstrumentManager RPC Server
-            self.rpc_server.shutdown()
-            self.rpc_server.server_close()
-            self.rpc_server_thread.join()
+        if self._server is not None:
+            from .remote import RemoteManager
+            RemoteManager(address='localhost', port=self._server_port).shutdown()
 
             # Signal the event
             self._event_signal(constants.ManagerEvents.shutdown)
 
-            self.rpc_server = None
-            self.rpc_server_thread = None
+            self._server = None
 
     @staticmethod
     def getVersion():

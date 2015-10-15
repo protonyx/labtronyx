@@ -5,7 +5,7 @@ import importlib
 import socket
 
 # Local Imports
-from .remote import RemoteManager
+from .remote import RemoteManager, RemoteResource
 
 __all__ = ['LabManager']
 
@@ -21,7 +21,7 @@ class LabManager(object):
     :param configFile: Configuration file to load
     :type configFile: str
     """
-    managers = {} # IP Address -> RemoteManager object
+    _managers = {} # IP Address -> RemoteManager object
     hostnames = {} # Hostname => IP Address [Lookup table]
     
     # Resources
@@ -36,15 +36,6 @@ class LabManager(object):
         
         if not self.rootPath in sys.path:
             sys.path.append(self.rootPath)
-        
-        # Load Config
-        configFile = kwargs.get('configFile', 'default')
-        try:
-            cFile = importlib.import_module('config.%s' % configFile)
-            self.config = cFile.Config()
-        except Exception as e:
-            print("FATAL ERROR: Unable to import config file")
-            sys.exit()
                 
         #=======================================================================
         # # Attempt to connect to the local manager
@@ -66,6 +57,10 @@ class LabManager(object):
         # except:
         #     pass
         #=======================================================================
+
+    @property
+    def managers(self):
+        return self._managers
     
     #===========================================================================
     # Manager Operations    
@@ -96,8 +91,8 @@ class LabManager(object):
         :type address: str - IPv4
         :returns: str
         """
-        if address in self.managers.keys():
-            man = self.managers.get(address)
+        if address in self._managers.keys():
+            man = self._managers.get(address)
             return man._getHostname() # RpcClient function
         
     def getConnectedAddresses(self):
@@ -131,19 +126,17 @@ class LabManager(object):
         """
         address = self._resolveAddress(address)
         
-        seekPort = port or self.config.managerPort
-        
-        if address not in self.managers.keys():
+        if address not in self._managers:
             # Attempt a connection
             try:
-                testManager = RemoteManager(address=address, port=seekPort)
+                testManager = RemoteManager(address=address)
                 
                 ver = testManager.getVersion()
                 host = testManager.getHostname()
                 address = testManager.getAddress()
                 
                 self.hostnames[host] = address 
-                self.managers[address] = testManager
+                self._managers[address] = testManager
                 
                 # Update the resource cache
                 self.refreshManager(address)
@@ -166,7 +159,7 @@ class LabManager(object):
         """
         address = self._resolveAddress(address)
         
-        man = self.managers.get(address)
+        man = self._managers.get(address)
         man.refreshResources()
         
         # Refresh properties
@@ -198,7 +191,7 @@ class LabManager(object):
         """
         address = self._resolveAddress(address)
         
-        if address in self.managers:
+        if address in self._managers:
             # Clear out all cached properties from this manager
             dev_list = [uuid for uuid, res_dict in self.properties.items() if res_dict.get('address') == address]
             
@@ -208,7 +201,7 @@ class LabManager(object):
                     self.resources.pop(uuid, None)
                     
                 # Remove host
-                man = self.managers.pop(address, None)
+                man = self._managers.pop(address, None)
                 man.disconnect()
                 
             except:
@@ -236,18 +229,18 @@ class LabManager(object):
         existing connection to `address`
         """
         if address is None:
-            return self.managers
+            return self._managers
         
         else:
             address = self._resolveAddress(address)
                 
-            return self.managers.get(address, None)
+            return self._managers.get(address, None)
         
     def refresh(self):
         """
         Refresh all managers and resources
         """
-        for address, man in self.managers.items():
+        for address, man in self._managers.items():
             self.refreshManager(address)
 
     #===========================================================================

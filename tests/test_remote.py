@@ -3,25 +3,25 @@ from nose.tools import * # PEP8 asserts
 
 import labtronyx
 
-@unittest.skip('RPC not working')
-def test_init_time_rpc():
-    import time
-    start = time.clock()
-    instr = labtronyx.InstrumentManager(rpc=True)
-    delta = time.clock() - start
-    assert_less_equal(delta, 2.0, "RPC Init time must be less than 2.0 second(s)")
+class Server_Tests(unittest.TestCase):
 
-    instr.rpc_stop()
-    del instr
+    @classmethod
+    def setUpClass(cls):
+        import time
+        start = time.clock()
+        cls.manager = labtronyx.InstrumentManager(server=True)
 
-@unittest.skip('RPC not working')
-def test_remote_connect():
-    # Setup an InstrumentManager with RPC
-    instr = labtronyx.InstrumentManager(rpc=True)
+        cls.startup_time = time.clock() - start
 
-    client = labtronyx.RemoteManager(uri='http://localhost:6780/')
+    @classmethod
+    def tearDownClass(cls):
+        cls.manager.server_stop()
+        del cls.manager
 
-    assert_equal(client.getVersion(), instr.getVersion())
+    def test_startup_time(self):
+        assert_less_equal(self.startup_time, 2.0, "RPC Init time must be less than 2.0 second(s)")
 
-    instr.rpc_stop()
-    del instr
+    def test_remote_connect(self):
+        client = labtronyx.RemoteManager(address='localhost')
+
+        assert_equal(client.getVersion(), instr.getVersion())
