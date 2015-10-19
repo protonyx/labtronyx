@@ -21,8 +21,12 @@ class Server_Tests(unittest.TestCase):
     def test_startup_time(self):
         assert_less_equal(self.startup_time, 2.0, "RPC Init time must be less than 2.0 second(s)")
 
-    @unittest.skip("RPC not working")
     def test_remote_connect(self):
         client = labtronyx.RemoteManager(address='localhost')
+
+        methods = client._getMethods()
+        assert_greater_equal(len(methods), 0)
+
+        assert_in('getVersion', methods)
 
         assert_equal(client.getVersion(), self.manager.getVersion())

@@ -9,7 +9,9 @@ instrument over the network is taken care of by the :mod:`common.Rpc` library.
 .. _JSON-RPC: http://www.jsonrpc.org/specification
 
 """
-from .server import *
 from .client import *
 from .errors import *
-        
+from .engines import *
+
+# Engines
+import jsonrpc

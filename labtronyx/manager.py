@@ -112,7 +112,7 @@ class InstrumentManager(object):
             from werkzeug.serving import run_simple
 
             # Create a server app
-            self._server = common.server.create_server(self, self._server_port)
+            self._server = common.server.create_server(self, self._server_port, logger=self.logger)
 
             srv_start_cmd = lambda: run_simple(
                 hostname='localhost', port=self._server_port, application=self._server,
@@ -362,7 +362,7 @@ class InstrumentManager(object):
                     props = res.getProperties()
 
                     # UUID is not used to key properties within the interface
-                    uuid = props.get('uuid')
+                    uuid = props.get('uuid', res.uuid)
 
                     ret[uuid] = props
                     ret[uuid].setdefault('deviceType', '')
@@ -383,15 +383,14 @@ class InstrumentManager(object):
         :param res_uuid:        Unique Resource Identifier (UUID)
         :type res_uuid:         str
         :returns:               object
+        :raises:                KeyError if resource is not found
         """
         for interf in self._interfaces.values():
-            try:
-                temp = interf.resources.get(res_uuid)
-                if temp is not None:
-                    return temp
+            for resID, res in interf.resources.items():
+                if res.uuid == res_uuid:
+                    return res
 
-            except:
-                pass
+        raise KeyError('Resource not found')
     
     def getResource(self, interface, resID, driverName=None):
         """
@@ -452,7 +451,10 @@ class InstrumentManager(object):
                     break
                 
             if match:
-                matching_instruments.append(self._getResource(uuid))
+                try:
+                    matching_instruments.append(self._getResource(uuid))
+                except KeyError:
+                    pass
                 
         return matching_instruments
     

@@ -1,12 +1,16 @@
 __author__ = 'kkennedy'
 
-from flask import Flask, Blueprint, request, current_app, abort
+import logging
+
+from flask import Flask, Blueprint, request, current_app, abort, Response
 import json
+
+from .rpc import *
 
 api_blueprint = Blueprint('api', __name__)
 rpc_blueprint = Blueprint('rpc', __name__)
 
-def create_server(manager_instance, port):
+def create_server(manager_instance, port, logger=logging):
     """
     Labtronyx Server Factory
 
@@ -16,7 +20,8 @@ def create_server(manager_instance, port):
     """
     app = Flask(__name__)
 
-    app.config['MANAGER_INSTANCE'] = manager_instance
+    app.config['LABTRONYX_MANAGER'] = manager_instance
+    app.config['LABTRONYX_LOGGER'] = logger
 
     app.register_blueprint(api_blueprint)
     app.register_blueprint(rpc_blueprint)
@@ -25,28 +30,32 @@ def create_server(manager_instance, port):
 
 @api_blueprint.route('/api/resources')
 def list_resources():
-    man = current_app.config.get('MANAGER_INSTANCE')
+    man = current_app.config.get('LABTRONYX_MANAGER')
 
-    return str(man.getProperties().keys())
+    data = json.dumps(man.getProperties().keys())
+
+    resp = Response(data, status=200, mimetype='application/json')
+
+    return resp
 
 @api_blueprint.route('/api/resources/<uuid>')
 def resource_properties(uuid):
-    man = current_app.config.get('MANAGER_INSTANCE')
+    man = current_app.config.get('LABTRONYX_MANAGER')
 
     props = man.getProperties()
 
     if uuid in props:
-        return str(props.get(uuid))
+        return json.dumps(props.get(uuid))
 
     else:
         abort(404)
 
 @api_blueprint.route('/api/version')
 def version():
-    man = current_app.config.get('MANAGER_INSTANCE')
+    man = current_app.config.get('LABTRONYX_MANAGER')
 
     try:
-        return json.dump({
+        return json.dumps({
             'version': man.version.ver_sem,
             'version_full': man.version.ver_full,
             'build_date': man.version.build_date,
@@ -54,7 +63,7 @@ def version():
         })
 
     except:
-        return json.dump({
+        return json.dumps({
             'version': man.getVersion()
         })
 
@@ -65,69 +74,114 @@ def shutdown():
         func()
     return ''
 
-@rpc_blueprint.route('/rpc')
-@rpc_blueprint.route('/rpc/<uuid>')
-def rpc_process(uuid):
-    engine = self.server.engine
-    target = self.server.rpc_paths.get(self.path)
-    lock   = self.server.rpc_locks.get(self.path)
+@rpc_blueprint.route('/rpc', methods=['GET', 'POST'])
+@rpc_blueprint.route('/rpc/<uuid>', methods=['GET', 'POST'])
+def rpc_process(uuid=None):
+    if request.method == 'GET':
+        def rpc_getMethods(target):
+            import inspect
+            # Check for bound and unbound methods
+            validMethod = lambda mem: inspect.ismethod(mem) or inspect.isfunction(mem)
+            return [attr for attr, val in inspect.getmembers(target) if validMethod(val) and not attr.startswith('_')]
 
-    # Decode the incoming data
-    requests, _, rpc_errors = engine.decode(data)
+        man = current_app.config.get('LABTRONYX_MANAGER')
 
-    # Process responses
-    # For now, ignore all responses
-    responses = []
+        if uuid is None:
+            return json.dumps({
+                'methods': rpc_getMethods(man)
+            })
 
-    # Process requests
-    if len(rpc_errors) != 0:
-        # Process errors
-        for err in rpc_errors:
-            # Move errors into the responses list
-            responses.append(err)
-
-    else:
-        # Only process requests if no errors were encountered
-        if len(requests) > 0:
-            pass
-
-        for req in requests:
-            method_name = req.method
-            req_id = req.id
-
+        else:
             try:
-                with lock:
-                    # RPC hook for target objects, allows the object to dispatch the request
-                    if hasattr(target, '_rpc'):
-                        result = target._rpc(method_name)
+                res = man._getResource(uuid)
+                return json.dumps({
+                    'methods': rpc_getMethods(res)
+                })
 
-                    elif not method_name.startswith('_') and hasattr(target, method_name):
-                        method = getattr(target, method_name)
-                        result = req.call(method)
+            except KeyError:
+                abort(404)
 
-                    else:
-                        responses.append(RpcMethodNotFound(id=req_id))
-                        break
+    elif request.method == 'POST':
+        # Set decode engine based on content type
+        contentType = request.headers['Content-Type']
 
-                # Check if the request was a notification
-                if req_id is not None:
-                    responses.append(RpcResponse(id=req_id, result=result))
+        if contentType == 'application/json':
+            engine = jsonrpc
+        else:
+            engine = jsonrpc
 
-            # Catch exceptions during method execution
-            # DO NOT ALLOW ANY EXCEPTIONS TO PASS THIS LEVEL
-            except Exception as e:
-                # Catch-all for everything else
-                excp = RpcServerException(id=req_id)
-                excp.message = e.__class__.__name__
-                responses.append(excp)
+        # Determine a target object
+        man = current_app.config.get('LABTRONYX_MANAGER')
+        if uuid is None:
+            target = man
+        else:
+            try:
+                target = man._getResource(uuid)
+            except KeyError:
+                abort(404)
 
-    # Encode the outgoing data
-    try:
-        out_data = engine.encode([], responses)
+        import threading
+        lock = threading.Lock() # self.server.rpc_locks.get(self.path)
+        # TODO: Get a lock for each object
 
-    except Exception as e:
-        # Encoder errors are RPC Errors
-        out_data = engine.encode([], [RpcError()])
+        # Decode the incoming data
+        rpc_requests, _, rpc_errors = engine.decode(request.data)
 
-    return out_data
+        # Process responses
+        # For now, ignore all responses
+        rpc_responses = []
+
+        # Process requests
+        if len(rpc_errors) != 0:
+            # Process errors
+            for err in rpc_errors:
+                # Move errors into the responses list
+                rpc_responses.append(err)
+
+        else:
+            # Only process requests if no errors were encountered
+            if len(rpc_requests) > 0:
+                pass
+
+            for req in rpc_requests:
+                method_name = req.method
+                req_id = req.id
+
+                try:
+                    with lock:
+                        # RPC hook for target objects, allows the object to dispatch the request
+                        if hasattr(target, '_rpc'):
+                            result = target._rpc(method_name)
+
+                        elif not method_name.startswith('_') and hasattr(target, method_name):
+                            method = getattr(target, method_name)
+                            result = req.call(method)
+
+                        else:
+                            rpc_responses.append(RpcMethodNotFound(id=req_id))
+                            break
+
+                    # Check if the request was a notification
+                    if req_id is not None:
+                        rpc_responses.append(RpcResponse(id=req_id, result=result))
+
+                # Catch exceptions during method execution
+                except Exception as e:
+                    excp = RpcServerException(id=req_id)
+                    excp.message = e.__class__.__name__
+                    rpc_responses.append(excp)
+
+                    # Log the exception on the server
+                    logger = current_app.config.get('LABTRONYX_LOGGER')
+                    logger.exception('RPC Server-side Exception')
+
+        # Encode the outgoing data
+        try:
+            out_data = engine.encode([], rpc_responses)
+
+        except Exception as e:
+            # Encoder errors are RPC Errors
+            out_data = engine.encode([], [RpcError()])
+
+        return out_data
 

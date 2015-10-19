@@ -2,7 +2,8 @@
 numpy
 # Optional
 enum34
-ptx-rpc
+flask
+requests
 # Interfaces
 pyvisa>=1.8
 pyserial>=2.7

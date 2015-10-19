@@ -1,6 +1,8 @@
-__author__ = 'kkennedy'
+"""
+Base classes for RPC engines
+"""
+__all__ = ['RpcRequest', 'RpcResponse']
 
-__all__ = ['jsonrpc']
 
 class RpcRequest(object):
     def __init__(self, **kwargs):
@@ -13,6 +15,7 @@ class RpcRequest(object):
         # Invoke target method with stored arguments
         # Don't attempt to catch exceptions here, let them bubble up
         return target(*self.args, **self.kwargs)
+
 
 class RpcResponse(object):
     def __init__(self, **kwargs):

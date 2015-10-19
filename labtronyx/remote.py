@@ -2,13 +2,13 @@
 
 # Local Imports
 try:
-    from labtronyx.common.rpc import PtxRpcClient, RpcServerNotFound
+    from labtronyx.common.rpc import RpcClient, RpcServerNotFound
 except ImportError:
     raise
 
 __all__ = ['RemoteManager', 'RemoteResource']
 
-class RemoteManager(PtxRpcClient):
+class RemoteManager(RpcClient):
     """
     Labtronyx Remote Instrument Manager
     
@@ -27,7 +27,7 @@ class RemoteManager(PtxRpcClient):
         port = kwargs.get('port', self.RPC_PORT)
 
         if uri is None:
-            uri = 'http://{0}:{1}/'.format(host, port)
+            uri = 'http://{0}:{1}/rpc'.format(host, port)
 
         super(RemoteManager, self).__init__(uri)
         
@@ -117,7 +117,7 @@ class RemoteManager(PtxRpcClient):
         """
         return self.findResources(**kwargs)
     
-class RemoteResource(PtxRpcClient):
+class RemoteResource(RpcClient):
     
     def _handleException(self, exception_object):
         pass
