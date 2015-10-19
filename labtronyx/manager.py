@@ -111,8 +111,7 @@ class InstrumentManager(object):
         :returns: True if successful, False otherwise
         """
         # Clean out old RPC server, if any exists
-        if self._server is not None:
-            self.server_stop()
+        self.server_stop()
 
         from werkzeug.serving import run_simple
 
@@ -141,22 +140,25 @@ class InstrumentManager(object):
         Stop the Server
         """
         if self._server is not None:
+            try:
+                # Must use the REST API to shutdown
+                import urllib2
+                url = 'http://{0}:{1}/api/shutdown'.format('localhost', self._server_port)
+                resp = urllib2.Request(url)
+                handler = urllib2.urlopen(resp)
 
-            # Must use the REST API to shutdown
-            import urllib2
-            url = 'http://{0}:{1}/api/shutdown'.format('localhost', self._server_port)
-            resp = urllib2.Request(url)
-            handler = urllib2.urlopen(resp)
+                if handler.code == 200:
+                    self.logger.debug('Server stopped')
+                else:
+                    self.logger.error('Server stop returned code: %d', handler.code)
 
-            if handler.code == 200:
-                self.logger.debug('Server stopped')
-            else:
-                self.logger.error('Server stop returned code: %d', handler.code)
+                # Signal the event
+                self._event_signal(constants.ManagerEvents.shutdown)
 
-            # Signal the event
-            self._event_signal(constants.ManagerEvents.shutdown)
+                self._server = None
 
-            self._server = None
+            except:
+                pass
 
     @property
     def version(self):

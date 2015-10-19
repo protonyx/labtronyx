@@ -291,6 +291,7 @@ class RemoteManager_Tests(unittest.TestCase):
         self.assertEqual(resp.status_code, 404)
 
     def test_remote_error_timeout(self):
+        old_timeout = self.client.timeout
         self.client.timeout = 0.1
 
         import time
@@ -298,6 +299,8 @@ class RemoteManager_Tests(unittest.TestCase):
 
         with self.assertRaises(labtronyx.common.rpc.errors.RpcTimeout):
             self.client.test_timeout()
+
+        self.client.timeout = old_timeout
 
     def test_remote_get_resource(self):
         self.client.refresh()
