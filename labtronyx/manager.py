@@ -13,11 +13,7 @@ from . import common
 from .common import *
 from .common.errors import *
 
-
-try:
-    from . import version
-except ImportError:
-    raise EnvironmentError("No Version file present, reinstall project")
+from . import version
 
 
 class InstrumentManager(object):
@@ -102,7 +98,7 @@ class InstrumentManager(object):
     # Labtronyx Server
     #===========================================================================
 
-    def server_start(self):
+    def server_start(self, new_thread=True):
         """
         Start the RPC Server and being listening for remote connections.
 
@@ -112,39 +108,32 @@ class InstrumentManager(object):
         if self._server is not None:
             self.server_stop()
 
-        # Instantiate an rpc server
         try:
-            import threading
             from werkzeug.serving import run_simple
 
+            # Create a server app
             self._server = common.server.create_server(self, self._server_port)
-            server_thread = threading.Thread(name='Labtronyx-Server', target=lambda: run_simple(
+
+            srv_start_cmd = lambda: run_simple(
                 hostname='localhost', port=self._server_port, application=self._server,
                 threaded=True, use_debugger=True
-            ))
-            server_thread.start()
+            )
 
-            # # Register InstrumentManager in the base path
-            # self.rpc_server.register_path('/', self)
-            # self.logger.debug("RPC Server starting...")
-            #
-            # # Register all resources with the RPC server
-            # self.rpc_refresh()
-            #
-            # # Start the server in a new thread
-            # self.rpc_server_thread = threading.Thread(name='Labtronyx-InstrumentManager',
-            #                                           target=self.rpc_server.serve_forever)
-            # self.rpc_server_thread.start()
+        except ImportError:
+            self.logger.exception("Missing Dependency: Flask")
+            return False
+
+        # Instantiate an rpc server
+        if new_thread:
+            import threading
+
+            server_thread = threading.Thread(name='Labtronyx-Server', target=srv_start_cmd)
+            server_thread.start()
 
             return True
 
-        except rpc.RpcServerPortInUse:
-            self.logger.error("RPC Port in use, shutting down...")
-            return False
-
-        except:
-            self.logger.exception("RPC Exception")
-            return False
+        else:
+            srv_start_cmd()
 
     def rpc_refresh(self):
         """
@@ -182,6 +171,10 @@ class InstrumentManager(object):
             self._event_signal(constants.ManagerEvents.shutdown)
 
             self._server = None
+
+    @property
+    def version(self):
+        return version
 
     @staticmethod
     def getVersion():
@@ -365,9 +358,13 @@ class InstrumentManager(object):
 
         for interface, interface_obj in self._interfaces.items():
             try:
-                for uuid, res in interface_obj.resources.items():
-                    ret[uuid] = res.getProperties()
+                for resID, res in interface_obj.resources.items():
+                    props = res.getProperties()
 
+                    # UUID is not used to key properties within the interface
+                    uuid = props.get('uuid')
+
+                    ret[uuid] = props
                     ret[uuid].setdefault('deviceType', '')
                     ret[uuid].setdefault('deviceVendor', '')
                     ret[uuid].setdefault('deviceModel', '')

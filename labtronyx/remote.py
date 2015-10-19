@@ -18,10 +18,16 @@ class RemoteManager(PtxRpcClient):
        
        InstrumentManager must be running with RPC enabled on the computer that you are trying to connect to.
     """
+    RPC_PORT = 6780
+
     resources = {}
     
-    def __init__(self, host='localhost', **kwargs):
-        uri = kwargs.get('uri', 'http://%s:6780/' % host)
+    def __init__(self, uri=None, **kwargs):
+        host = kwargs.get('host', 'localhost')
+        port = kwargs.get('port', self.RPC_PORT)
+
+        if uri is None:
+            uri = 'http://{0}:{1}/'.format(host, port)
 
         super(RemoteManager, self).__init__(uri)
         

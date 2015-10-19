@@ -9,17 +9,16 @@ def main():
     labtronyx.logConsole()
 
     # Instantiate an InstrumentManager
-    man = labtronyx.InstrumentManager(rpc=True)
+    man = labtronyx.InstrumentManager()
 
     # Force a refresh
     man.refresh()
 
-    # Keep the main thread alive
+    # Start the server in the current thread
     try:
-        while True:
-            time.sleep(1.0)
+        man.server_start(new_thread=False)
     except KeyboardInterrupt:
-        man.rpc_stop()
+        man.server_stop()
 
 if __name__ == "__main__":
     main()

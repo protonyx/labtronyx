@@ -32,9 +32,10 @@ def logFile(filename, backupCount=1, logLevel=logging.DEBUG):
 
 # Import modules into the labtronyx namespace
 try:
-    import version
+    from . import version
     __version__ = version.ver_sem
 except ImportError:
+    version = object()
     __version__ = "unknown"
 
 from .manager import InstrumentManager
