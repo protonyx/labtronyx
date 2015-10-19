@@ -69,20 +69,22 @@ class JsonRpc_ServerException(errors.RpcServerException, JsonRpc_Error):
     code = -32000
     message = 'An unhandled server exception occurred'
 
-JsonRpcErrors = {  -32700: JsonRpc_ParseError,
-                   -32600: JsonRpc_InvalidRequest,
-                   -32601: JsonRpc_MethodNotFound,
-                   -32602: JsonRpc_InvalidParams,
-                   -32603: JsonRpc_InternalError,
-                   -32000: JsonRpc_ServerException  } 
-                 # -32000 to -32099 are reserved server-errors
+JsonRpcErrors = {
+    -32700: JsonRpc_ParseError,
+    -32600: JsonRpc_InvalidRequest,
+    -32601: JsonRpc_MethodNotFound,
+    -32602: JsonRpc_InvalidParams,
+    -32603: JsonRpc_InternalError,
+    -32000: JsonRpc_ServerException
+    # -32000 to -32099 are reserved server-errors
+}
 
 JsonRpc_error_map = {
-                    errors.RpcError: JsonRpc_InternalError,
-                    errors.RpcInvalidPacket: JsonRpc_InvalidRequest,
-                    errors.RpcMethodNotFound: JsonRpc_MethodNotFound,
-                    errors.RpcServerException: JsonRpc_ServerException
-                    }
+    errors.RpcError: JsonRpc_InternalError,
+    errors.RpcInvalidPacket: JsonRpc_InvalidRequest,
+    errors.RpcMethodNotFound: JsonRpc_MethodNotFound,
+    errors.RpcServerException: JsonRpc_ServerException
+}
 
 #===============================================================================
 # Request Type
@@ -111,7 +113,7 @@ class JsonRpc_Request(engines.RpcRequest):
         # Adds kwargs variable to object only when both are present
         out = {'jsonrpc': '2.0',
                'id': self.id,
-               'method': self.method }
+               'method': self.method}
 
         if len(self.args) > 0:
             out['params'] = self.args
@@ -139,13 +141,6 @@ class JsonRpc_Response(engines.RpcResponse):
                'result': self.result}
             
         return ret
-
-def generate_id():
-    next_id = 0
-
-    while 1:
-        next_id += 1
-        yield next_id
      
 #===============================================================================
 # JSON RPC Handlers
@@ -264,8 +259,6 @@ def encode(requests, responses):
     for rpc_obj in requests + responses:
         if type(rpc_obj) == engines.RpcRequest:
             rpc_obj.__class__ = JsonRpc_Request
-            # Generate new ID for requests
-            rpc_obj.id = generate_id().next()
 
         if type(rpc_obj) == engines.RpcResponse:
             rpc_obj.__class__ = JsonRpc_Response

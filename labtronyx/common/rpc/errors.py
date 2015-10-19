@@ -30,7 +30,3 @@ class RpcInvalidPacket(RpcError):
 
 class RpcMethodNotFound(RpcError):
     pass
-
-
-    
-
