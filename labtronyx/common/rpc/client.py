@@ -2,6 +2,7 @@ import threading
 import json
 import logging
 import requests
+import errno
 
 # Local imports
 from . import errors
@@ -55,35 +56,38 @@ class RpcClient(object):
         resp_data = requests.get(self.uri)
 
         return json.loads(resp_data.text).get('methods')
-    
-    def _rpcCall(self, remote_method, *args, **kwargs):
-        """
-        Calls a function on the remote host with both positional and keyword
-        arguments
-        
-        Returns:
-            - Whatever the remote function returns
-            
-        Exceptions:
-            - AttributeError when method not found (same as if a local call)
-            - RuntimeError when the remote host sent back a server error
-            - Rpc_Timeout when the request times out
-        """
-        req = engines.RpcRequest(method=remote_method, args=args, kwargs=kwargs)
 
-        # Encode the RPC Request
-        data = self.engine.encode([req], [])
-        
-        # Send the encoded request
-        with self.rpc_lock:
-            resp_data = requests.post(self.uri, data)
+    @staticmethod
+    def __getNextId():
+        next_id = 0
 
-        # Check status code
-        if resp_data.status_code is not 200:
-            raise errors.RpcError("Server returned error code: %d" % resp_data.status_code)
+        while 1:
+            next_id += 1
+            yield next_id
 
-        # Decode the returned data
-        rpc_requests, rpc_responses, rpc_errors = self.engine.decode(resp_data.text)
+    def __sendRequest(self, rpc_request):
+        try:
+            # Encode the RPC Request
+            data = self.engine.encode([rpc_request], [])
+
+            # Send the encoded request
+            with self.rpc_lock:
+                resp_data = requests.post(self.uri, data, timeout=self.timeout)
+
+            # Check status code
+            if resp_data.status_code is not 200:
+                raise errors.RpcError("Server returned error code: %d" % resp_data.status_code)
+
+            return resp_data.text
+
+        except requests.ConnectionError:
+            raise errors.RpcServerNotFound()
+
+        except requests.Timeout:
+            raise errors.RpcTimeout()
+
+    def __decodeResponse(self, data):
+        rpc_requests, rpc_responses, rpc_errors = self.engine.decode(data)
 
         if len(rpc_errors) > 0:
             # There is a problem if there are more than one errors,
@@ -100,6 +104,28 @@ class RpcClient(object):
 
         else:
             raise errors.RpcInvalidPacket("An incorrectly formatted packet was received")
+    
+    def _rpcCall(self, remote_method, *args, **kwargs):
+        """
+        Calls a function on the remote host with both positional and keyword
+        arguments
+            
+        Exceptions:
+        :raises AttributeError: when method not found (same as if a local call)
+        :raises RuntimeError: when the remote host sent back a server error
+        :raises RpcTimeout: when the request times out
+        """
+        req = engines.RpcRequest(method=remote_method, args=args, kwargs=kwargs, id=self.__getNextId().next())
+
+        # Decode the returned data
+        data = self.__sendRequest(req)
+
+        return self.__decodeResponse(data)
+
+    def _rpcNotify(self, remote_method, *args, **kwargs):
+        req = engines.RpcRequest(method=remote_method, args=args, kwargs=kwargs)
+
+        self.__sendRequest(req)
     
     def __str__(self):
         return '<RPC @ %s>' % (self.uri)
