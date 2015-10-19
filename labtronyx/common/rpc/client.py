@@ -70,9 +70,13 @@ class RpcClient(object):
             # Encode the RPC Request
             data = self.engine.encode([rpc_request], [])
 
+            headers = {
+                'user-agent': 'Labtronyx-RPC/1.0.0'
+            }
+
             # Send the encoded request
             with self.rpc_lock:
-                resp_data = requests.post(self.uri, data, timeout=self.timeout)
+                resp_data = requests.post(self.uri, data, headers=headers, timeout=self.timeout)
 
             # Check status code
             if resp_data.status_code is not 200:

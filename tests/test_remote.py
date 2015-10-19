@@ -267,6 +267,10 @@ class RemoteManager_Tests(unittest.TestCase):
         del cls.manager
 
     def setUp(self):
+        import os
+        if 'TRAVIS' in os.environ:
+            self.skipTest('Remote not working in Travis-CI')
+
         self.client = labtronyx.RemoteManager(address='localhost')
 
     def test_startup_time(self):
