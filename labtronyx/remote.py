@@ -20,8 +20,6 @@ class RemoteManager(RpcClient):
     """
     RPC_PORT = 6780
 
-    resources = {}
-    
     def __init__(self, uri=None, **kwargs):
         host = kwargs.pop('host', 'localhost')
         port = kwargs.pop('port', self.RPC_PORT)
@@ -30,6 +28,8 @@ class RemoteManager(RpcClient):
             uri = 'http://{0}:{1}/rpc'.format(host, port)
 
         super(RemoteManager, self).__init__(uri, **kwargs)
+
+        self._resources = {}
         
         #self._enableNotifications()
         #self._registerCallback('event_new_resource', lambda: self.cb_event_new_resource())
@@ -44,18 +44,18 @@ class RemoteManager(RpcClient):
         prop = self._rpcCall('getProperties')
         
         for res_uuid, res_dict in prop.items():
-            if res_uuid not in self.resources:
+            if res_uuid not in self._resources:
                 address = res_dict.get('address')
                 port = res_dict.get('port')
                 uri = "http://{0}:{1}/rpc/{2}".format(address, port, res_uuid)
 
                 instr = RemoteResource(uri, timeout=self.timeout, logger=self.logger)
-                self.resources[res_uuid] = instr
+                self._resources[res_uuid] = instr
         
         # Purge resources that are no longer in remote
-        for res_uuid in self.resources:
+        for res_uuid in self._resources:
             if res_uuid not in prop:
-                self.resources.pop(res_uuid)
+                self._resources.pop(res_uuid)
 
     def _getResource(self, res_uuid):
         """
@@ -65,17 +65,20 @@ class RemoteManager(RpcClient):
         :type res_uuid: str
         :returns: RemoteResource object
         """
-        if res_uuid in self.resources:
-            return self.resources.get(res_uuid)
+        if res_uuid in self._resources:
+            return self._resources.get(res_uuid)
         
         else:
             self.refresh()
-            return self.resources.get(res_uuid)
+            return self._resources.get(res_uuid)
     
     def getResource(self, interface, resID, driverName=None):
         self._rpcNotify(interface, resID, driverName)
 
-        return self.findResources(interface=interface, resID=resID)
+        res_list = self.findResources(interface=interface, resID=resID)
+
+        if len(res_list) > 0:
+            return res_list[0]
     
     def findResources(self, **kwargs):
         """

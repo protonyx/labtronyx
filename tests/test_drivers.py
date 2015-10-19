@@ -8,7 +8,7 @@ from labtronyx.bases import Base_Resource, Base_Driver, Base_Interface
 
 def setUpModule():
     global instr
-    instr = labtronyx.InstrumentManager(rpc=False)
+    instr = labtronyx.InstrumentManager()
 
 def test_driver_api():
     global instr
@@ -34,7 +34,7 @@ def check_visa_api(driverCls):
     assert_equal(type(driverCls.VISA_validResource(['','','',''])), bool)
 
 def test_driver_integration():
-    instr = labtronyx.InstrumentManager(rpc=False)
+    instr = labtronyx.InstrumentManager()
 
     # Create a fake interface, imitating the interface API
     interf = Base_Interface(manager=instr)

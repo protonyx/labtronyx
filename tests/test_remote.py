@@ -8,18 +8,24 @@ import labtronyx
 from labtronyx.common.rpc import jsonrpc
 
 
-class JsonRpc_Tests(unittest.TestCase):
+class Remote_Tests(unittest.TestCase):
 
     TEST_URI = 'http://localhost:6780/rpc'
 
     @classmethod
     def setUpClass(cls):
+        import time
+        start = time.clock()
         cls.manager = labtronyx.InstrumentManager(server=True)
+
+        cls.startup_time = time.clock() - start
 
         # Create a test object
         cls.manager.subtract = lambda subtrahend, minuend: int(subtrahend) - int(minuend)
         cls.manager.foobar = mock.MagicMock(return_value=None)
         cls.manager.raise_exception = mock.MagicMock(side_effect=RuntimeError)
+
+        cls.client = labtronyx.RemoteManager(address='localhost')
 
     @classmethod
     def tearDownClass(cls):
@@ -27,7 +33,7 @@ class JsonRpc_Tests(unittest.TestCase):
         cls.manager._close()
         del cls.manager
 
-    def test_request_call_multi_pos_param(self):
+    def test_jsonrpc_request_call_multi_pos_param(self):
         req = '{"jsonrpc": "2.0", "method": "subtract", "params": [42, 23], "id": 1}'
 
         resp = requests.post(self.TEST_URI, data=req)
@@ -43,7 +49,7 @@ class JsonRpc_Tests(unittest.TestCase):
         self.assertEqual(rpc_resp.result, 19)
         self.assertEqual(rpc_resp.id, 1)
 
-    def test_request_call_multi_named_param(self):
+    def test_jsonrpc_request_call_multi_named_param(self):
         req = '{"jsonrpc": "2.0", "method": "subtract", "params": {"subtrahend": 42, "minuend": 23}, "id": 3}'
 
         resp = requests.post(self.TEST_URI, data=req)
@@ -59,7 +65,7 @@ class JsonRpc_Tests(unittest.TestCase):
         self.assertEqual(rpc_resp.result, 19)
         self.assertEqual(rpc_resp.id, 3)
 
-    def test_request_call_no_params(self):
+    def test_jsonrpc_request_call_no_params(self):
         req = '{"jsonrpc": "2.0", "method": "foobar", "id": 2}'
 
         resp = requests.post(self.TEST_URI, data=req)
@@ -75,7 +81,7 @@ class JsonRpc_Tests(unittest.TestCase):
         self.assertEqual(rpc_resp.result, None)
         self.assertEqual(rpc_resp.id, 2)
 
-    def test_request_call_multi_combo_param(self):
+    def test_jsonrpc_request_call_multi_combo_param(self):
         req = '{"jsonrpc": "2.0", "method": "subtract", "params": [42], "kwargs": {"minuend": 23}, "id": 3}'
 
         resp = requests.post(self.TEST_URI, data=req)
@@ -91,7 +97,7 @@ class JsonRpc_Tests(unittest.TestCase):
         self.assertEqual(rpc_resp.result, 19)
         self.assertEqual(rpc_resp.id, 3)
 
-    def test_request_call_exception(self):
+    def test_jsonrpc_request_call_exception(self):
         req = '{"jsonrpc": "2.0", "method": "raise_exception", "id": 4}'
 
         resp = requests.post(self.TEST_URI, data=req)
@@ -106,7 +112,7 @@ class JsonRpc_Tests(unittest.TestCase):
         rpc_err = rpc_err[0]
         self.assertEqual(type(rpc_err), jsonrpc.JsonRpc_ServerException)
 
-    def test_request_error_invalid_json(self):
+    def test_jsonrpc_request_error_invalid_json(self):
         req = '{"jsonrpc": "2.0", "method": "foobar, "params": "bar", "baz]'
 
         resp = requests.post(self.TEST_URI, data=req)
@@ -121,7 +127,7 @@ class JsonRpc_Tests(unittest.TestCase):
         rpc_err = rpc_err[0]
         self.assertEqual(type(rpc_err), jsonrpc.JsonRpc_ParseError)
 
-    def test_request_error_invalid_request(self):
+    def test_jsonrpc_request_error_invalid_request(self):
         req = '{"jsonrpc": "2.0", "method": 1, "params": "bar"}'
 
         resp = requests.post(self.TEST_URI, data=req)
@@ -136,7 +142,7 @@ class JsonRpc_Tests(unittest.TestCase):
         rpc_err = rpc_err[0]
         self.assertEqual(type(rpc_err), jsonrpc.JsonRpc_InvalidRequest)
 
-    def test_request_error_parse_empty_request(self):
+    def test_jsonrpc_request_error_parse_empty_request(self):
         req = '{}'
 
         resp = requests.post(self.TEST_URI, data=req)
@@ -151,7 +157,7 @@ class JsonRpc_Tests(unittest.TestCase):
         rpc_err = rpc_err[0]
         self.assertEqual(type(rpc_err), jsonrpc.JsonRpc_InvalidRequest)
 
-    def test_request_error_batch_invalid_json(self):
+    def test_jsonrpc_request_error_batch_invalid_json(self):
         req = '[\
                         {"jsonrpc": "2.0", "method": "sum", "params": [1,2,4], "id": "1"},\
                         {"jsonrpc": "2.0", "method"\
@@ -169,7 +175,7 @@ class JsonRpc_Tests(unittest.TestCase):
         rpc_err = rpc_err[0]
         self.assertEqual(type(rpc_err), jsonrpc.JsonRpc_ParseError)
 
-    def test_request_error_batch_empty(self):
+    def test_jsonrpc_request_error_batch_empty(self):
         req = '[]'
 
         resp = requests.post(self.TEST_URI, data=req)
@@ -184,7 +190,7 @@ class JsonRpc_Tests(unittest.TestCase):
         rpc_err = rpc_err[0]
         self.assertEqual(type(rpc_err), jsonrpc.JsonRpc_InvalidRequest)
 
-    def test_request_error_batch_invalid_nonempty(self):
+    def test_jsonrpc_request_error_batch_invalid_nonempty(self):
         req = '[1]'
 
         resp = requests.post(self.TEST_URI, data=req)
@@ -199,7 +205,7 @@ class JsonRpc_Tests(unittest.TestCase):
         rpc_err = rpc_err[0]
         self.assertEqual(type(rpc_err), jsonrpc.JsonRpc_InvalidRequest)
 
-    def test_request_error_parse_invalid_batch(self):
+    def test_jsonrpc_request_error_parse_invalid_batch(self):
         req = '[1,2,3]'
 
         resp = requests.post(self.TEST_URI, data=req)
@@ -215,7 +221,7 @@ class JsonRpc_Tests(unittest.TestCase):
         self.assertEqual(type(rpc_err[1]), jsonrpc.JsonRpc_InvalidRequest)
         self.assertEqual(type(rpc_err[2]), jsonrpc.JsonRpc_InvalidRequest)
 
-    def test_request_batch(self):
+    def test_jsonrpc_request_batch(self):
         req = '[{"jsonrpc": "2.0", "method": "subtract", "params": [100, 10], "id": 1}, \
                 {"jsonrpc": "2.0", "method": "subtract", "params": [99, 11], "id": 2}]'
 
@@ -248,30 +254,6 @@ class JsonRpc_Tests(unittest.TestCase):
         data_out = jsonrpc.encode([], [])
 
         self.assertEqual(data_out, '')
-
-
-class RemoteManager_Tests(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        import time
-        start = time.clock()
-        cls.manager = labtronyx.InstrumentManager(server=True)
-
-        cls.startup_time = time.clock() - start
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.manager.server_stop()
-        cls.manager._close()
-        del cls.manager
-
-    def setUp(self):
-        import os
-        if 'TRAVIS' in os.environ:
-            self.skipTest('Remote not working in Travis-CI')
-
-        self.client = labtronyx.RemoteManager(address='localhost')
 
     def test_startup_time(self):
         assert_less_equal(self.startup_time, 2.0, "RPC Init time must be less than 2.0 second(s)")

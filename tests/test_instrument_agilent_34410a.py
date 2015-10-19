@@ -12,7 +12,7 @@ class Agilent_34410A_Functional_Tests(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         # Setup a mock manager
-        self.manager = labtronyx.InstrumentManager(rpc=False)
+        self.manager = labtronyx.InstrumentManager()
 
         if 'TRAVIS' in os.environ or self.SIM:
             lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'agilent_34410a.yaml')

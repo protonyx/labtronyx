@@ -9,7 +9,7 @@ from labtronyx.bases import Base_Resource, Base_Interface
 
 def test_interfaces():
     # Nose test generator to run unittests on discovered interfaces
-    instr = labtronyx.InstrumentManager(rpc=False)
+    instr = labtronyx.InstrumentManager()
 
     for interName, interCls in instr.interfaces.items():
         yield check_interface_api, interCls
@@ -21,7 +21,7 @@ class Interface_Integration_Tests(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.instr = labtronyx.InstrumentManager(rpc=False)
+        self.instr = labtronyx.InstrumentManager()
 
         # Create a fake interface, imitating the interface API
         self.interf = Base_Interface(manager=self.instr)
@@ -52,7 +52,7 @@ class VISA_Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Setup a mock manager
-        cls.manager = labtronyx.InstrumentManager(rpc=False)
+        cls.manager = labtronyx.InstrumentManager()
 
         if 'TRAVIS' in os.environ or cls.manager._getInterface('VISA') is None:
             lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'default.yaml')
@@ -86,7 +86,7 @@ class VISA_Tests(unittest.TestCase):
 class Serial_Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.manager = labtronyx.InstrumentManager(rpc=False)
+        cls.manager = labtronyx.InstrumentManager()
 
     def setUp(self):
         if self.manager._getInterface('Serial') is None:

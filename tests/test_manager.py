@@ -6,7 +6,7 @@ import labtronyx
 def test_init_time_no_rpc():
     import time
     start = time.clock()
-    instr = labtronyx.InstrumentManager(rpc=False)
+    instr = labtronyx.InstrumentManager()
     delta = time.clock() - start
     assert_less_equal(delta, 1.0, "No RPC Init time must be less than 1.0 second(s)")
 
@@ -14,7 +14,7 @@ class InstrumentManager_Tests(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.instr = labtronyx.InstrumentManager(rpc=False)
+        self.instr = labtronyx.InstrumentManager()
 
     def test_get_version(self):
         self.assertIsNotNone(self.instr.getVersion())
