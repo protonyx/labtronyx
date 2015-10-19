@@ -23,13 +23,13 @@ class RemoteManager(RpcClient):
     resources = {}
     
     def __init__(self, uri=None, **kwargs):
-        host = kwargs.get('host', 'localhost')
-        port = kwargs.get('port', self.RPC_PORT)
+        host = kwargs.pop('host', 'localhost')
+        port = kwargs.pop('port', self.RPC_PORT)
 
         if uri is None:
             uri = 'http://{0}:{1}/rpc'.format(host, port)
 
-        super(RemoteManager, self).__init__(uri)
+        super(RemoteManager, self).__init__(uri, **kwargs)
         
         #self._enableNotifications()
         #self._registerCallback('event_new_resource', lambda: self.cb_event_new_resource())
@@ -39,16 +39,17 @@ class RemoteManager(RpcClient):
         Query the InstrumentManager resources and create RemoteResource objects
         for new resources
         """
-        self.refresh()
-        prop = self.getProperties()
+        self._rpcNotify('refresh')
+
+        prop = self._rpcCall('getProperties')
         
         for res_uuid, res_dict in prop.items():
             if res_uuid not in self.resources:
                 address = res_dict.get('address')
                 port = res_dict.get('port')
-                uri = "http://{0}:{1}/{2}".format(address, port, res_uuid)
+                uri = "http://{0}:{1}/rpc/{2}".format(address, port, res_uuid)
 
-                instr = RemoteResource(uri)
+                instr = RemoteResource(uri, timeout=self.timeout, logger=self.logger)
                 self.resources[res_uuid] = instr
         
         # Purge resources that are no longer in remote
@@ -56,10 +57,7 @@ class RemoteManager(RpcClient):
             if res_uuid not in prop:
                 self.resources.pop(res_uuid)
 
-    def refreshResources(self):
-        self.refresh()
-
-    def getResource(self, res_uuid):
+    def _getResource(self, res_uuid):
         """
         Returns a resource object given the Resource UUID
                 
@@ -71,14 +69,13 @@ class RemoteManager(RpcClient):
             return self.resources.get(res_uuid)
         
         else:
-            self.refreshResources()
+            self.refresh()
             return self.resources.get(res_uuid)
     
-    def getInstrument(self, res_uuid):
-        """
-        Alias for :func:`getResource`
-        """
-        return self.getResource(res_uuid)
+    def getResource(self, interface, resID, driverName=None):
+        self._rpcNotify(interface, resID, driverName)
+
+        return self.findResources(interface=interface, resID=resID)
     
     def findResources(self, **kwargs):
         """
@@ -96,7 +93,7 @@ class RemoteManager(RpcClient):
         """
         matching_instruments = []
         
-        prop = self.getProperties()
+        prop = self._rpcCall('getProperties')
         
         for uuid, res_dict in prop.items():
             match = True
@@ -107,7 +104,7 @@ class RemoteManager(RpcClient):
                     break
                 
             if match:
-                matching_instruments.append(self.getResource(uuid))
+                matching_instruments.append(self._getResource(uuid))
                 
         return matching_instruments
     

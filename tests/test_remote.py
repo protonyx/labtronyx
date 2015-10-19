@@ -1,9 +1,256 @@
 import unittest
 from nose.tools import * # PEP8 asserts
+import mock
+
+import requests
 
 import labtronyx
+from labtronyx.common.rpc import jsonrpc
 
-class Server_Tests(unittest.TestCase):
+
+class JsonRpc_Tests(unittest.TestCase):
+
+    TEST_URI = 'http://localhost:6780/rpc'
+
+    @classmethod
+    def setUpClass(cls):
+        cls.manager = labtronyx.InstrumentManager(server=True)
+
+        # Create a test object
+        cls.manager.subtract = lambda subtrahend, minuend: int(subtrahend) - int(minuend)
+        cls.manager.foobar = mock.MagicMock(return_value=None)
+        cls.manager.raise_exception = mock.MagicMock(side_effect=RuntimeError)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.manager.server_stop()
+        cls.manager._close()
+        del cls.manager
+
+    def test_request_call_multi_pos_param(self):
+        req = '{"jsonrpc": "2.0", "method": "subtract", "params": [42, 23], "id": 1}'
+
+        resp = requests.post(self.TEST_URI, data=req)
+        self.assertEqual(resp.status_code, 200)
+
+        rpc_req, rpc_resp, rpc_err = jsonrpc.decode(resp.content)
+
+        self.assertEqual(len(rpc_req), 0)
+        self.assertEqual(len(rpc_resp), 1)
+        self.assertEqual(len(rpc_err), 0)
+
+        rpc_resp = rpc_resp[0]
+        self.assertEqual(rpc_resp.result, 19)
+        self.assertEqual(rpc_resp.id, 1)
+
+    def test_request_call_multi_named_param(self):
+        req = '{"jsonrpc": "2.0", "method": "subtract", "params": {"subtrahend": 42, "minuend": 23}, "id": 3}'
+
+        resp = requests.post(self.TEST_URI, data=req)
+        self.assertEqual(resp.status_code, 200)
+
+        rpc_req, rpc_resp, rpc_err = jsonrpc.decode(resp.content)
+
+        self.assertEqual(len(rpc_req), 0)
+        self.assertEqual(len(rpc_resp), 1)
+        self.assertEqual(len(rpc_err), 0)
+
+        rpc_resp = rpc_resp[0]
+        self.assertEqual(rpc_resp.result, 19)
+        self.assertEqual(rpc_resp.id, 3)
+
+    def test_request_call_no_params(self):
+        req = '{"jsonrpc": "2.0", "method": "foobar", "id": 2}'
+
+        resp = requests.post(self.TEST_URI, data=req)
+        self.assertEqual(resp.status_code, 200)
+
+        rpc_req, rpc_resp, rpc_err = jsonrpc.decode(resp.content)
+
+        self.assertEqual(len(rpc_req), 0)
+        self.assertEqual(len(rpc_resp), 1)
+        self.assertEqual(len(rpc_err), 0)
+
+        rpc_resp = rpc_resp[0]
+        self.assertEqual(rpc_resp.result, None)
+        self.assertEqual(rpc_resp.id, 2)
+
+    def test_request_call_multi_combo_param(self):
+        req = '{"jsonrpc": "2.0", "method": "subtract", "params": [42], "kwargs": {"minuend": 23}, "id": 3}'
+
+        resp = requests.post(self.TEST_URI, data=req)
+        self.assertEqual(resp.status_code, 200)
+
+        rpc_req, rpc_resp, rpc_err = jsonrpc.decode(resp.content)
+
+        self.assertEqual(len(rpc_req), 0)
+        self.assertEqual(len(rpc_resp), 1)
+        self.assertEqual(len(rpc_err), 0)
+
+        rpc_resp = rpc_resp[0]
+        self.assertEqual(rpc_resp.result, 19)
+        self.assertEqual(rpc_resp.id, 3)
+
+    def test_request_call_exception(self):
+        req = '{"jsonrpc": "2.0", "method": "raise_exception", "id": 4}'
+
+        resp = requests.post(self.TEST_URI, data=req)
+        self.assertEqual(resp.status_code, 200)
+
+        rpc_req, rpc_resp, rpc_err = jsonrpc.decode(resp.content)
+
+        self.assertEqual(len(rpc_req), 0)
+        self.assertEqual(len(rpc_resp), 0)
+        self.assertEqual(len(rpc_err), 1)
+
+        rpc_err = rpc_err[0]
+        self.assertEqual(type(rpc_err), jsonrpc.JsonRpc_ServerException)
+
+    def test_request_error_invalid_json(self):
+        req = '{"jsonrpc": "2.0", "method": "foobar, "params": "bar", "baz]'
+
+        resp = requests.post(self.TEST_URI, data=req)
+        self.assertEqual(resp.status_code, 200)
+
+        rpc_req, rpc_resp, rpc_err = jsonrpc.decode(resp.content)
+
+        self.assertEqual(len(rpc_req), 0)
+        self.assertEqual(len(rpc_resp), 0)
+        self.assertEqual(len(rpc_err), 1)
+
+        rpc_err = rpc_err[0]
+        self.assertEqual(type(rpc_err), jsonrpc.JsonRpc_ParseError)
+
+    def test_request_error_invalid_request(self):
+        req = '{"jsonrpc": "2.0", "method": 1, "params": "bar"}'
+
+        resp = requests.post(self.TEST_URI, data=req)
+        self.assertEqual(resp.status_code, 200)
+
+        rpc_req, rpc_resp, rpc_err = jsonrpc.decode(resp.content)
+
+        self.assertEqual(len(rpc_req), 0)
+        self.assertEqual(len(rpc_resp), 0)
+        self.assertEqual(len(rpc_err), 1)
+
+        rpc_err = rpc_err[0]
+        self.assertEqual(type(rpc_err), jsonrpc.JsonRpc_InvalidRequest)
+
+    def test_request_error_parse_empty_request(self):
+        req = '{}'
+
+        resp = requests.post(self.TEST_URI, data=req)
+        self.assertEqual(resp.status_code, 200)
+
+        rpc_req, rpc_resp, rpc_err = jsonrpc.decode(resp.content)
+
+        self.assertEqual(len(rpc_req), 0)
+        self.assertEqual(len(rpc_resp), 0)
+        self.assertEqual(len(rpc_err), 1)
+
+        rpc_err = rpc_err[0]
+        self.assertEqual(type(rpc_err), jsonrpc.JsonRpc_InvalidRequest)
+
+    def test_request_error_batch_invalid_json(self):
+        req = '[\
+                        {"jsonrpc": "2.0", "method": "sum", "params": [1,2,4], "id": "1"},\
+                        {"jsonrpc": "2.0", "method"\
+                    ]'
+
+        resp = requests.post(self.TEST_URI, data=req)
+        self.assertEqual(resp.status_code, 200)
+
+        rpc_req, rpc_resp, rpc_err = jsonrpc.decode(resp.content)
+
+        self.assertEqual(len(rpc_req), 0)
+        self.assertEqual(len(rpc_resp), 0)
+        self.assertEqual(len(rpc_err), 1)
+
+        rpc_err = rpc_err[0]
+        self.assertEqual(type(rpc_err), jsonrpc.JsonRpc_ParseError)
+
+    def test_request_error_batch_empty(self):
+        req = '[]'
+
+        resp = requests.post(self.TEST_URI, data=req)
+        self.assertEqual(resp.status_code, 200)
+
+        rpc_req, rpc_resp, rpc_err = jsonrpc.decode(resp.content)
+
+        self.assertEqual(len(rpc_req), 0)
+        self.assertEqual(len(rpc_resp), 0)
+        self.assertEqual(len(rpc_err), 1)
+
+        rpc_err = rpc_err[0]
+        self.assertEqual(type(rpc_err), jsonrpc.JsonRpc_InvalidRequest)
+
+    def test_request_error_batch_invalid_nonempty(self):
+        req = '[1]'
+
+        resp = requests.post(self.TEST_URI, data=req)
+        self.assertEqual(resp.status_code, 200)
+
+        rpc_req, rpc_resp, rpc_err = jsonrpc.decode(resp.content)
+
+        self.assertEqual(len(rpc_req), 0)
+        self.assertEqual(len(rpc_resp), 0)
+        self.assertEqual(len(rpc_err), 1)
+
+        rpc_err = rpc_err[0]
+        self.assertEqual(type(rpc_err), jsonrpc.JsonRpc_InvalidRequest)
+
+    def test_request_error_parse_invalid_batch(self):
+        req = '[1,2,3]'
+
+        resp = requests.post(self.TEST_URI, data=req)
+        self.assertEqual(resp.status_code, 200)
+
+        rpc_req, rpc_resp, rpc_err = jsonrpc.decode(resp.content)
+
+        self.assertEqual(len(rpc_req), 0)
+        self.assertEqual(len(rpc_resp), 0)
+        self.assertEqual(len(rpc_err), 3)
+
+        self.assertEqual(type(rpc_err[0]), jsonrpc.JsonRpc_InvalidRequest)
+        self.assertEqual(type(rpc_err[1]), jsonrpc.JsonRpc_InvalidRequest)
+        self.assertEqual(type(rpc_err[2]), jsonrpc.JsonRpc_InvalidRequest)
+
+    def test_request_batch(self):
+        req = '[{"jsonrpc": "2.0", "method": "subtract", "params": [100, 10], "id": 1}, \
+                {"jsonrpc": "2.0", "method": "subtract", "params": [99, 11], "id": 2}]'
+
+        resp = requests.post(self.TEST_URI, data=req)
+        self.assertEqual(resp.status_code, 200)
+
+        rpc_req, rpc_resp, rpc_err = jsonrpc.decode(resp.content)
+
+        self.assertEqual(len(rpc_req), 0)
+        self.assertEqual(len(rpc_resp), 2)
+        self.assertEqual(len(rpc_err), 0)
+
+        self.assertEqual(rpc_resp[0].result, 90)
+        self.assertEqual(rpc_resp[0].id, 1)
+        self.assertEqual(rpc_resp[1].result, 88)
+        self.assertEqual(rpc_resp[1].id, 2)
+
+    def test_jsonrpc_decode_invalid(self):
+        req = '123'
+
+        rpc_req, rpc_resp, rpc_err = jsonrpc.decode(req)
+
+        self.assertEqual(len(rpc_req), 0)
+        self.assertEqual(len(rpc_resp), 0)
+        self.assertEqual(len(rpc_err), 1)
+
+        self.assertEqual(type(rpc_err[0]), jsonrpc.JsonRpc_ParseError)
+
+    def test_jsonrpc_encode_empty(self):
+        data_out = jsonrpc.encode([], [])
+
+        self.assertEqual(data_out, '')
+
+
+class RemoteManager_Tests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -16,17 +263,48 @@ class Server_Tests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.manager.server_stop()
+        cls.manager._close()
         del cls.manager
+
+    def setUp(self):
+        self.client = labtronyx.RemoteManager(address='localhost')
 
     def test_startup_time(self):
         assert_less_equal(self.startup_time, 2.0, "RPC Init time must be less than 2.0 second(s)")
 
-    def test_remote_connect(self):
-        client = labtronyx.RemoteManager(address='localhost')
-
-        methods = client._getMethods()
+    def test_remote_client_connect(self):
+        methods = self.client._getMethods()
         assert_greater_equal(len(methods), 0)
 
         assert_in('getVersion', methods)
 
-        assert_equal(client.getVersion(), self.manager.getVersion())
+        assert_equal(self.client.getVersion(), self.manager.getVersion())
+
+    def test_remote_error_server_not_running(self):
+        with self.assertRaises(labtronyx.common.rpc.errors.RpcServerNotFound):
+            client = labtronyx.RemoteManager(port=6781)
+
+            client.test_connection()
+
+    def test_remote_error_invalid_path(self):
+        resp = requests.post('http://localhost:6780/invalid', data='')
+        self.assertEqual(resp.status_code, 404)
+
+    def test_remote_error_timeout(self):
+        self.client.timeout = 0.1
+
+        import time
+        self.manager.test_timeout = lambda: time.sleep(0.2)
+
+        with self.assertRaises(labtronyx.common.rpc.errors.RpcTimeout):
+            self.client.test_timeout()
+
+    def test_remote_get_resource(self):
+        self.client.refresh()
+
+        res_list = self.client.findResources()
+
+        if len(res_list) > 0:
+            for res_uuid, res in res_list.items():
+                methods = res._getMethods()
+                assert_greater_equal(len(methods), 0)

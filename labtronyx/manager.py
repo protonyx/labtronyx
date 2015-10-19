@@ -88,10 +88,16 @@ class InstrumentManager(object):
         try:
             self.server_stop()
         except:
-            self.logger.exception('Error during deconstructor')
+            pass
 
+        self._close()
+
+    def _close(self):
+        """
+        Close all resources and interfaces
+        """
         # Disable all interfaces, close all resources
-        for interface_name in self._interfaces:
+        for interface_name in self._interfaces.values(): # use values() so a copy is created
             self.disableInterface(interface_name)
 
     #===========================================================================
@@ -108,20 +114,15 @@ class InstrumentManager(object):
         if self._server is not None:
             self.server_stop()
 
-        try:
-            from werkzeug.serving import run_simple
+        from werkzeug.serving import run_simple
 
-            # Create a server app
-            self._server = common.server.create_server(self, self._server_port, logger=self.logger)
+        # Create a server app
+        self._server = common.server.create_server(self, self._server_port, logger=self.logger)
 
-            srv_start_cmd = lambda: run_simple(
-                hostname='localhost', port=self._server_port, application=self._server,
-                threaded=True, use_debugger=True
-            )
-
-        except ImportError:
-            self.logger.exception("Missing Dependency: Flask")
-            return False
+        srv_start_cmd = lambda: run_simple(
+            hostname='localhost', port=self._server_port, application=self._server,
+            threaded=True, use_debugger=True
+        )
 
         # Instantiate an rpc server
         if new_thread:
@@ -134,21 +135,6 @@ class InstrumentManager(object):
 
         else:
             srv_start_cmd()
-
-    def rpc_refresh(self):
-        """
-        Re-register all resources with the RPC server
-
-        :return: None
-        """
-        if self._server is not None:
-            for interf in self._interfaces.values():
-                try:
-                    for res_uuid, res_obj in interf.getResources.items():
-                        self._server.register_path(res_uuid, res_obj)
-
-                except:
-                    pass
 
     def server_stop(self):
         """
@@ -232,6 +218,7 @@ class InstrumentManager(object):
         :type interface_name:   str
         :return:                object
         """
+         # NON-SERIALIZABLE
         if interface_name not in self._interfaces:
             for interf_name, interf_cls in self._interfaces.items():
                 if interf_cls.info.get('interfaceName') == interface_name:
@@ -343,8 +330,6 @@ class InstrumentManager(object):
                 except:
                     self.logger.exception("Unhandled exception during refresh of interface: %s", interf.name)
                     raise
-
-        self.rpc_refresh()
             
         return True
     
@@ -385,6 +370,7 @@ class InstrumentManager(object):
         :returns:               object
         :raises:                KeyError if resource is not found
         """
+         # NON-SERIALIZABLE
         for interf in self._interfaces.values():
             for resID, res in interf.resources.items():
                 if res.uuid == res_uuid:
@@ -408,6 +394,7 @@ class InstrumentManager(object):
         :raises:                ResourceUnavailable
         :raises:                InterfaceError
         """
+         # NON-SERIALIZABLE
         int_obj = self._getInterface(interface)
 
         if int_obj is None:
@@ -419,6 +406,8 @@ class InstrumentManager(object):
 
             # Attempt to load the specified driver, but do not force
             res.loadDriver(driverName)
+
+            return res
 
         except NotImplementedError:
             raise InterfaceError('Operation not support by interface %s' % interface)
