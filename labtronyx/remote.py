@@ -15,7 +15,7 @@ class LabtronyxRpcClient(RpcClient):
             if hasattr(labtronyx.common.errors, exc_type):
                 raise getattr(labtronyx.common.errors, exc_type)(exc_msg)
             else:
-                raise exception_object
+                RpcClient._handleException(self, exception_object)
 
         else:
             RpcClient._handleException(self, exception_object)
@@ -130,6 +130,6 @@ class RemoteManager(LabtronyxRpcClient):
         """
         return self.findResources(**kwargs)
 
-    
+
 class RemoteResource(LabtronyxRpcClient):
     pass
