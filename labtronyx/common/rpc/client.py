@@ -50,7 +50,23 @@ class RpcClient(object):
         self.methods = []
     
     def _handleException(self, exception_object):
-        raise NotImplementedError()
+        """
+        Subclass hook to handle exceptions raised during RPC calls
+
+        :param exception_object: Exception object
+        """
+        # Try to decode server exceptions
+        if isinstance(exception_object, errors.RpcServerException):
+            exc_type, exc_msg = exception_object.message.split('|')
+
+            import exceptions
+            if hasattr(exceptions, exc_type):
+                raise getattr(exceptions, exc_type)(exc_msg)
+            else:
+                raise exception_object
+
+        else:
+            raise exception_object
 
     def _getMethods(self):
         resp_data = requests.get(self.uri)
@@ -100,7 +116,11 @@ class RpcClient(object):
             if isinstance(recv_error, errors.RpcMethodNotFound):
                 raise AttributeError()
             else:
-                raise recv_error
+                # Call the exception handling hook
+                try:
+                    self._handleException(recv_error)
+                except NotImplementedError:
+                    raise recv_error
 
         elif len(rpc_responses) == 1:
             resp = rpc_responses[0]

@@ -168,7 +168,8 @@ def rpc_process(uuid=None):
                 # Catch exceptions during method execution
                 except Exception as e:
                     excp = RpcServerException(id=req_id)
-                    excp.message = e.__class__.__name__
+                    # Pass the type as the message so the client can attempt to match with a client-side exception
+                    excp.message = '{}|{}'.format(e.__class__.__name__, e.message)
                     rpc_responses.append(excp)
 
                     # Log the exception on the server

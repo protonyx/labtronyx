@@ -1,14 +1,27 @@
 # System Imports
 
 # Local Imports
-try:
-    from labtronyx.common.rpc import RpcClient, RpcServerNotFound
-except ImportError:
-    raise
+from labtronyx.common.rpc import RpcClient, RpcServerException
+import labtronyx.common.errors
 
 __all__ = ['RemoteManager', 'RemoteResource']
 
-class RemoteManager(RpcClient):
+
+class LabtronyxRpcClient(RpcClient):
+    def _handleException(self, exception_object):
+        if isinstance(exception_object, RpcServerException):
+            exc_type, exc_msg = exception_object.message.split('|')
+
+            if hasattr(labtronyx.common.errors, exc_type):
+                raise getattr(labtronyx.common.errors, exc_type)(exc_msg)
+            else:
+                raise exception_object
+
+        else:
+            RpcClient._handleException(self, exception_object)
+
+
+class RemoteManager(LabtronyxRpcClient):
     """
     Labtronyx Remote Instrument Manager
     
@@ -116,9 +129,7 @@ class RemoteManager(RpcClient):
         Alias for :func:`findResources`
         """
         return self.findResources(**kwargs)
-    
-class RemoteResource(RpcClient):
-    
-    def _handleException(self, exception_object):
-        pass
 
+    
+class RemoteResource(LabtronyxRpcClient):
+    pass

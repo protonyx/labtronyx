@@ -297,3 +297,12 @@ class Remote_Tests(unittest.TestCase):
             for res_uuid, res in res_list.items():
                 methods = res._getMethods()
                 assert_greater_equal(len(methods), 0)
+
+    def test_remote_exception_handling(self):
+        def test_exception():
+            raise UserWarning('Test Message')
+
+        self.manager.test_exception = test_exception
+
+        with self.assertRaises(UserWarning):
+            self.client.test_exception()
