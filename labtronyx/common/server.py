@@ -1,3 +1,9 @@
+"""
+Labtronyx Flask app factory
+
+Call `create_server` to get a flask app
+"""
+
 __author__ = 'kkennedy'
 
 import logging

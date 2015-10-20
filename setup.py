@@ -13,13 +13,13 @@ def build_package():
 
     # Setup Metadata
     setup_meta = dict(
-        # Application name:
+        # Application name
         name='Labtronyx',
 
         # Version number
         version=full_version,
 
-        # Application author details:
+        # Application author details
         author="Kevin Kennedy",
         author_email="protonyx@users.noreply.github.com",
 
@@ -66,7 +66,7 @@ def build_package():
 
         # Dependencies
         install_requires=['enum34',
-                          'flask', 'requests',
+                          'flask', 'requests', 'pyzmq',
                           'numpy'],
 
         extras_require={

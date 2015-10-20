@@ -3,6 +3,7 @@
 import os, sys
 import socket
 import threading
+import zmq
 
 # Local Imports
 from . import logger
@@ -22,25 +23,31 @@ class InstrumentManager(object):
 
     Facilitates communication with instruments using all available interfaces.
 
-    :param rpc:         Enable RPC endpoint
-    :type rpc:          bool
-    :param rpc_port:    RPC endpoint port
-    :type rpc_port:     int
-    :param plugin_dirs: List of directories containing plugins
-    :type plugin_dirs:  list
-    :param logger:      Logger instance if you wish to override the internal instance
-    :type logger:       Logging.logger object
+    :param server:         Enable RPC endpoint
+    :type server:          bool
+    :param server_port:    RPC endpoint port
+    :type server_port:     int
+    :param plugin_dirs:    List of directories containing plugins
+    :type plugin_dirs:     list
+    :param logger:         Logger
+    :type logger:          Logging.logger object
     """
     name = 'Labtronyx'
     longname = 'Labtronyx Instrumentation Control Framework'
+
+    SERVER_PORT = 6780
+    ZMQ_PORT = 6781
     
     def __init__(self, **kwargs):
+        # Configurable instance variables
+        self.plugin_dirs = kwargs.get('plugin_dirs', [])
+        self.server_port = kwargs.get('server_port', self.SERVER_PORT)
+        self.logger = kwargs.get('logger', logger)
+
         # Initialize instance variables
         self._interfaces = {}  # Interface name -> interface object
         self._drivers = {}  # Module name -> Model info
-
-        # Configurable instance variables
-        self.logger = kwargs.get('logger', logger)
+        self._server = None
 
         # Initialize PYTHONPATH
         self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
@@ -54,7 +61,7 @@ class InstrumentManager(object):
 
         # Directories to search for plugins
         dirs = ['drivers', 'interfaces']
-        dirs_res = [os.path.join(self.rootPath, dir) for dir in dirs] + kwargs.get('plugin_dirs', [])
+        dirs_res = [os.path.join(self.rootPath, dir) for dir in dirs] + self.plugin_dirs
 
         # Categorize plugins by base class
         cat_filter = {
@@ -74,15 +81,12 @@ class InstrumentManager(object):
         for interface_name in self.plugin_manager.getPluginsByCategory('interfaces'):
             self.enableInterface(interface_name)
 
-        #
-        # Server
-        #
-        self._server = None
-        self._server_port = kwargs.get('server_port', 6780)
-
+        # Start Server
+        self._zmq_context = zmq.Context()
+        self._zmq_socket = None
         if kwargs.get('server', False):
             if not self.server_start():
-                raise RuntimeError("Unable to start Labtronyx Server")
+                raise EnvironmentError("Unable to start Labtronyx Server")
     
     def __del__(self):
         try:
@@ -106,27 +110,32 @@ class InstrumentManager(object):
 
     def server_start(self, new_thread=True):
         """
-        Start the RPC Server and being listening for remote connections.
+        Start the API/RPC Server and Event publisher. If `new_thread` is True, the server will be started in a new
+        thread in a non-blocking fashion.
+
+        If a server is already running, it will be stopped and then restarted.
 
         :returns: True if successful, False otherwise
         """
-        # Clean out old RPC server, if any exists
+        # Clean out old server, if any exists
         self.server_stop()
 
-        from werkzeug.serving import run_simple
+        # Start ZMQ Event publisher
+        self._zmq_socket = self._zmq_context.socket(zmq.PUB)
+        self._zmq_socket.bind("tcp://*:{}".format(self.ZMQ_PORT))
 
         # Create a server app
-        self._server = common.server.create_server(self, self._server_port, logger=self.logger)
+        self._server = common.server.create_server(self, self.server_port, logger=self.logger)
 
+        # Server start command
+        from werkzeug.serving import run_simple
         srv_start_cmd = lambda: run_simple(
-            hostname='localhost', port=self._server_port, application=self._server,
+            hostname='localhost', port=self.server_port, application=self._server,
             threaded=True, use_debugger=True
         )
 
-        # Instantiate an rpc server
+        # Instantiate server
         if new_thread:
-            import threading
-
             server_thread = threading.Thread(name='Labtronyx-Server', target=srv_start_cmd)
             server_thread.start()
 
@@ -139,11 +148,15 @@ class InstrumentManager(object):
         """
         Stop the Server
         """
+        if self._zmq_socket is not None:
+            self._zmq_socket.close()
+            self._zmq_socket = None
+
         if self._server is not None:
             try:
                 # Must use the REST API to shutdown
                 import urllib2
-                url = 'http://{0}:{1}/api/shutdown'.format('localhost', self._server_port)
+                url = 'http://{0}:{1}/api/shutdown'.format('localhost', self.server_port)
                 resp = urllib2.Request(url)
                 handler = urllib2.urlopen(resp)
 
@@ -153,7 +166,7 @@ class InstrumentManager(object):
                     self.logger.error('Server stop returned code: %d', handler.code)
 
                 # Signal the event
-                self._event_signal(constants.ManagerEvents.shutdown)
+                self._publishEvent(constants.ManagerEvents.shutdown)
 
                 self._server = None
 
@@ -190,18 +203,22 @@ class InstrumentManager(object):
         return socket.gethostname()
 
     #===========================================================================
-    # Event Processing and Dispatch
+    # Event Publishing
     #===========================================================================
 
-    def _event_signal(self, event, **kwargs):
+    def _publishEvent(self, event, **kwargs):
         """
         Private method called internally to signal events. Calls handlers and dispatches event signal to subscribed
         clients
 
-        :param event:   event object
-        :param kwargs:  arguments
+        :param event:   event
+        :type event:    str
         """
-        pass
+        if self._zmq_socket is not None:
+            self._zmq_socket.send_json({
+                'event': event,
+                'args': kwargs
+            })
 
     # ===========================================================================
     # Interface Operations

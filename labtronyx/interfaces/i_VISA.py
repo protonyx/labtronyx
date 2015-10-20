@@ -185,7 +185,7 @@ class i_VISA(Base_Interface):
             self._resources[resID] = new_resource
 
             # Signal new resource event
-            self.manager._event_signal(common.constants.ResourceEvents.created)
+            self.manager._publishEvent(common.constants.ResourceEvents.created)
 
             return new_resource
 

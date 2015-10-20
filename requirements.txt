@@ -2,9 +2,9 @@
 numpy
 # Optional
 enum34
-flask
-requests
+flask>=0.10
+requests>=2.8
+pyzmq>=14.7
 # Interfaces
 pyvisa>=1.8
 pyserial>=2.7
-
