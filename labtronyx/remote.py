@@ -58,9 +58,7 @@ class RemoteManager(LabtronyxRpcClient):
         
         for res_uuid, res_dict in prop.items():
             if res_uuid not in self._resources:
-                address = res_dict.get('address')
-                port = res_dict.get('port')
-                uri = "http://{0}:{1}/rpc/{2}".format(address, port, res_uuid)
+                uri = "http://{0}:{1}/rpc/{2}".format(self.host, self.port, res_uuid)
 
                 instr = RemoteResource(uri, timeout=self.timeout, logger=self.logger)
                 self._resources[res_uuid] = instr

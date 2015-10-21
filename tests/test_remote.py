@@ -293,10 +293,12 @@ class Remote_Tests(unittest.TestCase):
 
         res_list = self.client.findResources()
 
-        if len(res_list) > 0:
-            for res_uuid, res in res_list.items():
-                methods = res._getMethods()
-                assert_greater_equal(len(methods), 0)
+        if len(res_list) == 0:
+            self.skipTest("No resources on server")
+
+        for res in res_list:
+            methods = res._getMethods()
+            assert_greater_equal(len(methods), 0)
 
     def test_remote_exception_handling(self):
         def test_exception():
