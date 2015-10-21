@@ -34,9 +34,12 @@ Usage Model
 -----------
 
 Resources may implement more functions than just those which are defined in the API below. When a driver is loaded, all
-of the driver functions are linked at runtime to the resource object. They essentially become a single object and all
-functions are available between both classes with one exception: if there is a naming conflict between a method in the
-resource and a method in the driver, the resource resolve the conflict by calling the resource method.
+of the driver functions are linked at runtime to the resource object. All driver functions are accessed directly from
+the resource object as if they were a single object. Some things to note:
+
+   * If there is a naming conflict between a method in the resource and a method in the driver, the resource method
+     will be called
+   * Driver functions cannot be called if the resource is not open
 
 .. note::
 
@@ -107,9 +110,10 @@ class Base_Resource(PluginBase):
                 # Only call driver functions if the resource is open
                 if self.isOpen():
                     return getattr(self._driver, name)
+
                 else:
-                    # TODO: Raise the correct exception on failure here
-                    raise RuntimeError("Resource not open, unable to call driver function")
+                    # Driver functions are locked out if the resource is not open
+                    raise common.errors.ResourceNotOpen("Unable to call driver function on closed resource")
 
             else:
                 raise AttributeError
