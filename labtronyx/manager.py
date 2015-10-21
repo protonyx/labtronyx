@@ -212,7 +212,7 @@ class InstrumentManager(object):
         """
         if self._zmq_socket is not None:
             self._zmq_socket.send_json({
-                'event': event,
+                'event': str(event),
                 'args': kwargs
             })
 

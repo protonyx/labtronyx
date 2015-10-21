@@ -36,6 +36,8 @@ class RemoteManager(LabtronyxRpcClient):
     def __init__(self, uri=None, **kwargs):
         host = kwargs.pop('host', 'localhost')
         port = kwargs.pop('port', self.RPC_PORT)
+        if port is None:
+            port = self.RPC_PORT
 
         if uri is None:
             uri = 'http://{0}:{1}/rpc'.format(host, port)
@@ -64,7 +66,7 @@ class RemoteManager(LabtronyxRpcClient):
                 self._resources[res_uuid] = instr
         
         # Purge resources that are no longer in remote
-        for res_uuid in self._resources:
+        for res_uuid in self._resources.keys():
             if res_uuid not in prop:
                 self._resources.pop(res_uuid)
 
