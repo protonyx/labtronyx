@@ -321,8 +321,12 @@ class Remote_Tests(unittest.TestCase):
             self.time_set = time.time()
 
         # Create a subscriber
-        sub = labtronyx.common.events.EventSubscriber('localhost')
+        sub = labtronyx.common.events.EventSubscriber(logger=self.manager.logger)
+        sub.connect('localhost')
         sub.registerCallback('TEST_EVENT', lambda args: on_event(self, event))
+
+        # Give time for the client to connect
+        time.sleep(0.5)
 
         # Publish the test event
         time_publish = time.time()
@@ -341,4 +345,4 @@ class Remote_Tests(unittest.TestCase):
 
         else:
             time_delta = self.time_set - time_publish
-            self.assertLess(time_delta, 0.01)
+            self.assertLess(time_delta, 1.0)

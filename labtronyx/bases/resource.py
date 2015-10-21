@@ -323,7 +323,7 @@ class Base_Resource(PluginBase):
                 self._driver.name = driverName
 
                 # Signal the event
-                self.manager._publishEvent(common.constants.ResourceEvents.driver_load)
+                self.manager._publishEvent(common.events.ResourceEvents.driver_load)
 
                 # Call the driver open if the resource is already open
                 if self.isOpen():
@@ -362,7 +362,7 @@ class Base_Resource(PluginBase):
             self.logger.debug('Unloaded driver for resource [%s]', self._resID)
 
             # Signal the event
-            self.manager._publishEvent(common.constants.ResourceEvents.driver_unload)
+            self.manager._publishEvent(common.events.ResourceEvents.driver_unload)
                
             return True
         

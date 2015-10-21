@@ -1,6 +1,10 @@
-#
+"""
+Labtronyx Project
+
+:author: Kevin Kennedy
+"""
+
 # Logging
-#
 import logging
 
 logger = logging.getLogger('labtronyx')
@@ -41,8 +45,10 @@ except ImportError:
 from .manager import InstrumentManager
 from .remote import RemoteManager, RemoteResource
 from .lab import LabManager
+
 from . import bases
 from . import common
 from .common import errors
 
-__all__ = ['InstrumentManager']
+# Bring errors into the labtronyx namespace
+from .common.errors import *

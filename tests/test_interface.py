@@ -78,7 +78,7 @@ class VISA_Sim_Tests(unittest.TestCase):
         ret = self.i_visa.resources
         self.assertEqual(type(ret), dict)
 
-        with self.assertRaises(labtronyx.errors.ResourceUnavailable):
+        with self.assertRaises(labtronyx.ResourceUnavailable):
             self.manager.getResource('VISA', 'INVALID')
 
     def test_interface_find_instruments(self):
@@ -109,7 +109,7 @@ class VISA_Tests(unittest.TestCase):
         ret = i_visa.resources
         self.assertEqual(type(ret), dict)
 
-        with self.assertRaises(labtronyx.errors.ResourceUnavailable):
+        with self.assertRaises(labtronyx.ResourceUnavailable):
             self.manager.getResource('VISA', 'INVALID')
 
 
@@ -123,7 +123,7 @@ class Serial_Tests(unittest.TestCase):
             self.skipTest('Serial library not installed')
 
     def test_get_resources(self):
-        with self.assertRaises(labtronyx.errors.ResourceUnavailable):
+        with self.assertRaises(labtronyx.ResourceUnavailable):
             self.manager.getResource('Serial', 'INVALID')
 
     def test_open_resource(self):

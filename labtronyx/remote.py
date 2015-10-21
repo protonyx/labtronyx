@@ -1,8 +1,8 @@
 # System Imports
 
 # Local Imports
-from labtronyx.common.rpc import RpcClient, RpcServerException
-import labtronyx.common.errors
+from . import common
+from .common.rpc import RpcClient, RpcServerException
 
 __all__ = ['RemoteManager', 'RemoteResource']
 
@@ -12,8 +12,8 @@ class LabtronyxRpcClient(RpcClient):
         if isinstance(exception_object, RpcServerException):
             exc_type, exc_msg = exception_object.message.split('|')
 
-            if hasattr(labtronyx.common.errors, exc_type):
-                raise getattr(labtronyx.common.errors, exc_type)(exc_msg)
+            if hasattr(common.errors, exc_type):
+                raise getattr(common.errors, exc_type)(exc_msg)
             else:
                 RpcClient._handleException(self, exception_object)
 

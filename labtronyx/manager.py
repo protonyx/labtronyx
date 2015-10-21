@@ -7,14 +7,10 @@ import zmq
 
 # Local Imports
 from . import logger
+from . import version
 
 from . import bases
 from . import common
-
-from .common import *
-from .common.errors import *
-
-from . import version
 
 
 class InstrumentManager(object):
@@ -72,7 +68,7 @@ class InstrumentManager(object):
         }
 
         # Load Plugins
-        self.plugin_manager = plugin.PluginManager(directories=dirs_res, categories=cat_filter, logger=self.logger)
+        self.plugin_manager = common.plugin.PluginManager(directories=dirs_res, categories=cat_filter, logger=self.logger)
         self.plugin_manager.search()
         
         # Load Drivers
@@ -166,7 +162,7 @@ class InstrumentManager(object):
                     self.logger.error('Server stop returned code: %d', handler.code)
 
                 # Signal the event
-                self._publishEvent(constants.ManagerEvents.shutdown)
+                self._publishEvent(common.events.ManagerEvents.shutdown)
 
                 self._server = None
 
@@ -419,7 +415,7 @@ class InstrumentManager(object):
         int_obj = self._getInterface(interface)
 
         if int_obj is None:
-            raise InterfaceUnavailable('Interface not found')
+            raise common.errors.InterfaceUnavailable('Interface not found')
 
         try:
             # Call the interface getResource hook
@@ -431,7 +427,7 @@ class InstrumentManager(object):
             return res
 
         except NotImplementedError:
-            raise InterfaceError('Operation not support by interface %s' % interface)
+            raise common.errors.InterfaceError('Operation not support by interface %s' % interface)
     
     def findResources(self, **kwargs):
         """
