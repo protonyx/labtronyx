@@ -65,8 +65,7 @@ def build_package():
         include_package_data=True,
 
         # Dependencies
-        install_requires=['enum34',
-                          'flask', 'requests', 'pyzmq',
+        install_requires=['flask', 'requests', 'pyzmq',
                           'numpy'],
 
         extras_require={

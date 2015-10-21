@@ -1,6 +1,5 @@
 import threading
 import zmq
-from enum import Enum
 import logging
 
 
@@ -65,6 +64,16 @@ class EventSubscriber(object):
         uri = "tcp://{}:{}".format(host, self.ZMQ_PORT)
         self._socket.connect(uri)
 
+    def disconnect(self, host):
+        """
+        Disconnect from a remote event publisher
+
+        :param host:        Hostname or IP Address of remote host
+        :type host:         str
+        """
+        uri = "tcp://{}:{}".format(host, self.ZMQ_PORT)
+        self._socket.disconnect(uri)
+
     def handleMsg(self, event, args):
         """
         Default message handler. Dispatches events to registered callbacks. Overload in subclasses to change how
@@ -101,12 +110,12 @@ class EventSubscriber(object):
         self._client_alive.clear()
 
 
-class ManagerEvents(Enum):
+class ManagerEvents(object):
 
     shutdown = "MANAGER_SHUTDOWN"
 
 
-class ResourceEvents(Enum):
+class ResourceEvents(object):
 
     created = "RESOURCE_CREATED"
 

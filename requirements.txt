@@ -1,7 +1,6 @@
 # General
 numpy
 # Optional
-enum34
 flask>=0.10
 requests>=2.8
 pyzmq>=14.7
