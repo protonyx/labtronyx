@@ -1,7 +1,7 @@
 import unittest
 from nose.tools import * # PEP8 asserts
 import mock
-
+import time
 import requests
 
 import labtronyx
@@ -268,7 +268,7 @@ class Remote_Tests(unittest.TestCase):
 
     def test_remote_error_server_not_running(self):
         with self.assertRaises(labtronyx.common.rpc.errors.RpcServerNotFound):
-            client = labtronyx.RemoteManager(port=6781)
+            client = labtronyx.RemoteManager(port=6782)
 
             client.test_connection()
 
@@ -306,3 +306,37 @@ class Remote_Tests(unittest.TestCase):
 
         with self.assertRaises(UserWarning):
             self.client.test_exception()
+
+    def test_remote_event_subscribe(self):
+        import threading
+        event = threading.Event()
+        event.clear()
+
+        self.time_set = 0.0
+
+        def on_event(self, event):
+            event.set()
+            self.time_set = time.time()
+
+        # Create a subscriber
+        sub = labtronyx.common.events.EventSubscriber('localhost')
+        sub.registerCallback('TEST_EVENT', lambda args: on_event(self, event))
+
+        # Publish the test event
+        time_publish = time.time()
+        self.manager._publishEvent('TEST_EVENT')
+
+        # Wait for event to be set
+        event.wait(1.0)
+
+        # Stop the subscriber thread
+        sub.stop()
+        del sub
+
+        # Verify the event was set
+        if not event.is_set():
+            self.fail('Event not received')
+
+        else:
+            time_delta = self.time_set - time_publish
+            self.assertLess(time_delta, 0.01)

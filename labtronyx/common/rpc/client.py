@@ -2,7 +2,6 @@ import threading
 import json
 import logging
 import requests
-import errno
 
 # Local imports
 from . import errors
@@ -21,7 +20,6 @@ class RpcClient(object):
     :param uri: HTTP URI
     :type uri: str
     """
-    # TODO: Add batch processing
     
     RPC_TIMEOUT = 10.0
     RPC_MAX_PACKET_SIZE = 1048576 # 1MB
@@ -174,5 +172,3 @@ class RpcClient(object):
 
     def __getattr__(self, name):
         return self._RpcMethod(self._rpcCall, name)
-
-        #return lambda *args, **kwargs: self._rpcCall(name, *args, **kwargs)
