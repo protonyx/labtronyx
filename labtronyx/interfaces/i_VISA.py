@@ -71,7 +71,8 @@ class i_VISA(Base_Interface):
             self.resource_manager = visa.ResourceManager(self._lib)
 
             # Announce details about the VISA driver
-            debug_info = self.resource_manager.visalib.get_debug_info()
+            import pyvisa.util
+            self.logger.debug("PyVISA Debug information\n%s", pyvisa.util.get_debug_info(False))
 
             # Enumerate all of the connected instruments
             self.enumerate()
@@ -122,12 +123,7 @@ class i_VISA(Base_Interface):
 
             except visa.VisaIOError as e:
                 # Exception thrown when there are no resources
-                # TODO: only catch the specific error
-                res_list = []
-
-            except:
-                self.logger.exception("Unhandled VISA Exception while enumerating resources")
-                raise
+                self.logger.exception('VISA Exception during enumeration')
 
     def prune(self):
         """
