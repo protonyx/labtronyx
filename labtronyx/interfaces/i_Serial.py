@@ -85,7 +85,7 @@ class i_Serial(Base_Interface):
         """
         Remove any resources that are no longer found on the system
         """
-        res_list = list(serial.tools.list_ports.comports())
+        res_list = [resID for resID, _, _ in serial.tools.list_ports.comports()]
 
         to_remove = []
 
@@ -166,6 +166,16 @@ class r_Serial(Base_Resource):
         
         # Serial port is immediately opened on object creation
         self.close()
+
+    def getProperties(self):
+        def_prop = Base_Resource.getProperties(self)
+
+        def_prop.setdefault('deviceVendor', '')
+        def_prop.setdefault('deviceModel', '')
+        def_prop.setdefault('deviceSerial', '')
+        def_prop.setdefault('deviceFirmware', '')
+
+        return def_prop
         
     #===========================================================================
     # Resource State
