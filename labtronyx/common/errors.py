@@ -1,3 +1,5 @@
+from .rpc.errors import *
+
 class GeneralError(RuntimeError):
     """
     Base class for Labtronyx errors
