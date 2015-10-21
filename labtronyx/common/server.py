@@ -126,9 +126,12 @@ def rpc_process(uuid=None):
             except KeyError:
                 abort(404)
 
+        # Get lock
         import threading
-        lock = threading.Lock() # self.server.rpc_locks.get(self.path)
-        # TODO: Get a lock for each object
+        locks = current_app.config.get('RPC_LOCKS', {})
+        if uuid not in locks:
+            locks[uuid] = threading.Lock()
+        lock = locks.get(uuid)
 
         # Decode the incoming data
         rpc_requests, _, rpc_errors = engine.decode(request.data)

@@ -48,6 +48,7 @@ class InstrumentManager(object):
         self._interfaces = {}  # Interface name -> interface object
         self._drivers = {}  # Module name -> Model info
         self._server = None
+        self._zmq_socket = None # Has to be set before plugins are loaded in case they try to publish events
 
         # Initialize PYTHONPATH
         self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
@@ -83,7 +84,6 @@ class InstrumentManager(object):
 
         # Start Server
         self._zmq_context = zmq.Context()
-        self._zmq_socket = None
         if kwargs.get('server', False):
             if not self.server_start():
                 raise EnvironmentError("Unable to start Labtronyx Server")
@@ -219,6 +219,8 @@ class InstrumentManager(object):
                 'event': event,
                 'args': kwargs
             })
+
+            self.logger.debug('[EVENT] %s', event)
 
     # ===========================================================================
     # Interface Operations
