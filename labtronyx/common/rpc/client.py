@@ -17,8 +17,8 @@ class RpcClient(object):
     send and responses are received. This is a blocking operation, so only one
     request can be sent at a time.
     
-    :param uri: HTTP URI
-    :type uri: str
+    :param uri:     HTTP URI
+    :type uri:      str
     """
     
     RPC_TIMEOUT = 10.0

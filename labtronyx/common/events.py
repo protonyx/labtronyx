@@ -85,11 +85,11 @@ class EventSubscriber(object):
         :type args:         dict
         """
         if event in self._callbacks:
-            self._callbacks.get(event)(args)
+            self._callbacks.get(event)(event, args)
 
         else:
             if '' in self._callbacks:
-                self._callbacks.get('')(args)
+                self._callbacks.get('')(event, args)
 
     def registerCallback(self, event, cb_func):
         """
@@ -98,7 +98,7 @@ class EventSubscriber(object):
 
         :param event:       Event to register
         :type event:        str
-        :param cb_func:     Function which takes a single parameter `args` (dict)
+        :param cb_func:     Function which takes parameters `event` (str) and `args` (dict)
         :type cb_func:      method
         """
         self._callbacks[event] = cb_func
@@ -113,6 +113,8 @@ class EventSubscriber(object):
 class ManagerEvents(object):
 
     shutdown = "MANAGER_SHUTDOWN"
+
+    heartbeat = "MANAGER_HEARTBEAT"
 
 
 class ResourceEvents(object):

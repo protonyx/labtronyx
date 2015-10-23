@@ -25,15 +25,23 @@ class RemoteManager(LabtronyxRpcClient):
     """
     Labtronyx Remote Instrument Manager
     
-    Subclass of RpcClient
-    
-    .. note::
-       
-       InstrumentManager must be running with RPC enabled on the computer that you are trying to connect to.
+    Connects to a InstrumentManager instance running on another computer. Requires the Labtronyx server to be running
+    on the remote computer in order to connect.
+
+    Required Parameters:
+
+    :param host:        Hostname or IP Address of computer to connect to
+    :type host:         str
+
+    Optional Parameters:
+
+    :param port:        TCP port to connect to
+    :type port:         int
     """
     RPC_PORT = 6780
 
-    def __init__(self, uri=None, **kwargs):
+    def __init__(self, **kwargs):
+        uri = kwargs.get('uri')
         host = kwargs.pop('host', 'localhost')
         port = kwargs.pop('port', self.RPC_PORT)
         if port is None:
@@ -45,9 +53,6 @@ class RemoteManager(LabtronyxRpcClient):
         super(RemoteManager, self).__init__(uri, **kwargs)
 
         self._resources = {}
-        
-        #self._enableNotifications()
-        #self._registerCallback('event_new_resource', lambda: self.cb_event_new_resource())
         
     def refresh(self):
         """
