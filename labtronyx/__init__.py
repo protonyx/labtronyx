@@ -44,7 +44,6 @@ except ImportError:
 
 from .manager import InstrumentManager
 from .remote import RemoteManager, RemoteResource
-from .lab import LabManager
 from .common.events import EventSubscriber
 
 from . import bases
