@@ -2,6 +2,7 @@
 # System Imports
 import os, sys
 import socket
+import time
 import threading
 import zmq
 
@@ -33,6 +34,7 @@ class InstrumentManager(object):
 
     SERVER_PORT = 6780
     ZMQ_PORT = 6781
+    HEARTBEAT_FREQ = 60.0 # Send heartbeat once per minute
     
     def __init__(self, **kwargs):
         # Configurable instance variables
@@ -129,6 +131,19 @@ class InstrumentManager(object):
             hostname='localhost', port=self.server_port, application=self._server,
             threaded=True, use_debugger=True
         )
+
+        # Start heartbeat server
+        def heartbeat_server():
+            last_heartbeat = 0.0
+
+            while self._zmq_socket is not None:
+                if time.time() - last_heartbeat > self.HEARTBEAT_FREQ:
+                    self._publishEvent(common.events.ManagerEvents.heartbeat)
+                    last_heartbeat = time.time()
+                time.sleep(0.5) # Low sleep time to ensure we shutdown in a timely manor
+
+        heartbeat_srv = threading.Thread(name='Labtronyx-Heartbeat-Server', target=heartbeat_server)
+        heartbeat_srv.start()
 
         # Instantiate server
         if new_thread:
