@@ -16,10 +16,10 @@ VER_PATCH = 0
 RELEASE = False
 
 # Release type
-REL_TYPE = 'dev0'    # Development Release
+# REL_TYPE = 'dev0'    # Development Release
 # REL_TYPE = 'alpha0' # Alpha Release
 # REL_TYPE = 'beta0'  # Beta Release
-# REL_TYPE = 'rc1'    # Release Candidate
+REL_TYPE = 'rc1'    # Release Candidate
 
 # -----------------------------------------------------------------------
 # DO NOT CHANGE ANYTHING BELOW THIS LINE
