@@ -15,6 +15,4 @@ Drivers
    Sorensen.Source
    TDI.Load
    Tektronix.Oscilloscope
-   UPEL.AMPED
-   UPEL.BDPC
 

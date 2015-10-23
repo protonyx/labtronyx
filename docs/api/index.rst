@@ -3,14 +3,8 @@ API
 
 Labtronyx Python Library API
 
-    | :doc:`localmanager`
-    | API Documentation for the InstrumentManager class
-    |
-    | :doc:`remotemanager`
-    | Controlling an InstrumentManager on another computer
-    |
-    | :doc:`labmanager`
-    | Managing instruments connected to other computers
+    | :doc:`manager`
+    | API Documentation for the InstrumentManager and RemoteManager classes
     |
     | :doc:`resources`
     | API Documentation for general resources
@@ -27,9 +21,7 @@ Labtronyx Python Library API
 .. toctree::
    :hidden:
 
-   localmanager
-   remotemanager
-   labmanager
+   manager
    resources
    exceptions
    drivers/index

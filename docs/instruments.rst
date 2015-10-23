@@ -152,11 +152,3 @@ Tektronix
   * :class:`MSO72304DX Oscilloscope <labtronyx.drivers.Tektronix.Oscilloscope.d_5XXX7XXX>`
   * :class:`MSO72504DX Oscilloscope <labtronyx.drivers.Tektronix.Oscilloscope.d_5XXX7XXX>`
   * :class:`MSO73304DX Oscilloscope <labtronyx.drivers.Tektronix.Oscilloscope.d_5XXX7XXX>`
-
-UPEL
-----
-
-  * :class:`AMPED BMS 2.1 DC-DC Converter <labtronyx.drivers.UPEL.AMPED.m_BMS>`
-  * :class:`BDPC 1kW SRC6 DC-DC Converter <labtronyx.drivers.UPEL.BDPC.m_BDPC_SRC6>`
-  * :class:`BDPC 2kW Dual-SRC6 DC-DC Converter <labtronyx.drivers.UPEL.BDPC.m_BDPC_BR2>`
-  * :class:`BDPC 32kW DC-DC Converter <labtronyx.drivers.UPEL.BDPC.m_BDPC_BR32>`
