@@ -138,7 +138,7 @@ class InstrumentManager(object):
 
             while self._zmq_socket is not None:
                 if time.time() - last_heartbeat > self.HEARTBEAT_FREQ:
-                    self._publishEvent(common.events.ManagerEvents.heartbeat)
+                    self._publishEvent(common.events.EventCodes.manager.heartbeat)
                     last_heartbeat = time.time()
                 time.sleep(0.5) # Low sleep time to ensure we shutdown in a timely manor
 
@@ -177,7 +177,7 @@ class InstrumentManager(object):
                     self.logger.error('Server stop returned code: %d', handler.code)
 
                 # Signal the event
-                self._publishEvent(common.events.ManagerEvents.shutdown)
+                self._publishEvent(common.events.EventCodes.manager.shutdown)
 
                 self._server = None
 
@@ -217,7 +217,7 @@ class InstrumentManager(object):
     # Event Publishing
     #===========================================================================
 
-    def _publishEvent(self, event, **kwargs):
+    def _publishEvent(self, event, *args, **kwargs):
         """
         Private method called internally to signal events. Calls handlers and dispatches event signal to subscribed
         clients
@@ -227,8 +227,11 @@ class InstrumentManager(object):
         """
         if self._zmq_socket is not None:
             self._zmq_socket.send_json({
+                'labtronyx-version': self.getVersion(),
+                'hostname': self.getHostname(),
                 'event': str(event),
-                'args': kwargs
+                'args': args,
+                'params': kwargs
             })
 
             self.logger.debug('[EVENT] %s', event)
@@ -501,3 +504,11 @@ class InstrumentManager(object):
         :return: list
         """
         return self._drivers.keys()
+
+    def getDriverInfo(self):
+        """
+        Get a dictionary of loaded driver info
+
+        :return: dict
+        """
+        return {k:v.info for k, v in self._drivers.items()}

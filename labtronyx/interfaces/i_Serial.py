@@ -124,7 +124,7 @@ class i_Serial(Base_Interface):
             self._resources[resID] = new_resource
 
             # Signal new resource event
-            self.manager._publishEvent(common.events.ResourceEvents.created)
+            self.manager._publishEvent(common.events.EventCodes.resource.created, new_resource.uuid)
 
             return new_resource
 

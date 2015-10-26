@@ -45,12 +45,11 @@ class EventSubscriber(object):
                 for idx in range(in_waiting):
                     msg = self._socket.recv_json()
 
-                    event = msg.get('event')
-                    args = msg.get('args')
+                    msg_obj = EventMessage(msg)
 
-                    self.logger.debug("Received event: %s", event)
+                    self.logger.debug("Received event: %s", msg_obj.event)
 
-                    self.handleMsg(event, args)
+                    self.handleMsg(msg_obj)
 
         self._socket.close()
 
@@ -74,22 +73,20 @@ class EventSubscriber(object):
         uri = "tcp://{}:{}".format(host, self.ZMQ_PORT)
         self._socket.disconnect(uri)
 
-    def handleMsg(self, event, args):
+    def handleMsg(self, event):
         """
         Default message handler. Dispatches events to registered callbacks. Overload in subclasses to change how
         messages are dispatched.
 
         :param event:       Event
-        :type event:        str
-        :param args:        Arguments
-        :type args:         dict
+        :type event:        EventMessage object
         """
         if event in self._callbacks:
-            self._callbacks.get(event)(event, args)
+            self._callbacks.get(event)(event)
 
         else:
             if '' in self._callbacks:
-                self._callbacks.get('')(event, args)
+                self._callbacks.get('')(event)
 
     def registerCallback(self, event, cb_func):
         """
@@ -110,21 +107,31 @@ class EventSubscriber(object):
         self._client_alive.clear()
 
 
-class ManagerEvents(object):
+class EventMessage(object):
+    def __init__(self, json_msg):
+        self.version = json_msg.get('labtronyx-version')
 
-    shutdown = "MANAGER_SHUTDOWN"
+        self.hostname = json_msg.get('hostname')
+        self.event = json_msg.get('event')
 
-    heartbeat = "MANAGER_HEARTBEAT"
+        self.args = json_msg.get('args', [])
+        self.__len__ = self.args.__len__
+        self.__getitem__ = self.args.__getitem__
+
+        self.params = json_msg.get('params', {})
+        self.__getattr__ = self.params.__getattr__
 
 
-class ResourceEvents(object):
+class EventCodes:
+    class manager:
+        shutdown = "manager.shutdown"
+        heartbeat = "manager.heartbeat"
 
-    created = "RESOURCE_CREATED"
+    class resource:
+        created = "resource.created"
+        destroyed = "resource.destroyed"
+        changed = "resource.changed"
 
-    destroyed = "RESOURCE_DESTROYED"
-
-    status_changed = "RESOURCE_STATUS"
-
-    driver_load = "DRIVER_LOADED"
-
-    driver_unload = "DRIVER_UNLOADED"
+    class driver:
+        loaded = "driver.loaded"
+        unloaded = "driver.unloaded"

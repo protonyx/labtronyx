@@ -42,6 +42,9 @@ class RpcClient(object):
 
         # Encode/Decode Engine, jsonrpc is the default
         self.engine = jsonrpc
+        self._reqSession = requests.session()
+        # Disable proxy settings from the host
+        self._reqSession.trust_env = False
 
         self.rpc_lock = threading.Lock()
         
@@ -90,7 +93,7 @@ class RpcClient(object):
 
             # Send the encoded request
             with self.rpc_lock:
-                resp_data = requests.post(self.uri, data, headers=headers, timeout=self.timeout)
+                resp_data = self._reqSession.post(self.uri, data, headers=headers, timeout=self.timeout)
 
             # Check status code
             if resp_data.status_code is not 200:
