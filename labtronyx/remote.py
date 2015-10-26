@@ -46,20 +46,26 @@ class RemoteManager(LabtronyxRpcClient):
         port = kwargs.pop('port', self.RPC_PORT)
         if port is None:
             port = self.RPC_PORT
+        timeout = kwargs.pop('timeout', None)
 
         if uri is None:
             uri = 'http://{0}:{1}/rpc'.format(host, port)
 
-        super(RemoteManager, self).__init__(uri, **kwargs)
+        super(RemoteManager, self).__init__(uri, timeout=1.0, **kwargs)
 
         self._resources = {}
+        self._properties = {}
+
+        # TODO: Add something to test the connection
+        self._rpcCall('getVersion')
+        self.timeout = timeout
         
     def refresh(self):
         """
         Query the InstrumentManager resources and create RemoteResource objects
         for new resources
         """
-        self._rpcNotify('refresh')
+        self._rpcCall('refresh')
 
         prop = self._rpcCall('getProperties')
         
@@ -68,12 +74,16 @@ class RemoteManager(LabtronyxRpcClient):
                 uri = "http://{0}:{1}/rpc/{2}".format(self.host, self.port, res_uuid)
 
                 instr = RemoteResource(uri, timeout=self.timeout, logger=self.logger)
+                instr.properties = res_dict
                 self._resources[res_uuid] = instr
         
         # Purge resources that are no longer in remote
         for res_uuid in self._resources.keys():
             if res_uuid not in prop:
                 self._resources.pop(res_uuid)
+
+        # Update the cached properties
+        self._properties.update(prop)
 
     def _getResource(self, res_uuid):
         """
@@ -114,9 +124,7 @@ class RemoteManager(LabtronyxRpcClient):
         """
         matching_instruments = []
         
-        prop = self._rpcCall('getProperties')
-        
-        for uuid, res_dict in prop.items():
+        for uuid, res_dict in self._properties.items():
             match = True
             
             for key, value in kwargs.items():
@@ -137,4 +145,35 @@ class RemoteManager(LabtronyxRpcClient):
 
 
 class RemoteResource(LabtronyxRpcClient):
-    pass
+    """
+    Labtronyx Remote Resource
+    """
+
+    def __init__(self, uri, **kwargs):
+        LabtronyxRpcClient.__init__(self, uri, **kwargs)
+
+        self._properties = {}
+
+    def getProperties(self):
+        props = self._rpcCall('getProperties')
+        self._properties = props
+
+    @property
+    def properties(self):
+        return self._properties
+
+    @properties.setter
+    def properties(self, new_props):
+        self._properties = new_props
+
+    @property
+    def uuid(self):
+        return self._properties.get('uuid')
+
+    @property
+    def resID(self):
+        return self._properties.get('resourceID')
+
+    @property
+    def driver(self):
+        return self._properties.get('driver')
