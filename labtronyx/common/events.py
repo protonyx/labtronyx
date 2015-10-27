@@ -81,8 +81,10 @@ class EventSubscriber(object):
         :param event:       Event
         :type event:        EventMessage object
         """
-        if event in self._callbacks:
-            self._callbacks.get(event)(event)
+        code = event.event
+
+        if code in self._callbacks:
+            self._callbacks.get(code)(event)
 
         else:
             if '' in self._callbacks:
@@ -115,11 +117,16 @@ class EventMessage(object):
         self.event = json_msg.get('event')
 
         self.args = json_msg.get('args', [])
-        self.__len__ = self.args.__len__
-        self.__getitem__ = self.args.__getitem__
-
         self.params = json_msg.get('params', {})
-        self.__getattr__ = self.params.__getattr__
+
+    def __len__(self):
+        return len(self.args)
+
+    def __getitem__(self, item):
+        return self.args[item]
+
+    def __getattr__(self, item):
+        return self.params.get(item)
 
 
 class EventCodes:

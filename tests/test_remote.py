@@ -316,14 +316,14 @@ class Remote_Tests(unittest.TestCase):
 
         self.time_set = 0.0
 
-        def on_event(self, event, args):
+        def on_event(self, event):
             event.set()
             self.time_set = time.time()
 
         # Create a subscriber
         sub = labtronyx.common.events.EventSubscriber(logger=self.manager.logger)
         sub.connect('localhost')
-        sub.registerCallback('TEST_EVENT', lambda _, args: on_event(self, event, args))
+        sub.registerCallback('TEST_EVENT', lambda _: on_event(self, event))
 
         # Give time for the client to connect
         time.sleep(0.5)
