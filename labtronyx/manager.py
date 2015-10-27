@@ -81,6 +81,8 @@ class InstrumentManager(object):
             self.enableInterface(interface_name)
 
         # Start Server
+        self._server_alive = threading.Event()
+        self._server_alive.clear()
         self._zmq_context = zmq.Context()
         if kwargs.get('server', False):
             if not self.server_start():
@@ -118,6 +120,9 @@ class InstrumentManager(object):
         # Clean out old server, if any exists
         self.server_stop()
 
+        # Set the thread event
+        self._server_alive.set()
+
         # Start ZMQ Event publisher
         self._zmq_socket = self._zmq_context.socket(zmq.PUB)
         self._zmq_socket.bind("tcp://*:{}".format(self.ZMQ_PORT))
@@ -136,7 +141,7 @@ class InstrumentManager(object):
         def heartbeat_server():
             last_heartbeat = 0.0
 
-            while self._zmq_socket is not None:
+            while self._server_alive.isSet():
                 if time.time() - last_heartbeat > self.HEARTBEAT_FREQ:
                     self._publishEvent(common.events.EventCodes.manager.heartbeat)
                     last_heartbeat = time.time()
@@ -159,10 +164,18 @@ class InstrumentManager(object):
         """
         Stop the Server
         """
+        # Stop heartbeat server
+        self._server_alive.clear()
+
+        # Signal the event
+        self._publishEvent(common.events.EventCodes.manager.shutdown)
+
+        # Close ZMQ socket
         if self._zmq_socket is not None:
             self._zmq_socket.close()
             self._zmq_socket = None
 
+        # Shutdown server
         if self._server is not None:
             try:
                 # Must use the REST API to shutdown
@@ -175,9 +188,6 @@ class InstrumentManager(object):
                     self.logger.debug('Server stopped')
                 else:
                     self.logger.error('Server stop returned code: %d', handler.code)
-
-                # Signal the event
-                self._publishEvent(common.events.EventCodes.manager.shutdown)
 
                 self._server = None
 
