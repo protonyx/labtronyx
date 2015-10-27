@@ -19,15 +19,19 @@ class RpcClient(object):
     
     :param uri:     HTTP URI
     :type uri:      str
+    :param timeout: Request timeout (seconds)
+    :type timeout:  float
+    :param logger:  Logging instance
+    :type logger:   logging.Logger object
     """
     
-    RPC_TIMEOUT = 10.0
+    DEFAULT_TIMEOUT = 10.0
     RPC_MAX_PACKET_SIZE = 1048576 # 1MB
     
     def __init__(self, uri, **kwargs):
 
         self.uri = uri
-        self.timeout = kwargs.get('timeout', self.RPC_TIMEOUT)
+        self.timeout = kwargs.get('timeout', self.DEFAULT_TIMEOUT)
         self.logger = kwargs.get('logger', logging)
 
         # Decode URI

@@ -25,7 +25,12 @@ class Remote_Tests(unittest.TestCase):
         cls.manager.foobar = mock.MagicMock(return_value=None)
         cls.manager.raise_exception = mock.MagicMock(side_effect=RuntimeError)
 
-        cls.client = labtronyx.RemoteManager(address='localhost')
+        try:
+            cls.client = labtronyx.RemoteManager(address='localhost')
+
+        except labtronyx.RpcServerNotFound:
+            cls.tearDownClass()
+            cls.fail(cls, "Unable to locate server")
 
     @classmethod
     def tearDownClass(cls):

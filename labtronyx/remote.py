@@ -37,6 +37,10 @@ class RemoteManager(LabtronyxRpcClient):
 
     :param port:        TCP port to connect to
     :type port:         int
+    :param timeout:     Request timeout (seconds)
+    :type timeout:      float
+    :param logger:      Logging instance
+    :type logger:       logging.Logger object
     """
     RPC_PORT = 6780
 
@@ -46,20 +50,18 @@ class RemoteManager(LabtronyxRpcClient):
         port = kwargs.pop('port', self.RPC_PORT)
         if port is None:
             port = self.RPC_PORT
-        timeout = kwargs.pop('timeout', None)
 
         if uri is None:
             uri = 'http://{0}:{1}/rpc'.format(host, port)
 
-        super(RemoteManager, self).__init__(uri, timeout=1.0, **kwargs)
+        super(RemoteManager, self).__init__(uri, **kwargs)
 
         self._resources = {}
         self._properties = {}
 
-        # TODO: Add something to test the connection
-        self._rpcCall('getVersion')
-        self.timeout = timeout
-        
+        # Test the connection
+        self._version = self._rpcCall('getVersion')
+
     def refresh(self):
         """
         Query the InstrumentManager resources and create RemoteResource objects
