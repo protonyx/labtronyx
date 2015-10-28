@@ -271,7 +271,7 @@ class InstrumentManager(object):
 
         return self._interfaces.get(interface_name)
 
-    def getInterfaceList(self):
+    def listInterfaces(self):
         """
         Get a list of interfaces that are enabled
         
@@ -356,8 +356,6 @@ class InstrumentManager(object):
         """
         Refresh all interfaces and resources. Attempts enumeration on all interfaces, then calls the `refresh`
         method for all resources.
-
-        :returns: bool
         """
         for interf in self._interfaces.values():
             try:
@@ -365,18 +363,6 @@ class InstrumentManager(object):
                 interf.refresh()
             except NotImplementedError:
                 pass
-
-            # Refresh each resource
-            for resID, res in interf.resources.items():
-                try:
-                    res.refresh()
-                except NotImplementedError:
-                    pass
-                except:
-                    self.logger.exception("Unhandled exception during refresh of interface: %s", interf.name)
-                    raise
-            
-        return True
     
     def getProperties(self):
         """
@@ -507,9 +493,10 @@ class InstrumentManager(object):
     def drivers(self):
         return self._drivers
                 
-    def getDrivers(self):
+    def listDrivers(self):
         """
-        Get a list of loaded drivers
+        Get a list of loaded driver names. Returned names are the keys into the `driver` dictionary which contains the
+        driver classes.
 
         :return: list
         """

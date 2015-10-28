@@ -30,7 +30,6 @@ class Remote_Tests(unittest.TestCase):
 
         except labtronyx.RpcServerNotFound:
             cls.tearDownClass()
-            cls.fail(cls, "Unable to locate server")
 
     @classmethod
     def tearDownClass(cls):

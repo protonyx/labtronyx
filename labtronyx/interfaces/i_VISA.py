@@ -206,7 +206,7 @@ class r_VISA(Base_Resource):
     
     Wraps PyVISA Resource Class
     
-    All VISA complient devices will adhere to the IEEE 488.2 standard
+    All VISA compliant devices will adhere to the IEEE 488.2 standard
     for responses to the '*IDN?' query. The expected format is:
     <Manufacturer>,<Model>,<Serial>,<Firmware>
     
@@ -259,17 +259,6 @@ class r_VISA(Base_Resource):
         def_prop.setdefault('deviceFirmware', self.getVISA_firmware())
 
         return def_prop
-
-    def refresh(self):
-        """
-        Refresh the resource. Attempts to re-identify the instrument and load a driver. If a driver is already loaded,
-        it will not be unloaded.
-        """
-        self.identify()
-
-        if self._driver is None:
-            # Attempt to automatically load a driver
-            self.loadDriver()
 
     #===========================================================================
     # VISA Specific
