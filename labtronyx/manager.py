@@ -72,6 +72,11 @@ class InstrumentManager(object):
         # Load Plugins
         self.plugin_manager = common.plugin.PluginManager(directories=dirs_res, categories=cat_filter, logger=self.logger)
         self.plugin_manager.search()
+
+        # Validate plugins
+        for plugin_name in self.plugin_manager.getAllPlugins().keys(): # Create a copy
+            if not self.plugin_manager.validatePlugin(plugin_name):
+                self.plugin_manager.disablePlugin(plugin_name)
         
         # Load Drivers
         self._drivers = self.plugin_manager.getPluginsByCategory('drivers')
@@ -266,7 +271,7 @@ class InstrumentManager(object):
          # NON-SERIALIZABLE
         if interface_name not in self._interfaces:
             for interf_name, interf_cls in self._interfaces.items():
-                if interf_cls.info.get('interfaceName') == interface_name:
+                if interf_cls.interfaceName == interface_name:
                     interface_name = interf_name
 
         return self._interfaces.get(interface_name)
@@ -290,9 +295,8 @@ class InstrumentManager(object):
         int_cls = self.plugin_manager.getPlugin(interface_name)
 
         if int_cls is None:
-            # Search by interface name in the plugin info
             for interf_name, interf_cls in self.plugin_manager.getPluginsByCategory('interfaces').items():
-                if interf_cls.info.get('interfaceName') == interface_name:
+                if interf_cls.interfaceName == interface_name:
                     interface_name = interf_name
                     int_cls = interf_cls
                     break
@@ -508,4 +512,4 @@ class InstrumentManager(object):
 
         :return: dict
         """
-        return {k:v.info for k, v in self._drivers.items()}
+        return {driver:self.plugin_manager.getPluginInfo(driver) for driver in self.drivers}

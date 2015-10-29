@@ -14,15 +14,6 @@ import serial
 import serial.tools.list_ports
 from serial.serialutil import SerialException
 
-info = {
-    # Interface Author
-    'author':               'KKENNEDY',
-    # Interface Version
-    'version':              '1.0',
-    # Revision date
-    'date':                 '2015-10-05'
-}
-
 
 class i_Serial(Base_Interface):
     """
@@ -30,11 +21,9 @@ class i_Serial(Base_Interface):
 
     Wraps PySerial.
     """
-    
-    info = {
-        # Interface Name
-        'interfaceName':    'Serial'
-    }
+    author = 'KKENNEDY'
+    version = '1.0'
+    interfaceName = 'Serial'
 
     def open(self):
         """

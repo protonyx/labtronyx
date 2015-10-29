@@ -28,15 +28,6 @@ from labtronyx.bases import Base_Interface, Base_Resource
 from labtronyx.common.errors import *
 import labtronyx.common as common
 
-info = {
-    # Interface Author
-    'author':               'KKENNEDY',
-    # Interface Version
-    'version':              '1.0',
-    # Revision date
-    'date':                 '2015-10-05'
-}
-
 
 class i_VISA(Base_Interface):
     """
@@ -44,11 +35,9 @@ class i_VISA(Base_Interface):
     
     Wraps PyVISA. Requires a VISA driver to be installed on the system.
     """
-
-    info = {
-        # Interface Name
-        'interfaceName':    'VISA'
-    }
+    author = 'KKENNEDY'
+    version = '1.0'
+    interfaceName = 'VISA'
 
     def __init__(self, manager, **kwargs):
         # Allow the use of a custom library for testing

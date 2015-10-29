@@ -169,7 +169,7 @@ class Base_Resource(PluginBase):
         
         res_prop = {
             'uuid': self._uuid,
-            'interface': self._interface.name,
+            'interface': self._interface.interfaceName,
             'resourceID': self._resID,
             'resourceType': self.resourceType
         }

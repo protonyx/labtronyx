@@ -39,7 +39,22 @@ class InstrumentManager_Tests(unittest.TestCase):
         self.instr.refresh()
         
     def test_get_drivers(self):
-        self.assertIsNotNone(self.instr.getDrivers())
+        self.assertIsNotNone(self.instr.listDrivers())
+        self.assertIsNotNone(self.instr.getDriverInfo())
 
     def test_get_resource(self):
         self.assertRaises(labtronyx.InterfaceUnavailable, self.instr.getResource, 'INVALID', 'NOPE')
+
+    def test_plugins(self):
+        bad_plugs = self.instr.plugin_manager.getDisabledPlugins()
+
+        self.assertEqual(len(bad_plugs), 0, "1 or more plugins failed validation")
+
+        plugs = self.instr.plugin_manager.getAllPlugins()
+
+        self.assertGreater(len(plugs), 0, "No plugins were found")
+
+        test_plug = plugs.values()[0]
+
+        self.assertTrue(len(test_plug._getAttributeClasses()) > 0)
+        self.assertTrue(len(test_plug.getAttributes()) > 0)

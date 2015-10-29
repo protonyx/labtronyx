@@ -15,7 +15,7 @@ def test_interfaces():
         yield check_interface_api, interCls
 
 def check_interface_api(interfaceCls):
-    assert_true(hasattr(interfaceCls, 'info'))
+    interfaceCls._validateAttributes()
 
 
 class Interface_Integration_Tests(unittest.TestCase):

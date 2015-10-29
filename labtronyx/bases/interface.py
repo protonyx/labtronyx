@@ -1,13 +1,12 @@
 import logging
 
-from labtronyx.common.plugin import PluginBase
+from labtronyx.common.plugin import PluginBase, PluginAttribute
 
 class Base_Interface(PluginBase):
     """
     Interface Base Class
     """
-
-    info = {}
+    interfaceName = PluginAttribute(attrType=str, required=True)
     
     def __init__(self, manager, **kwargs):
         """
@@ -30,18 +29,6 @@ class Base_Interface(PluginBase):
     @property
     def resources(self):
         return self._resources
-
-    @property
-    def name(self):
-        """
-        Returns the interface name as defined by the `interfaceName` attribute in the info dictionary
-
-        :return: str
-        """
-        if hasattr(self, 'info'):
-            return self.info.get('interfaceName')
-        else:
-            return self.__class__.__name__
 
     def refresh(self):
         """
