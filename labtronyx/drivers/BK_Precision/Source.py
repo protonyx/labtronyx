@@ -30,31 +30,17 @@ Java-enabled web browser.
 from labtronyx.bases import Base_Driver
 from labtronyx.common.errors import *
 
-info = {
-    # Plugin author
-    'author':               'KKENNEDY',
-    # Plugin version
-    'version':              '1.0',
-    # Last Revision Date
-    'date':                 '2015-10-04',
-}
-
 
 class d_911X(Base_Driver):
     """
     Driver for BK Precision 9110 Series DC Power Sources
     """
-    
-    info = {
-        # Device Manufacturer
-        'deviceVendor':         'BK Precision',
-        # List of compatible device models
-        'deviceModel':          ['9115', '9116'],
-        # Device type    
-        'deviceType':           'DC Power Supply',      
-        
-        # List of compatible resource types
-        'validResourceTypes':   ['VISA']
+    author = 'KKENNEDY'
+    version = '1.0'
+    deviceType = 'DC Power Supply'
+    compatibleInterfaces = ['VISA']
+    compatibleInstruments = {
+        'BK Precision': ['9115', '9116']
     }
 
     @classmethod
@@ -70,13 +56,11 @@ class d_911X(Base_Driver):
         self.setLocalControl()
         
     def getProperties(self):
-        prop = Base_Driver.getProperties(self)
-        
-        prop['protectionModes'] = ['Voltage']
-        prop['terminalSense'] = ['Voltage', 'Current', 'Power']
-        prop['controlModes'] = ['Voltage', 'Current']
-        
-        return prop
+        return {
+            'protectionModes': ['Voltage'],
+            'terminalSense':   ['Voltage', 'Current', 'Power'],
+            'controlModes':    ['Voltage', 'Current']
+        }
     
     def setRemoteControl(self):
         """
@@ -281,12 +265,10 @@ class d_911X(Base_Driver):
         
         :returns: dict with keys ['Voltage']
         """
-        ret = {}
-        
-        ret['Voltage'] = self.instr.query('VOLT:PROT?')
-        
-        return ret
-            
+        return {
+            'Voltage': self.instr.query('VOLT:PROT?')
+        }
+
     def setProtectionDelay(self, delay):
         """
         Set the OVP (Over-Voltage Protection) circuitry delay. Can be used
@@ -332,30 +314,21 @@ class d_XLN(Base_Driver):
     """
     Driver for BK Precision XLN Series DC Sources
     """
-
-    info = {
-        # Device Manufacturer
-        'deviceVendor':         'BK Precision',
-        # List of compatible device models
-        'deviceModel':          ['XLN3640', 'XLN6024', 'XLN8018', 'XLN10014',
-                                 'XLN15010', 'XLN30052', 'XLN60026'],
-        # Device type
-        'deviceType':           'DC Power Supply',
-
-        # List of compatible resource types
-        'validResourceTypes':   ['VISA']
+    author = 'KKENNEDY'
+    version = '1.0'
+    deviceType = 'DC Power Supply'
+    compatibleInterfaces = ['VISA']
+    compatibleInstruments = {
+        'BK Precision': ['XLN3640', 'XLN6024', 'XLN8018', 'XLN10014', 'XLN15010', 'XLN30052', 'XLN60026']
     }
 
     @classmethod
     def VISA_validResource(cls, identity):
         vendors = ['B&K Precision', 'B&K PRECISION']
-        return identity[0] in vendors and identity[1] in cls.info['deviceModel']
+        return identity[0] in vendors and identity[1] in cls.compatibleInstruments['BK Precision']
 
     def open(self):
-        self.configure(baudrate=57600,
-                             bytesize=8,
-                             parity='N',
-                             stopbits=1)
+        self.configure(baudrate=57600, bytesize=8, parity='N', stopbits=1)
 
         self.setRemoteControl()
 
@@ -560,13 +533,11 @@ class d_XLN(Base_Driver):
 
         :returns: dict with keys ['Voltage', 'Current', 'Power']
         """
-        ret = {}
-
-        ret['Voltage'] = self.query('PROT:OVP:LEV?')
-        ret['Current'] = self.query('PROT:OCP:LEV?')
-        ret['Power']   = self.query('PROT:OPP:LEV?')
-
-        return ret
+        return {
+           'Voltage': self.query('PROT:OVP:LEV?'),
+           'Current': self.query('PROT:OCP:LEV?'),
+           'Power':   self.query('PROT:OPP:LEV?')
+        }
 
     def disableProtection(self):
         """
@@ -594,6 +565,3 @@ class d_XLN(Base_Driver):
         OVP/OCP or reduce the output voltage/current
         """
         self.write("PROT:CLE")
-
-
-    

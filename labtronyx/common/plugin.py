@@ -179,6 +179,13 @@ class PluginBase(object):
     author = PluginAttribute(attrType=str, required=False, defaultValue="")
     version = PluginAttribute(attrType=str, required=False, defaultValue="Unknown")
 
+    def __init__(self):
+        # Set all class-level attributes on the new instance. This is mostly to resolve default values
+        attrs = self.getAttributes()
+
+        for attr_name, attr_val in attrs.items():
+            setattr(self, attr_name, attr_val)
+
     @classmethod
     def _getAttributeClasses(cls):
         import inspect

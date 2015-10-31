@@ -84,14 +84,15 @@ interfaces.
 
 import logging
 
-from labtronyx.common.plugin import PluginBase
+from labtronyx.common.plugin import PluginBase, PluginAttribute
 
 class Base_Driver(PluginBase):
     """
     Driver Base Class
     """
-    
-    info = {}
+    deviceType = PluginAttribute(attrType=str, defaultValue="Generic")
+    compatibleInterfaces = PluginAttribute(attrType=list, required=True)
+    compatibleInstruments = PluginAttribute(attrType=dict, defaultValue={})
     
     def __init__(self, resource, **kwargs):
         """

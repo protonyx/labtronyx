@@ -68,14 +68,13 @@ import logging
 
 import labtronyx.common as common
 
-from labtronyx.common.plugin import PluginBase
+from labtronyx.common.plugin import PluginBase, PluginAttribute
 
 class Base_Resource(PluginBase):
     """
     Resource Base Class
     """
-
-    resourceType = "Generic"
+    resourceType = PluginAttribute(attrType=str, required=True)
     
     def __init__(self, manager, interface, resID, **kwargs):
         """
@@ -101,7 +100,7 @@ class Base_Resource(PluginBase):
     def __del__(self):
         try:
             self.close()
-        except Exception as e:
+        except:
             pass
         
     def __getattr__(self, name):
@@ -164,8 +163,7 @@ class Base_Resource(PluginBase):
             driver_prop = self._driver.getProperties()
 
             driver_prop.setdefault('driver', self._driver.name)
-            driver_prop.setdefault('deviceType', self._driver.info.get('deviceType', ''))
-            driver_prop.setdefault('deviceVendor', self._driver.info.get('deviceVendor', ''))
+            driver_prop.setdefault('deviceType', self._driver.deviceType)
         
         res_prop = {
             'uuid': self._uuid,
@@ -188,7 +186,7 @@ class Base_Resource(PluginBase):
 
         :return:    bool
         """
-        raise NotImplementedError
+        return False
         
     def open(self):
         """
@@ -237,7 +235,7 @@ class Base_Resource(PluginBase):
         :param force:           Force load driver by unloading existing driver
         :returns:               True if successful, False otherwise
         """
-        if self._driver is not None and not force:
+        if self.hasDriver() and not force:
             return False
 
         if force:
@@ -261,9 +259,6 @@ class Base_Resource(PluginBase):
                 if self.isOpen():
                     self._driver.open()
 
-            except NotImplementedError:
-                pass
-
             except:
                 self.logger.exception('Exception during driver load: %s', driverName)
 
@@ -282,8 +277,6 @@ class Base_Resource(PluginBase):
         if self._driver is not None:
             try:
                 self._driver.close()
-            except NotImplementedError:
-                pass
             except:
                 self.logger.exception('Exception while unloading driver')
             finally:

@@ -24,31 +24,17 @@ directions given in the
 from labtronyx.bases import Base_Driver
 from labtronyx.common.errors import *
 
-info = {
-    # Plugin author
-    'author':               'KKENNEDY',
-    # Plugin version
-    'version':              '1.0',
-    # Last Revision Date
-    'date':                 '2015-10-04',
-}
-
 
 class d_2831(Base_Driver):
     """
     Driver for BK Precision 2831E and 5491B Digital Multimeters
     """
-    
-    info = {
-        # Device Manufacturer
-        'deviceVendor':         'BK Precision',
-        # List of compatible device models
-        'deviceModel':          ['2831E', '5491B', '5492B', '5492BGPIB'],
-        # Device type    
-        'deviceType':           'Multimeter',      
-        
-        # List of compatible resource types
-        'validResourceTypes':   ['VISA']
+    author = 'KKENNEDY'
+    version = '1.0'
+    deviceType = 'Multimeter'
+    compatibleInterfaces = ['VISA']
+    compatibleInstruments = {
+        'BK Precision': ['2831E', '5491B', '5492B', '5492BGPIB']
     }
 
     @classmethod
@@ -82,7 +68,7 @@ class d_2831(Base_Driver):
     def getProperties(self):
         return {
             # Override VISA defaults, this device is different
-            'deviceVendor':        self.info.get('deviceVendor'),
+            'deviceVendor':        'BK Precision',
             'deviceModel':         self.getIdentity()[0].split(' ')[0],
 
             'validModes':          self.modes,

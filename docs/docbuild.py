@@ -106,7 +106,7 @@ def build_driver_docs():
     # Create RST file for each driver module
     toc_list = []
     for driver_name, driver_cls in plugin_manager.getPluginsByCategory('drivers').items():
-        driver_info = driver_cls.info
+        driver_info = plugin_manager.getPluginInfo(driver_name)
         driver_class = driver_name.split('.')[-1]
         driver_module = driver_name[:-1*(len(driver_class)+1)]
 
@@ -155,7 +155,7 @@ def build_interface_docs():
     # Create RST file for each interface module
     toc_list = []
     for plugin_name, plugin_cls in plugin_manager.getPluginsByCategory('interfaces').items():
-        plugin_info = plugin_cls.info
+        plugin_info = plugin_manager.getPluginInfo(plugin_name)
         plugin_class = plugin_name.split('.')[-1]
         plugin_module = plugin_name[:-1*(len(plugin_class)+1)]
 
@@ -193,13 +193,14 @@ def build_instrument_docs():
 
     # Iterate drivers and scrape instrument information
     for driver_name, driver_cls in plugin_manager.getPluginsByCategory('drivers').items():
-        driver_info = driver_cls.info
+        driver_info = plugin_manager.getPluginInfo(driver_name)
         # driver_class = driver_name.split('.')[-1]
         # driver_module = driver_name[:-1*(len(driver_class)+1)]
 
-        for driver_model in driver_info.get('deviceModel'):
-            entry = (driver_info.get('deviceVendor'), driver_info.get('deviceType'), driver_model, driver_name)
-            instruments.append(entry)
+        for driver_vendor, vendor_models in driver_info.get('compatibleInstruments').items():
+            for driver_model in vendor_models:
+                entry = (driver_vendor, driver_info.get('deviceType'), driver_model, driver_name)
+                instruments.append(entry)
 
     # Sort by model, vendor
     instruments.sort(key=lambda x: x[2])

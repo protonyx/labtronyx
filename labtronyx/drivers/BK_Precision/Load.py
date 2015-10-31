@@ -28,15 +28,6 @@ BK Precision provides a device for communicating with this class of DC load:
 from labtronyx.bases import Base_Driver
 from labtronyx.common.errors import *
 
-info = {
-    # Plugin author
-    'author':               'KKENNEDY',
-    # Plugin version
-    'version':              '1.0',
-    # Last Revision Date
-    'date':                 '2015-10-04',
-}
-
 
 class d_85XX(Base_Driver):
     """
@@ -44,19 +35,12 @@ class d_85XX(Base_Driver):
 
     Adapted from reference code provided by BK Precision
     """
-    
-    info = {
-        # Device Manufacturer
-        'deviceVendor':         'BK Precision',
-        # List of compatible device models
-        'deviceModel':          ['8500', '8502', 
-                                 '8510', '8512', '8514', '8518', 
-                                 '8520', '8522', '8524', '8526'],
-        # Device type    
-        'deviceType':           'DC Electronic Load',      
-        
-        # List of compatible resource types
-        'validResourceTypes':   ['Serial']
+    author = 'KKENNEDY'
+    version = '1.0'
+    deviceType = 'DC Electronic Load'
+    compatibleInterfaces = ['Serial']
+    compatibleInstruments = {
+        'BK Precision': ['8500', '8502', '8510', '8512', '8514', '8518', '8520', '8522', '8524', '8526']
     }
 
     address = 0
@@ -110,7 +94,7 @@ class d_85XX(Base_Driver):
         
     def getProperties(self):
         return {
-            'deviceVendor':        self.info.get('deviceVendor'),
+            'deviceVendor':        'BK Precision',
             'deviceModel':         self.prodInfo[0],
             'deviceSerial':        self.prodInfo[1],
             'deviceFirmware':      self.prodInfo[2],

@@ -286,6 +286,8 @@ class r_Serial(Base_Resource):
     # ===========================================================================
     # Data Transmission
     # ===========================================================================
+
+
     
     def write(self, data):
         """
@@ -427,6 +429,16 @@ class r_Serial(Base_Resource):
         """
         try:
             return self.instrument.inWaiting()
+
+        except serial.SerialException as e:
+            raise InterfaceError(e.strerror)
+
+    def flush(self):
+        """
+        Flush the output buffer
+        """
+        try:
+            return self.instrument.flush()
 
         except serial.SerialException as e:
             raise InterfaceError(e.strerror)

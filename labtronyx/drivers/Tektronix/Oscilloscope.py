@@ -34,51 +34,37 @@ import sys
 
 import numpy
 
-info = {
-    # Plugin author
-    'author':               'KKENNEDY',
-    # Plugin version
-    'version':              '1.0',
-    # Last Revision Date
-    'date':                 '2015-10-04',
-}
-
 
 class d_2XXX(Base_Driver):
     """
     Driver for Tektronix 2000 Series Oscilloscopes
     """
-    
-    info = {
-        # Device Manufacturer
-        'deviceVendor':         'Tektronix',
-        # List of compatible device models
-        'deviceModel':          [# MSO2XXX
-                                 "MSO2002B", "MSO2004B", "MSO2012", "MSO2012B",
-                                 "MSO2014", "MSO2014B", "MSO2022B",
-                                 "MSO2024", "MSO2024B",
-                                 # DPO2XXX
-                                 "DPO2002B", "DPO2004B", "DPO2012", "DPO2012B",
-                                 "DPO2014", "DPO2014B", "DPO2022B", 
-                                 "DPO2024", "DPO2024B"],
-        # Device type    
-        'deviceType':           'Oscilloscope',      
-        
-        # List of compatible resource types
-        'validResourceTypes':   ['VISA']
+    author = 'KKENNEDY'
+    version = '1.0'
+    deviceType = 'Oscilloscope'
+    compatibleInterfaces = ['VISA']
+    compatibleInstruments = {
+        'Tektronix': [# MSO2XXX
+                     "MSO2002B", "MSO2004B", "MSO2012", "MSO2012B",
+                     "MSO2014", "MSO2014B", "MSO2022B",
+                     "MSO2024", "MSO2024B",
+                     # DPO2XXX
+                     "DPO2002B", "DPO2004B", "DPO2012", "DPO2012B",
+                     "DPO2014", "DPO2014B", "DPO2022B",
+                     "DPO2024", "DPO2024B"]
     }
 
     @classmethod
     def VISA_validResource(cls, identity):
         vendors = ['TEKTRONIX', 'Tektronix']
-        return identity[0] in vendors and identity[1] in cls.info['deviceModel']
+        return identity[0] in vendors and identity[1] in cls.compatibleInstruments['Tektronix']
 
     validWaveforms = ['CH1', 'CH2', 'CH3', 'CH4', 'REF1', 'REF2', 'MATH1']
     
     def open(self):
         # Configure scope
-        self.instr.write('HEADER OFF')
-        resp = str(self.instr.query('HEADER?')).strip()
+        self.write('HEADER OFF')
+        resp = str(self.query('HEADER?')).strip()
         if resp != '0':
             time.sleep(1.0)
             self.write('HEADER OFF')
@@ -149,13 +135,6 @@ class d_2XXX(Base_Driver):
         """
         Get the waveform data from the oscilloscope
         """
-        try:
-            import numpy
-            
-        except:
-            self.logger.error('Unable to getWaveform without numpy library')
-            return False
-        
         if not self.waitUntilReady(1.0, 10.0):
             self.logger.error("Unable to export waveform while oscilloscope is busy")
             return False
@@ -247,38 +226,33 @@ class d_5XXX7XXX(Base_Driver):
     """
     Driver for Tektronix 5000, 7000 and 70000 Series Oscilloscopes
     """
-
-    info = {
-        # Device Manufacturer
-        'deviceVendor':         'Tektronix',
-        # List of compatible device models
-        'deviceModel':          [# DPO5XXX Series
-                                "DPO5054", "DPO5054B", "DPO5104", "DPO5104B",
-                                "DPO5204", "DPO5204B", "DPO5034", "DPO5034B",
-                                # MSO5XXX Series
-                                "MSO5034", "MSO5034B", "MSO5054", "MSO5054B",
-                                "MSO5104", "MSO5104B", "MSO5204", "MSO5204B",
-                                # DPO7XXX Series
-                                "DPO7054C", "DPO7104C", "DPO7254C", "DPO7354C",
-                                # DPO7XXXX Series
-                                "DPO70404C", "DPO70604C", "DPO70804C",
-                                "DPO71254C", "DPO71604C", "DPO72004C",
-                                "DPO72304DX", "DPO72504DX", "DPO73304DX",
-                                # MSO7XXXX Series
-                                "MSO70404C", "MSO70604C", "MSO70804C",
-                                "MSO71254C", "MSO71604C", "MSO72004C",
-                                "MSO72304DX", "MSO72504DX", "MSO73304DX"],
-        # Device type
-        'deviceType':           'Oscilloscope',
-
-        # List of compatible resource types
-        'validResourceTypes':   ['VISA']
+    author = 'KKENNEDY'
+    version = '1.0'
+    deviceType = 'Oscilloscope'
+    compatibleInterfaces = ['VISA']
+    compatibleInstruments = {
+        'Tektronix': [# DPO5XXX Series
+                    "DPO5054", "DPO5054B", "DPO5104", "DPO5104B",
+                    "DPO5204", "DPO5204B", "DPO5034", "DPO5034B",
+                    # MSO5XXX Series
+                    "MSO5034", "MSO5034B", "MSO5054", "MSO5054B",
+                    "MSO5104", "MSO5104B", "MSO5204", "MSO5204B",
+                    # DPO7XXX Series
+                    "DPO7054C", "DPO7104C", "DPO7254C", "DPO7354C",
+                    # DPO7XXXX Series
+                    "DPO70404C", "DPO70604C", "DPO70804C",
+                    "DPO71254C", "DPO71604C", "DPO72004C",
+                    "DPO72304DX", "DPO72504DX", "DPO73304DX",
+                    # MSO7XXXX Series
+                    "MSO70404C", "MSO70604C", "MSO70804C",
+                    "MSO71254C", "MSO71604C", "MSO72004C",
+                    "MSO72304DX", "MSO72504DX", "MSO73304DX"]
     }
 
     @classmethod
     def VISA_validResource(cls, identity):
         vendors = ['TEKTRONIX', 'Tektronix']
-        return identity[0] in vendors and identity[1] in cls.info['deviceModel']
+        return identity[0] in vendors and identity[1] in cls.compatibleInstruments['Tektronix']
 
     # Device Specific constants
     validWaveforms = ['CH1', 'CH2', 'CH3', 'CH4', 'REF1', 'REF2', 'REF3', 'REF4', 'MATH1', 'MATH2', 'MATH3', 'MATH4']
@@ -305,11 +279,6 @@ class d_5XXX7XXX(Base_Driver):
         Resets the Oscilloscope to the Default Setup
         """
         self.write("FAC")
-
-        # TODO: Make this not a static delay
-        time.sleep(1.0)
-
-        self._onLoad()
 
     def getEnabledWaveforms(self):
         """
@@ -731,7 +700,6 @@ class d_5XXX7XXX(Base_Driver):
 
         return True
 
-
     def getSearchMarks(self, **kwargs):
         """
         Get a list of all mark locations. Manually iterates through all marks
@@ -855,13 +823,6 @@ class d_5XXX7XXX(Base_Driver):
 
         :returns: bool - True if successful, False otherwise
         """
-        try:
-            import numpy
-
-        except:
-            self.logger.error('Unable to getWaveform without numpy library')
-            return False
-
         if not self.waitUntilReady(1.0, 10.0):
             self.logger.error("Unable to export waveform while oscilloscope is busy")
             return False

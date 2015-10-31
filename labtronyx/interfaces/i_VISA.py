@@ -242,10 +242,10 @@ class r_VISA(Base_Resource):
 
         def_prop = Base_Resource.getProperties(self)
 
-        def_prop.setdefault('deviceVendor', self.getVISA_vendor())
-        def_prop.setdefault('deviceModel', self.getVISA_model())
-        def_prop.setdefault('deviceSerial', self.getVISA_serial())
-        def_prop.setdefault('deviceFirmware', self.getVISA_firmware())
+        def_prop.setdefault('deviceVendor', self._VISA_vendor)
+        def_prop.setdefault('deviceModel', self._VISA_model)
+        def_prop.setdefault('deviceSerial', self._VISA_serial)
+        def_prop.setdefault('deviceFirmware', self._VISA_firmware)
 
         return def_prop
 
@@ -266,6 +266,10 @@ class r_VISA(Base_Resource):
 
         # Reset identity data
         self._identity = []
+        self._VISA_vendor = ''
+        self._VISA_model = ''
+        self._VISA_firmware = ''
+        self._VISA_serial = ''
 
         try:
             # Set the timeout really low
@@ -279,39 +283,23 @@ class r_VISA(Base_Resource):
             # Set the timeout back to what it was
             self.instrument.timeout = start_timeout
 
+            if len(self._identity) >= 4:
+                self._VISA_vendor = self._identity[0].strip()
+                self._VISA_model = self._identity[1].strip()
+                self._VISA_serial = self._identity[2].strip()
+                self._VISA_firmware = self._identity[3].strip()
+
+                self.logger.debug("Identified VISA Resource: %s", self.resID)
+                self.logger.debug("Vendor: %s", self._VISA_vendor)
+                self.logger.debug("Model:  %s", self._VISA_model)
+                self.logger.debug("Serial: %s", self._VISA_serial)
+                self.logger.debug("F/W:    %s", self._VISA_firmware)
+
+            else:
+                self.logger.debug("VISA Resource responded to identify in non-standard way: %s", scpi_ident)
+
         except InterfaceTimeout:
             self.logger.debug("Resource did not respond to Identify: %s", self.resID)
-
-
-        if len(self._identity) >= 4:
-            self.VID = self._identity[0].strip()
-            self.PID = self._identity[1].strip()
-            self.serial = self._identity[2].strip()
-            self.firmware = self._identity[3].strip()
-
-            self.logger.debug("Identified VISA Resource: %s", self.resID)
-            self.logger.debug("Vendor: %s", self.VID)
-            self.logger.debug("Model:  %s", self.PID)
-            self.logger.debug("Serial: %s", self.serial)
-            self.logger.debug("F/W:    %s", self.firmware)
-
-        elif len(self._identity) == 3:
-            # Resource provided a non-standard identify response
-            # Screw you BK Precision for making me do this
-            self.VID = ''
-            self.PID, self.firmware, self.serial = self._identity
-
-            self.logger.debug("Identified VISA Resource: %s", self.resID)
-            self.logger.debug("Model:  %s", self.PID)
-            self.logger.debug("Serial: %s", self.serial)
-            self.logger.debug("F/W:    %s", self.firmware)
-
-        else:
-            self.VID = ''
-            self.PID = ''
-            self.firmware = ''
-            self.serial = ''
-
 
         # Attempt to find a suitable driver if one is not already loaded
         if self._driver is None:
@@ -328,31 +316,10 @@ class r_VISA(Base_Resource):
 
         :return:    str
         """
+        if not self.ready:
+            self.identify()
+
         return self._identity
-
-    def getVISA_vendor(self):
-        if not self.ready:
-            self.identify()
-
-        return self.VID
-
-    def getVISA_model(self):
-        if not self.ready:
-            self.identify()
-
-        return self.PID
-
-    def getVISA_serial(self):
-        if not self.ready:
-            self.identify()
-
-        return self.serial
-
-    def getVISA_firmware(self):
-        if not self.ready:
-            self.identify()
-
-        return self.firmware
 
     def getStatusByte(self):
         """
@@ -446,20 +413,21 @@ class r_VISA(Base_Resource):
         :returns: True if successful, False otherwise
         """
         if self.isOpen():
-            try:
-                # Close the driver
-                Base_Resource.close(self)
+            # Close the driver
+            Base_Resource.close(self)
 
+            try:
                 # Close the instrument
                 self.instrument.close()
 
-                return True
+            except visa.VisaIOError as e:
+                self.logger.exception('VISA resource error on close: %s', e.abbreviation)
+                return False
 
             except:
                 return False
 
-        else:
-            return True
+        return True
 
     def lock(self):
         self.instrument.lock()
@@ -603,6 +571,8 @@ class r_VISA(Base_Resource):
         try:
             self.instrument.write_raw(data)
 
+            self.logger.debug("VISA Write: %s", data)
+
         except visa.InvalidSession:
             raise ResourceNotOpen()
 
@@ -699,8 +669,7 @@ class r_VISA(Base_Resource):
         try:
             ret_data = self.instrument.query(data)
 
-            self.logger.debug("VISA Write: %s", data)
-            self.logger.debug("VISA Read: %s", ret_data)
+            self.logger.debug("VISA Query: %s returned: %s", data, ret_data)
 
             return ret_data
 

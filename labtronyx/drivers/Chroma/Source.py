@@ -11,40 +11,26 @@ uses this driver.
 from labtronyx.bases import Base_Driver
 from labtronyx.common.errors import *
 
-info = {
-    # Plugin author
-    'author':               'KKENNEDY',
-    # Plugin version
-    'version':              '1.0',
-    # Last Revision Date
-    'date':                 '2015-10-04',
-}
-
 
 class d_620XXP(Base_Driver):
     """
     Driver for Chroma 6200P Series DC Power Supplies
     """
-    
-    info = {
-        # Device Manufacturer
-        'deviceVendor':         'Chroma',
-        # List of compatible device models
-        'deviceModel':          ['62006P-30-80', '62006P-100-25', '62006P-300-8',
-                                 '62012P-40-120', '62012P-80-60', '62012P-100-50', '62012P-600-8',
-                                 '62024P-40-120', '62024P-80-60', '62024P-100-50', '62024P-600-8',
-                                 '62052P-100-100'],
-        # Device type    
-        'deviceType':           'DC Power Supply',      
-        
-        # List of compatible resource types
-        'validResourceTypes':   ['VISA']
+    author = 'KKENNEDY'
+    version = '1.0'
+    deviceType = 'DC Power Supply'
+    compatibleInterfaces = ['VISA']
+    compatibleInstruments = {
+        'Chroma': ['62006P-30-80', '62006P-100-25', '62006P-300-8',
+                   '62012P-40-120', '62012P-80-60', '62012P-100-50', '62012P-600-8',
+                   '62024P-40-120', '62024P-80-60', '62024P-100-50', '62024P-600-8',
+                   '62052P-100-100']
     }
 
     @classmethod
     def VISA_validResource(cls, identity):
         vendors = ['CHROMA', 'Chroma']
-        return identity[0] in vendors and identity[1] in cls.info['deviceModel']
+        return identity[0] in vendors and identity[1] in cls.compatibleInstruments['Chroma']
     
     def open(self):
         self.setRemoteControl()
@@ -332,11 +318,8 @@ class d_620XXP(Base_Driver):
         
         :returns: dict with keys ['Voltage', 'Current', 'Power']
         """
-        ret = {}
-        
-        ret['Voltage'] = self.query('SOUR:VOLT:PROT:HIGH?')
-        ret['Current'] = self.query('SOUR:CURR:PROT:HIGH?')
-        ret['Power']   = self.query('SOUR:POW:PROT:HIGH?')
-        
-        return ret
-    
+        return {
+            'Voltage': self.query('SOUR:VOLT:PROT:HIGH?'),
+            'Current': self.query('SOUR:CURR:PROT:HIGH?'),
+            'Power':   self.query('SOUR:POW:PROT:HIGH?')
+        }

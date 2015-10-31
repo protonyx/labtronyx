@@ -65,25 +65,50 @@ class VISA_Sim_Tests(unittest.TestCase):
 
         cls.i_visa = cls.manager._getInterface('VISA')
 
-    def test_interface_visa_enumerate_time(self):
+    def setUp(self):
+        if self.manager._getInterface('VISA') is None:
+            self.fail("VISA Interface not enabled")
+
+    def test_enumerate_time(self):
         import time
         start = time.clock()
         self.i_visa.enumerate()
         self.assertLessEqual(time.clock() - start, 1.0, "VISA refresh time must be less than 1.0 second(s)")
 
-    def test_interface_open(self):
-        self.assertIsNotNone(self.manager._getInterface('VISA'))
-
-    def test_interface_visa_get_resources(self):
-        ret = self.i_visa.resources
-        self.assertEqual(type(ret), dict)
-
-        with self.assertRaises(labtronyx.ResourceUnavailable):
-            self.manager.getResource('VISA', 'INVALID')
-
-    def test_interface_find_instruments(self):
+    def test_get_resources(self):
         dev_list = self.manager.findInstruments(interface='VISA')
         self.assertGreater(len(dev_list), 0)
+
+    def test_resource_api(self):
+        dev_list = self.manager.findInstruments(interface='VISA')
+        test_res = dev_list[0]
+
+        # API Checks
+        self.check_get_configuration(test_res)
+        self.check_ops_error_while_closed(test_res)
+
+    def check_get_configuration(self, test_res):
+        # Get configuration
+        res_conf = test_res.getConfiguration()
+        self.assertEqual(type(res_conf), dict)
+
+    def check_ops_error_while_closed(self, test_res):
+        test_res.close()
+
+        with self.assertRaises(labtronyx.ResourceNotOpen):
+            test_res.write('BAD')
+
+        with self.assertRaises(labtronyx.ResourceNotOpen):
+            test_res.write_raw('BAD')
+
+        with self.assertRaises(labtronyx.ResourceNotOpen):
+            test_res.read()
+
+        with self.assertRaises(labtronyx.ResourceNotOpen):
+            test_res.read_raw(1)
+
+        with self.assertRaises(labtronyx.ResourceNotOpen):
+            test_res.query('BAD?')
 
 
 class VISA_Tests(unittest.TestCase):
@@ -95,7 +120,7 @@ class VISA_Tests(unittest.TestCase):
         if self.manager._getInterface('VISA') is None:
             self.skipTest('VISA library not installed')
 
-    def test_interface_visa_enumerate_time(self):
+    def test_enumerate_time(self):
         import time
         start = time.clock()
 
@@ -104,11 +129,12 @@ class VISA_Tests(unittest.TestCase):
 
         self.assertLessEqual(time.clock() - start, 1.0, "VISA refresh time must be less than 1.0 second(s)")
 
-    def test_interface_visa_get_resources(self):
+    def test_get_resources(self):
         i_visa = self.manager._getInterface('VISA')
         ret = i_visa.resources
         self.assertEqual(type(ret), dict)
 
+    def test_get_resource_invalid(self):
         with self.assertRaises(labtronyx.ResourceUnavailable):
             self.manager.getResource('VISA', 'INVALID')
 

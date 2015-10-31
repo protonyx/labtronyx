@@ -16,17 +16,13 @@ def test_driver_api():
         yield check_driver_api, driverCls
 
 def check_driver_api(driverCls):
-    assert_true(hasattr(driverCls, 'info'))
-    assert_in('deviceVendor', driverCls.info)
-    assert_in('deviceModel', driverCls.info)
-    assert_in('deviceType', driverCls.info)
-    assert_in('validResourceTypes', driverCls.info)
+    driverCls._validateAttributes()
 
     # Regression test
     assert_false(hasattr(driverCls, '_onLoad'))
     assert_false(hasattr(driverCls, '_onUnload'))
 
-    if 'VISA' in driverCls.info['validResourceTypes']:
+    if 'VISA' in driverCls.compatibleInterfaces:
         check_visa_api(driverCls)
 
 def check_visa_api(driverCls):
