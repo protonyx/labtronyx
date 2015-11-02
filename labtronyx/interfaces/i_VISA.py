@@ -24,12 +24,12 @@ import pyvisa
 import pyvisa.constants
 import pyvisa.resources
 
-from labtronyx.bases import Base_Interface, Base_Resource
+from labtronyx.bases import InterfaceBase, ResourceBase
 from labtronyx.common.errors import *
 import labtronyx.common as common
 
 
-class i_VISA(Base_Interface):
+class i_VISA(InterfaceBase):
     """
     VISA Controller
     
@@ -43,7 +43,7 @@ class i_VISA(Base_Interface):
         # Allow the use of a custom library for testing
         self._lib = kwargs.pop('library', '')
 
-        Base_Interface.__init__(self, manager, **kwargs)
+        InterfaceBase.__init__(self, manager, **kwargs)
 
         # Instance variables
         self.resource_manager = None
@@ -189,7 +189,7 @@ class i_VISA(Base_Interface):
                 raise InterfaceError('VISA Interface Error: %s' % e.abbreviation)
 
 
-class r_VISA(Base_Resource):
+class r_VISA(ResourceBase):
     """
     VISA Resource Base class.
     
@@ -220,7 +220,7 @@ class r_VISA(Base_Resource):
     def __init__(self, manager, interface, resID, **kwargs):
         self.instrument = kwargs.pop('visa_instrument')
 
-        Base_Resource.__init__(self, manager, interface, resID, **kwargs)
+        ResourceBase.__init__(self, manager, interface, resID, **kwargs)
 
         # Instance variables
         self._identity = []
@@ -240,7 +240,7 @@ class r_VISA(Base_Resource):
         if not self.ready:
             self.identify()
 
-        def_prop = Base_Resource.getProperties(self)
+        def_prop = ResourceBase.getProperties(self)
 
         def_prop.setdefault('deviceVendor', self._VISA_vendor)
         def_prop.setdefault('deviceModel', self._VISA_model)
@@ -391,7 +391,7 @@ class r_VISA(Base_Resource):
             raise ResourceUnavailable('VISA resource error: %s' % e.abbreviation)
 
         # Call the base resource open function to call driver hooks
-        return Base_Resource.open(self)
+        return ResourceBase.open(self)
 
     def isOpen(self):
         """
@@ -414,7 +414,7 @@ class r_VISA(Base_Resource):
         """
         if self.isOpen():
             # Close the driver
-            Base_Resource.close(self)
+            ResourceBase.close(self)
 
             try:
                 # Close the instrument
@@ -720,7 +720,7 @@ class r_VISA(Base_Resource):
 
             # Only auto-load a model if a single model was found
             if len(validModels) == 1:
-                Base_Resource.loadDriver(self, validModels[0], force)
+                ResourceBase.loadDriver(self, validModels[0], force)
 
                 return True
 
@@ -728,4 +728,4 @@ class r_VISA(Base_Resource):
             return False
 
         else:
-            return Base_Resource.loadDriver(self, driverName, force)
+            return ResourceBase.loadDriver(self, driverName, force)

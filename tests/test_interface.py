@@ -5,7 +5,7 @@ import os
 import mock
 
 import labtronyx
-from labtronyx.bases import Base_Resource, Base_Interface
+from labtronyx.bases import ResourceBase, InterfaceBase
 
 def test_interfaces():
     # Nose test generator to run unittests on discovered interfaces
@@ -24,12 +24,12 @@ class Interface_Integration_Tests(unittest.TestCase):
         self.manager = labtronyx.InstrumentManager()
 
         # Create a fake interface, imitating the interface API
-        self.interf = Base_Interface(manager=self.manager)
+        self.interf = InterfaceBase(manager=self.manager)
         self.interf.open = mock.Mock(return_value=True)
         self.interf.close = mock.Mock(return_value=True)
 
         # Create a fake resource
-        self.res = Base_Resource(manager=self.manager,
+        self.res = ResourceBase(manager=self.manager,
                                  interface=self.interf,
                                  resID='DEBUG')
         self.res.getProperties = mock.Mock(return_value=dict(resourceID= 'DEBUG'))

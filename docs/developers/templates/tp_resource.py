@@ -1,7 +1,7 @@
-from labtronyx.bases import Base_Interface, Base_Resource
+from labtronyx.bases import InterfaceBase, ResourceBase
 from labtronyx.common.errors import *
 
-class r_Template(Base_Resource):
+class r_Template(ResourceBase):
     type = ""
         
     #===========================================================================

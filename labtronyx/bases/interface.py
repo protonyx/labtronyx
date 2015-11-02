@@ -1,8 +1,6 @@
-import logging
-
 from labtronyx.common.plugin import PluginBase, PluginAttribute
 
-class Base_Interface(PluginBase):
+class InterfaceBase(PluginBase):
     """
     Interface Base Class
     """
@@ -10,14 +8,14 @@ class Base_Interface(PluginBase):
     
     def __init__(self, manager, **kwargs):
         """
-        :param manager: Reference to the InstrumentManager instance
-        :type manager: InstrumentManager object
+        :param manager:        Reference to the InstrumentManager instance
+        :type manager:         InstrumentManager object
+        :param logger:         Logger
+        :type logger:          Logging.logger object
         """
-        PluginBase.__init__(self)
+        PluginBase.__init__(self, **kwargs)
 
         self._manager = manager
-
-        self.logger = kwargs.get('logger', logging)
 
         # Instance variables
         self._resources = {}

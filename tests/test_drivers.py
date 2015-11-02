@@ -4,7 +4,7 @@ from nose.tools import * # PEP8 asserts
 import mock
 
 import labtronyx
-from labtronyx.bases import Base_Resource, Base_Driver, Base_Interface
+from labtronyx.bases import ResourceBase, DriverBase, InterfaceBase
 
 def setUpModule():
     global instr
@@ -33,13 +33,13 @@ def test_driver_integration():
     instr = labtronyx.InstrumentManager()
 
     # Create a fake interface, imitating the interface API
-    interf = Base_Interface(manager=instr)
+    interf = InterfaceBase(manager=instr)
     interf.info = dict(instrumentName='Debug')
     interf.open = mock.Mock(return_value=True)
     interf.close = mock.Mock(return_value=True)
 
     # Create a fake resource
-    res = Base_Resource(manager=instr,
+    res = ResourceBase(manager=instr,
                              interface=interf,
                              resID='DEBUG')
     res.open = mock.Mock(return_value=True)
@@ -47,7 +47,7 @@ def test_driver_integration():
     res.close = mock.Mock(return_value=True)
 
     # Create a fake driver
-    driver = Base_Driver
+    driver = DriverBase
     driver.open = mock.Mock(return_value=True)
     driver.close = mock.Mock(return_value=True)
 

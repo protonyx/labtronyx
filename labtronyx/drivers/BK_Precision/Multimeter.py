@@ -21,11 +21,11 @@ with a baudrate of `9600`. This must be done on the instrument following the
 directions given in the
 `user's guide <https://bkpmedia.s3.amazonaws.com/downloads/manuals/en-us/2831Eand5491B_manual.pdf>`_
 """
-from labtronyx.bases import Base_Driver
+from labtronyx.bases import DriverBase
 from labtronyx.common.errors import *
 
 
-class d_2831(Base_Driver):
+class d_2831(DriverBase):
     """
     Driver for BK Precision 2831E and 5491B Digital Multimeters
     """

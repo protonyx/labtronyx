@@ -2,7 +2,7 @@
 The Serial interface is a wrapper for the pyserial library.
 """
 
-from labtronyx.bases import Base_Interface, Base_Resource
+from labtronyx.bases import InterfaceBase, ResourceBase
 from labtronyx.common.errors import *
 import labtronyx.common as common
 
@@ -15,7 +15,7 @@ import serial.tools.list_ports
 from serial.serialutil import SerialException
 
 
-class i_Serial(Base_Interface):
+class i_Serial(InterfaceBase):
     """
     Serial Interface
 
@@ -130,7 +130,7 @@ class i_Serial(Base_Interface):
                 raise InterfaceError('Serial interface error [%i]: %s' % (e.errno, e.message))
 
         
-class r_Serial(Base_Resource):
+class r_Serial(ResourceBase):
     """
     Serial Resource Base class.
 
@@ -147,7 +147,7 @@ class r_Serial(Base_Resource):
     termination = CR + LF
         
     def __init__(self, manager, interface, resID, **kwargs):
-        Base_Resource.__init__(self, manager, interface, resID, **kwargs)
+        ResourceBase.__init__(self, manager, interface, resID, **kwargs)
         
         self.instrument = kwargs.get('instrument')
         
@@ -157,7 +157,7 @@ class r_Serial(Base_Resource):
         self.close()
 
     def getProperties(self):
-        def_prop = Base_Resource.getProperties(self)
+        def_prop = ResourceBase.getProperties(self)
 
         def_prop.setdefault('deviceVendor', '')
         def_prop.setdefault('deviceModel', '')
@@ -189,7 +189,7 @@ class r_Serial(Base_Resource):
             raise ResourceUnavailable('Serial resource error: %s' % e.strerror)
 
         # Call the base resource open function to call driver hooks
-        return Base_Resource.open(self)
+        return ResourceBase.open(self)
         
     def isOpen(self):
         """
@@ -210,7 +210,7 @@ class r_Serial(Base_Resource):
         """
         if self.isOpen():
             # Close the driver
-            Base_Resource.close(self)
+            ResourceBase.close(self)
 
             try:
                 # Close the instrument

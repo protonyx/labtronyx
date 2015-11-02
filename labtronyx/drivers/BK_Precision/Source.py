@@ -27,11 +27,11 @@ Java-enabled web browser.
 
    The default admin password is 123456
 """
-from labtronyx.bases import Base_Driver
+from labtronyx.bases import DriverBase
 from labtronyx.common.errors import *
 
 
-class d_911X(Base_Driver):
+class d_911X(DriverBase):
     """
     Driver for BK Precision 9110 Series DC Power Sources
     """
@@ -310,7 +310,7 @@ class d_911X(Base_Driver):
         self.instr.write("PROT:CLE")
 
 
-class d_XLN(Base_Driver):
+class d_XLN(DriverBase):
     """
     Driver for BK Precision XLN Series DC Sources
     """

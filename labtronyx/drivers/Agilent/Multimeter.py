@@ -3,14 +3,14 @@
 
 
 """
-from labtronyx.bases import Base_Driver
+from labtronyx.bases import DriverBase
 from labtronyx.common.errors import *
 
 import time
 import re
 
 
-class d_3441XA(Base_Driver):
+class d_3441XA(DriverBase):
     """
     Driver for Agilent 34410A and 34411A Digital Multimeter
     """

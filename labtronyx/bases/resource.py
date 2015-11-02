@@ -2,11 +2,11 @@
 Getting started
 ---------------
 
-All resources are subclasses of the :class:`labtronyx.bases.Base_Resource` class. Creating a resource is simple::
+All resources are subclasses of the :class:`labtronyx.bases.ResourceBase` class. Creating a resource is simple::
 
-    from labtronyx.bases import Base_Interface, Base_Resource
+    from labtronyx.bases import ResourceBase
 
-    class RESOURCE_CLASS_NAME(Base_Resource):
+    class RESOURCE_CLASS_NAME(ResourceBase):
         pass
 
 Errors
@@ -62,15 +62,12 @@ the resource object as if they were a single object. Some things to note:
    method returns a non-serializable data type, the method should be prefixed with an underscore ('_') to mark it as a
    protected function that cannot be accessed remotely.
 """
-
 import uuid
-import logging
 
 import labtronyx.common as common
-
 from labtronyx.common.plugin import PluginBase, PluginAttribute
 
-class Base_Resource(PluginBase):
+class ResourceBase(PluginBase):
     """
     Resource Base Class
     """
@@ -84,14 +81,14 @@ class Base_Resource(PluginBase):
         :type interface:        object
         :param resID:           Resource Identifier
         :type resID:            str
+        :param logger:          Logger
+        :type logger:           Logging.logger object
         """
-        PluginBase.__init__(self)
+        PluginBase.__init__(self, **kwargs)
 
         self._manager = manager
         self._interface = interface
         self._resID = resID
-
-        self.logger = kwargs.get('logger', logging)
 
         # Instance variables
         self._uuid = str(uuid.uuid4())

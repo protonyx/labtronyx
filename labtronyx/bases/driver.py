@@ -2,11 +2,11 @@
 Getting Started
 ---------------
 
-All Drivers extend :class:`labtronyx.bases.Base_Driver`::
+All Drivers extend :class:`labtronyx.bases.DriverBase`::
 
-    from labtronyx.bases import Base_Driver
+    from labtronyx.bases import DriverBase
 
-    class DRIVER_CLASS_NAME(Base_Driver):
+    class DRIVER_CLASS_NAME(DriverBase):
         pass
 
 Properties
@@ -81,12 +81,9 @@ interfaces.
    method returns a non-serializable data type, the method should be prefixed with an underscore ('_') to mark it as a
    protected function that cannot be accessed remotely.
 """
-
-import logging
-
 from labtronyx.common.plugin import PluginBase, PluginAttribute
 
-class Base_Driver(PluginBase):
+class DriverBase(PluginBase):
     """
     Driver Base Class
     """
@@ -96,14 +93,14 @@ class Base_Driver(PluginBase):
     
     def __init__(self, resource, **kwargs):
         """
-        :param resource: Reference to the associated resource instance
-        :type resource: object
+        :param resource:       Reference to the associated resource instance
+        :type resource:        object
+        :param logger:         Logger
+        :type logger:          Logging.logger object
         """
-        PluginBase.__init__(self)
+        PluginBase.__init__(self, **kwargs)
 
         self._resource = resource
-
-        self.logger = kwargs.get('logger', logging)
 
         # Instance variables
         self._name = self.__class__.__module__ + '.' + self.__class__.__name__
