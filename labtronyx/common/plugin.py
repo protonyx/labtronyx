@@ -6,6 +6,7 @@ Yapsy was developed by Thibauld Nion (Copyright (c) 2007-2015, Thibauld Nion)
 """
 import os
 import logging
+import inspect
 
 
 class PluginManager(object):
@@ -36,37 +37,51 @@ class PluginManager(object):
         self._plugins = {}
         self._plugins_disabled = {}
 
+    @property
+    def directories(self):
+        return self._directories
+
+    @property
+    def categories(self):
+        return self._category_filter
+
     def search(self):
+        """
+        Search all directories for plugins
+        """
         for dir in self._directories:
             if type(dir) == str:
                 self.locatePlugins(dir)
             else:
                 self.locatePlugins(dir)
 
-    def locatePlugins(self, package, recursive=True, prefix=''):
+    def locatePlugins(self, plugin_path, recursive=True, prefix=''):
         """
-        Get all valid plugins in a python package.
+        Locate and catalog all valid plugins within a python package at the given path.
 
-        :param package: path to plugin package
-        :return:
+        :param plugin_path:     Path to search
+        :type plugin_path:      str
+        :param recursive:       Scan subpackages recursively
+        :type recursive:        bool
         """
         # Use pkgutil to support compiled and frozen modules as plugins
         import pkgutil
 
         # Ensure absolute path
-        package = os.path.abspath(package)
+        plugin_path = os.path.abspath(plugin_path)
 
         # Create an iterator
-        pkg_iter = pkgutil.iter_modules(path=[package])
+        pkg_iter = pkgutil.iter_modules(path=[plugin_path])
 
         for importer, modname, ispkg in pkg_iter:
             if ispkg and recursive:
-                self.locatePlugins(os.path.join(package, modname), recursive, prefix=prefix+modname+'.')
+                self.locatePlugins(os.path.join(plugin_path, modname), recursive, prefix=prefix+modname+'.')
 
             else:
-                # Attempt plugin import
                 try:
                     plugin_name = prefix + modname
+
+                    # Attempt plugin import
                     mod_imp = importer.find_module(modname)
                     mod = mod_imp.load_module(modname)
 
@@ -88,6 +103,11 @@ class PluginManager(object):
                     self.logger.exception("Exception during plugin load")
 
     def getAllPlugins(self):
+        """
+        Get a dictionary of all catalogued plugins
+
+        :rtype: dict
+        """
         return self._plugins
 
     def disablePlugin(self, plugin_name):
@@ -98,26 +118,56 @@ class PluginManager(object):
         return self._plugins_disabled
 
     def getPluginsByCategory(self, category):
-        # Rather than maintain another dictionary of categorized plugins, lets just do a search now
-        category_bc = self._category_filter.get(category)
+        """
+        Get a dictionary of catalogued plugins that subclass a category type
 
-        if category_bc is None:
+        :param category:    Plugin category
+        :type category:     str
+        :rtype:             dict
+        """
+        category_base_class = self._category_filter.get(category)
+
+        if category_base_class is None:
             return {}
 
-        return {k:v for k,v in self._plugins.items() if issubclass(v, category_bc)}
+        # Rather than maintain another dictionary of categorized plugins, lets just do a search now
+        return {k:v for k,v in self._plugins.items() if issubclass(v, category_base_class)}
 
     def getPlugin(self, plugin_name):
+        """
+        Get the plugin class for a plugin with a given name
+
+        :param plugin_name: Plugin name
+        :type plugin_name:  str
+        :rtype:             class
+        """
         return self._plugins.get(plugin_name)
 
     def getPluginInfo(self, plugin_name):
+        """
+        Get the plugin attributes for a plugin with a given name
+
+        :param plugin_name: Plugin name
+        :type plugin_name:  str
+        :rtype:             dict
+        """
         return self._plugins.get(plugin_name).getAttributes()
+
+    def getPluginPath(self, plugin_name):
+        """
+        Get the file system path for the plugin with a given name
+
+        :param plugin_name: Plugin name
+        :type plugin_name:  str
+        :returns:           Path to plugin module
+        :rtype:             str
+        """
+        plugin_cls = self._plugins.get(plugin_name)
+        return inspect.getfile(plugin_cls)
 
     def isValidPlugin(self, plugin_cls):
         """
-        Valid plugins:
-
-           - Have a class that extends BasePlugin
-           - Defines all required attributes
+        Used by `extractPlugins` to check if a class contained within a module is a usable plugin.
 
         :param plugin_cls:  Plugin class
         :type plugin_cls:   class
@@ -134,17 +184,21 @@ class PluginManager(object):
 
     def extractPlugins(self, plugin_module):
         """
-        Extract all valid plugins from a module. Returns a dict of plugins in the
+        Extract all valid plugins from a module. Returns a dictionary of plugins found in the module
 
         :param plugin_module:   Python Module
         :type plugin_module:    module
         :return:                dict
         """
-        import inspect
-
         return {name:cls for name,cls in inspect.getmembers(plugin_module, inspect.isclass) if self.isValidPlugin(cls)}
 
     def validatePlugin(self, plugin_name):
+        """
+        Validate plugin attributes for a plugin with the given name
+
+        :param plugin_name:     Plugin name
+        :type plugin_name:      str
+        """
         plugin_cls = self.getPlugin(plugin_name)
 
         try:
@@ -179,12 +233,14 @@ class PluginBase(object):
     author = PluginAttribute(attrType=str, required=False, defaultValue="")
     version = PluginAttribute(attrType=str, required=False, defaultValue="Unknown")
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         # Set all class-level attributes on the new instance. This is mostly to resolve default values
         attrs = self.getAttributes()
 
         for attr_name, attr_val in attrs.items():
             setattr(self, attr_name, attr_val)
+
+        self.logger = kwargs.get('logger', logging)
 
     @classmethod
     def _getAttributeClasses(cls):
