@@ -1,15 +1,71 @@
 import threading
 import zmq
 import logging
+import time
+import socket
+
+
+class EventPublisher(object):
+    """
+    Event broadcast class for Labtronyx
+
+    :param port:        Port to bind for event notifications
+    :type port:         int
+    """
+    HEARTBEAT_FREQ = 60.0 # Send heartbeat once per minute
+
+    def __init__(self, port):
+        self.port = port
+        self._zmq_context = zmq.Context()
+        self._zmq_socket = None
+
+        self._server_alive = threading.Event()
+        self._server_alive.clear()
+
+    def start(self):
+        # Start ZMQ Event publisher
+        self._zmq_socket = self._zmq_context.socket(zmq.PUB)
+        self._zmq_socket.bind("tcp://*:{}".format(self.port))
+
+        # Start heartbeat server
+        heartbeat_srv = threading.Thread(name='Labtronyx-Heartbeat-Server', target=self._heartbeat_server)
+        heartbeat_srv.start()
+
+    def _heartbeat_server(self):
+        last_heartbeat = 0.0
+        self._server_alive.set()
+
+        while self._server_alive.isSet():
+            if time.time() - last_heartbeat > self.HEARTBEAT_FREQ:
+                self.publishEvent(EventCodes.manager.heartbeat)
+                last_heartbeat = time.time()
+            time.sleep(0.5) # Low sleep time to ensure we shutdown in a timely manor
+
+    def stop(self):
+        # Stop heartbeat server
+        self._server_alive.clear()
+
+        # Close ZMQ socket
+        if self._zmq_socket is not None:
+            self._zmq_socket.close()
+            self._zmq_socket = None
+
+    def publishEvent(self, event, *args, **kwargs):
+        if self._zmq_socket is not None:
+            self._zmq_socket.send_json({
+                'labtronyx-event': '1.0',
+                'hostname': socket.gethostname(),
+                'event': str(event),
+                'args': args,
+                'params': kwargs
+            })
 
 
 class EventSubscriber(object):
     """
     Subscribe to events broadcast by the Labtronyx Server. Run asynchronously in a separate thread to prevent the need
-    for continuous polling.
-
-    :param host:        Hostname or IP address to connect to
-    :type host:         str
+    for continuous polling. Use `connect` to listen for notifications from a remote server. A single `EventSubscriber`
+    object can listen to multiple servers.
     """
     ZMQ_PORT = 6781
     POLL_TIME = 100 # ms

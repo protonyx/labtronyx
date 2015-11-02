@@ -1,10 +1,8 @@
 
 # System Imports
-import os, sys
+import os
 import socket
-import time
 import threading
-import zmq
 
 # Local Imports
 from . import logger
@@ -34,7 +32,6 @@ class InstrumentManager(object):
 
     SERVER_PORT = 6780
     ZMQ_PORT = 6781
-    HEARTBEAT_FREQ = 60.0 # Send heartbeat once per minute
     
     def __init__(self, **kwargs):
         # Configurable instance variables
@@ -45,13 +42,11 @@ class InstrumentManager(object):
         # Initialize instance variables
         self._interfaces = {}  # Interface name -> interface object
         self._drivers = {}  # Module name -> Model info
-        self._server = None
-        self._zmq_socket = None # Has to be set before plugins are loaded in case they try to publish events
 
         # Initialize PYTHONPATH
         self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
-        if self.rootPath not in sys.path:
-            sys.path.append(self.rootPath)
+        # if self.rootPath not in sys.path:
+        #     sys.path.append(self.rootPath)
 
         # Announce Version
         self.logger.info(self.longname)
@@ -64,9 +59,10 @@ class InstrumentManager(object):
 
         # Categorize plugins by base class
         cat_filter = {
-            "drivers": bases.Base_Driver,
-            "interfaces": bases.Base_Interface,
-            "resources": bases.Base_Resource
+            "drivers":      bases.DriverBase,
+            "interfaces":   bases.InterfaceBase,
+            "resources":    bases.ResourceBase,
+            "scripts":      bases.ScriptBase
         }
 
         # Load Plugins
@@ -86,9 +82,6 @@ class InstrumentManager(object):
             self.enableInterface(interface_name)
 
         # Start Server
-        self._server_alive = threading.Event()
-        self._server_alive.clear()
-        self._zmq_context = zmq.Context()
         if kwargs.get('server', False):
             if not self.server_start():
                 raise EnvironmentError("Unable to start Labtronyx Server")
@@ -125,35 +118,19 @@ class InstrumentManager(object):
         # Clean out old server, if any exists
         self.server_stop()
 
-        # Set the thread event
-        self._server_alive.set()
-
-        # Start ZMQ Event publisher
-        self._zmq_socket = self._zmq_context.socket(zmq.PUB)
-        self._zmq_socket.bind("tcp://*:{}".format(self.ZMQ_PORT))
+        # Start event publisher
+        self._server_events = common.events.EventPublisher(self.ZMQ_PORT)
+        self._server_events.start()
 
         # Create a server app
-        self._server = common.server.create_server(self, self.server_port, logger=self.logger)
+        self._server_app = common.server.create_server(self, self.server_port, logger=self.logger)
 
         # Server start command
         from werkzeug.serving import run_simple
         srv_start_cmd = lambda: run_simple(
-            hostname='localhost', port=self.server_port, application=self._server,
+            hostname='localhost', port=self.server_port, application=self._server_app,
             threaded=True, use_debugger=True
         )
-
-        # Start heartbeat server
-        def heartbeat_server():
-            last_heartbeat = 0.0
-
-            while self._server_alive.isSet():
-                if time.time() - last_heartbeat > self.HEARTBEAT_FREQ:
-                    self._publishEvent(common.events.EventCodes.manager.heartbeat)
-                    last_heartbeat = time.time()
-                time.sleep(0.5) # Low sleep time to ensure we shutdown in a timely manor
-
-        heartbeat_srv = threading.Thread(name='Labtronyx-Heartbeat-Server', target=heartbeat_server)
-        heartbeat_srv.start()
 
         # Instantiate server
         if new_thread:
@@ -163,25 +140,32 @@ class InstrumentManager(object):
             return True
 
         else:
-            srv_start_cmd()
+            try:
+                srv_start_cmd()
+
+            except:
+                self.server_stop()
 
     def server_stop(self):
         """
         Stop the Server
         """
-        # Stop heartbeat server
-        self._server_alive.clear()
-
         # Signal the event
         self._publishEvent(common.events.EventCodes.manager.shutdown)
 
-        # Close ZMQ socket
-        if self._zmq_socket is not None:
-            self._zmq_socket.close()
-            self._zmq_socket = None
+        # Stop the event publisher
+        if hasattr(self, '_server_events'):
+            try:
+                self._server_events.stop()
+
+            except:
+                pass
+
+            finally:
+                del self._server_events
 
         # Shutdown server
-        if self._server is not None:
+        if hasattr(self, '_server_app'):
             try:
                 # Must use the REST API to shutdown
                 import urllib2
@@ -194,10 +178,11 @@ class InstrumentManager(object):
                 else:
                     self.logger.error('Server stop returned code: %d', handler.code)
 
-                self._server = None
-
             except:
                 pass
+
+            finally:
+                del self._server_app
 
     @property
     def version(self):
@@ -240,16 +225,8 @@ class InstrumentManager(object):
         :param event:   event
         :type event:    str
         """
-        if self._zmq_socket is not None:
-            self._zmq_socket.send_json({
-                'labtronyx-version': self.getVersion(),
-                'hostname': self.getHostname(),
-                'event': str(event),
-                'args': args,
-                'params': kwargs
-            })
-
-            self.logger.debug('[EVENT] %s', event)
+        if hasattr(self, '_server_events'):
+            self._server_events.publishEvent(event, *args, **kwargs)
 
     # ===========================================================================
     # Interface Operations
@@ -286,7 +263,7 @@ class InstrumentManager(object):
     
     def enableInterface(self, interface_name, **kwargs):
         """
-        Enable an interface for use. Requires a class object that extends Base_Interface, NOT a class instance.
+        Enable an interface for use. Requires a class object that extends InterfaceBase, NOT a class instance.
 
         :param interface_name:  Interface plugin name
         :type interface_name:   str
