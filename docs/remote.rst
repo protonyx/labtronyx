@@ -8,18 +8,17 @@ The Labtronyx InstrumentManager runs locally by default. To run Labtronyx in ser
 
    python labtronyx/cli.py
 
-To start the server programmatically, use::
-
-   import labtronyx
-   
-   manager = labtronyx.InstrumentManager()
-   manager.rpc_start()
-
 If Labtronyx was properly installed, it can be called from the command line::
 
    labtronyx
 
-While in server mode, the terminal window will be unavailable for use, but all logging events will be displayed there.
+For both of these methods, the server will block input and the terminal window will be unavailable for use, but all
+logging events will be displayed there. If you need to start the server in a new thread, it must be done in code::
+
+   import labtronyx
+
+   manager = labtronyx.InstrumentManager()
+   manager.server_start()
 
 Connect to a Remote InstrumentManager
 -------------------------------------
@@ -34,4 +33,5 @@ Connections to remote InstrumentManager instances is done using the
 Error Handling
 --------------
 
-All errors that occur using a Remote InstrumentManager are raised as RuntimeError objects.
+Exceptions raised from a remote InstrumentManager are handled in the same way they would be handled locally. See
+:doc:`api/exceptions` for more details on Labtronyx exception classes.

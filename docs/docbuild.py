@@ -30,27 +30,8 @@ sys.path.append(rootPath)
 import labtronyx
 
 # Load Plugins
-
-# Directories to search
-dirs = ['drivers', 'interfaces']
-dirs_res = map(lambda dir: os.path.join(libPath, dir), dirs)
-
-# Categorize plugins by base class
-cat_filter = {
-    "drivers": labtronyx.bases.Base_Driver,
-    "interfaces": labtronyx.bases.Base_Interface,
-    "resources": labtronyx.bases.Base_Resource
-}
-
-plugin_manager = labtronyx.common.plugin.PluginManager(directories=dirs_res, categories=cat_filter)
-plugin_manager.search()
-
-# # Load Drivers
-# self._drivers = plugin_manager.getPluginsByCategory('drivers')
-#
-# # Load Interfaces
-# for interface_name in self.plugin_manager.getPluginsByCategory('interfaces'):
-#     self.enableInterface(interface_name)
+instr = labtronyx.InstrumentManager()
+plugin_manager = instr.plugin_manager
 
 #===============================================================================
 # Build Documentation
@@ -117,9 +98,7 @@ def build_driver_docs():
             toc_list.append(driver_module)
         
         print "Processing: {0}".format(driver_module)
-        driver_filename = os.path.join(driver_folder, str(driver_module) + ".rst")
-
-        with file(driver_filename, "w+") as f:
+        with file(os.path.join(driver_folder, str(driver_module) + ".rst"), "w+") as f:
             f.write(gen_sphinx_header(driver_module, "="))
             
             f.write(gen_sphinx_automodule(DRIVER_SRC + '.' + driver_module, ['members']))
