@@ -44,7 +44,25 @@ scripts in a large repository. It is recommended that scripts define these attri
 Declaring Required Resources
 ----------------------------
 
-Labtronyx is fundamentally an automation framework for instruments. Scripts that subclass provide an easy way to declare
+Labtronyx is fundamentally an automation framework for instruments. Scripts that subclass :class:`ScriptBase` can
+declare required resources by defining class attributes that instantiate the :class:`RequiredResource` class.::
+
+   import labtronyx
+   from labtronyx.script import ScriptBase, RequiredResource
+
+   class TestScript(ScriptBase):
+       dut = RequiredResource(deviceVendor='Test', deviceModel='Widget')
+
+       def run(self):
+           pass
+
+   if __name__ == '__main__':
+       labtronyx.runScriptMain()
+
+The parameters for :class:`RequiredResource` are the same parameters passed to `InstrumentManager.FindResources`. These
+parameters are used to locate viable resources using the keys returned by the resource method `getProperties`. If the
+parameters are not specific enough, it could match more than one resource and cause the script to FAIL because each
+required resource must match exactly one resource known to :class:`InstrumentManager`
 
 Running Scripts
 ---------------
@@ -72,9 +90,11 @@ condition, the `stop` parameter of the `fail` method can be set, or any of the c
 `assert` will cause execution to halt when the condition is met.
 """
 import time
+import inspect
 
 import labtronyx
 from labtronyx.common.plugin import PluginBase, PluginAttribute
+
 
 class ScriptBase(PluginBase):
     """
@@ -106,6 +126,24 @@ class ScriptBase(PluginBase):
         self._scriptResult = ScriptResult()
         self._status = ''
         self._progress = 0
+
+    def _getRequiredResources(self):
+        return {attr_name:attr_cls for attr_name, attr_cls in inspect.getmembers(self, inspect.isclass) if issubclass(attr_cls, RequiredResource)}
+
+    def _resolveResources(self):
+        """
+        Iterate through all RequiredResource attributes and replace instance attributes with resource objects.
+        """
+        for attr_name, attr_cls in self._getRequiredResources():
+            matching_res = self._manager.findResources(**attr_cls.search_params)
+
+            if len(matching_res) == 1:
+                setattr(self, matching_res)
+
+            else:
+                return False
+
+        return True
 
     def start(self):
         """
@@ -147,9 +185,8 @@ class ScriptBase(PluginBase):
 
         :rtype:     bool
         """
-        pass
+        return self._resolveResources()
 
-    # Script hooks
     def setUp(self):
         """
         Method called to prepare the script for execution. `setUp` is called immediately before `run`. Any exception
@@ -228,8 +265,6 @@ class ScriptBase(PluginBase):
         """
         pass
 
-    # Script functions
-
     def setProgress(self, new_progress):
         """
         Optional method to set the progress of a script. Useful for external tools or GUIs to report script progress.
@@ -248,8 +283,6 @@ class ScriptBase(PluginBase):
         :type new_status:       str
         """
         self._status = str(new_status)
-
-    # Convenience functions
 
     def fail(self, reason, stop=False):
         """
@@ -348,8 +381,12 @@ class ScriptBase(PluginBase):
 
 
 class RequiredResource(object):
-    def requireResource(self, name, attr_name, **kwargs):
-        pass
+    def __init__(self, **kwargs):
+        self._kwargs = kwargs
+
+    @property
+    def search_params(self):
+        return self._kwargs
 
 
 class ScriptResult(object):
