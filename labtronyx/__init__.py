@@ -3,17 +3,39 @@ Labtronyx Project
 
 :author: Kevin Kennedy
 """
+import logging
+import sys
 
 # Logging
-import logging
-
 logger = logging.getLogger('labtronyx')
 
-log_format = '%(asctime)s %(levelname)-8s %(module)s - %(message)s'
+log_format = '%(asctime)s %(levelname)-8s %(name)s - %(message)s'
 log_formatter = logging.Formatter(log_format)
 
 # Default handler
 logger.addHandler(logging.NullHandler())
+
+# Import modules into the labtronyx namespace
+try:
+    from . import version
+    __version__ = version.ver_sem
+except ImportError:
+    version = object()
+    __version__ = "unknown"
+
+from .manager import InstrumentManager
+from .remote import RemoteManager, RemoteResource
+from .common.events import EventSubscriber
+
+from . import bases
+from . import common
+from .common import errors
+
+from .common.errors import *
+
+# Import script plugin module into Labtronyx namespace for convenience
+from .bases import script
+
 
 def logConsole(logLevel=logging.DEBUG):
     logger.setLevel(logLevel)
@@ -33,22 +55,29 @@ def logFile(filename, backupCount=1, logLevel=logging.DEBUG):
     logger.addHandler(fh)
     fh.doRollover()
 
+def runScriptMain():
+    """
+    Bootstrap helper function to run a Labtronyx Script when invoked interactively from the command line. An
+    InstrumentManager object is automatically instantiated and passed to a valid script object is located in the
+    `__main__` module.
+    """
+    logConsole(logging.INFO)
+    manager = InstrumentManager()
 
-# Import modules into the labtronyx namespace
-try:
-    from . import version
-    __version__ = version.ver_sem
-except ImportError:
-    version = object()
-    __version__ = "unknown"
+    plugin_manager = common.plugin.PluginManager()
+    main_plugins = plugin_manager.extractPlugins(sys.modules['__main__'])
 
-from .manager import InstrumentManager
-from .remote import RemoteManager, RemoteResource
-from .common.events import EventSubscriber
+    main_scripts = [p_cls for p_cls in main_plugins.values() if issubclass(p_cls, bases.ScriptBase) and p_cls != bases.ScriptBase]
 
-from . import bases
-from . import common
-from .common import errors
+    if len(main_scripts) == 0:
+        raise EnvironmentError("No scripts found")
 
-# Bring errors into the labtronyx namespace
-from .common.errors import *
+    elif len(main_scripts) > 1:
+        raise EnvironmentError("More than one script object found, unable to choose")
+
+    else:
+        from bases.script import ScriptResult
+        script_cls = main_scripts[0]
+        script_obj = script_cls(manager, logger=logger)
+
+        script_obj.start()

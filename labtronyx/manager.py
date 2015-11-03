@@ -290,7 +290,7 @@ class InstrumentManager(object):
                 if int_obj.open():
                     self._interfaces[interface_name] = int_obj
 
-                    self.logger.info("Started Interface: %s", interface_name)
+                    self.logger.debug("Started Interface: %s", interface_name)
                     return True
 
                 else:
