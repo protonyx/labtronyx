@@ -217,6 +217,16 @@ class r_VISA(ResourceBase):
     CONFIG_KEYS = ['timeout', 'chunk_size', 'encoding', 'query_delay', 'read_termination', 'write_termination',
         'baud_rate', 'break_length', 'data_bits', 'discard_null', 'parity', 'stop_bits', 'allow_dma', 'send_end']
 
+    RES_TYPES = {
+        pyvisa.constants.InterfaceType.gpib:    "GPIB",
+        pyvisa.constants.InterfaceType.vxi:     "VXI",
+        pyvisa.constants.InterfaceType.asrl:    "Serial",
+        pyvisa.constants.InterfaceType.pxi:     "PXI",
+        pyvisa.constants.InterfaceType.tcpip:   "TCPIP",
+        pyvisa.constants.InterfaceType.usb:     "USB",
+        pyvisa.constants.InterfaceType.firewire: "Firewire"
+    }
+
     def __init__(self, manager, interface, resID, **kwargs):
         self.instrument = kwargs.pop('visa_instrument')
 
@@ -229,6 +239,11 @@ class r_VISA(ResourceBase):
                       'write_termination': '\r\n',
                       'timeout': 2000
                       }
+
+        # Set Resource Type
+
+        if self.instrument.interface_type in self.RES_TYPES:
+            self.resourceType = self.RES_TYPES.get(self.instrument.interface_type)
 
         # Instrument is created in the open state, but we do not want to lock the VISA instrument
         self.close()
