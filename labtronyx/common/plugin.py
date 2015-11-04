@@ -219,10 +219,15 @@ class PluginAttribute(object):
 
     def validate(self, value):
         if self.required and value is None:
-            raise AssertionError("is required")
+            raise ValueError("is required")
 
         if type(value) != self.attrType:
-            raise AssertionError("must be of type %s" % self.attrType)
+            # Can we cast?
+            try:
+                self.attrType(value)
+
+            except:
+                raise TypeError("must be of type %s" % self.attrType)
 
 
 class PluginBase(object):
@@ -243,20 +248,23 @@ class PluginBase(object):
         self.logger = kwargs.get('logger', logging)
 
     @classmethod
-    def _getAttributeClasses(cls):
-        import inspect
+    def _getClassAttributesByBase(cls, base_class):
         parent_classes = inspect.getmro(cls)
 
         attrs = {}
         # Traverse inheritance tree in reverse so that overrides work properly
         for parent in reversed(parent_classes):
-            attrs.update(dict(inspect.getmembers(parent, lambda obj: issubclass(type(obj), PluginAttribute))))
+            attrs.update(dict(inspect.getmembers(parent, lambda obj: issubclass(type(obj), base_class))))
 
         return attrs
 
     @classmethod
+    def _getPluginAttributeClasses(cls):
+        return cls._getClassAttributesByBase(PluginAttribute)
+
+    @classmethod
     def getAttributes(cls):
-        attrs = cls._getAttributeClasses()
+        attrs = cls._getPluginAttributeClasses()
         attr_vals = {}
 
         for attr_name, attr_obj in attrs.items():
@@ -277,11 +285,12 @@ class PluginBase(object):
     def _validateAttributes(cls):
         attr_vals = cls.getAttributes()
 
-        for attr_name, attr_obj in cls._getAttributeClasses().items():
+        for attr_name, attr_obj in cls._getPluginAttributeClasses().items():
             try:
                 attr_obj.validate(attr_vals.get(attr_name))
 
-            except AssertionError as e:
-                raise AssertionError("Plugin attribute %s %s" % (attr_name, e.message))
+            except Exception as e:
+                e.message = "Plugin attribute %s: %s" % (attr_name, e.message)
+                raise e
 
         return True

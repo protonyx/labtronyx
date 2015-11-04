@@ -90,7 +90,7 @@ condition, the `stop` parameter of the `fail` method can be set, or any of the c
 `assert` will cause execution to halt when the condition is met.
 """
 import time
-import inspect
+import sys
 
 import labtronyx
 from labtronyx.common.plugin import PluginBase, PluginAttribute
@@ -113,7 +113,7 @@ class ScriptBase(PluginBase):
     def __init__(self, manager=None, **kwargs):
         PluginBase.__init__(self, **kwargs)
 
-        if isinstance(manager, labtronyx.InstrumentManager):
+        if isinstance(manager, labtronyx.InstrumentManager) or isinstance(manager, labtronyx.RemoteManager):
             self._manager = manager
 
         else:
@@ -123,27 +123,73 @@ class ScriptBase(PluginBase):
         if not self.continueOnFail:
             self.allowedFailures = 0
 
+        # Resolve all ScriptParameters using keyword arguments
+        # script runner is responsible for passing CLI args as a dict
+        self._resolveParameters(**kwargs)
+
         self._scriptResult = ScriptResult()
         self._status = ''
         self._progress = 0
 
-    def _getRequiredResources(self):
-        return {attr_name:attr_cls for attr_name, attr_cls in inspect.getmembers(self, inspect.isclass) if issubclass(attr_cls, RequiredResource)}
+    def _collectRequiredResources(self):
+        req_res = self._getClassAttributesByBase(RequiredResource)
+        res = {}
+
+        for attr_name, attr_cls in req_res.items():
+            matching_res = self._manager.findResources(**attr_cls.search_params)
+            res[attr_name] = matching_res
+
+        return res
 
     def _resolveResources(self):
         """
         Iterate through all RequiredResource attributes and replace instance attributes with resource objects.
         """
-        for attr_name, attr_cls in self._getRequiredResources():
-            matching_res = self._manager.findResources(**attr_cls.search_params)
+        req_res = self._collectRequiredResources()
 
-            if len(matching_res) == 1:
-                setattr(self, matching_res)
-
+        for attr_name, res_list in req_res.items():
+            if len(res_list) == 0 or len(res_list) > 1:
+                setattr(self, attr_name, None)
             else:
-                return False
+                setattr(self, attr_name, res_list[0])
 
-        return True
+    def _validateResources(self):
+        req_res = self._collectRequiredResources()
+        failCount = 0
+
+        for attr_name, res_list in req_res.items():
+            if len(res_list) == 0:
+                self.logger.info("ERROR: Required resource %s could not be found", attr_name)
+                failCount += 1
+
+            elif len(res_list) > 1:
+                self.logger.info("ERROR: Required resource %s ")
+                failCount += 1
+
+        return failCount
+
+    def _resolveParameters(self, **kwargs):
+        params = self._getClassAttributesByBase(ScriptParameter)
+
+        # TODO: Resolve command line parameters as well
+
+        for attr_name, attr_cls in params.items():
+            attr_val = kwargs.get(attr_name)
+            setattr(self, attr_name, attr_val)
+
+    def _validateParameters(self):
+        params = self._getClassAttributesByBase(ScriptParameter)
+        failCount = 0
+
+        for attr_name, attr_cls in params.items():
+            try:
+                attr_cls.validate(getattr(self, attr_name))
+
+            except Exception as e:
+                self.logger.info("ERROR: Script parameter %s %s", attr_name, e.message)
+                failCount += 1
+
+        return failCount
 
     def start(self):
         """
@@ -179,28 +225,28 @@ class ScriptBase(PluginBase):
 
         return self._scriptResult
 
-    def ready(self):
-        """
-        Checks if the script is ready to run. All required resources must be present
-
-        :rtype:     bool
-        """
-        return self._resolveResources()
-
     def setUp(self):
         """
         Method called to prepare the script for execution. `setUp` is called immediately before `run`. Any exception
         raised will cause script FAILURE and the `run` method will not be called.
 
-        Default behavior is to log script information and check for script readiness by calling `ready`. If script is
-        not ready, the script will FAIL.
+        Default behavior is to validate all `RequiredResource` and `ScriptParameter` objects and FAIL script if
+        resources could not be resolved or required parameters were not found.
 
         This method can be overriden to change the behavior.
         """
         self.logger.info("Running script: %s", self.__class__.__name__)
 
-        if not self.ready():
-            self.fail("Required resources are not all present", True)
+        for res_uuid, res_dict in self._manager.getProperties().items():
+            self.logger.info("Found resource: %s", res_dict.get('resourceID'))
+
+        spinUpFailures = 0
+
+        spinUpFailures += self._validateParameters()
+        spinUpFailures += self._validateResources()
+
+        if spinUpFailures > 0:
+            self.fail("Errors encountered during script setUp", True)
 
     def tearDown(self):
         """
@@ -212,7 +258,9 @@ class ScriptBase(PluginBase):
 
         This method can be overriden to change the behavior.
         """
-        self.logger.info("Script Execution Time: %f", self._scriptResult.executionTime)
+        if self._scriptResult.executionTime > 0:
+            self.logger.info("Script Execution Time: %f", self._scriptResult.executionTime)
+
         self.logger.info("Script Result: %s", self._scriptResult.result)
         if self._scriptResult.result == ScriptResult.FAIL:
             self.logger.info("Failure Reason: %s", self._scriptResult.reason)
@@ -382,11 +430,26 @@ class ScriptBase(PluginBase):
 
 class RequiredResource(object):
     def __init__(self, **kwargs):
-        self._kwargs = kwargs
+        self.search_params = kwargs
 
-    @property
-    def search_params(self):
-        return self._kwargs
+
+class ScriptParameter(object):
+    def __init__(self, attrType=str, required=False, defaultValue=None):
+        self.attrType = attrType
+        self.required = required
+        self.defaultValue = defaultValue
+
+    def validate(self, value):
+        if self.required and value is None:
+            raise ValueError("is required")
+
+        if type(value) != self.attrType:
+            # Can we cast?
+            try:
+                self.attrType(value)
+
+            except:
+                raise TypeError("must be of type %s" % self.attrType)
 
 
 class ScriptResult(object):

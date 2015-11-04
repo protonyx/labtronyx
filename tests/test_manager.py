@@ -56,5 +56,5 @@ class InstrumentManager_Tests(unittest.TestCase):
 
         test_plug = plugs.values()[0]
 
-        self.assertTrue(len(test_plug._getAttributeClasses()) > 0)
+        self.assertTrue(len(test_plug._getPluginAttributeClasses()) > 0)
         self.assertTrue(len(test_plug.getAttributes()) > 0)
