@@ -167,7 +167,7 @@ class EventSubscriber(object):
 
 class EventMessage(object):
     def __init__(self, json_msg):
-        self.version = json_msg.get('labtronyx-version')
+        self.version = json_msg.get('labtronyx-event')
 
         self.hostname = json_msg.get('hostname')
         self.event = json_msg.get('event')
@@ -194,7 +194,5 @@ class EventCodes:
         created = "resource.created"
         destroyed = "resource.destroyed"
         changed = "resource.changed"
-
-    class driver:
-        loaded = "driver.loaded"
-        unloaded = "driver.unloaded"
+        driver_loaded = "resource.driver.loaded"
+        driver_unloaded = "resource.driver.unloaded"
