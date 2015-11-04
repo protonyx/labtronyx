@@ -98,7 +98,8 @@ class d_B29XX(DriverBase):
 
     def getProperties(self):
         return dict(
-            validModes=self.VALID_MODES,
+            validSourceModes=self.VALID_SOURCE_MODES,
+            validMeasureModes=self.VALID_MEASURE_MODES,
             validTriggerSources=self.VALID_TRIGGER_SOURCES
         )
 
