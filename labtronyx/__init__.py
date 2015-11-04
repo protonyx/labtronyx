@@ -80,4 +80,8 @@ def runScriptMain():
         script_cls = main_scripts[0]
         script_obj = script_cls(manager, logger=logger)
 
-        script_obj.start()
+        script_result = script_obj.start()
+        if script_result.result == ScriptResult.PASS:
+            sys.exit(0)
+        else:
+            sys.exit(-1)
