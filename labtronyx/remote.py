@@ -76,7 +76,7 @@ class RemoteManager(LabtronyxRpcClient):
                 uri = "http://{0}:{1}/rpc/{2}".format(self.host, self.port, res_uuid)
 
                 instr = RemoteResource(uri, timeout=self.timeout, logger=self.logger)
-                instr.properties = res_dict
+                instr._properties = res_dict
                 self._resources[res_uuid] = instr
         
         # Purge resources that are no longer in remote
@@ -158,24 +158,26 @@ class RemoteResource(LabtronyxRpcClient):
 
     def getProperties(self):
         props = self._rpcCall('getProperties')
+
+        # Cache properties
         self._properties = props
+        return props
 
     @property
     def properties(self):
-        return self._properties
-
-    @properties.setter
-    def properties(self, new_props):
-        self._properties = new_props
+        if len(self._properties) > 0:
+            return self._properties
+        else:
+            return self.getProperties()
 
     @property
     def uuid(self):
-        return self._properties.get('uuid')
+        return self.properties.get('uuid')
 
     @property
     def resID(self):
-        return self._properties.get('resourceID')
+        return self.properties.get('resourceID')
 
     @property
     def driver(self):
-        return self._properties.get('driver')
+        return self.properties.get('driver')
