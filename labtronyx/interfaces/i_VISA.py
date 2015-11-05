@@ -325,16 +325,23 @@ class r_VISA(ResourceBase):
 
         self.ready = True
 
-    def getIdentity(self):
+    def getIdentity(self, section=None):
         """
         Get the comma-delimited identity string returned from `*IDN?` command on resource enumeration
 
-        :return:    str
+        :param section: Section of comma-split identity
+        :type section:  int
+        :rtype:         str
         """
         if not self.ready:
             self.identify()
 
-        return self._identity
+        if section is None:
+            return self._identity
+        elif len(self._identity) > section:
+            return self._identity[section]
+        else:
+            return ''
 
     def getStatusByte(self):
         """
