@@ -41,8 +41,8 @@ class d_620XXP(DriverBase):
     def getProperties(self):
         return {
             # Chroma seems to have a different way of responding to *IDN?
-            'deviceSerial':         self.getIdentity()[3],
-            'deviceFirmware':       self.getIdentity()[2],
+            'deviceSerial':         self.getIdentity(3),
+            'deviceFirmware':       self.getIdentity(2),
         
             'protectionModes':      ['Voltage', 'Current', 'Power'],
             'terminalSense':        ['Voltage', 'Current', 'Power'],

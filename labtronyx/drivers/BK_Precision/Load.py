@@ -93,16 +93,22 @@ class d_85XX(DriverBase):
         self.setLocalControl()
         
     def getProperties(self):
-        return {
+        ret = {
             'deviceVendor':        'BK Precision',
-            'deviceModel':         self.prodInfo[0],
-            'deviceSerial':        self.prodInfo[1],
-            'deviceFirmware':      self.prodInfo[2],
             'validModes':          self.modes,
             'validTriggerSources': self.trigger_sources,
             'controlModes':        ['Voltage', 'Current', 'Power', 'Resistance'],
             'terminalSense':       ['Voltage', 'Current', 'Power']
         }
+
+        if self.isOpen():
+            ret.update({
+                'deviceModel':         self.prodInfo[0],
+                'deviceSerial':        self.prodInfo[1],
+                'deviceFirmware':      self.prodInfo[2],
+            })
+
+        return ret
     
     def _CommandProperlyFormed(self, cmd):
         """
@@ -162,8 +168,8 @@ class d_85XX(DriverBase):
         '''
         assert(len(command) == self.length_packet)
         
-        self.instr.write_raw(command)
-        response = self.instr.read_raw(self.length_packet)
+        self.write_raw(command)
+        response = self.read_raw(self.length_packet)
         
         if self.debug:
             print "command:"

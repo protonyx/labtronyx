@@ -66,10 +66,16 @@ class d_2831(DriverBase):
         pass
         
     def getProperties(self):
+        id_model = self.resource.getIdentity(0).split(' ')
+        if len(id_model) > 0:
+            model = id_model[0]
+        else:
+            model = 'Unknown'
+
         return {
             # Override VISA defaults, this device is different
             'deviceVendor':        'BK Precision',
-            'deviceModel':         self.getIdentity()[0].split(' ')[0],
+            'deviceModel':         model,
 
             'validModes':          self.modes,
             'validTriggerSources': self.trigger_sources
