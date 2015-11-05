@@ -27,10 +27,7 @@ information such as:
 
    * Firmware Revision
    * Serial Numbers
-   * Product Codes
-   * Number of channels
-   * Operating Frequencies
-   * Command Set Revision
+
    * etc.
 	
 Properties are retrieved by calling :func:`getProperties`. All resources provide

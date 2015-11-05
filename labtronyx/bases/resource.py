@@ -9,6 +9,11 @@ All resources are subclasses of the :class:`labtronyx.bases.ResourceBase` class.
     class RESOURCE_CLASS_NAME(ResourceBase):
         pass
 
+Attributes
+----------
+
+Resources have some attributes that should be defined.
+
 Errors
 ------
 

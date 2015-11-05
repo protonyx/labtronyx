@@ -9,19 +9,38 @@ All Drivers extend :class:`labtronyx.bases.DriverBase`::
     class DRIVER_CLASS_NAME(DriverBase):
         pass
 
+Required Attributes
+-------------------
+
+Drivers require some attributes to be defined in order to specify which resource types and interfaces they are
+compatible with.
+
 Properties
 ----------
 
-Drivers can provide auxiliary information about a physical device in the
-properties. Properties can be useful for application and script development
-by enabling or disabling features according to data contained in the properties.
+Like Resources, Drivers can provide auxiliary information about a physical device by returning a dictionary from the
+method :func:`getProperties`. Properties can be useful for application and script development by enabling or disabling
+features according to data contained in the properties. Driver properties can relate information about a device or
+instrument that require specific commands such as:
 
-All drivers should provide the minimum properties to ensure a device can be
-found by an application or script:
+   * Serial number
+   * Model number
+   * Firmware revision
+   * Product Codes
+   * Number of channels
+   * Operating Frequencies
+   * Command Set Revision
+
+Warning::
+
+   The :func:`getProperties` method of the driver may be called when a resource is not open, so any commands that
+   require the resource to be open should be wrapped with :func:`isOpen` to prevent exceptions from being raised.
+
+It is recommended that drivers should provide these properties to assist scripts or applications to locate a resource:
 
 +-----------------+---------------+-------------------------------------+
 | Key             | Default Value | Examples                            |
-+-----------------+---------------+-------------------------------------+
++=================+===============+=====================================+
 | 'deviceType'    | 'Generic'     | 'Multimeter', 'Oscilloscope'        |
 +-----------------+---------------+-------------------------------------+
 | 'deviceVendor'  | 'Generic'     | 'Tektronix', 'Agilent Technologies' |
@@ -51,7 +70,8 @@ Usage Model
 -----------
 
 Driver objects are instantiated and stored in the resource object. When a driver is loaded, all methods are dynamically
-loaded into the resource object and can be accessed by calling the method from the resource.
+loaded into the resource object and can be accessed by calling the method from the resource. To prevent exceptions,
+Driver methods are inaccessible unless the resource is open by a call to the resource method `open`.
 
 In order to maintain functional abstraction, Drivers should limit dependencies on outside libraries and avoid making
 system driver calls. All code contained in drivers should deal with the specific instrument's command set and use
