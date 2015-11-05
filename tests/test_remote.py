@@ -10,8 +10,6 @@ from labtronyx.common.rpc import jsonrpc
 
 class Remote_Tests(unittest.TestCase):
 
-    TEST_URI = 'http://localhost:6780/rpc'
-
     @classmethod
     def setUpClass(cls):
         import time
@@ -26,16 +24,23 @@ class Remote_Tests(unittest.TestCase):
         cls.manager.raise_exception = mock.MagicMock(side_effect=RuntimeError)
 
         try:
-            cls.client = labtronyx.RemoteManager(address='localhost')
+            cls.client = labtronyx.RemoteManager(host=labtronyx.InstrumentManager.getHostname())
+
+            cls.TEST_URI = cls.client.uri
 
         except labtronyx.RpcServerNotFound:
             cls.tearDownClass()
 
     @classmethod
     def tearDownClass(cls):
-        cls.manager.server_stop()
-        cls.manager._close()
-        del cls.manager
+        if hasattr(cls, 'manager'):
+            cls.manager.server_stop()
+            cls.manager._close()
+            del cls.manager
+
+    def setUp(self):
+        if not hasattr(self, 'client'):
+            self.fail("Client not present")
 
     def test_jsonrpc_request_call_multi_pos_param(self):
         req = '{"jsonrpc": "2.0", "method": "subtract", "params": [42, 23], "id": 1}'
@@ -277,7 +282,7 @@ class Remote_Tests(unittest.TestCase):
             client.test_connection()
 
     def test_remote_error_invalid_path(self):
-        resp = requests.post('http://localhost:6780/invalid', data='')
+        resp = requests.post(self.TEST_URI + '/invalid', data='')
         self.assertEqual(resp.status_code, 404)
 
     def test_remote_error_timeout(self):
