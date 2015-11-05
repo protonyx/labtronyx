@@ -160,7 +160,7 @@ def rpc_process(uuid=None):
                     with lock:
                         # RPC hook for target objects, allows the object to dispatch the request
                         if hasattr(target, '_rpc'):
-                            result = target._rpc(method_name)
+                            result = target._rpc(req)
 
                         elif not method_name.startswith('_') and hasattr(target, method_name):
                             method = getattr(target, method_name)
