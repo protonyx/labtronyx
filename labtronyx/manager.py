@@ -128,7 +128,7 @@ class InstrumentManager(object):
         # Server start command
         from werkzeug.serving import run_simple
         srv_start_cmd = lambda: run_simple(
-            hostname='localhost', port=self.server_port, application=self._server_app,
+            hostname=self.getHostname(), port=self.server_port, application=self._server_app,
             threaded=True, use_debugger=True
         )
 

@@ -38,7 +38,7 @@ def create_server(manager_instance, port, logger=logging):
 def list_resources():
     man = current_app.config.get('LABTRONYX_MANAGER')
 
-    data = json.dumps(man.getProperties().keys())
+    data = json.dumps(man.getProperties())
 
     resp = Response(data, status=200, mimetype='application/json')
 
