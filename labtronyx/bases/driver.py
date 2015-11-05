@@ -109,7 +109,7 @@ class DriverBase(PluginBase):
         if hasattr(self._resource, name):
             return getattr(self._resource, name)
         else:
-            raise AttributeError
+            raise AttributeError("Unable to find attribute in driver or resource")
 
     @property
     def resource(self):

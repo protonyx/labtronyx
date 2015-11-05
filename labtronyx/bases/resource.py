@@ -274,6 +274,8 @@ class ResourceBase(PluginBase):
         if self._driver is not None:
             try:
                 self._driver.close()
+            except common.errors.ResourceNotOpen:
+                pass
             except:
                 self.logger.exception('Exception while unloading driver')
             finally:
