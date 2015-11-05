@@ -169,7 +169,7 @@ class InstrumentManager(object):
             try:
                 # Must use the REST API to shutdown
                 import urllib2
-                url = 'http://{0}:{1}/api/shutdown'.format('localhost', self.server_port)
+                url = 'http://{0}:{1}/api/shutdown'.format(self.getHostname(), self.server_port)
                 resp = urllib2.Request(url)
                 handler = urllib2.urlopen(resp)
 
@@ -196,7 +196,7 @@ class InstrumentManager(object):
         :returns: str
         """
         return version.ver_full
-    
+
     def getAddress(self):
         """
         Get the local IP Address
@@ -204,8 +204,9 @@ class InstrumentManager(object):
         :returns: str
         """
         return socket.gethostbyname(self.getHostname())
-    
-    def getHostname(self):
+
+    @staticmethod
+    def getHostname():
         """
         Get the local hostname
 
@@ -353,25 +354,42 @@ class InstrumentManager(object):
         """
         ret = {}
 
-        for interface, interface_obj in self._interfaces.items():
+        for res_uuid, res in self.resources:
             try:
-                for resID, res in interface_obj.resources.items():
-                    props = res.getProperties()
+                props = res.getProperties()
 
-                    # UUID is not used to key properties within the interface
-                    uuid = props.get('uuid', res.uuid)
+                # UUID is not used to key properties within the interface
+                uuid = props.get('uuid', res.uuid)
 
-                    ret[uuid] = props
-                    ret[uuid].setdefault('deviceType', '')
-                    ret[uuid].setdefault('deviceVendor', '')
-                    ret[uuid].setdefault('deviceModel', '')
-                    ret[uuid].setdefault('deviceSerial', '')
-                    ret[uuid].setdefault('deviceFirmware', '')
+                ret[uuid] = props
+                ret[uuid].setdefault('deviceType', '')
+                ret[uuid].setdefault('deviceVendor', '')
+                ret[uuid].setdefault('deviceModel', '')
+                ret[uuid].setdefault('deviceSerial', '')
+                ret[uuid].setdefault('deviceFirmware', '')
 
             except NotImplementedError:
                 pass
         
         return ret
+
+    @property
+    def resources(self):
+        all_resources = {}
+
+        for interfaceName, interfaceObj in self.interfaces.items():
+            for resID, resourceObj in interfaceObj.resources.items():
+                all_resources[resourceObj.uuid] = resourceObj
+
+        return all_resources
+
+    def listResources(self):
+        """
+        Get a list of UUIDs for all resources
+
+        :rtype: dict
+        """
+        return self.resources.keys()
 
     def _getResource(self, res_uuid):
         """
@@ -383,13 +401,13 @@ class InstrumentManager(object):
         :raises:                KeyError if resource is not found
         """
          # NON-SERIALIZABLE
-        for interf in self._interfaces.values():
-            for resID, res in interf.resources.items():
-                if res.uuid == res_uuid:
-                    return res
+        all_res = self.resources
+        if res_uuid in all_res:
+            return all_res.get(res_uuid)
 
-        raise KeyError('Resource not found')
-    
+        else:
+            raise KeyError('Resource not found')
+
     def getResource(self, interface, resID, driverName=None):
         """
         Get a resource by name from the specified interface. Not supported by all interfaces, see interface
@@ -406,7 +424,7 @@ class InstrumentManager(object):
         :raises:                ResourceUnavailable
         :raises:                InterfaceError
         """
-         # NON-SERIALIZABLE
+        # NON-SERIALIZABLE
         int_obj = self._getInterface(interface)
 
         if int_obj is None:

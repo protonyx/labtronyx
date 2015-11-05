@@ -69,23 +69,22 @@ class RemoteManager(LabtronyxRpcClient):
         """
         self._rpcCall('refresh')
 
-        prop = self._rpcCall('getProperties')
+        res_list = self._rpcCall('listResources')
         
-        for res_uuid, res_dict in prop.items():
+        for res_uuid in res_list:
             if res_uuid not in self._resources:
                 uri = "http://{0}:{1}/rpc/{2}".format(self.host, self.port, res_uuid)
 
-                instr = RemoteResource(uri, timeout=self.timeout, logger=self.logger)
-                instr._properties = res_dict
-                self._resources[res_uuid] = instr
+                self._resources[res_uuid] = RemoteResource(uri, timeout=self.timeout, logger=self.logger)
         
         # Purge resources that are no longer in remote
         for res_uuid in self._resources.keys():
-            if res_uuid not in prop:
+            if res_uuid not in res_list:
                 self._resources.pop(res_uuid)
 
-        # Update the cached properties
-        self._properties.update(prop)
+    @property
+    def resources(self):
+        return self._resources
 
     def _getResource(self, res_uuid):
         """
@@ -125,8 +124,9 @@ class RemoteManager(LabtronyxRpcClient):
         :returns: list
         """
         matching_instruments = []
+        props = self._rpcCall('getProperties')
         
-        for uuid, res_dict in self._properties.items():
+        for uuid, res_dict in props.items():
             match = True
             
             for key, value in kwargs.items():
@@ -149,26 +149,16 @@ class RemoteManager(LabtronyxRpcClient):
 class RemoteResource(LabtronyxRpcClient):
     """
     Labtronyx Remote Resource
+
+    Provides convenience properties `uuid`, `resID` and `driver` similar to BaseResource API.
     """
 
     def __init__(self, uri, **kwargs):
         LabtronyxRpcClient.__init__(self, uri, **kwargs)
 
-        self._properties = {}
-
-    def getProperties(self):
-        props = self._rpcCall('getProperties')
-
-        # Cache properties
-        self._properties = props
-        return props
-
     @property
     def properties(self):
-        if len(self._properties) > 0:
-            return self._properties
-        else:
-            return self.getProperties()
+        return self.getProperties()
 
     @property
     def uuid(self):
