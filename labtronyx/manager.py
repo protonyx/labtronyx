@@ -11,7 +11,6 @@ from . import version
 from . import bases
 from . import common
 
-
 class InstrumentManager(object):
     """
     Labtronyx InstrumentManager
@@ -25,7 +24,7 @@ class InstrumentManager(object):
     :param plugin_dirs:    List of directories containing plugins
     :type plugin_dirs:     list
     :param logger:         Logger
-    :type logger:          Logging.logger object
+    :type logger:          logging.Logger
     """
     name = 'Labtronyx'
     longname = 'Labtronyx Instrumentation Control Framework'
@@ -40,8 +39,8 @@ class InstrumentManager(object):
         self.logger = kwargs.get('logger', logger)
 
         # Initialize instance variables
-        self._interfaces = {}  # Interface name -> interface object
-        self._drivers = {}  # Module name -> Model info
+        self._interfaces = {}  # Plugin FQN -> Interface INSTANCE
+        self._drivers = {}  # Plugin FQN -> Driver CLASS
 
         # Initialize PYTHONPATH
         self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
@@ -114,6 +113,7 @@ class InstrumentManager(object):
         If a server is already running, it will be stopped and then restarted.
 
         :returns: True if successful, False otherwise
+        :rtype: bool
         """
         # Clean out old server, if any exists
         self.server_stop()
@@ -210,7 +210,7 @@ class InstrumentManager(object):
         """
         Get the local hostname
 
-        :returns: str
+        :rtype:                 str
         """
         return socket.gethostname()
 
@@ -223,8 +223,8 @@ class InstrumentManager(object):
         Private method called internally to signal events. Calls handlers and dispatches event signal to subscribed
         clients
 
-        :param event:   event
-        :type event:    str
+        :param event:           event
+        :type event:            str
         """
         if hasattr(self, '_server_events'):
             self._server_events.publishEvent(event, *args, **kwargs)
@@ -235,30 +235,18 @@ class InstrumentManager(object):
 
     @property
     def interfaces(self):
-        return self._interfaces
-
-    def _getInterface(self, interface_name):
         """
-        Get an interface object with a given interface name. Used primarily in testing and debug, but can also be
-        useful to access interface methods.
-
-        :param interface_name:  Interface plugin name or InterfaceName attribute
-        :type interface_name:   str
-        :return:                object
+        :rtype:                 dict[str:labtronyx.bases.interface.DriverBase]
         """
-         # NON-SERIALIZABLE
-        if interface_name not in self._interfaces:
-            for interf_name, interf_cls in self._interfaces.items():
-                if interf_cls.interfaceName == interface_name:
-                    interface_name = interf_name
-
-        return self._interfaces.get(interface_name)
+        # Make interfaces available by
+        return {v.interfaceName:v for k,v in self._interfaces.items()}
 
     def listInterfaces(self):
         """
         Get a list of interfaces that are enabled
-        
-        :returns: list
+
+        :returns:               Interface names
+        :rtype:                 list[str]
         """
         return self._interfaces.keys()
     
@@ -268,7 +256,7 @@ class InstrumentManager(object):
 
         :param interface_name:  Interface plugin name
         :type interface_name:   str
-        :returns:               bool
+        :rtype:                 bool
         """
         int_cls = self.plugin_manager.getPlugin(interface_name)
 
@@ -310,7 +298,8 @@ class InstrumentManager(object):
         Disable an interface that is running.
 
         :param interface_name:  Interface plugin name
-        :returns:               bool
+        :type interface_name:   str
+        :rtype:                 bool
         """
         if interface_name in self._interfaces:
             try:
@@ -350,7 +339,7 @@ class InstrumentManager(object):
         """
         Returns the property dictionaries for all resources
         
-        :returns: dict
+        :rtype:                 dict[str:dict]
         """
         ret = {}
 
@@ -387,26 +376,9 @@ class InstrumentManager(object):
         """
         Get a list of UUIDs for all resources
 
-        :rtype: dict
+        :rtype:                 list[str]
         """
         return self.resources.keys()
-
-    def _getResource(self, res_uuid):
-        """
-        Returns a resource object given the Resource UUID
-
-        :param res_uuid:        Unique Resource Identifier (UUID)
-        :type res_uuid:         str
-        :returns:               object
-        :raises:                KeyError if resource is not found
-        """
-         # NON-SERIALIZABLE
-        all_res = self.resources
-        if res_uuid in all_res:
-            return all_res.get(res_uuid)
-
-        else:
-            raise KeyError('Resource not found')
 
     def getResource(self, interface, resID, driverName=None):
         """
@@ -420,12 +392,18 @@ class InstrumentManager(object):
         :param driverName:      Driver to load for resource
         :type driverName:       str
         :returns:               Resource object
+        :rtype:                 labtronyx.bases.resource.ResourceBase
         :raises:                InterfaceUnavailable
         :raises:                ResourceUnavailable
         :raises:                InterfaceError
         """
         # NON-SERIALIZABLE
-        int_obj = self._getInterface(interface)
+
+        # Allow interface identification by FQN or interfaceName attribute
+        if interface in self._interfaces:
+            int_obj = self._interfaces.get(interface)
+        else:
+            int_obj = self.interfaces.get(interface)
 
         if int_obj is None:
             raise common.errors.InterfaceUnavailable('Interface not found')
@@ -454,7 +432,7 @@ class InstrumentManager(object):
         :param deviceVendor:    Instrument Vendor
         :param deviceModel:     Instrument Model Number
         :param deviceSerial:    Instrument Serial Number
-        :returns: list of objects
+        :rtype:                 list[labtronyx.bases.resource.ResourceBase]
         """
         # NON-SERIALIZABLE
         matching_instruments = []
@@ -471,7 +449,7 @@ class InstrumentManager(object):
                 
             if match:
                 try:
-                    matching_instruments.append(self._getResource(uuid))
+                    matching_instruments.append(self.resources.get(uuid))
                 except KeyError:
                     pass
                 
@@ -497,7 +475,7 @@ class InstrumentManager(object):
         Get a list of loaded driver names. Returned names are the keys into the `driver` dictionary which contains the
         driver classes.
 
-        :return: list
+        :rtype:                 list[str]
         """
         return self._drivers.keys()
 
@@ -505,6 +483,6 @@ class InstrumentManager(object):
         """
         Get a dictionary of loaded driver info
 
-        :return: dict
+        :rtype:                 dict[str:dict]
         """
         return {driver:self.plugin_manager.getPluginInfo(driver) for driver in self.drivers}

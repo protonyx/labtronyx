@@ -99,7 +99,7 @@ def rpc_process(uuid=None):
 
         else:
             try:
-                res = man._getResource(uuid)
+                res = man.resources.get(uuid)
                 return json.dumps({
                     'methods': rpc_getMethods(res)
                 })
@@ -121,10 +121,10 @@ def rpc_process(uuid=None):
         if uuid is None:
             target = man
         else:
-            try:
-                target = man._getResource(uuid)
-            except KeyError:
-                abort(404)
+            target = man.resources.get(uuid)
+
+        if target is None:
+            abort(404)
 
         # Get lock
         import threading

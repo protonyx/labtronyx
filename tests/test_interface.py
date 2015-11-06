@@ -58,15 +58,15 @@ class VISA_Sim_Tests(unittest.TestCase):
         # Setup a mock manager
         cls.manager = labtronyx.InstrumentManager()
 
-        if 'TRAVIS' in os.environ or cls.manager._getInterface('VISA') is None:
+        if 'TRAVIS' in os.environ or cls.manager.interfaces.get('VISA') is None:
             lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'default.yaml')
 
             cls.manager.enableInterface('VISA', library='%s@sim'%lib_path)
 
-        cls.i_visa = cls.manager._getInterface('VISA')
+        cls.i_visa = cls.manager.interfaces.get('VISA')
 
     def setUp(self):
-        if self.manager._getInterface('VISA') is None:
+        if self.manager.interfaces.get('VISA') is None:
             self.fail("VISA Interface not enabled")
 
     def test_enumerate_time(self):
@@ -117,20 +117,20 @@ class VISA_Tests(unittest.TestCase):
         cls.manager = labtronyx.InstrumentManager()
 
     def setUp(self):
-        if self.manager._getInterface('VISA') is None:
+        if self.manager.interfaces.get('VISA') is None:
             self.skipTest('VISA library not installed')
 
     def test_enumerate_time(self):
         import time
         start = time.clock()
 
-        i_visa = self.manager._getInterface('VISA')
+        i_visa = self.manager.interfaces.get('VISA')
         i_visa.enumerate()
 
         self.assertLessEqual(time.clock() - start, 1.0, "VISA refresh time must be less than 1.0 second(s)")
 
     def test_get_resources(self):
-        i_visa = self.manager._getInterface('VISA')
+        i_visa = self.manager.interfaces.get('VISA')
         ret = i_visa.resources
         self.assertEqual(type(ret), dict)
 
@@ -145,8 +145,8 @@ class Serial_Tests(unittest.TestCase):
         cls.manager = labtronyx.InstrumentManager()
 
     def setUp(self):
-        if self.manager._getInterface('Serial') is None:
-            self.skipTest('Serial library not installed')
+        if self.manager.interfaces.get('Serial') is None:
+            self.skipTest('Serial library not enabled')
 
     def test_get_resources(self):
         with self.assertRaises(labtronyx.ResourceUnavailable):

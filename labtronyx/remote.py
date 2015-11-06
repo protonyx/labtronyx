@@ -35,12 +35,12 @@ class RemoteManager(LabtronyxRpcClient):
 
     Optional Parameters:
 
-    :param port:        TCP port to connect to
-    :type port:         int
-    :param timeout:     Request timeout (seconds)
-    :type timeout:      float
-    :param logger:      Logging instance
-    :type logger:       logging.Logger object
+    :param port:           TCP port to connect to
+    :type port:            int
+    :param timeout:        Request timeout (seconds)
+    :type timeout:         float
+    :param logger:         Logger
+    :type logger:          logging.Logger
     """
     RPC_PORT = 6780
 
