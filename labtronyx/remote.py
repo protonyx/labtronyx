@@ -85,21 +85,6 @@ class RemoteManager(LabtronyxRpcClient):
     @property
     def resources(self):
         return self._resources
-
-    def _getResource(self, res_uuid):
-        """
-        Returns a resource object given the Resource UUID
-                
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: RemoteResource object
-        """
-        if res_uuid in self._resources:
-            return self._resources.get(res_uuid)
-        
-        else:
-            self.refresh()
-            return self._resources.get(res_uuid)
     
     def getResource(self, interface, resID, driverName=None):
         self._rpcNotify(interface, resID, driverName)
@@ -126,7 +111,7 @@ class RemoteManager(LabtronyxRpcClient):
         matching_instruments = []
         props = self._rpcCall('getProperties')
         
-        for uuid, res_dict in props.items():
+        for res_uuid, res_dict in props.items():
             match = True
             
             for key, value in kwargs.items():
@@ -135,7 +120,10 @@ class RemoteManager(LabtronyxRpcClient):
                     break
                 
             if match:
-                matching_instruments.append(self._getResource(uuid))
+                if res_uuid not in self.resources:
+                    self.refresh()
+
+                matching_instruments.append(self.resources.get(res_uuid))
                 
         return matching_instruments
     

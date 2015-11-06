@@ -44,12 +44,6 @@ the following keys in the property dictionary:
 +---------------+-------------------------------------------------+
 | resourceType  | Resource type string for driver identification  |
 +---------------+-------------------------------------------------+
-| address       | RPC server address                              |
-+---------------+-------------------------------------------------+
-| hostname      | RPC server hostname                             |
-+---------------+-------------------------------------------------+
-| port          | RPC port                                        |
-+---------------+-------------------------------------------------+
 
 Drivers may add additional keys to the property dictionary. There are no
 restrictions to the number of keys in the property dictionary, but these will
