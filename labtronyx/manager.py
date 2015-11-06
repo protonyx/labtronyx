@@ -354,7 +354,7 @@ class InstrumentManager(object):
         """
         ret = {}
 
-        for res_uuid, res in self.resources:
+        for res_uuid, res in self.resources.items():
             try:
                 props = res.getProperties()
 
