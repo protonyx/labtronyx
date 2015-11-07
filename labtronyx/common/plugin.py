@@ -7,6 +7,7 @@ Yapsy was developed by Thibauld Nion (Copyright (c) 2007-2015, Thibauld Nion)
 import os
 import logging
 import inspect
+import uuid
 
 
 class PluginManager(object):
@@ -90,6 +91,7 @@ class PluginManager(object):
 
                     for name, plugin_cls in new_plugs.items():
                         fq_name = plugin_name + '.' + name
+                        plugin_cls.fqn = fq_name
 
                         if plugin_cls not in self._plugins.values():
                             self._plugins[fq_name] = plugin_cls
@@ -106,9 +108,16 @@ class PluginManager(object):
         """
         Get a dictionary of all catalogued plugins
 
-        :rtype: dict
+        :rtype: dict[str:PluginBase]
         """
         return self._plugins
+
+    def getAllPluginInfo(self):
+        """
+        Get a dictionary with the attributes from all cataloged plugins
+        :rtype: dict[str:dict]
+        """
+        return {pluginName:pluginCls.getAttributes() for pluginName, pluginCls in self._plugins.items()}
 
     def disablePlugin(self, plugin_name):
         if plugin_name in self._plugins:
@@ -139,7 +148,7 @@ class PluginManager(object):
 
         :param plugin_name: Plugin name
         :type plugin_name:  str
-        :rtype:             class
+        :rtype:             type(PluginBase)
         """
         return self._plugins.get(plugin_name)
 
@@ -171,7 +180,7 @@ class PluginManager(object):
 
         :param plugin_cls:  Plugin class
         :type plugin_cls:   class
-        :return:
+        :rtype:             bool
         """
         if not issubclass(plugin_cls, PluginBase):
             return False
@@ -198,6 +207,7 @@ class PluginManager(object):
 
         :param plugin_name:     Plugin name
         :type plugin_name:      str
+        :rtype:                 bool
         """
         plugin_cls = self.getPlugin(plugin_name)
 
@@ -234,9 +244,12 @@ class PluginBase(object):
     """
     Base class for plugins
     """
+    _fqn = ''
+
     # Attributes
     author = PluginAttribute(attrType=str, required=False, defaultValue="")
     version = PluginAttribute(attrType=str, required=False, defaultValue="Unknown")
+    pluginType = PluginAttribute(attrType=str, required=True)
 
     def __init__(self, **kwargs):
         # Set all class-level attributes on the new instance. This is mostly to resolve default values
@@ -245,7 +258,20 @@ class PluginBase(object):
         for attr_name, attr_val in attrs.items():
             setattr(self, attr_name, attr_val)
 
+        # Assign each plugin instance a universally unique identifier
+        self._uuid = str(uuid.uuid4())
         self.logger = kwargs.get('logger', logging)
+
+        if self._fqn == '':
+            self._fqn = self.__class__.__module__ + '.' + self.__class__.__name__
+
+    @property
+    def fqn(self):
+        return self._fqn
+
+    @property
+    def uuid(self):
+        return self._uuid
 
     @classmethod
     def _getClassAttributesByBase(cls, base_class):
@@ -294,3 +320,19 @@ class PluginBase(object):
                 raise e
 
         return True
+
+    @property
+    def properties(self):
+        return self.getProperties()
+
+    def getProperties(self):
+        """
+        Get plugin instance properties
+
+        :rtype:     dict[str:object]
+        """
+        return {
+            'uuid': self.uuid,
+            'fqn': self.fqn,
+            'pluginType': self.pluginType
+        }

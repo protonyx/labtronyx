@@ -3,16 +3,18 @@ from labtronyx.common.plugin import PluginBase, PluginAttribute
 class InterfaceBase(PluginBase):
     """
     Interface Base Class
+
+    :param manager:         InstrumentManager instance
+    :type manager:          labtronyx.manager.InstrumentManager
+    :param logger:          Logger instance
+    :type logger:           logging.Logger
     """
+    pluginType = 'interface'
+
     interfaceName = PluginAttribute(attrType=str, required=True)
+    enumerable = PluginAttribute(attrType=bool, defaultValue=False)
     
     def __init__(self, manager, **kwargs):
-        """
-        :param manager:        Reference to the InstrumentManager instance
-        :type manager:         InstrumentManager object
-        :param logger:         Logger
-        :type logger:          Logging.logger object
-        """
         PluginBase.__init__(self, **kwargs)
 
         self._manager = manager
@@ -27,6 +29,19 @@ class InterfaceBase(PluginBase):
     @property
     def resources(self):
         return self._resources
+
+    def getProperties(self):
+        """
+        Get the interface properties
+
+        :rtype: dict[str:object]
+        """
+        def_props = super(InterfaceBase, self).getProperties()
+        def_props.update({
+            'interfaceName': self.interfaceName,
+            'resources': self.resources.keys()
+        })
+        return def_props
 
     def refresh(self):
         """

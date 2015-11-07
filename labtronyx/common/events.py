@@ -29,6 +29,7 @@ class EventPublisher(object):
 
         # Start heartbeat server
         heartbeat_srv = threading.Thread(name='Labtronyx-Heartbeat-Server', target=self._heartbeat_server)
+        heartbeat_srv.setDaemon(True)
         heartbeat_srv.start()
 
     def _heartbeat_server(self):
@@ -196,3 +197,8 @@ class EventCodes:
         changed = "resource.changed"
         driver_loaded = "resource.driver.loaded"
         driver_unloaded = "resource.driver.unloaded"
+
+    class script:
+        created = "script.created"
+        changed = "script.changed"
+        destroyed = "script.destroyed"

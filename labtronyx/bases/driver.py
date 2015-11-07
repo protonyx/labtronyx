@@ -106,24 +106,22 @@ from labtronyx.common.plugin import PluginBase, PluginAttribute
 class DriverBase(PluginBase):
     """
     Driver Base Class
+
+    :param resource:        Resource instance
+    :type resource:         labtronyx.bases.resource.ResourceBase
+    :param logger:          Logger instance
+    :type logger:           logging.Logger
     """
+    pluginType = 'driver'
+
     deviceType = PluginAttribute(attrType=str, defaultValue="Generic")
     compatibleInterfaces = PluginAttribute(attrType=list, required=True)
     compatibleInstruments = PluginAttribute(attrType=dict, defaultValue={})
     
     def __init__(self, resource, **kwargs):
-        """
-        :param resource:       Reference to the associated resource instance
-        :type resource:        object
-        :param logger:         Logger
-        :type logger:          Logging.logger object
-        """
         PluginBase.__init__(self, **kwargs)
 
         self._resource = resource
-
-        # Instance variables
-        self._name = self.__class__.__module__ + '.' + self.__class__.__name__
 
     def __getattr__(self, name):
         if hasattr(self._resource, name):
@@ -134,14 +132,6 @@ class DriverBase(PluginBase):
     @property
     def resource(self):
         return self._resource
-
-    @property
-    def name(self):
-        return self._name
-
-    @name.setter
-    def name(self, value):
-        self._name = value
             
     # ===========================================================================
     # Optional Functions
@@ -162,6 +152,3 @@ class DriverBase(PluginBase):
         work.
         """
         return True
-    
-    def getProperties(self):
-        return {}

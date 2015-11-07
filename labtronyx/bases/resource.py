@@ -27,24 +27,18 @@ Packaging
 Interfaces and Resources are typically packaged together in a single plugin, as the interface is responsible for
 instantiating and maintaining resource objects.
 
-Instantiation
--------------
-
-Resources are instantiated by an interface, not InstrumentManager.
-
-When resources are created, they should be in the closed state. This is to prevent any locking issues if multiple
-instances of Labtronyx are open. Resources should typically only be open if they are actively in use.
-
 Usage Model
 -----------
 
-Resources may implement more functions than just those which are defined in the API below. When a driver is loaded, all
-of the driver functions are linked at runtime to the resource object. All driver functions are accessed directly from
-the resource object as if they were a single object. Some things to note:
+When resources are created, they should default to the closed state. This is to prevent any locking issues if multiple
+instances of Labtronyx are open. Resources should typically only be open if they are actively in use.
+
+When a driver is loaded, the resource object acts as a proxy to access the driver methods. All driver functions are
+accessed directly from the resource object as if they were a single object. Some things to note:
 
    * If there is a naming conflict between a method in the resource and a method in the driver, the resource method
-     will be called
-   * Driver functions cannot be called if the resource is not open
+     will take priority
+   * Driver functions are inaccessible and cannot be called if the resource is closed
 
 .. note::
 
@@ -66,29 +60,30 @@ the resource object as if they were a single object. Some things to note:
    If a method returns an object that is not serializable, an exception will be passed back to the remote host. If the
    method returns a non-serializable data type, the method should be prefixed with an underscore ('_') to mark it as a
    protected function that cannot be accessed remotely.
-"""
-import uuid
 
+Resources may implement more functions than just those which are defined in the API below, see the interface and
+resource class documentation to learn more.
+"""
 import labtronyx.common as common
 from labtronyx.common.plugin import PluginBase, PluginAttribute
 
+
 class ResourceBase(PluginBase):
     """
-    Resource Base Class
+    Resource Base Class. Acts as a proxy for driver if one is loaded.
+
+    :param manager:         InstrumentManager instance
+    :type manager:          labtronyx.InstrumentManager
+    :param interface:       Reference to the interface instance
+    :type interface:        labtronyx.bases.interface.InterfaceBase
+    :param resID:           Resource Identifier
+    :type resID:            str
+    :param logger:          Logger instance
+    :type logger:           logging.Logger
     """
-    resourceType = PluginAttribute(attrType=str, required=True)
+    pluginType = 'resource'
     
     def __init__(self, manager, interface, resID, **kwargs):
-        """
-        :param manager:         Reference to the InstrumentManager instance
-        :type manager:          InstrumentManager object
-        :param interface:       Reference to the interface instance
-        :type interface:        object
-        :param resID:           Resource Identifier
-        :type resID:            str
-        :param logger:          Logger
-        :type logger:           Logging.logger object
-        """
         PluginBase.__init__(self, **kwargs)
 
         self._manager = manager
@@ -96,7 +91,6 @@ class ResourceBase(PluginBase):
         self._resID = resID
 
         # Instance variables
-        self._uuid = str(uuid.uuid4())
         self._driver = None
             
     def __del__(self):
@@ -141,42 +135,39 @@ class ResourceBase(PluginBase):
         return self._resID
 
     @property
-    def uuid(self):
-        return self._uuid
-
-    @property
     def driver(self):
+        """
+        :rtype: labtronyx.bases.driver.DriverBase
+        """
         return self._driver
-
-    @property
-    def properties(self):
-        return self.getProperties()
     
     def getProperties(self):
         """
-        Get the resource property dictionary
+        Get the property dictionary for the resource. If a driver is loaded, the driver properties will be merged and
+        returned as well
 
-        :return: dict
+        :rtype: dict[str:object]
         """
-        driver_prop = {}
+        res_prop = super(ResourceBase, self).getProperties()
+        res_prop.update({
+            'interface': self._interface.interfaceName,
+            'resourceID': self._resID
+        })
 
-        # Append Driver properties if a Driver is loaded
         if self._driver is not None:
             driver_prop = self._driver.getProperties()
 
-            driver_prop.setdefault('driver', self._driver.name)
+            if hasattr(driver_prop, 'uuid'):
+                del driver_prop['uuid']
+            driver_prop.setdefault('driver', self._driver.fqn)
             driver_prop.setdefault('deviceType', self._driver.deviceType)
-        
-        res_prop = {
-            'uuid': self._uuid,
-            'interface': self._interface.interfaceName,
-            'resourceID': self._resID,
-            'resourceType': self.resourceType
-        }
-          
-        driver_prop.update(res_prop)
-        
-        return driver_prop
+
+            # Resource properties take precedence over driver properties
+            driver_prop.update(res_prop)
+            return driver_prop
+
+        else:
+            return res_prop
     
     #===========================================================================
     # Resource State
@@ -252,7 +243,6 @@ class ResourceBase(PluginBase):
             # Instantiate driver
             try:
                 self._driver = testClass(self, logger=self.logger)
-                self._driver.name = driverName
 
                 # Signal the event
                 self.manager._publishEvent(common.events.EventCodes.resource.driver_loaded, self.uuid, driverName)

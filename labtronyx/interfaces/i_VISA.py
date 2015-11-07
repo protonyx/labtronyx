@@ -38,6 +38,7 @@ class i_VISA(InterfaceBase):
     author = 'KKENNEDY'
     version = '1.0'
     interfaceName = 'VISA'
+    enumerable = True
 
     def __init__(self, manager, **kwargs):
         # Allow the use of a custom library for testing
@@ -211,9 +212,6 @@ class r_VISA(ResourceBase):
        * deviceSerial
        * deviceFirmware
     """
-
-    resourceType = "VISA"
-
     CONFIG_KEYS = ['timeout', 'chunk_size', 'encoding', 'query_delay', 'read_termination', 'write_termination',
         'baud_rate', 'break_length', 'data_bits', 'discard_null', 'parity', 'stop_bits', 'allow_dma', 'send_end']
 
@@ -239,11 +237,7 @@ class r_VISA(ResourceBase):
                       'write_termination': '\r\n',
                       'timeout': 2000
                       }
-
-        # Set Resource Type
-
-        if self.instrument.interface_type in self.RES_TYPES:
-            self.resourceType = self.RES_TYPES.get(self.instrument.interface_type)
+        self._resourceType = self.RES_TYPES.get(self.instrument.interface_type, 'VISA')
 
         # Instrument is created in the open state, but we do not want to lock the VISA instrument
         self.close()
@@ -252,11 +246,20 @@ class r_VISA(ResourceBase):
         self.ready = False
 
     def getProperties(self):
+        """
+        Get the property dictionary for the VISA resource.
+
+        :rtype: dict[str:object]
+        """
         if not self.ready:
             self.identify()
 
-        def_prop = ResourceBase.getProperties(self)
+        def_prop = super(r_VISA, self).getProperties()
+        def_prop.update({
+            'resourceType': self._resourceType
+        })
 
+        # Set some default search parameters if driver has not already defined
         def_prop.setdefault('deviceVendor', self._VISA_vendor)
         def_prop.setdefault('deviceModel', self._VISA_model)
         def_prop.setdefault('deviceSerial', self._VISA_serial)

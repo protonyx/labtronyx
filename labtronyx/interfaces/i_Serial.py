@@ -24,6 +24,7 @@ class i_Serial(InterfaceBase):
     author = 'KKENNEDY'
     version = '1.0'
     interfaceName = 'Serial'
+    enumerable = True
 
     def open(self):
         """
@@ -139,8 +140,6 @@ class r_Serial(ResourceBase):
     Resource API is compatible with VISA resources, so any driver written for a VISA resource should also work for
     serial resources in the case that a VISA library is not available.
     """
-
-    resourceType = "Serial"
     
     CR = '\r'
     LF = '\n'
@@ -157,13 +156,15 @@ class r_Serial(ResourceBase):
         self.close()
 
     def getProperties(self):
-        def_prop = ResourceBase.getProperties(self)
+        """
+        Get the property dictionary for the Serial resource.
 
-        def_prop.setdefault('deviceVendor', '')
-        def_prop.setdefault('deviceModel', '')
-        def_prop.setdefault('deviceSerial', '')
-        def_prop.setdefault('deviceFirmware', '')
-
+        :rtype: dict[str:object]
+        """
+        def_prop = super(r_Serial, self).getProperties()
+        def_prop.update({
+            'resourceType': 'Serial'
+        })
         return def_prop
         
     #===========================================================================

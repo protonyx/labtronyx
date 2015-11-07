@@ -91,8 +91,10 @@ condition, the `stop` parameter of the `fail` method can be set, or any of the c
 """
 import time
 import sys
+import threading
 
 import labtronyx
+import labtronyx.common as common
 from labtronyx.common.plugin import PluginBase, PluginAttribute
 
 
@@ -103,8 +105,10 @@ class ScriptBase(PluginBase):
     :param manager:         InstrumentManager instance
     :type manager:          labtronyx.InstrumentManager
     :param logger:          Logger instance
-    :type logger:           Logging.logger
+    :type logger:           logging.Logger
     """
+    pluginType = 'script'
+
     name = PluginAttribute(attrType=str, defaultValue='')
     description = PluginAttribute(attrType=str, defaultValue='')
     continueOnFail = PluginAttribute(attrType=bool, defaultValue=False)
@@ -127,9 +131,14 @@ class ScriptBase(PluginBase):
         # script runner is responsible for passing CLI args as a dict
         self._resolveParameters(**kwargs)
 
+        self._runLock = threading.Lock()
         self._scriptResult = ScriptResult()
         self._status = ''
         self._progress = 0
+
+    @property
+    def manager(self):
+        return self._manager
 
     def _collectRequiredResources(self):
         req_res = self._getClassAttributesByBase(RequiredResource)
@@ -191,13 +200,46 @@ class ScriptBase(PluginBase):
 
         return failCount
 
+    def getProperties(self):
+        """
+        Get script instance properties
+
+        :rtype: dict[str:object]
+        """
+        props = super(ScriptBase, self).getProperties()
+        props.update({
+            'running': self.isRunning(),
+            'status': self._status,
+            'progress': self._progress
+        })
+        return props
+
+    def isRunning(self):
+        """
+        Check if the script is currently running.
+
+        :rtype: bool
+        """
+        running = self._runLock.acquire(False)
+        self._runLock.release()
+        return running
+
     def start(self):
         """
         Script run routine to be called when executing the script. Returns the script result as a `ScriptResult` object.
+        `run` is protected from multiple thread execution using a lock.
 
         :rtype:     ScriptResult
         """
         self._scriptResult.startTimer()
+
+        # Acquire the lock and boogey if already locked
+        lockAcq = self._runLock.acquire(False)
+        if not lockAcq:
+            raise threading.ThreadError
+
+        # Notify that the script is running now
+        self.manager._publishEvent(common.events.EventCodes.script.changed, self.uuid)
 
         try:
             self.setUp()
@@ -221,9 +263,15 @@ class ScriptBase(PluginBase):
 
             self.tearDown()
 
+            self._runLock.release()
+
         self._scriptResult.stopTimer()
 
         return self._scriptResult
+
+    def stop(self):
+        # TODO: How to stop running scripts
+        pass
 
     def setUp(self):
         """
@@ -321,6 +369,7 @@ class ScriptBase(PluginBase):
         :type new_progress:     int
         """
         self._progress = max(0, min(int(new_progress), 100))
+        self.manager._publishEvent(common.events.EventCodes.script.changed, self.uuid)
 
     def setStatus(self, new_status):
         """
@@ -331,6 +380,7 @@ class ScriptBase(PluginBase):
         :type new_status:       str
         """
         self._status = str(new_status)
+        self.manager._publishEvent(common.events.EventCodes.script.changed, self.uuid)
 
     def fail(self, reason, stop=False):
         """
