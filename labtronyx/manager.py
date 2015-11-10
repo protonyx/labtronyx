@@ -48,7 +48,11 @@ class InstrumentManager(object):
         self.logger.info("Version: %s", version.ver_full)
         self.logger.debug("Build Date: %s", version.build_date)
 
-        # Directories to search for plugins
+        if len(self.plugin_dirs) > 0:
+            for dir in self.plugin_dirs:
+                self.logger.info("Plugin search directory: %s", dir)
+
+        # Library paths to search for plugins
         dirs = ['drivers', 'interfaces']
         dirs_res = [os.path.join(self.rootPath, dir) for dir in dirs] + self.plugin_dirs
 
@@ -61,7 +65,10 @@ class InstrumentManager(object):
         }
 
         # Load Plugins
-        self.plugin_manager = common.plugin.PluginManager(directories=dirs_res, categories=cat_filter, logger=self.logger)
+        self.plugin_manager = common.plugin.PluginManager(
+            directories=dirs_res,
+            categories=cat_filter,
+            logger=self.logger)
         self.plugin_manager.search()
         
         # Start Interfaces
@@ -319,30 +326,34 @@ class InstrumentManager(object):
 
         :param interface:   Interface Name (`interfaceName` attribute of plugin) or Interface UUID
         :type interface:    str
-        :rtype:                 bool
+        :rtype:             bool
         """
         interfacesByName = {plug_obj.interfaceName: plug_obj for plug_uuid, plug_obj
                             in self.plugin_manager.getPluginInstancesByBaseClass(bases.InterfaceBase).items()}
 
         if interface in interfacesByName:
-            inter_uuid = interfacesByName.get(interface).uuid
+            inter = interfacesByName.get(interface)
 
         else:
-            inter_uuid = interface
+            inter = self.interfaces.get(interface)
 
-        try:
-            inter = self.interfaces.get(inter_uuid)
+        if inter is not None:
+            try:
+                inter_uuid = inter.uuid
 
-            # Call the plugin hook to close the interface
-            inter.close()
+                # Call the plugin hook to close the interface
+                inter.close()
 
-            self.logger.info("Stopped Interface: %s" % inter.interfaceName)
+                self.logger.info("Stopped Interface: %s" % inter.interfaceName)
 
-            self.plugin_manager.destroyPluginInstance(inter_uuid)
-            return True
+                self.plugin_manager.destroyPluginInstance(inter_uuid)
+                return True
 
-        except:
-            self.logger.exception("Exception during interface close")
+            except:
+                self.logger.exception("Exception during interface close")
+                return False
+
+        else:
             return False
         
     # ===========================================================================
