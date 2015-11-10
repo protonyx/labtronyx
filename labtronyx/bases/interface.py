@@ -70,8 +70,9 @@ class InterfaceBase(PluginBase):
         inhibit communication, this function should return False to indicate an error to the InstrumentManager.
         
         :returns: True if ready, False if error occurred
+        :rtype bool:
         """
-        raise NotImplementedError
+        return True
     
     def close(self):
         """
@@ -80,7 +81,7 @@ class InterfaceBase(PluginBase):
         Make any system driver calls necessary to clean-up interface operations. This function should explicitly free
         any system resources to prevent locking errors.
         """
-        raise NotImplementedError
+        pass
 
     # ===========================================================================
     # Optional Functions
