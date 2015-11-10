@@ -111,6 +111,8 @@ class ScriptBase(PluginBase):
 
     name = PluginAttribute(attrType=str, defaultValue='')
     description = PluginAttribute(attrType=str, defaultValue='')
+    category = PluginAttribute(attrType=str, defaultValue='General')
+    subcategory = PluginAttribute(attrType=str, defaultValue='')
     continueOnFail = PluginAttribute(attrType=bool, defaultValue=False)
     allowedFailures = PluginAttribute(attrType=int, defaultValue=0)
 
@@ -199,6 +201,9 @@ class ScriptBase(PluginBase):
                 failCount += 1
 
         return failCount
+
+    def assignResource(self, res_attribute, res_uuid):
+        raise NotImplementedError
 
     def getProperties(self):
         """
