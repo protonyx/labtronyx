@@ -35,8 +35,8 @@ class PluginManager(object):
             self.logger = logger
 
         # Instance variables
-        self._plugins = {}
-        self._plugins_disabled = {}
+        self._plugins_classes = {}
+        self._plugins_instances = {}
 
     @property
     def directories(self):
@@ -45,6 +45,10 @@ class PluginManager(object):
     @property
     def categories(self):
         return self._category_filter
+
+    @property
+    def plugins(self):
+        return self._plugins_classes
 
     def search(self):
         """
@@ -93,8 +97,8 @@ class PluginManager(object):
                         fq_name = plugin_name + '.' + name
                         plugin_cls.fqn = fq_name
 
-                        if plugin_cls not in self._plugins.values():
-                            self._plugins[fq_name] = plugin_cls
+                        if plugin_cls not in self._plugins_classes.values():
+                            self._plugins_classes[fq_name] = plugin_cls
 
                             self.logger.debug("Found plugin: %s", fq_name)
 
@@ -104,27 +108,31 @@ class PluginManager(object):
                 except Exception as e:
                     self.logger.exception("Exception during plugin load")
 
+
+
     def getAllPlugins(self):
         """
         Get a dictionary of all catalogued plugins
 
-        :rtype: dict[str:PluginBase]
+        :rtype:                 dict[str:PluginBase]
         """
-        return self._plugins
+        return self._plugins_classes
 
     def getAllPluginInfo(self):
         """
         Get a dictionary with the attributes from all cataloged plugins
-        :rtype: dict[str:dict]
+        :rtype:             dict[str:dict]
         """
-        return {pluginName:pluginCls.getAttributes() for pluginName, pluginCls in self._plugins.items()}
+        return {pluginName:pluginCls.getAttributes() for pluginName, pluginCls in self._plugins_classes.items()}
 
-    def disablePlugin(self, plugin_name):
-        if plugin_name in self._plugins:
-            self._plugins_disabled[plugin_name] = self._plugins.pop(plugin_name)
-
-    def getDisabledPlugins(self):
-        return self._plugins_disabled
+    def getPluginsByBaseClass(self, base_class):
+        """
+        Get a dictionary of plugin classes that subclass the given base class
+        :param base_class:  Plugin Base Class
+        :type base_class:   type(PluginBase)
+        :rtype:             dict{str: type(base_class)}
+        """
+        return {k: v for k, v in self._plugins_classes.items() if issubclass(v, base_class)}
 
     def getPluginsByCategory(self, category):
         """
@@ -132,15 +140,17 @@ class PluginManager(object):
 
         :param category:    Plugin category
         :type category:     str
-        :rtype:             dict
+        :rtype:             dict{str: type(PluginBase)}
         """
         category_base_class = self._category_filter.get(category)
 
         if category_base_class is None:
             return {}
 
-        # Rather than maintain another dictionary of categorized plugins, lets just do a search now
-        return {k:v for k,v in self._plugins.items() if issubclass(v, category_base_class)}
+        return self.getPluginsByBaseClass(category_base_class)
+
+    def getPluginsByType(self, plugin_type):
+        return {k: v for k, v in self._plugins_classes.items() if v.pluginType == plugin_type}
 
     def getPlugin(self, plugin_name):
         """
@@ -150,7 +160,7 @@ class PluginManager(object):
         :type plugin_name:  str
         :rtype:             type(PluginBase)
         """
-        return self._plugins.get(plugin_name)
+        return self._plugins_classes.get(plugin_name)
 
     def getPluginInfo(self, plugin_name):
         """
@@ -160,7 +170,7 @@ class PluginManager(object):
         :type plugin_name:  str
         :rtype:             dict
         """
-        return self._plugins.get(plugin_name).getAttributes()
+        return self._plugins_classes.get(plugin_name).getAttributes()
 
     def getPluginPath(self, plugin_name):
         """
@@ -171,7 +181,7 @@ class PluginManager(object):
         :returns:           Path to plugin module
         :rtype:             str
         """
-        plugin_cls = self._plugins.get(plugin_name)
+        plugin_cls = self._plugins_classes.get(plugin_name)
         return inspect.getfile(plugin_cls)
 
     def isValidPlugin(self, plugin_cls):
@@ -219,6 +229,80 @@ class PluginManager(object):
             return False
 
         return True
+
+    def createPluginInstance(self, plugin_name, **kwargs):
+        """
+        Factory method to create a plugin instance
+
+        :param plugin_name:     Fully qualified plugin name
+        :type plugin_name:      str
+        :return:                Plugin instance
+        :rtype:                 PluginBase
+        """
+        plugCls = self.getPlugin(plugin_name)
+        plugInst = plugCls(**kwargs)
+
+        self._plugins_instances[plugInst.uuid] = plugInst
+        return plugInst
+
+    def destroyPluginInstance(self, plugin_uuid):
+        """
+        Destroy a plugin instance
+
+        :param plugin_uuid:     Plugin Instance UUID
+        :type plugin_uuid:      str
+        :return:                True if successful, False otherwise
+        :rtype:                 bool
+        """
+        if plugin_uuid in self._plugins_instances:
+            del self._plugins_instances[plugin_uuid]
+            return True
+
+        else:
+            return False
+
+    def getPluginInstances(self, plugin_name):
+        """
+        Get plugin instances by fully qualified plugin name
+
+        :param plugin_name:     Fully qualified plugin name
+        :type plugin_name:      str
+        :return:                List of Plugin instances
+        :rtype:                 list[PluginBase]
+        """
+        return [plugCls for plug_uuid, plugCls in self._plugins_instances.items() if plugCls.fqn == plugin_name]
+
+    def getPluginInstancesByBaseClass(self, base_class):
+        """
+        Get a dictionary of plugin instances that subclass the given base class
+
+        :param base_class:  Plugin Base Class
+        :type base_class:   type(PluginBase)
+        :rtype:             dict{str: type(base_class)}
+        """
+        return {k: v for k, v in self._plugins_instances.items() if issubclass(type(v), base_class)}
+
+    def getPluginInstancesByCategory(self, category):
+        """
+        Get plugin instances by the plugin category
+
+        :param category:        Plugin category
+        :type category:         str
+        :rtype:                 dict[str:BasePlugin]
+        """
+        category_base_class = self._category_filter.get(category, PluginBase)
+
+        return self.getPluginInstancesByBaseClass(category_base_class)
+
+    def getPluginInstancesByType(self, plugin_type):
+        """
+        Get plugin instances by the plugin attribute `pluginType`
+
+        :param plugin_type:     Plugin type
+        :type plugin_type:      str
+        :rtype:                 dict[str:BasePlugin]
+        """
+        return {k: v for k, v in self._plugins_instances.items() if v.pluginType == plugin_type}
 
 
 class PluginAttribute(object):
@@ -268,6 +352,10 @@ class PluginBase(object):
     @property
     def fqn(self):
         return self._fqn
+
+    @fqn.setter
+    def fqn(self, new_value):
+        self._fqn = new_value
 
     @property
     def uuid(self):

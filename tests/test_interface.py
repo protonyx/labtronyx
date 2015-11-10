@@ -38,7 +38,7 @@ class Interface_Integration_Tests(unittest.TestCase):
         self.interf._resources = {'DEBUG': self.res}
 
         # Inject the fake interface into the manager instance
-        self.manager._interfaces['interfaces.i_Debug'] = self.interf
+        self.manager.plugin_manager._plugins_instances[self.interf.uuid] = self.interf
         
     def test_resource(self):
         self.dev = self.manager.findInstruments(resourceID='DEBUG')
@@ -63,10 +63,12 @@ class VISA_Sim_Tests(unittest.TestCase):
 
             cls.manager.enableInterface('VISA', library='%s@sim'%lib_path)
 
-        cls.i_visa = cls.manager.interfaces.get('VISA')
+        interfaceInstancesByName = {pluginCls.interfaceName: pluginCls for plugin_uuid, pluginCls
+                                    in cls.manager.interfaces.items()}
+        cls.i_visa = interfaceInstancesByName.get('VISA')
 
     def setUp(self):
-        if self.manager.interfaces.get('VISA') is None:
+        if self.i_visa is None:
             self.fail("VISA Interface not enabled")
 
     def test_enumerate_time(self):

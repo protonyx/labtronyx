@@ -38,11 +38,6 @@ class InstrumentManager(object):
         self.server_port = kwargs.get('server_port', self.SERVER_PORT)
         self.logger = kwargs.get('logger', logger)
 
-        # Initialize instance variables
-        self._interfaces = {}  # Plugin FQN -> Interface INSTANCE
-        self._drivers = {}  # Plugin FQN -> Driver CLASS
-        self._scripts = {} # Plugin UUID -> Script INSTANCE
-
         # Initialize PYTHONPATH
         self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
         # if self.rootPath not in sys.path:
@@ -68,18 +63,10 @@ class InstrumentManager(object):
         # Load Plugins
         self.plugin_manager = common.plugin.PluginManager(directories=dirs_res, categories=cat_filter, logger=self.logger)
         self.plugin_manager.search()
-
-        # Validate plugins
-        for plugin_name in self.plugin_manager.getAllPlugins().keys(): # Create a copy
-            if not self.plugin_manager.validatePlugin(plugin_name):
-                self.plugin_manager.disablePlugin(plugin_name)
         
-        # Load Drivers
-        self._drivers = self.plugin_manager.getPluginsByCategory('drivers')
-        
-        # Load Interfaces
-        for interface_name in self.plugin_manager.getPluginsByCategory('interfaces'):
-            self.enableInterface(interface_name)
+        # Start Interfaces
+        for i_fqn, i_cls in self.plugin_manager.getPluginsByBaseClass(bases.InterfaceBase).items():
+            self.enableInterface(i_fqn)
 
         # Start Server
         if kwargs.get('server', False):
@@ -99,8 +86,8 @@ class InstrumentManager(object):
         Close all resources and interfaces
         """
         # Disable all interfaces, close all resources
-        for interface_name in self._interfaces.values(): # use values() so a copy is created
-            self.disableInterface(interface_name)
+        for inter_uuid, inter_obj in self.interfaces.items():
+            self.disableInterface(inter_uuid)
 
     #===========================================================================
     # Labtronyx Server
@@ -215,6 +202,32 @@ class InstrumentManager(object):
         """
         return socket.gethostname()
 
+    ############################################################################
+    # Plugin Operations
+    ############################################################################
+
+    def getAttributes(self):
+        """
+        Get the class attributes for all loaded plugins. Dictionary keys are the Fully Qualified Names (FQN) of the
+        plugins
+
+        :rtype:                 dict[str:dict]
+        """
+        return self.plugin_manager.getAllPluginInfo()
+
+    def getProperties(self):
+        """
+        Returns the property dictionaries for all resources
+
+        :rtype:                 dict[str:dict]
+        """
+        ret = {}
+        ret.update({uuid: pObj.getProperties() for uuid, pObj in self.interfaces.items()})
+        ret.update({uuid: pObj.getProperties() for uuid, pObj in self.resources.items()})
+        ret.update({uuid: pObj.getProperties() for uuid, pObj in self.scripts.items()})
+
+        return ret
+
     #===========================================================================
     # Event Publishing
     #===========================================================================
@@ -237,19 +250,19 @@ class InstrumentManager(object):
     @property
     def interfaces(self):
         """
-        :rtype:                 dict[str:labtronyx.bases.interface.DriverBase]
+        :returns:               Dictionary of interface plugin instances {UUID -> Interface Object}
+        :rtype:                 dict[str:labtronyx.bases.interface.InterfaceBase]
         """
-        # Make interfaces available by
-        return {v.interfaceName:v for k,v in self._interfaces.items()}
+        return self.plugin_manager.getPluginInstancesByBaseClass(bases.InterfaceBase)
 
     def listInterfaces(self):
         """
-        Get a list of interfaces that are enabled
+        Get a list of interface names that are enabled
 
         :returns:               Interface names
         :rtype:                 list[str]
         """
-        return self.interfaces.keys()
+        return [intObj.interfaceName for int_uuid, intObj in self.interfaces.items()]
     
     def enableInterface(self, interfaceName, **kwargs):
         """
@@ -257,79 +270,80 @@ class InstrumentManager(object):
         same name is already running, it will be stopped first. Each interface may only have one instance at a time
         (Singleton pattern).
 
-        :param interfaceName:   Interface plugin name
+        :param interfaceName:   Interface Name (`interfaceName` attribute of plugin) or plugin FQN
         :type interfaceName:    str
         :rtype:                 bool
         :raises:                KeyError
         """
-        int_cls = self.plugin_manager.getPlugin(interfaceName)
+        interfaceClasses = self.plugin_manager.getPluginsByBaseClass(bases.InterfaceBase)
+        interfacesByName = {v.interfaceName: k for k, v in interfaceClasses.items()}
 
-        # Attempt to find interface using the interfaceName attribute
-        if int_cls is None:
-            for pluginName, pluginCls in self.plugin_manager.getPluginsByCategory('interfaces').items():
-                if pluginCls.interfaceName == interfaceName:
-                    interfaceName = pluginName
-                    int_cls = pluginCls
-                    break
+        # Resolve interfaceName as a plugin FQN
+        if interfaceName in interfaceClasses:
+            fqn = interfaceName
+        else:
+            fqn = interfacesByName.get(interfaceName)
 
-        if not issubclass(int_cls, bases.InterfaceBase):
-            return False
+        if fqn is None:
+            raise KeyError("Interface not found or not available")
 
-        if int_cls is None:
-            raise KeyError("Interface has not been loaded")
+        # If the interface is already enabled, disable the existing one
+        self.disableInterface(interfaceName)
 
-        try:
-            # If the interface is already enabled, disable the existing one
-            self.disableInterface(interfaceName)
+        if self.plugin_manager.validatePlugin(fqn):
+            try:
+                # Instantiate interface
+                int_obj = self.plugin_manager.createPluginInstance(fqn, manager=self, logger=self.logger, **kwargs)
 
-            # Instantiate interface
-            int_obj = int_cls(manager=self, logger=self.logger, **kwargs)
+                # Call the plugin hook to open the interface. Ensure interface opens correctly
+                if int_obj.open():
+                    self.logger.debug("Started Interface: %s", interfaceName)
+                    return True
 
-            # Call the plugin hook to open the interface. Ensure interface opens correctly
-            if int_obj.open():
-                self._interfaces[int_obj.uuid] = int_obj
+                else:
+                    self.logger.error("Interface %s failed to open", interfaceName)
+                    self.disableInterface(interfaceName)
+                    return False
 
-                self.logger.debug("Started Interface: %s", interfaceName)
-                return True
-
-            else:
-                self.logger.error("Interface %s failed to open", interfaceName)
+            except:
+                self.logger.exception("Exception during enableInterface")
                 return False
 
-        except NotImplementedError:
-            return False
-
-        except:
-            self.logger.exception("Exception during enableInterface")
+        else:
+            self.logger.error("Invalid plugin: %s", fqn)
             return False
     
-    def disableInterface(self, interfaceName):
+    def disableInterface(self, interface):
         """
         Disable an interface that is running.
 
-        :param interfaceName:   Interface plugin name
-        :type interfaceName:    str
+        :param interface:   Interface Name (`interfaceName` attribute of plugin) or Interface UUID
+        :type interface:    str
         :rtype:                 bool
         """
-        if interfaceName in self.interfaces:
-            try:
-                inter = self.interfaces.get(interfaceName)
-                inter_uuid = inter.uuid
+        interfacesByName = {plug_obj.interfaceName: plug_obj for plug_uuid, plug_obj
+                            in self.plugin_manager.getPluginInstancesByBaseClass(bases.InterfaceBase).items()}
 
-                # Call the plugin hook to close the interface
-                inter.close()
+        if interface in interfacesByName:
+            inter_uuid = interfacesByName.get(interface).uuid
 
-                self.logger.info("Stopped Interface: %s" % interfaceName)
+        else:
+            inter_uuid = interface
 
-                del self._interfaces[inter_uuid]
-                return True
+        try:
+            inter = self.interfaces.get(inter_uuid)
 
-            except NotImplementedError:
-                return False
-                
-            except:
-                self.logger.exception("Exception during interface close")
-                return False
+            # Call the plugin hook to close the interface
+            inter.close()
+
+            self.logger.info("Stopped Interface: %s" % inter.interfaceName)
+
+            self.plugin_manager.destroyPluginInstance(inter_uuid)
+            return True
+
+        except:
+            self.logger.exception("Exception during interface close")
+            return False
         
     # ===========================================================================
     # Resource Operations
@@ -340,33 +354,9 @@ class InstrumentManager(object):
         Refresh all interfaces and resources. Attempts enumeration on all interfaces, then calls the `refresh`
         method for all resources.
         """
-        for interfaceName, interfaceObj in self.interfaces.items():
-            try:
-                # Discover any new resources
-                interfaceObj.refresh()
-            except NotImplementedError:
-                pass
-
-    def getAttributes(self):
-        """
-        Get the class attributes for all loaded plugins. Dictionary keys are the Fully Qualified Names (FQN) of the
-        plugins
-
-        :rtype:                 dict[str:dict]
-        """
-        return self.plugin_manager.getAllPluginInfo()
-    
-    def getProperties(self):
-        """
-        Returns the property dictionaries for all resources
-        
-        :rtype:                 dict[str:dict]
-        """
-        ret = {}
-        ret.update({uuid:pObj.getProperties() for uuid,pObj in self._interfaces.items()})
-        ret.update({uuid:pObj.getProperties() for uuid,pObj in self.resources.items()})
-        
-        return ret
+        for inter_uuid, inter_obj in self.interfaces.items():
+            # Discover any new resources
+            inter_obj.refresh()
 
     @property
     def resources(self):
@@ -381,6 +371,8 @@ class InstrumentManager(object):
     def listResources(self):
         """
         Get a list of UUIDs for all resources
+
+        :deprecated:            Deprecated by :func:`getProperties`
 
         :rtype:                 list[str]
         """
@@ -469,33 +461,30 @@ class InstrumentManager(object):
 
     @property
     def drivers(self):
-        return self._drivers
+        """
+        :returns:               Dictionary of driver plugin classes {FQN -> Driver Class}
+        :rtype:                 dict[str:labtronyx.bases.driver.DriverBase]
+        """
+        return self.plugin_manager.getPluginsByBaseClass(bases.DriverBase)
                 
     def listDrivers(self):
         """
         Get a list of loaded driver names. Returned names are the keys into the `driver` dictionary which contains the
         driver classes.
 
+        :deprecated:            Deprecated by :func:`getAttributes`
+
         :rtype:                 list[str]
         """
-        return self._drivers.keys()
-
-    def getDriverInfo(self):
-        """
-        Get a dictionary of loaded driver info
-
-        :deprecated: Deprecated by :func:`getAttributes`
-
-        :rtype:                 dict[str:dict]
-        """
-        return {driver:self.plugin_manager.getPluginInfo(driver) for driver in self.drivers}
+        return self.drivers.keys()
 
     @property
     def scripts(self):
         """
-        :rtype: dict[str:bases.ScriptBase]
+        :returns:               Dictionary of script plugin instances {UUID -> Script object}
+        :rtype:                 dict[str:labtronyx.bases.script.ScriptBase]
         """
-        return self._scripts
+        return self.plugin_manager.getPluginInstancesByBaseClass(bases.ScriptBase)
 
     def openScript(self, script_fqn, **kwargs):
         """
@@ -507,22 +496,23 @@ class InstrumentManager(object):
         :returns:               Script Instance UUID
         :rtype:                 str
         :raises:                KeyError
+        :raises:                RuntimeError
         """
-        scriptCls = self.plugin_manager.getPlugin(script_fqn)
+        script_classes = self.plugin_manager.getPluginsByBaseClass(bases.ScriptBase)
 
-        if scriptCls is None:
-            raise KeyError("Script has not been loaded")
+        if script_fqn not in script_classes:
+            raise KeyError("Script plugin could not be found")
 
-        if not issubclass(scriptCls, bases.ScriptBase):
-            raise KeyError("Plugin is not a script")
+        if self.plugin_manager.validatePlugin(script_fqn):
+            scriptObj = self.plugin_manager.createPluginInstance(script_fqn, manager=self, logger=self.logger, **kwargs)
+            script_uuid = scriptObj.uuid
 
-        scriptObj = scriptCls(self, logger=self.logger, **kwargs)
-        script_uuid = scriptObj.uuid
-        self._scripts[script_uuid] = scriptObj
+            self._publishEvent(common.events.EventCodes.script.created, script_uuid)
 
-        self._publishEvent(common.events.EventCodes.script.created, script_uuid)
+            return script_uuid
 
-        return script_uuid
+        else:
+            raise RuntimeError("Script is invalid")
 
     def runScript(self, script_uuid):
         """
@@ -573,4 +563,4 @@ class InstrumentManager(object):
         if scriptObj.isRunning():
             return False
 
-        del self.scripts[script_uuid]
+        self.plugin_manager.destroyPluginInstance(script_uuid)

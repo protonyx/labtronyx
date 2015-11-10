@@ -110,6 +110,9 @@ class RemoteManager(LabtronyxRpcClient):
         """
         matching_instruments = []
         props = self._rpcCall('getProperties')
+
+        # Force resource plugin types
+        kwargs['pluginType'] = 'resource'
         
         for res_uuid, res_dict in props.items():
             match = True
@@ -120,10 +123,8 @@ class RemoteManager(LabtronyxRpcClient):
                     break
                 
             if match:
-                if res_uuid not in self.resources:
-                    self.refresh()
-
-                matching_instruments.append(self.resources.get(res_uuid))
+                if res_uuid in self.resources:
+                    matching_instruments.append(self.resources.get(res_uuid))
                 
         return matching_instruments
     
