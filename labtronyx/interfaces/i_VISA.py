@@ -82,15 +82,10 @@ class i_VISA(InterfaceBase):
         """
         Stops the VISA Interface. Frees all resources associated with the interface.
         """
-        for resID, res in self._resources.items():
-            try:
-                if res.isOpen():
-                    res.close()
+        for res_uuid, res_obj in self.resources.items():
+            res_obj.close()
 
-            except:
-                pass
-
-        self._resources.clear()
+            self.manager.plugin_manager.destroyPluginInstance(res_uuid)
 
         return True
 
@@ -98,56 +93,55 @@ class i_VISA(InterfaceBase):
         """
         Identify all devices known to the VISA driver and create resource objects for valid resources
         """
-        if self.resource_manager is not None:
-            try:
-                res_list = self.resource_manager.list_resources()
+        if self.resource_manager is None:
+            raise InterfaceError("Interface not open")
 
-                # Check for new resources
-                for res in res_list:
-                    if res not in self._resources.keys():
-                        try:
-                            self.getResource(res)
+        try:
+            res_list = self.resource_manager.list_resources()
 
-                        except ResourceUnavailable:
-                            pass
+            # Check for new resources
+            for resID in res_list:
+                if resID not in self.resources_by_id:
+                    try:
+                        self.getResource(resID)
 
-            except visa.VisaIOError as e:
-                # Exception thrown when there are no resources
-                self.logger.exception('VISA Exception during enumeration')
+                    except ResourceUnavailable:
+                        pass
+
+        except visa.VisaIOError as e:
+            # Exception thrown when there are no resources
+            self.logger.exception('VISA Exception during enumeration')
 
     def prune(self):
         """
         Close any resources that are no longer known to the VISA interface
         """
-        to_remove = []
+        if self.resource_manager is None:
+            raise InterfaceError("Interface not open")
 
-        if self.resource_manager is not None:
-            try:
-                # Get a fresh list of resources
-                res_list = self.resource_manager.list_resources()
+        try:
+            # Get a fresh list of resources
+            res_list = self.resource_manager.list_resources()
+        except visa.VisaIOError:
+            # Exception thrown when there are no resources
+            res_list = []
 
-                for resID in self._resources:
-                    if resID not in res_list:
-                        # Close this resource and remove from the list
-                        resource = self._resources.get(resID)
-                        to_remove.append(resID)
+        for res_uuid, res_obj in self.resources.items():
+            resID = res_obj.resID
 
-                        try:
-                            # Resource is gone, so this will probably error
-                            resource.close()
-                        except:
-                            pass
+            if resID not in res_list:
+                res_obj.close()
 
-            except visa.VisaIOError:
-                # Exception thrown when there are no resources
-                pass
+                self.manager.plugin_manager.destroyPluginInstance(res_uuid)
+                self.manager._publishEvent(common.events.EventCodes.resource.destroyed, res_obj.uuid)
 
-            except:
-                self.logger.exception("Unhandled VISA Exception while pruning resources")
-                raise
+    @property
+    def resources(self):
+        return self.manager.plugin_manager.getPluginInstancesByBaseClass(r_VISA)
 
-            for resID in to_remove:
-                del self._resources[resID]
+    @property
+    def resources_by_id(self):
+        return {res_obj.resID: res_obj for res_uuid, res_obj in self.resources.items()}
 
     def getResource(self, resID):
         """
@@ -158,22 +152,24 @@ class i_VISA(InterfaceBase):
         :raises:        ResourceUnavailable
         :raises:        InterfaceError
         """
+        if resID in self.resources_by_id:
+            raise InterfaceError("Resource instance already exists")
+
         try:
             instrument = self.resource_manager.open_resource(resID)
 
             # Instantiate the resource object
-            new_resource = r_VISA(manager=self.manager,
-                                  interface=self,
-                                  resID=resID,
-                                  visa_instrument=instrument,
-                                  logger=self.logger)
-
-            self._resources[resID] = new_resource
+            res_obj = self.manager.plugin_manager.createPluginInstance(r_VISA.fqn, manager=self.manager,
+                                                                       interface=self,
+                                                                       resID=resID,
+                                                                       instrument=instrument,
+                                                                       logger=self.logger
+                                                                       )
 
             # Signal new resource event
-            self.manager._publishEvent(common.events.EventCodes.resource.created, new_resource.uuid)
+            self.manager._publishEvent(common.events.EventCodes.resource.created, res_obj.uuid)
 
-            return new_resource
+            return res_obj
 
         except AttributeError:
             raise ResourceUnavailable('Invalid VISA Resource Identifier: %s' % resID)
@@ -225,10 +221,10 @@ class r_VISA(ResourceBase):
         pyvisa.constants.InterfaceType.firewire: "Firewire"
     }
 
-    def __init__(self, manager, interface, resID, **kwargs):
-        self.instrument = kwargs.pop('visa_instrument')
-
+    def __init__(self, manager, interface, resID, instrument, **kwargs):
         ResourceBase.__init__(self, manager, interface, resID, **kwargs)
+
+        self.instrument = instrument
 
         # Instance variables
         self._identity = []

@@ -19,16 +19,18 @@ class InterfaceBase(PluginBase):
 
         self._manager = manager
 
-        # Instance variables
-        self._resources = {}
-
     @property
     def manager(self):
         return self._manager
 
     @property
     def resources(self):
-        return self._resources
+        """
+        Dictionary of resource objects by UUID
+
+        :rtype: dict{str: labtronyx.bases.resource.ResourceBase}
+        """
+        return {}
 
     def getProperties(self):
         """
@@ -48,15 +50,8 @@ class InterfaceBase(PluginBase):
         Macro for interfaces that support enumeration. Calls `enumerate` then `prune` to get an updated list of
         resources available to the interface
         """
-        try:
-            self.enumerate()
-        except NotImplementedError:
-            pass
-
-        try:
-            self.prune()
-        except NotImplementedError:
-            pass
+        self.enumerate()
+        self.prune()
 
     # ==========================================================================
     # Interface Methods
@@ -91,13 +86,13 @@ class InterfaceBase(PluginBase):
         """
         Refreshes the resource list by enumerating all of the available devices on the interface.
         """
-        raise NotImplementedError
+        pass
 
     def prune(self):
         """
         Clear out any resources that are no longer known to the interface
         """
-        raise NotImplementedError
+        pass
 
     def getResource(self, resID):
         """

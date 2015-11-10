@@ -42,16 +42,11 @@ class i_Serial(InterfaceBase):
 
         :return:        bool
         """
-        for resID, res in self._resources.items():
-            try:
-                if res.isOpen():
-                    res.close()
-                    
-            except:
-                pass
+        for res_uuid, res_obj in self.resources.items():
+            res_obj.close()
 
-        self._resources.clear()
-            
+            self.manager.plugin_manager.destroyPluginInstance(res_uuid)
+
         return True
 
     def enumerate(self):
@@ -61,10 +56,8 @@ class i_Serial(InterfaceBase):
         res_list = list(serial.tools.list_ports.comports())
 
         # Check for new resources
-        for res in res_list:
-            resID, _, _ = res
-
-            if resID not in self._resources:
+        for resID, _, _ in res_list:
+            if resID not in self.resources_by_id:
                 try:
                     self.getResource(resID)
 
@@ -77,22 +70,22 @@ class i_Serial(InterfaceBase):
         """
         res_list = [resID for resID, _, _ in serial.tools.list_ports.comports()]
 
-        to_remove = []
+        for res_uuid, res_obj in self.resources.items():
+            resID = res_obj.resID
 
-        for resID in self._resources:
             if resID not in res_list:
-                # Close this resource and remove from the list
-                res = self._resources.get(resID)
-                to_remove.append(resID)
+                res_obj.close()
 
-                try:
-                    # Resource is gone, so this will probably error
-                    res.close()
-                except:
-                    pass
+                self.manager.plugin_manager.destroyPluginInstance(res_uuid)
+                self.manager._publishEvent(common.events.EventCodes.resource.destroyed, res_obj.uuid)
 
-        for resID in to_remove:
-            del self._resources[resID]
+    @property
+    def resources(self):
+        return self.manager.plugin_manager.getPluginInstancesByBaseClass(r_Serial)
+
+    @property
+    def resources_by_id(self):
+        return {res_obj.resID: res_obj for res_uuid, res_obj in self.resources.items()}
 
     def getResource(self, resID):
         """
@@ -103,20 +96,23 @@ class i_Serial(InterfaceBase):
         :raises:        ResourceUnavailable
         :raises:        InterfaceError
         """
+        if resID in self.resources_by_id:
+            raise InterfaceError("Resource instance already exists")
+
         try:
             instrument = serial.Serial(port=resID, timeout=0)
 
-            new_resource = r_Serial(manager=self.manager,
-                                    interface=self,
-                                    resID=resID,
-                                    instrument=instrument,
-                                    logger=self.logger)
-            self._resources[resID] = new_resource
+            res_obj = self.manager.plugin_manager.createPluginInstance(r_Serial.fqn, manager=self.manager,
+                                                                       interface=self,
+                                                                       resID=resID,
+                                                                       instrument=instrument,
+                                                                       logger=self.logger
+                                                                       )
 
             # Signal new resource event
-            self.manager._publishEvent(common.events.EventCodes.resource.created, new_resource.uuid)
+            self.manager._publishEvent(common.events.EventCodes.resource.created, res_obj.uuid)
 
-            return new_resource
+            return res_obj
 
         except (serial.SerialException, OSError) as e:
             if os.name == 'nt':
@@ -145,10 +141,10 @@ class r_Serial(ResourceBase):
     LF = '\n'
     termination = CR + LF
         
-    def __init__(self, manager, interface, resID, **kwargs):
+    def __init__(self, manager, interface, resID, instrument, **kwargs):
         ResourceBase.__init__(self, manager, interface, resID, **kwargs)
         
-        self.instrument = kwargs.get('instrument')
+        self.instrument = instrument
         
         self.logger.debug("Created Serial resource: %s", resID)
         
