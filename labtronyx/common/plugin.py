@@ -55,10 +55,7 @@ class PluginManager(object):
         Search all directories for plugins
         """
         for dir in self._directories:
-            if type(dir) == str:
-                self.locatePlugins(dir)
-            else:
-                self.locatePlugins(dir)
+            self.locatePlugins(dir)
 
     def locatePlugins(self, plugin_path, recursive=True, prefix=''):
         """
@@ -76,7 +73,11 @@ class PluginManager(object):
         plugin_path = os.path.abspath(plugin_path)
 
         # Create an iterator
-        pkg_iter = pkgutil.iter_modules(path=[plugin_path])
+        pkg_iter = list(pkgutil.iter_modules(path=[plugin_path]))
+
+        if len(pkg_iter) == 0:
+            self.logger.info("No Python package found at path: %s", plugin_path)
+            return
 
         for importer, modname, ispkg in pkg_iter:
             if ispkg and recursive:
@@ -260,6 +261,20 @@ class PluginManager(object):
 
         else:
             return False
+
+    def getPluginInstance(self, plugin_uuid):
+        """
+        Get plugin instance by UUID
+
+        :param plugin_uuid:     Plugin Instance UUID
+        :type plugin_uuid:      str
+        :rtype:                 PluginBase
+        :raises:                KeyError
+        """
+        if plugin_uuid in self._plugins_instances:
+            return self._plugins_instances.get(plugin_uuid)
+        else:
+            raise KeyError("Plugin instance does not exist")
 
     def getPluginInstances(self, plugin_name):
         """
