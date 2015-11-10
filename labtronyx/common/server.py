@@ -99,7 +99,7 @@ def rpc_process(uuid=None):
 
         else:
             try:
-                res = man.resources.get(uuid)
+                res = man.plugin_manager.getPluginInstance(uuid)
                 return json.dumps({
                     'methods': rpc_getMethods(res)
                 })
@@ -121,7 +121,7 @@ def rpc_process(uuid=None):
         if uuid is None:
             target = man
         else:
-            target = man.resources.get(uuid)
+            target = man.plugin_manager.getPluginInstance(uuid)
 
         if target is None:
             abort(404)
