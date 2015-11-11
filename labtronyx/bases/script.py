@@ -205,6 +205,22 @@ class ScriptBase(PluginBase):
     def assignResource(self, res_attribute, res_uuid):
         raise NotImplementedError
 
+    @classmethod
+    def getParameters(cls):
+        params = cls._getClassAttributesByBase(ScriptParameter)
+
+        # TODO: Add more information than just the names of parameters (e.g. description, type, valid values)
+        return params.keys()
+
+    @classmethod
+    def getAttributes(cls):
+        attrs = super(ScriptBase, cls).getAttributes()
+
+        # Inject parameters into attributes since they don't subclass PluginAttribute (why?)
+        attrs['parameters'] = cls.getParameters()
+
+        return attrs
+
     def getProperties(self):
         """
         Get script instance properties
