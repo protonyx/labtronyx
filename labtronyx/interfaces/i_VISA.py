@@ -727,26 +727,26 @@ class r_VISA(ResourceBase):
             self.logger.debug("Searching for suitable drivers")
 
             # Search for a compatible model
-            validModels = []
+            driverClasses = self.manager.plugin_manager.getPluginsByType('driver')
+            validDrivers = []
 
             # Iterate through all driver classes to find compatible driver
-            for driver, driverCls in self.manager.drivers.items():
-                if hasattr(driverCls, 'VISA_validResource'):
-                    try:
-                        if driverCls.VISA_validResource(self._identity):
-                            validModels.append(driver)
-                            self.logger.debug("Found match: %s", driver)
-                    except:
-                        pass
+            for driver_fqn, driverCls in driverClasses.items():
+                try:
+                    if driverCls.VISA_validResource(self._identity):
+                        validDrivers.append(driver_fqn)
+                        self.logger.debug("Found match: %s", driver_fqn)
+                except:
+                    pass
 
             # Only auto-load a model if a single model was found
-            if len(validModels) == 1:
-                ResourceBase.loadDriver(self, validModels[0], force)
-
+            if len(validDrivers) == 1:
+                ResourceBase.loadDriver(self, validDrivers[0], force)
                 return True
 
-            self.logger.debug("Unable to load driver, more than one match found")
-            return False
+            else:
+                self.logger.debug("Unable to load driver, more than one match found")
+                return False
 
         else:
             return ResourceBase.loadDriver(self, driverName, force)

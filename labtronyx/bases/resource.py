@@ -227,6 +227,7 @@ class ResourceBase(PluginBase):
         :type driverName:       str
         :param force:           Force load driver by unloading existing driver
         :returns:               True if successful, False otherwise
+        :raises:                KeyError if driver class not found
         """
         if self.hasDriver() and not force:
             return False
@@ -234,31 +235,32 @@ class ResourceBase(PluginBase):
         if force:
             self.unloadDriver()
 
-        # Check if the specified model is valid
-        if driverName in self.manager.drivers:
-            self.logger.debug('Loading driver [%s] for resource [%s]', driverName, self._resID)
+        self.logger.debug('Loading driver [%s] for resource [%s]', driverName, self._resID)
 
-            testClass = self.manager.drivers.get(driverName)
+        # Instantiate driver
+        try:
+            self._driver = self.manager.plugin_manager.createPluginInstance(driverName,
+                                                                            resource=self,
+                                                                            logger=self.logger)
 
-            # Instantiate driver
-            try:
-                self._driver = testClass(self, logger=self.logger)
+            # Signal the event
+            self.manager._publishEvent(common.events.EventCodes.resource.driver_loaded, self.uuid, driverName)
 
-                # Signal the event
-                self.manager._publishEvent(common.events.EventCodes.resource.driver_loaded, self.uuid, driverName)
+            # Call the driver open if the resource is already open
+            if self.isOpen():
+                self._driver.open()
 
-                # Call the driver open if the resource is already open
-                if self.isOpen():
-                    self._driver.open()
+        except KeyError:
+            raise KeyError("Driver not found")
 
-            except:
-                self.logger.exception('Exception during driver load: %s', driverName)
+        except:
+            self.logger.exception('Exception during driver load: %s', driverName)
 
-                self.unloadDriver()
+            self.unloadDriver()
 
-                return False
+            return False
 
-            return True
+        return True
     
     def unloadDriver(self):
         """
@@ -273,9 +275,11 @@ class ResourceBase(PluginBase):
                 pass
             except:
                 self.logger.exception('Exception while unloading driver')
+                return False
             finally:
                 self.close()
-                
+
+            self.manager.plugin_manager.destroyPluginInstance(self._driver.uuid)
             self._driver = None
             
             self.logger.debug('Unloaded driver for resource [%s]', self._resID)
@@ -283,7 +287,4 @@ class ResourceBase(PluginBase):
             # Signal the event
             self.manager._publishEvent(common.events.EventCodes.resource.driver_unloaded, self.uuid)
                
-            return True
-        
-        else:
-            return False
+        return True

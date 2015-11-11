@@ -153,15 +153,19 @@ class PluginManager(object):
     def getPluginsByType(self, plugin_type):
         return {k: v for k, v in self._plugins_classes.items() if v.pluginType == plugin_type}
 
-    def getPlugin(self, plugin_name):
+    def getPlugin(self, plugin_fqn):
         """
         Get the plugin class for a plugin with a given name
 
-        :param plugin_name: Plugin name
-        :type plugin_name:  str
+        :param plugin_fqn:  Plugin Fully Qualified Name
+        :type plugin_fqn:   str
         :rtype:             type(PluginBase)
+        :raises:            KeyError
         """
-        return self._plugins_classes.get(plugin_name)
+        if plugin_fqn in self._plugins_classes:
+            return self._plugins_classes.get(plugin_fqn)
+        else:
+            raise KeyError("Plugin not found")
 
     def getPluginInfo(self, plugin_name):
         """
@@ -239,6 +243,7 @@ class PluginManager(object):
         :type plugin_name:      str
         :return:                Plugin instance
         :rtype:                 PluginBase
+        :raises:                KeyError
         """
         plugCls = self.getPlugin(plugin_name)
         plugInst = plugCls(**kwargs)
