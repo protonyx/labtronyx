@@ -209,8 +209,7 @@ class ScriptBase(PluginBase):
     def getParameters(cls):
         params = cls._getClassAttributesByBase(ScriptParameter)
 
-        # TODO: Add more information than just the names of parameters (e.g. description, type, valid values)
-        return params.keys()
+        return {p_name: p_cls.getDict() for p_name, p_cls in params.items()}
 
     @classmethod
     def getAttributes(cls):
@@ -505,10 +504,11 @@ class RequiredResource(object):
 
 
 class ScriptParameter(object):
-    def __init__(self, attrType=str, required=False, defaultValue=None):
+    def __init__(self, attrType=str, required=False, defaultValue=None, description=''):
         self.attrType = attrType
         self.required = required
         self.defaultValue = defaultValue
+        self.description = description
 
     def validate(self, value):
         if self.required and value is None:
@@ -521,6 +521,12 @@ class ScriptParameter(object):
 
             except:
                 raise TypeError("must be of type %s" % self.attrType)
+
+    def getDict(self):
+        return {
+            'description': self.description,
+            'required': self.required
+        }
 
 
 class ScriptResult(object):
