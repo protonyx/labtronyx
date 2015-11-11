@@ -44,12 +44,6 @@ class RemoteManager(LabtronyxRpcClient):
     """
     RPC_PORT = 6780
 
-    REMOTE_PLUGIN_MAP = {
-        'resource': RemoteResource,
-        'interface': LabtronyxRpcClient,
-        'script': LabtronyxRpcClient
-    }
-
     def __init__(self, **kwargs):
         uri = kwargs.get('uri')
         host = kwargs.pop('host', 'localhost')
@@ -76,11 +70,17 @@ class RemoteManager(LabtronyxRpcClient):
         self._rpcCall('refresh')
 
         self._properties = self._rpcCall('getProperties')
+
+        REMOTE_PLUGIN_MAP = {
+            'resource':  RemoteResource,
+            'interface': LabtronyxRpcClient,
+            'script':    LabtronyxRpcClient
+        }
         
         for plug_uuid, plug_props in self._properties.items():
             if plug_uuid not in self._remote_clients:
                 uri = "http://{0}:{1}/rpc/{2}".format(self.host, self.port, plug_uuid)
-                remote_class = self.REMOTE_PLUGIN_MAP.get(plug_props.get('pluginType'), LabtronyxRpcClient)
+                remote_class = REMOTE_PLUGIN_MAP.get(plug_props.get('pluginType'), LabtronyxRpcClient)
                 self._remote_clients[plug_uuid] = remote_class(uri, timeout=self.timeout, logger=self.logger)
         
         # Purge resources that are no longer in remote

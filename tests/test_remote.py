@@ -265,7 +265,8 @@ class Remote_Tests(unittest.TestCase):
         self.assertEqual(data_out, '')
 
     def test_startup_time(self):
-        assert_less_equal(self.startup_time, 2.0, "RPC Init time must be less than 2.0 second(s)")
+        assert_less_equal(self.startup_time, 5.0, "Remote initialization time: %f was greater than 5.0 seconds" %
+                          self.startup_time)
 
     def test_remote_client_connect(self):
         methods = self.client._getMethods()
