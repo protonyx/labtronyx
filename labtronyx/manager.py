@@ -309,7 +309,7 @@ class InstrumentManager(object):
 
                 else:
                     self.logger.error("Interface %s failed to open", interfaceName)
-                    self.disableInterface(interfaceName)
+                    self.disableInterface(int_obj.uuid)
                     return False
 
             except:
@@ -344,7 +344,7 @@ class InstrumentManager(object):
                 # Call the plugin hook to close the interface
                 inter.close()
 
-                self.logger.info("Stopped Interface: %s" % inter.interfaceName)
+                self.logger.info("Stopped Interface: %s" % inter.fqn)
 
                 self.plugin_manager.destroyPluginInstance(inter_uuid)
                 return True

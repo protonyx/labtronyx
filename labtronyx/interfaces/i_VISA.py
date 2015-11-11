@@ -72,11 +72,11 @@ class i_VISA(InterfaceBase):
         except OSError as e:
             # No VISA library on the computer
             self.logger.error("No VISA Library found on the computer")
-            return False
 
         except Exception as e:
             self.logger.exception("Failed to initialize VISA Interface")
-            return False
+
+        return False
 
     def close(self):
         """

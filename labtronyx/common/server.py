@@ -121,7 +121,10 @@ def rpc_process(uuid=None):
         if uuid is None:
             target = man
         else:
-            target = man.plugin_manager.getPluginInstance(uuid)
+            try:
+                target = man.plugin_manager.getPluginInstance(uuid)
+            except KeyError:
+                abort(404)
 
         if target is None:
             abort(404)
