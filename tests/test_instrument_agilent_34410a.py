@@ -1,26 +1,26 @@
 import unittest
-import importlib
-import time
 import os
 
 import labtronyx
 
-class Agilent_34410A_Functional_Tests(unittest.TestCase):
 
-    SIM = True
+class Agilent_34410A_Functional_Tests(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
         # Setup a mock manager
         self.manager = labtronyx.InstrumentManager()
 
-        if 'TRAVIS' in os.environ or self.SIM:
+        dev_list = self.manager.findInstruments(driver='Agilent.Multimeter.d_3441XA')
+
+        if len(dev_list) == 0:
+            # Use sim
             lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'agilent_34410a.yaml')
 
             self.manager.enableInterface('VISA', library='%s@sim'%lib_path)
 
-        # Find the instrument by model number
-        dev_list = self.manager.findInstruments(deviceVendor='Agilent', deviceModel='34410A')
+            # Find the instrument by model number
+            dev_list = self.manager.findInstruments(driver='Agilent.Multimeter.d_3441XA')
 
         if len(dev_list) == 1:
             self.dev = dev_list[0]
@@ -30,8 +30,7 @@ class Agilent_34410A_Functional_Tests(unittest.TestCase):
 
     def setUp(self):
         if self.dev is None:
-            self.skipTest("Instrument not present")
-            return
+            self.fail("Instrument not present")
 
         # Open the instrument
         self.dev.open()
@@ -44,10 +43,6 @@ class Agilent_34410A_Functional_Tests(unittest.TestCase):
 
     def tearDown(self):
         self.dev.close()
-
-    def test_driver_name(self):
-        # Regression test
-        self.assertEqual(self.dev.getProperties()['driver'], 'Agilent.Multimeter.d_3441XA')
 
     def test_bad_command(self):
         self.assertRaises(labtronyx.common.errors.InterfaceTimeout, self.dev.query, 'BAD COMMAND')

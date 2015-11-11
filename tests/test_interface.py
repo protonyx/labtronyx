@@ -7,51 +7,36 @@ import mock
 import labtronyx
 from labtronyx.bases import ResourceBase, InterfaceBase
 
+
 def test_interfaces():
     # Nose test generator to run unittests on discovered interfaces
     instr = labtronyx.InstrumentManager()
 
-    for interName, interCls in instr.plugin_manager.getPluginsByCategory('interfaces').items():
+    for interName, interCls in instr.plugin_manager.getPluginsByBaseClass(InterfaceBase).items():
         yield check_interface_api, interCls
 
+
 def check_interface_api(interfaceCls):
-    interfaceCls._validateAttributes()
+    pass
 
 
-class Interface_Integration_Tests(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        self.manager = labtronyx.InstrumentManager()
+def test_interface_integration():
+    manager = labtronyx.InstrumentManager()
 
-        # Create a fake interface, imitating the interface API
-        self.interf = InterfaceBase(manager=self.manager)
-        self.interf.open = mock.Mock(return_value=True)
-        self.interf.close = mock.Mock(return_value=True)
+    # Create a fake interface, imitating the interface API
+    interf = InterfaceBase
+    interf.interfaceName = 'Test'
+    interf.open = mock.Mock(return_value=True)
+    interf.close = mock.Mock(return_value=True)
 
-        # Create a fake resource
-        self.res = ResourceBase(manager=self.manager,
-                                 interface=self.interf,
-                                 resID='DEBUG')
-        self.res.getProperties = mock.Mock(return_value=dict(resourceID='DEBUG'))
+    # Inject the fake plugin into the manager instance
+    manager.plugin_manager._plugins_classes[interf.uuid] = interf
 
-        # self.interf.resources = {self.res.uuid: self.res}
-
-        # Inject the fake plugins into the manager instance
-        self.manager.plugin_manager._plugins_instances[self.interf.uuid] = self.interf
-        self.manager.plugin_manager._plugins_instances[self.res.uuid] = self.res
-
-    def setUp(self):
-        self.skipTest("Integration tests are broken with new plugin API")
-        
-    def test_resource(self):
-        self.dev = self.manager.findInstruments(resourceID='DEBUG')
-        self.assertEqual(type(self.dev), list)
-        self.assertEqual(len(self.dev), 1)
-
-        self.dev = self.dev[0]
-
-    def test_interface_get_properties(self):
-        self.manager.getProperties()
+    assert_true(manager.enableInterface('Test'))
+    assert_true(interf.open.called)
+    assert_false(interf.close.called)
+    assert_true(manager.disableInterface('Test'))
+    assert_true(interf.open.called)
 
 
 class VISA_Sim_Tests(unittest.TestCase):
@@ -121,23 +106,22 @@ class VISA_Tests(unittest.TestCase):
     def setUpClass(cls):
         cls.manager = labtronyx.InstrumentManager()
 
+        interfaceInstancesByName = {pluginCls.interfaceName: pluginCls for plugin_uuid, pluginCls
+                                    in cls.manager.interfaces.items()}
+
+        cls.i_visa = interfaceInstancesByName.get('VISA')
+
     def setUp(self):
-        if self.manager.interfaces.get('VISA') is None:
+        if 'VISA' not in self.manager.listInterfaces():
             self.skipTest('VISA library not installed')
 
     def test_enumerate_time(self):
         import time
         start = time.clock()
+        self.i_visa.enumerate()
+        end = time.clock()
 
-        i_visa = self.manager.interfaces.get('VISA')
-        i_visa.enumerate()
-
-        self.assertLessEqual(time.clock() - start, 1.0, "VISA refresh time must be less than 1.0 second(s)")
-
-    def test_get_resources(self):
-        i_visa = self.manager.interfaces.get('VISA')
-        ret = i_visa.resources
-        self.assertEqual(type(ret), dict)
+        self.assertLessEqual(end - start, 1.0, "VISA refresh time must be less than 1.0 second(s)")
 
     def test_get_resource_invalid(self):
         with self.assertRaises(labtronyx.ResourceUnavailable):
@@ -150,7 +134,7 @@ class Serial_Tests(unittest.TestCase):
         cls.manager = labtronyx.InstrumentManager()
 
     def setUp(self):
-        if self.manager.interfaces.get('Serial') is None:
+        if 'Serial' not in self.manager.listInterfaces():
             self.skipTest('Serial library not enabled')
 
     def test_get_resources(self):

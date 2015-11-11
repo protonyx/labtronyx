@@ -30,7 +30,9 @@ class InterfaceBase(PluginBase):
 
         :rtype: dict{str: labtronyx.bases.resource.ResourceBase}
         """
-        return {}
+        return {plug_uuid: plugCls for plug_uuid, plugCls
+                in self.manager.plugin_manager.getPluginInstancesByType('resource').items()
+                if plugCls.interface == self}
 
     def getProperties(self):
         """

@@ -288,10 +288,9 @@ class InstrumentManager(object):
         # Resolve interfaceName as a plugin FQN
         if interfaceName in interfaceClasses:
             fqn = interfaceName
-        else:
+        elif interfaceName in interfacesByName:
             fqn = interfacesByName.get(interfaceName)
-
-        if fqn is None:
+        else:
             raise KeyError("Interface not found or not available")
 
         # If the interface is already enabled, disable the existing one
@@ -407,10 +406,10 @@ class InstrumentManager(object):
         :raises:                InterfaceError
         """
         # NON-SERIALIZABLE
-        int_obj = self.interfaces.get(interfaceName)
-
-        if int_obj is None:
+        if interfaceName not in self.listInterfaces():
             raise common.errors.InterfaceUnavailable('Interface not found')
+
+        int_obj = [intObj for int_uuid, intObj in self.interfaces.items() if intObj.interfaceName == interfaceName][0]
 
         try:
             # Call the interface getResource hook

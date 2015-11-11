@@ -95,10 +95,10 @@ class PluginManager(object):
                     new_plugs = self.extractPlugins(mod)
 
                     for name, plugin_cls in new_plugs.items():
-                        fq_name = plugin_name + '.' + name
-                        plugin_cls.fqn = fq_name
-
                         if plugin_cls not in self._plugins_classes.values():
+                            fq_name = plugin_name + '.' + name
+                            plugin_cls.fqn = fq_name
+
                             self._plugins_classes[fq_name] = plugin_cls
 
                             self.logger.debug("Found plugin: %s", fq_name)

@@ -1,25 +1,25 @@
 import unittest
-import importlib
 import os
 
 import labtronyx
 
-class Agilent_B2901_Functional_Tests(unittest.TestCase):
 
-    SIM = True
+class Agilent_B2901_Functional_Tests(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
         # Setup a mock manager
         self.manager = labtronyx.InstrumentManager()
 
-        if 'TRAVIS' in os.environ or self.SIM:
+        dev_list = self.manager.findInstruments(driver='Agilent.SMU.d_B29XX')
+
+        if len(dev_list) == 0:
             lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'agilent_b2901.yaml')
 
             self.manager.enableInterface('VISA', library='%s@sim'%lib_path)
 
-        # Find the instrument by model number
-        dev_list = self.manager.findInstruments(deviceVendor='Agilent', deviceModel='B2901A')
+            # Find the instrument by model number
+            dev_list = self.manager.findInstruments(driver='Agilent.SMU.d_B29XX')
 
         if len(dev_list) == 1:
             self.dev = dev_list[0]
@@ -29,8 +29,7 @@ class Agilent_B2901_Functional_Tests(unittest.TestCase):
 
     def setUp(self):
         if self.dev is None:
-            self.skipTest("Instrument not present")
-            return
+            self.fail("Instrument not present")
 
         # Open the instrument
         self.dev.open()
@@ -48,10 +47,6 @@ class Agilent_B2901_Functional_Tests(unittest.TestCase):
         self.assertRaises(labtronyx.common.errors.InterfaceTimeout, self.dev.query, 'BAD COMMAND')
 
         self.assertEqual(len(self.dev.getErrors()), 1)
-
-    def test_driver_name(self):
-        # Regression test
-        self.assertEqual(self.dev.getProperties()['driver'], 'Agilent.SMU.d_B29XX')
 
     def test_configuration(self):
         conf = self.dev.getConfiguration()
