@@ -44,6 +44,12 @@ class RemoteManager(LabtronyxRpcClient):
     """
     RPC_PORT = 6780
 
+    REMOTE_PLUGIN_MAP = {
+        'resource': RemoteResource,
+        'interface': LabtronyxRpcClient,
+        'script': LabtronyxRpcClient
+    }
+
     def __init__(self, **kwargs):
         uri = kwargs.get('uri')
         host = kwargs.pop('host', 'localhost')
@@ -56,7 +62,7 @@ class RemoteManager(LabtronyxRpcClient):
 
         super(RemoteManager, self).__init__(uri, **kwargs)
 
-        self._resources = {}
+        self._remote_clients = {}
         self._properties = {}
 
         # Test the connection
@@ -69,25 +75,37 @@ class RemoteManager(LabtronyxRpcClient):
         """
         self._rpcCall('refresh')
 
-        res_list = self._rpcCall('listResources')
+        self._properties = self._rpcCall('getProperties')
         
-        for res_uuid in res_list:
-            if res_uuid not in self._resources:
-                uri = "http://{0}:{1}/rpc/{2}".format(self.host, self.port, res_uuid)
-
-                self._resources[res_uuid] = RemoteResource(uri, timeout=self.timeout, logger=self.logger)
+        for plug_uuid, plug_props in self._properties.items():
+            if plug_uuid not in self._remote_clients:
+                uri = "http://{0}:{1}/rpc/{2}".format(self.host, self.port, plug_uuid)
+                remote_class = self.REMOTE_PLUGIN_MAP.get(plug_props.get('pluginType'), LabtronyxRpcClient)
+                self._remote_clients[plug_uuid] = remote_class(uri, timeout=self.timeout, logger=self.logger)
         
         # Purge resources that are no longer in remote
-        for res_uuid in self._resources.keys():
-            if res_uuid not in res_list:
-                self._resources.pop(res_uuid)
+        for plug_uuid in self._remote_clients.keys():
+            if plug_uuid not in self._properties:
+                del self._remote_clients[plug_uuid]
+
+    def _clients_by_type(self, pluginType):
+        return {uuid: self._remote_clients.get(uuid) for uuid, props in self._properties.items()
+                if props.get('pluginType') == pluginType}
+
+    @property
+    def scripts(self):
+        return self._clients_by_type('script')
+
+    @property
+    def interfaces(self):
+        return self._clients_by_type('interface')
 
     @property
     def resources(self):
-        return self._resources
+        return self._clients_by_type('resource')
     
     def getResource(self, interface, resID, driverName=None):
-        self._rpcNotify(interface, resID, driverName)
+        self._rpcNotify('getResource', interface, resID, driverName)
 
         res_list = self.findResources(interface=interface, resID=resID)
 

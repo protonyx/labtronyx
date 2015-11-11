@@ -60,18 +60,7 @@ def resource_properties(uuid):
 def version():
     man = current_app.config.get('LABTRONYX_MANAGER')
 
-    try:
-        return json.dumps({
-            'version': man.version.ver_sem,
-            'version_full': man.version.ver_full,
-            'build_date': man.version.build_date,
-            'git_revision': man.version.git_revision
-        })
-
-    except:
-        return json.dumps({
-            'version': man.getVersion()
-        })
+    return json.dumps(man.getVersion())
 
 @api_blueprint.route('/api/shutdown')
 def shutdown():
