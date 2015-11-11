@@ -75,6 +75,9 @@ class InstrumentManager(object):
         for i_fqn, i_cls in self.plugin_manager.getPluginsByBaseClass(bases.InterfaceBase).items():
             self.enableInterface(i_fqn)
 
+        # Create the flask server app
+        self._server_app = common.server.create_server(self, self.server_port, logger=self.logger)
+
         # Start Server
         if kwargs.get('server', False):
             if not self.server_start():
@@ -113,13 +116,6 @@ class InstrumentManager(object):
         # Clean out old server, if any exists
         self.server_stop()
 
-        # Start event publisher
-        self._server_events = common.events.EventPublisher(self.ZMQ_PORT)
-        self._server_events.start()
-
-        # Create a server app
-        self._server_app = common.server.create_server(self, self.server_port, logger=self.logger)
-
         # Server start command
         from werkzeug.serving import run_simple
         srv_start_cmd = lambda: run_simple(
@@ -128,18 +124,23 @@ class InstrumentManager(object):
         )
 
         # Instantiate server
-        if new_thread:
-            server_thread = threading.Thread(name='Labtronyx-Server', target=srv_start_cmd)
-            server_thread.start()
+        try:
+            # Start event publisher
+            self._server_events = common.events.EventPublisher(self.ZMQ_PORT)
+            self._server_events.start()
 
-            return True
+            if new_thread:
+                server_thread = threading.Thread(name='Labtronyx-Server', target=srv_start_cmd)
+                server_thread.start()
 
-        else:
-            try:
+                return True
+
+            else:
                 srv_start_cmd()
 
-            except:
-                self.server_stop()
+        except:
+            self.logger.exception("Exception during server start")
+            self.server_stop()
 
     def server_stop(self):
         """
@@ -160,24 +161,20 @@ class InstrumentManager(object):
                 del self._server_events
 
         # Shutdown server
-        if hasattr(self, '_server_app'):
-            try:
-                # Must use the REST API to shutdown
-                import urllib2
-                url = 'http://{0}:{1}/api/shutdown'.format(self.getHostname(), self.server_port)
-                resp = urllib2.Request(url)
-                handler = urllib2.urlopen(resp)
+        try:
+            # Must use the REST API to shutdown
+            import urllib2
+            url = 'http://{0}:{1}/api/shutdown'.format(self.getHostname(), self.server_port)
+            resp = urllib2.Request(url)
+            handler = urllib2.urlopen(resp)
 
-                if handler.code == 200:
-                    self.logger.debug('Server stopped')
-                else:
-                    self.logger.error('Server stop returned code: %d', handler.code)
+            if handler.code == 200:
+                self.logger.debug('Server stopped')
+            else:
+                self.logger.error('Server stop returned code: %d', handler.code)
 
-            except:
-                pass
-
-            finally:
-                del self._server_app
+        except:
+            pass
 
     @property
     def version(self):
