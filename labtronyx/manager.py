@@ -173,18 +173,19 @@ class InstrumentManager(object):
         except:
             pass
 
-    @property
-    def version(self):
-        return version
-
     @staticmethod
     def getVersion():
         """
         Get the Labtronyx version
         
-        :returns: str
+        :rtype: dict{str: str}
         """
-        return version.ver_full
+        return {
+            'version': version.ver_sem,
+            'version_full': version.ver_full,
+            'build_date': version.build_date,
+            'git_revision': version.git_revision
+        }
 
     def getAddress(self):
         """
@@ -460,27 +461,8 @@ class InstrumentManager(object):
         return self.findResources(**kwargs)
 
     # ===========================================================================
-    # Driver Operations
+    # Script Operations
     # ===========================================================================
-
-    @property
-    def drivers(self):
-        """
-        :returns:               Dictionary of driver plugin classes {FQN -> Driver Class}
-        :rtype:                 dict[str:labtronyx.bases.driver.DriverBase]
-        """
-        return self.plugin_manager.getPluginsByBaseClass(bases.DriverBase)
-                
-    def listDrivers(self):
-        """
-        Get a list of loaded driver names. Returned names are the keys into the `driver` dictionary which contains the
-        driver classes.
-
-        :deprecated:            Deprecated by :func:`getAttributes`
-
-        :rtype:                 list[str]
-        """
-        return self.drivers.keys()
 
     @property
     def scripts(self):

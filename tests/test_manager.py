@@ -56,9 +56,6 @@ class InstrumentManager_Tests(unittest.TestCase):
 
     def test_refresh(self):
         self.instr.refresh()
-        
-    def test_get_drivers(self):
-        self.assertIsNotNone(self.instr.listDrivers())
 
     def test_get_resource(self):
         self.assertRaises(labtronyx.InterfaceUnavailable, self.instr.getResource, 'INVALID', 'NOPE')

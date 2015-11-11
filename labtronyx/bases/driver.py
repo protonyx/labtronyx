@@ -129,6 +129,9 @@ class DriverBase(PluginBase):
         else:
             raise AttributeError("Unable to find attribute in driver or resource")
 
+    def _rpc(self, request):
+        raise RuntimeError("Driver methods must be accessed through resource")
+
     @property
     def resource(self):
         return self._resource
