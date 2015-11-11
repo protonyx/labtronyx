@@ -77,6 +77,7 @@ class InstrumentManager(object):
 
         # Create the flask server app
         self._server_app = common.server.create_server(self, self.server_port, logger=self.logger)
+        self._server_events = common.events.EventPublisher(self.ZMQ_PORT)
 
         # Start Server
         if kwargs.get('server', False):
@@ -126,11 +127,11 @@ class InstrumentManager(object):
         # Instantiate server
         try:
             # Start event publisher
-            self._server_events = common.events.EventPublisher(self.ZMQ_PORT)
             self._server_events.start()
 
             if new_thread:
                 server_thread = threading.Thread(name='Labtronyx-Server', target=srv_start_cmd)
+                server_thread.setDaemon(True)
                 server_thread.start()
 
                 return True
@@ -150,15 +151,11 @@ class InstrumentManager(object):
         self._publishEvent(common.events.EventCodes.manager.shutdown)
 
         # Stop the event publisher
-        if hasattr(self, '_server_events'):
-            try:
-                self._server_events.stop()
+        try:
+            self._server_events.stop()
 
-            except:
-                pass
-
-            finally:
-                del self._server_events
+        except:
+            pass
 
         # Shutdown server
         try:
