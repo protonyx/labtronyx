@@ -191,6 +191,10 @@ class EventCodes:
         shutdown = "manager.shutdown"
         heartbeat = "manager.heartbeat"
 
+    class interface:
+        created = "interface.created"
+        destroyed = "interface.destroyed"
+
     class resource:
         created = "resource.created"
         destroyed = "resource.destroyed"
