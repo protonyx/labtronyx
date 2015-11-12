@@ -96,6 +96,8 @@ class i_VISA(InterfaceBase):
         if self.resource_manager is None:
             raise InterfaceError("Interface not open")
 
+        self.logger.debug("Enumerating VISA interface")
+
         try:
             res_list = self.resource_manager.list_resources()
 
@@ -225,6 +227,8 @@ class r_VISA(ResourceBase):
         ResourceBase.__init__(self, manager, interface, resID, **kwargs)
 
         self.instrument = instrument
+
+        self.logger.debug("Created VISA resource: %s", resID)
 
         # Instance variables
         self._identity = []

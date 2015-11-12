@@ -114,8 +114,12 @@ class InstrumentManager(object):
         :returns: True if successful, False otherwise
         :rtype: bool
         """
+        SERVER_THREAD_NAME = 'Labtronyx-Server'
+
         # Clean out old server, if any exists
-        self.server_stop()
+        threads = [th.name for th in threading.enumerate()]
+        if SERVER_THREAD_NAME in threads:
+            self.server_stop()
 
         # Server start command
         from werkzeug.serving import run_simple
@@ -130,7 +134,7 @@ class InstrumentManager(object):
             self._server_events.start()
 
             if new_thread:
-                server_thread = threading.Thread(name='Labtronyx-Server', target=srv_start_cmd)
+                server_thread = threading.Thread(name=SERVER_THREAD_NAME, target=srv_start_cmd)
                 server_thread.setDaemon(True)
                 server_thread.start()
 
@@ -163,7 +167,7 @@ class InstrumentManager(object):
             import urllib2
             url = 'http://{0}:{1}/api/shutdown'.format(self.getHostname(), self.server_port)
             resp = urllib2.Request(url)
-            handler = urllib2.urlopen(resp)
+            handler = urllib2.urlopen(resp, timeout=0.5)
 
             if handler.code == 200:
                 self.logger.debug('Server stopped')

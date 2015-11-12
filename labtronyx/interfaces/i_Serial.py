@@ -53,6 +53,8 @@ class i_Serial(InterfaceBase):
         """
         Scans system for new resources and creates resource objects for them.
         """
+        self.logger.debug("Enumerating Serial interface")
+
         res_list = list(serial.tools.list_ports.comports())
 
         # Check for new resources
