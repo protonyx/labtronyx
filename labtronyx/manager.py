@@ -3,13 +3,14 @@
 import os
 import socket
 import threading
+import logging
 
 # Local Imports
-from . import logger
 from . import version
 
 from . import bases
 from . import common
+
 
 class InstrumentManager(object):
     """
@@ -36,7 +37,12 @@ class InstrumentManager(object):
         # Configurable instance variables
         self.plugin_dirs = kwargs.get('plugin_dirs', [])
         self.server_port = kwargs.get('server_port', self.SERVER_PORT)
-        self.logger = kwargs.get('logger', logger)
+
+        if 'logger' in kwargs:
+            self.logger = kwargs.get('logger', )
+
+        else:
+            self.logger = logging.getLogger('labtronyx')
 
         # Initialize PYTHONPATH
         self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
@@ -302,7 +308,8 @@ class InstrumentManager(object):
 
                 # Call the plugin hook to open the interface. Ensure interface opens correctly
                 if int_obj.open():
-                    self.logger.debug("Started Interface: %s", interfaceName)
+                    self.logger.info("Started Interface: %s", interfaceName)
+                    self._publishEvent(common.events.EventCodes.interface.created, int_obj.interfaceName)
                     return True
 
                 else:
@@ -343,6 +350,7 @@ class InstrumentManager(object):
                 inter.close()
 
                 self.logger.info("Stopped Interface: %s" % inter.fqn)
+                self._publishEvent(common.events.EventCodes.interface.destroyed, inter.interfaceName)
 
                 self.plugin_manager.destroyPluginInstance(inter_uuid)
                 return True

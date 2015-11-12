@@ -3,12 +3,12 @@ Labtronyx Project
 
 :author: Kevin Kennedy
 """
+from __future__ import absolute_import
 import logging
 import sys
 
 # Logging
 logger = logging.getLogger('labtronyx')
-
 log_format = '%(asctime)s %(levelname)-8s %(name)s - %(message)s'
 log_formatter = logging.Formatter(log_format)
 
@@ -37,6 +37,7 @@ from .cli import main
 
 
 def logConsole(logLevel=logging.DEBUG):
+    logger = logging.getLogger('labtronyx')
     logger.setLevel(logLevel)
 
     ch = logging.StreamHandler()
@@ -47,6 +48,7 @@ def logConsole(logLevel=logging.DEBUG):
 
 
 def logFile(filename, backupCount=1, logLevel=logging.DEBUG):
+    logger = logging.getLogger('labtronyx')
     logger.setLevel(logLevel)
 
     fh = logging.handlers.RotatingFileHandler(filename, backupCount)
