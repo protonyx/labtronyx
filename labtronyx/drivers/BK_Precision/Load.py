@@ -25,11 +25,10 @@ BK Precision provides a device for communicating with this class of DC load:
 `IT-132 USB-to-Serial Adapter`. The driver for this device can be found
 `here <https://bkpmedia.s3.amazonaws.com/downloads/software/ITE132_driver.zip>`_
 """
-from labtronyx.bases import DriverBase
-from labtronyx.common.errors import *
+import labtronyx
 
 
-class d_85XX(DriverBase):
+class d_85XX(labtronyx.DriverBase):
     """
     Driver for BK Precision 8500 Series DC Loads
 
@@ -182,7 +181,7 @@ class d_85XX(DriverBase):
             self.last_status = ord(response[3])
         
         else:
-            raise InvalidResponse
+            raise labtronyx.InvalidResponse("Invalid response received")
         
         return response
     

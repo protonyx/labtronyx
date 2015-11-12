@@ -23,18 +23,17 @@ except ImportError:
     version = object()
     __version__ = "unknown"
 
-from .manager import InstrumentManager
-from .remote import RemoteManager, RemoteResource
-from .common.events import EventSubscriber
-
-from . import bases
+# Import exceptions
 from . import common
-from .common import errors
-
+from .common import errors, events, plugin
 from .common.errors import *
 
-# Import script plugin module into Labtronyx namespace for convenience
-from .bases import script
+from .manager import InstrumentManager
+from .remote import RemoteManager, RemoteResource
+
+from .bases import *
+
+from .cli import main
 
 
 def logConsole(logLevel=logging.DEBUG):
@@ -46,6 +45,7 @@ def logConsole(logLevel=logging.DEBUG):
     logger.addHandler(ch)
     logger.info("Console logging enabled")
 
+
 def logFile(filename, backupCount=1, logLevel=logging.DEBUG):
     logger.setLevel(logLevel)
 
@@ -54,6 +54,7 @@ def logFile(filename, backupCount=1, logLevel=logging.DEBUG):
     fh.setFormatter(log_formatter)
     logger.addHandler(fh)
     fh.doRollover()
+
 
 def runScriptMain():
     """
@@ -67,7 +68,7 @@ def runScriptMain():
     plugin_manager = common.plugin.PluginManager()
     main_plugins = plugin_manager.extractPlugins(sys.modules['__main__'])
 
-    main_scripts = [p_cls for p_cls in main_plugins.values() if issubclass(p_cls, bases.ScriptBase) and p_cls != bases.ScriptBase]
+    main_scripts = [p_cls for p_cls in main_plugins.values() if issubclass(p_cls, ScriptBase) and p_cls != ScriptBase]
 
     if len(main_scripts) == 0:
         raise EnvironmentError("No scripts found")

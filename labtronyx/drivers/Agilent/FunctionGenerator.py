@@ -2,11 +2,10 @@
 .. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
 """
-from labtronyx.bases import DriverBase
-from labtronyx.common.errors import *
+import labtronyx
 
 
-class d_335XX(DriverBase):
+class d_335XX(labtronyx.DriverBase):
     """
     Driver for Agilent Function Generators
 

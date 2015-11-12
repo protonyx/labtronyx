@@ -1,11 +1,11 @@
 import unittest
-from nose.tools import * # PEP8 asserts
 import mock
-import time
 import requests
+from nose.tools import * # PEP8 asserts
+import time
 
 import labtronyx
-from labtronyx.common.rpc import jsonrpc
+from labtronyx.common import jsonrpc
 
 
 class Remote_Tests(unittest.TestCase):

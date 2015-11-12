@@ -1,18 +1,21 @@
-from .rpc.errors import *
 
-class GeneralError(RuntimeError):
+
+class LabtronyxException(RuntimeError):
     """
     Base class for Labtronyx errors
     """
     pass
 
-class InvalidResponse(GeneralError):
+
+class InvalidResponse(LabtronyxException):
     pass
 
-class DeviceError(GeneralError):
+
+class DeviceError(LabtronyxException):
     pass
 
-class InterfaceUnavailable(GeneralError):
+
+class InterfaceUnavailable(LabtronyxException):
     """
     The interface could not be opened because it is unavailable. Possible causes:
 
@@ -21,19 +24,22 @@ class InterfaceUnavailable(GeneralError):
     """
     pass
 
-class InterfaceError(GeneralError):
+
+class InterfaceError(LabtronyxException):
     """
     Generic error for an exception that occurred during a low-level interface operation.
     """
     pass
 
-class InterfaceTimeout(GeneralError):
+
+class InterfaceTimeout(LabtronyxException):
     """
     A timeout condition occurred during data transmission, data was not received within the timeout window.
     """
     pass
 
-class ResourceUnavailable(GeneralError):
+
+class ResourceUnavailable(LabtronyxException):
     """
     The Resource could not be opened because it is unavailable. Possible causes:
 
@@ -43,9 +49,44 @@ class ResourceUnavailable(GeneralError):
     """
     pass
 
-class ResourceNotOpen(GeneralError):
+
+class ResourceNotOpen(LabtronyxException):
     """
     Operation could not be processed because the resource is not open. Try calling `open` before attempting this
     operation again
     """
+    pass
+
+
+class RpcError(LabtronyxException):
+    def __init__(self, *args, **kwargs):
+        RuntimeError.__init__(self)
+        self.id = kwargs.get('id', None)
+
+
+class RpcServerPortInUse(RpcError):
+    pass
+
+
+class RpcServerNotFound(RpcError):
+    pass
+
+
+class RpcServerUnresponsive(RpcError):
+    pass
+
+
+class RpcTimeout(RpcError):
+    pass
+
+
+class RpcServerException(RpcError):
+    pass
+
+
+class RpcInvalidPacket(RpcError):
+    pass
+
+
+class RpcMethodNotFound(RpcError):
     pass

@@ -10,7 +10,7 @@ a utility helper class
 import json
 
 from . import errors
-from . import engines
+from .rpc import RpcRequest, RpcResponse
 
 def get_content_type():
     return 'application/json'
@@ -90,7 +90,7 @@ JsonRpc_error_map = {
 # Request Type
 #===============================================================================
                
-class JsonRpc_Request(engines.RpcRequest):
+class JsonRpc_Request(RpcRequest):
     def __init__(self, **rpc_dict):
         self.id = rpc_dict.get('id', None)
         self.method = rpc_dict.get('method', '')
@@ -129,7 +129,7 @@ class JsonRpc_Request(engines.RpcRequest):
 # Response Type
 #===============================================================================
 
-class JsonRpc_Response(engines.RpcResponse):
+class JsonRpc_Response(RpcResponse):
     def __init__(self, **rpc_dict):
 
         self.id = rpc_dict.get('id', None)
@@ -141,6 +141,14 @@ class JsonRpc_Response(engines.RpcResponse):
                'result': self.result}
             
         return ret
+
+def buildResponse(*args, **kwargs):
+    """
+    Factory function to build RpcResponse objects
+
+    :rtype: JsonRpc_Response
+    """
+    return JsonRpc_Response(*args, **kwargs)
      
 #===============================================================================
 # JSON RPC Handlers
@@ -153,7 +161,7 @@ def _parseJsonRpcObject(rpc_dict):
     if rpc_dict.get('jsonrpc') == '2.0':
         if 'method' in rpc_dict.keys() and type(rpc_dict.get('method')) is unicode:
             # Request object
-            req = engines.RpcRequest(**rpc_dict)
+            req = RpcRequest(**rpc_dict)
 
             req.kwargs = rpc_dict.get('kwargs', {})
             req.args = rpc_dict.get('params', [])
@@ -182,7 +190,7 @@ def _parseJsonRpcObject(rpc_dict):
 
         elif 'id' in rpc_dict.keys() and 'result' in rpc_dict.keys():
             # Result response object
-            return engines.RpcResponse(**rpc_dict)
+            return RpcResponse(**rpc_dict)
 
         elif 'id' in rpc_dict.keys() and 'error' in rpc_dict.keys():
             # Error response object
@@ -215,9 +223,9 @@ def decode(data):
             for sub_req in req:
                 try:
                     res = _parseJsonRpcObject(sub_req)
-                    if isinstance(res, engines.RpcRequest):
+                    if isinstance(res, RpcRequest):
                         requests.append(res)
-                    elif isinstance(res, engines.RpcResponse):
+                    elif isinstance(res, RpcResponse):
                         responses.append(res)
                     elif isinstance(res, errors.RpcError):
                         rpc_errors.append(res)
@@ -231,9 +239,9 @@ def decode(data):
         elif type(req) == dict:
             # Single request
             res = _parseJsonRpcObject(req)
-            if isinstance(res, engines.RpcRequest):
+            if isinstance(res, RpcRequest):
                 requests.append(res)
-            elif isinstance(res, engines.RpcResponse):
+            elif isinstance(res, RpcResponse):
                 responses.append(res)
             elif isinstance(res, errors.RpcError):
                 rpc_errors.append(res)
@@ -257,10 +265,10 @@ def encode(requests, responses):
     ret = []
 
     for rpc_obj in requests + responses:
-        if type(rpc_obj) == engines.RpcRequest:
+        if type(rpc_obj) == RpcRequest:
             rpc_obj.__class__ = JsonRpc_Request
 
-        if type(rpc_obj) == engines.RpcResponse:
+        if type(rpc_obj) == RpcResponse:
             rpc_obj.__class__ = JsonRpc_Response
 
         if isinstance(rpc_obj, errors.RpcError) and type(rpc_obj) not in JsonRpcErrors.values():

@@ -8,11 +8,10 @@ These loads feature a Ethernet connection that hosts a web-based interface from
 which you can control the load much like you would if you were sitting in front
 of it.
 """
-from labtronyx.bases import DriverBase
-from labtronyx.common.errors import *
+import labtronyx
 
 
-class d_XBL(DriverBase):
+class d_XBL(labtronyx.DriverBase):
     """
     Driver for TDI XBL Series DC Electronic Loads
     """

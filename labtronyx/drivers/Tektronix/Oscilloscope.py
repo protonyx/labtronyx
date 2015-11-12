@@ -23,19 +23,17 @@ the HARD COPY command to get screenshot data from the oscilloscope application.
 Screenshots can be saved to the oscilloscope hard drive and must be retrieved
 using other means.
 """
-from labtronyx.bases import DriverBase
-from labtronyx.common.errors import *
+import labtronyx
 
 import time
 import struct
 import base64
 import csv
-import sys
 
 import numpy
 
 
-class d_2XXX(DriverBase):
+class d_2XXX(labtronyx.DriverBase):
     """
     Driver for Tektronix 2000 Series Oscilloscopes
     """
@@ -222,7 +220,7 @@ class d_2XXX(DriverBase):
             raise ValueError("Invalid format")
             
 
-class d_5XXX7XXX(DriverBase):
+class d_5XXX7XXX(labtronyx.DriverBase):
     """
     Driver for Tektronix 5000, 7000 and 70000 Series Oscilloscopes
     """

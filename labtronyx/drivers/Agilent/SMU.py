@@ -2,11 +2,10 @@
 .. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
 """
-from labtronyx.bases import DriverBase
-from labtronyx.common.errors import *
+import labtronyx
 
 
-class d_B29XX(DriverBase):
+class d_B29XX(labtronyx.DriverBase):
     """
     Driver for Agilent B2901A and B2902A Source Measurement Units
     """

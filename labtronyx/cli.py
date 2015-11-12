@@ -2,7 +2,6 @@
 Console script used to start Labtronyx in Server mode
 """
 import os
-import time
 
 def main():
     # Interactive Mode

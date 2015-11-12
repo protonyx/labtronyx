@@ -1,10 +1,7 @@
 """
 The Serial interface is a wrapper for the pyserial library.
 """
-
-from labtronyx.bases import InterfaceBase, ResourceBase
-from labtronyx.common.errors import *
-import labtronyx.common as common
+import labtronyx
 
 import time
 import os
@@ -15,7 +12,7 @@ import serial.tools.list_ports
 from serial.serialutil import SerialException
 
 
-class i_Serial(InterfaceBase):
+class i_Serial(labtronyx.InterfaceBase):
     """
     Serial Interface
 
@@ -63,7 +60,7 @@ class i_Serial(InterfaceBase):
                 try:
                     self.getResource(resID)
 
-                except ResourceUnavailable:
+                except labtronyx.ResourceUnavailable:
                     pass
             
     def prune(self):
@@ -79,7 +76,7 @@ class i_Serial(InterfaceBase):
                 res_obj.close()
 
                 self.manager.plugin_manager.destroyPluginInstance(res_uuid)
-                self.manager._publishEvent(common.events.EventCodes.resource.destroyed, res_obj.uuid)
+                self.manager._publishEvent(labtronyx.events.EventCodes.resource.destroyed, res_obj.uuid)
 
     @property
     def resources(self):
@@ -99,7 +96,7 @@ class i_Serial(InterfaceBase):
         :raises:        InterfaceError
         """
         if resID in self.resources_by_id:
-            raise InterfaceError("Resource instance already exists")
+            raise labtronyx.InterfaceError("Resource instance already exists")
 
         try:
             instrument = serial.Serial(port=resID, timeout=0)
@@ -112,7 +109,7 @@ class i_Serial(InterfaceBase):
                                                                        )
 
             # Signal new resource event
-            self.manager._publishEvent(common.events.EventCodes.resource.created, res_obj.uuid)
+            self.manager._publishEvent(labtronyx.events.EventCodes.resource.created, res_obj.uuid)
 
             return res_obj
 
@@ -123,13 +120,13 @@ class i_Serial(InterfaceBase):
                 e.errno = ctypes.WinError().errno
 
             if e.errno in [errno.ENOENT, errno.EACCES, errno.EBUSY]:
-                raise ResourceUnavailable('Serial resource error: %s' % resID)
+                raise labtronyx.ResourceUnavailable('Serial resource error: %s' % resID)
 
             else:
-                raise InterfaceError('Serial interface error [%i]: %s' % (e.errno, e.message))
+                raise labtronyx.InterfaceError('Serial interface error [%i]: %s' % (e.errno, e.message))
 
         
-class r_Serial(ResourceBase):
+class r_Serial(labtronyx.ResourceBase):
     """
     Serial Resource Base class.
 
@@ -144,7 +141,7 @@ class r_Serial(ResourceBase):
     termination = CR + LF
         
     def __init__(self, manager, interface, resID, instrument, **kwargs):
-        ResourceBase.__init__(self, manager, interface, resID, **kwargs)
+        super(r_Serial, self).__init__(manager, interface, resID, **kwargs)
         
         self.instrument = instrument
         
@@ -185,10 +182,10 @@ class r_Serial(ResourceBase):
         except SerialException as e:
             #if e.errno in [errno.EACCES]:
             # Access Denied, the port is probably open somewhere else
-            raise ResourceUnavailable('Serial resource error: %s' % e.strerror)
+            raise labtronyx.ResourceUnavailable('Serial resource error: %s' % e.strerror)
 
         # Call the base resource open function to call driver hooks
-        return ResourceBase.open(self)
+        return super(r_Serial, self).open()
         
     def isOpen(self):
         """
@@ -209,7 +206,7 @@ class r_Serial(ResourceBase):
         """
         if self.isOpen():
             # Close the driver
-            ResourceBase.close(self)
+            super(r_Serial, self).close()
 
             try:
                 # Close the instrument
@@ -306,13 +303,13 @@ class r_Serial(ResourceBase):
             
         except SerialException as e:
             if e == serial.portNotOpenError:
-                raise ResourceNotOpen()
+                raise labtronyx.ResourceNotOpen()
 
             elif e == serial.writeTimeoutError:
-                raise InterfaceTimeout()
+                raise labtronyx.InterfaceTimeout()
 
             else:
-                raise InterfaceError(e.strerror)
+                raise labtronyx.InterfaceError(e.strerror)
             
     def write_raw(self, data):
         """
@@ -330,13 +327,13 @@ class r_Serial(ResourceBase):
             
         except SerialException as e:
             if e == serial.portNotOpenError:
-                raise ResourceNotOpen()
+                raise labtronyx.ResourceNotOpen()
 
             elif e == serial.writeTimeoutError:
-                raise InterfaceTimeout()
+                raise labtronyx.InterfaceTimeout()
 
             else:
-                raise InterfaceError(e.strerror)
+                raise labtronyx.InterfaceError(e.strerror)
     
     def read(self, termination=None):
         """
@@ -366,9 +363,9 @@ class r_Serial(ResourceBase):
         
         except SerialException as e:
             if e == serial.portNotOpenError:
-                raise ResourceNotOpen()
+                raise labtronyx.ResourceNotOpen()
             else:
-                raise InterfaceError(e.strerror)
+                raise labtronyx.InterfaceError(e.strerror)
     
     def read_raw(self, size=None):
         """
@@ -389,15 +386,15 @@ class r_Serial(ResourceBase):
             
             ret += self.instrument.read(size)
             if len(ret) != len(size):
-                raise InterfaceTimeout("Timeout before requested bytes could be read")
+                raise labtronyx.InterfaceTimeout("Timeout before requested bytes could be read")
                 
             return ret
         
         except SerialException as e:
             if e == serial.portNotOpenError:
-                raise ResourceNotOpen()
+                raise labtronyx.ResourceNotOpen()
             else:
-                raise InterfaceError(e.strerror)
+                raise labtronyx.InterfaceError(e.strerror)
     
     def query(self, data, delay=None):
         """
@@ -430,7 +427,7 @@ class r_Serial(ResourceBase):
             return self.instrument.inWaiting()
 
         except serial.SerialException as e:
-            raise InterfaceError(e.strerror)
+            raise labtronyx.InterfaceError(e.strerror)
 
     def flush(self):
         """
@@ -440,4 +437,4 @@ class r_Serial(ResourceBase):
             return self.instrument.flush()
 
         except serial.SerialException as e:
-            raise InterfaceError(e.strerror)
+            raise labtronyx.InterfaceError(e.strerror)

@@ -2,7 +2,8 @@
 
 # Local Imports
 from . import common
-from .common.rpc import RpcClient, RpcServerException
+from .common.rpc import RpcClient
+from .common.errors import RpcServerException
 
 __all__ = ['RemoteManager', 'RemoteResource']
 

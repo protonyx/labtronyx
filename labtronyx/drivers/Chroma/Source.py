@@ -8,11 +8,10 @@ This driver does not include any of the device programming functionality,
 it is assumed that an automated program would be designed in a script that
 uses this driver.
 """
-from labtronyx.bases import DriverBase
-from labtronyx.common.errors import *
+import labtronyx
 
 
-class d_620XXP(DriverBase):
+class d_620XXP(labtronyx.DriverBase):
     """
     Driver for Chroma 6200P Series DC Power Supplies
     """

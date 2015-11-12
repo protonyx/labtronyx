@@ -2,11 +2,10 @@
 .. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
 """
-from labtronyx.bases import DriverBase
-from labtronyx.common.errors import *
+import labtronyx
 
 
-class d_XFR(DriverBase):
+class d_XFR(labtronyx.DriverBase):
     """
     Driver for Sorensen XFR Series DC Power Supplies
     """

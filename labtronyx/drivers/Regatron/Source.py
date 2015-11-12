@@ -9,13 +9,12 @@ with the TopCon software. In order to connect to the source with an adapter
 installed, you must install the drivers so that the device appears as a
 local COM port to the operating system.
 """
-from labtronyx.bases import DriverBase
-from labtronyx.common.errors import *
+import labtronyx
 
 import struct
 
 
-class d_TopCon(DriverBase):
+class d_TopCon(labtronyx.DriverBase):
     """
     Driver for Regatron TopCon compatible Power Supplies
     """

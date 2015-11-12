@@ -3,14 +3,13 @@
 
 
 """
-from labtronyx.bases import DriverBase
-from labtronyx.common.errors import *
+import labtronyx
 
 import time
 import re
 
 
-class d_3441XA(DriverBase):
+class d_3441XA(labtronyx.DriverBase):
     """
     Driver for Agilent 34410A and 34411A Digital Multimeter
     """
@@ -177,9 +176,9 @@ class d_3441XA(DriverBase):
 
         if len(errors) == 1:
             code, msg = errors[0]
-            raise DeviceError(msg.strip('"'))
+            raise labtronyx.DeviceError(msg.strip('"'))
         elif len(errors) > 1:
-            raise DeviceError("Multiple errors")
+            raise labtronyx.DeviceError("Multiple errors")
 
     def getError(self):
         """
@@ -293,7 +292,6 @@ class d_3441XA(DriverBase):
 
         # Returns mode and a series of comma-separated fields indicating the preset function, range and resolution
         # We are only interested in the mode at the beginning. Use a regex to get the mode out of the string
-        import re
         re_mode = re.compile(r'([A-Z:]+)\s?([A-Z0-9,+\-.]*)')
         re_srch = re.search(re_mode, mode)
 

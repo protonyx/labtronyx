@@ -90,12 +90,12 @@ condition, the `stop` parameter of the `fail` method can be set, or any of the c
 `assert` will cause execution to halt when the condition is met.
 """
 import time
-import sys
 import threading
 
-import labtronyx
-import labtronyx.common as common
-from labtronyx.common.plugin import PluginBase, PluginAttribute
+# Package relative imports
+from ..common import events
+from ..common.errors import *
+from ..common.plugin import PluginBase, PluginAttribute
 
 
 class ScriptBase(PluginBase):
@@ -116,15 +116,10 @@ class ScriptBase(PluginBase):
     continueOnFail = PluginAttribute(attrType=bool, defaultValue=False)
     allowedFailures = PluginAttribute(attrType=int, defaultValue=0)
 
-    def __init__(self, manager=None, **kwargs):
+    def __init__(self, manager, **kwargs):
         PluginBase.__init__(self, **kwargs)
 
-        if isinstance(manager, labtronyx.InstrumentManager) or isinstance(manager, labtronyx.RemoteManager):
-            self._manager = manager
-
-        else:
-            # Create our own instance of InstrumentManager
-            self._manager = labtronyx.InstrumentManager()
+        self._manager = manager
 
         if not self.continueOnFail:
             self.allowedFailures = 0
@@ -186,7 +181,11 @@ class ScriptBase(PluginBase):
 
         for attr_name, attr_cls in params.items():
             attr_val = kwargs.get(attr_name)
-            setattr(self, attr_name, attr_val)
+
+            if attr_val is None:
+                setattr(self, attr_name, attr_cls.defaultValue)
+            else:
+                setattr(self, attr_name, attr_val)
 
     def _validateParameters(self):
         params = self._getClassAttributesByBase(ScriptParameter)
@@ -203,30 +202,38 @@ class ScriptBase(PluginBase):
         return failCount
 
     def assignResource(self, res_attribute, res_uuid):
+        # TODO: Implement this feature
         raise NotImplementedError
 
     @classmethod
-    def getParameters(cls):
-        params = cls._getClassAttributesByBase(ScriptParameter)
+    def getParameterInfo(cls):
+        param_classes = cls._getClassAttributesByBase(ScriptParameter)
+        return {p_name: p_cls.getDict() for p_name, p_cls in param_classes.items()}
 
-        return {p_name: p_cls.getDict() for p_name, p_cls in params.items()}
+    def getParameters(self):
+        """
+        Get script instance parameters
 
-    @classmethod
-    def getAttributes(cls):
-        attrs = super(ScriptBase, cls).getAttributes()
+        :rtype: dict{str: object}
+        """
+        param_classes = self._getClassAttributesByBase(ScriptParameter)
 
-        # Inject parameters into attributes since they don't subclass PluginAttribute (why?)
-        attrs['parameters'] = cls.getParameters()
+        param_vals = {}
 
-        return attrs
+        for attr_name, attr_obj in param_classes.items():
+            param_vals[attr_name] = getattr(self, attr_name, None)
+
+        return param_vals
 
     def getProperties(self):
         """
         Get script instance properties
 
-        :rtype: dict[str:object]
+        :rtype: dict{str: object}
         """
         props = super(ScriptBase, self).getProperties()
+        props.update(self.getAttributes())
+        props.update(self.getParameters())
         props.update({
             'running': self.isRunning(),
             'status': self._status,
@@ -259,7 +266,7 @@ class ScriptBase(PluginBase):
             raise threading.ThreadError
 
         # Notify that the script is running now
-        self.manager._publishEvent(common.events.EventCodes.script.changed, self.uuid)
+        self.manager._publishEvent(events.EventCodes.script.changed, self.uuid)
 
         try:
             self.setUp()
@@ -389,7 +396,7 @@ class ScriptBase(PluginBase):
         :type new_progress:     int
         """
         self._progress = max(0, min(int(new_progress), 100))
-        self.manager._publishEvent(common.events.EventCodes.script.changed, self.uuid)
+        self.manager._publishEvent(events.EventCodes.script.changed, self.uuid)
 
     def setStatus(self, new_status):
         """
@@ -400,7 +407,7 @@ class ScriptBase(PluginBase):
         :type new_status:       str
         """
         self._status = str(new_status)
-        self.manager._publishEvent(common.events.EventCodes.script.changed, self.uuid)
+        self.manager._publishEvent(events.EventCodes.script.changed, self.uuid)
 
     def fail(self, reason, stop=False):
         """

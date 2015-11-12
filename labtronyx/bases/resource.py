@@ -64,8 +64,10 @@ accessed directly from the resource object as if they were a single object. Some
 Resources may implement more functions than just those which are defined in the API below, see the interface and
 resource class documentation to learn more.
 """
-import labtronyx.common as common
-from labtronyx.common.plugin import PluginBase, PluginAttribute
+# Package relative imports
+from ..common import events
+from ..common.errors import *
+from ..common.plugin import PluginBase, PluginAttribute
 
 
 class ResourceBase(PluginBase):
@@ -108,7 +110,7 @@ class ResourceBase(PluginBase):
 
                 else:
                     # Driver functions are locked out if the resource is not open
-                    raise common.errors.ResourceNotOpen("Unable to call driver function on closed resource")
+                    raise ResourceNotOpen("Unable to call driver function on closed resource")
 
             else:
                 raise AttributeError
@@ -244,7 +246,7 @@ class ResourceBase(PluginBase):
                                                                             logger=self.logger)
 
             # Signal the event
-            self.manager._publishEvent(common.events.EventCodes.resource.driver_loaded, self.uuid, driverName)
+            self.manager._publishEvent(events.EventCodes.resource.driver_loaded, self.uuid, driverName)
 
             # Call the driver open if the resource is already open
             if self.isOpen():
@@ -271,7 +273,7 @@ class ResourceBase(PluginBase):
         if self._driver is not None:
             try:
                 self._driver.close()
-            except common.errors.ResourceNotOpen:
+            except ResourceNotOpen:
                 pass
             except:
                 self.logger.exception('Exception while unloading driver')
@@ -285,6 +287,6 @@ class ResourceBase(PluginBase):
             self.logger.debug('Unloaded driver for resource [%s]', self._resID)
 
             # Signal the event
-            self.manager._publishEvent(common.events.EventCodes.resource.driver_unloaded, self.uuid)
+            self.manager._publishEvent(events.EventCodes.resource.driver_unloaded, self.uuid)
                
         return True
