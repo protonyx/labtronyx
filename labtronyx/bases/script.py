@@ -90,7 +90,7 @@ condition, the `stop` parameter of the `fail` method can be set, or any of the c
 `assert` will cause execution to halt when the condition is met.
 """
 import time
-import threading
+import threading, ctypes
 
 # Package relative imports
 from ..common import events
@@ -130,14 +130,31 @@ class ScriptBase(PluginBase):
         # script runner is responsible for passing CLI args as a dict
         self._resolveParameters(**kwargs)
 
+        self._scriptThread = None
         self._runLock = threading.Lock()
-        self._scriptResult = ScriptResult()
+        self._results = []
         self._status = ''
         self._progress = 0
 
     @property
     def manager(self):
         return self._manager
+
+    @property
+    def result(self):
+        return self._results
+
+    @result.setter
+    def result(self, new_result):
+        if isinstance(new_result, ScriptResult):
+            self._results.append(new_result)
+
+        else:
+            raise TypeError("Result must be a ScriptResult type")
+
+    @property
+    def current_test_result(self):
+        return self._scriptThread.result
 
     def _collectRequiredResources(self):
         req_res = self._getClassAttributesByBase(RequiredResource)
@@ -239,7 +256,8 @@ class ScriptBase(PluginBase):
         props.update({
             'running': self.isRunning(),
             'status': self._status,
-            'progress': self._progress
+            'progress': self._progress,
+            'results': [result.toDict() for result in self.result]
         })
         return props
 
@@ -250,8 +268,11 @@ class ScriptBase(PluginBase):
         :rtype: bool
         """
         running = self._runLock.acquire(False)
-        self._runLock.release()
-        return running
+
+        if running:  # lock was acquired
+            self._runLock.release()
+
+        return not running
 
     def start(self):
         """
@@ -260,47 +281,21 @@ class ScriptBase(PluginBase):
 
         :rtype:     ScriptResult
         """
-        self._scriptResult.startTimer()
+        if self.isRunning():
+            raise RuntimeError("Script already running")
 
-        # Acquire the lock and boogey if already locked
-        lockAcq = self._runLock.acquire(False)
-        if not lockAcq:
-            raise threading.ThreadError
+        self._scriptThread = ScriptThread(self)
+        self._scriptThread.setDaemon(True)
+        self._scriptThread.start()
 
-        # Notify that the script is running now
-        self.manager._publishEvent(events.EventCodes.script.changed, self.uuid)
+        # Wait for the script to finish
+        # self._scriptThread.join()
 
-        try:
-            self.setUp()
-
-            self.run()
-
-        except ScriptStopException as e:
-            self.logger.info("Script Stopped: %s", e.message)
-
-        except Exception as e:
-            # Handle all uncaught exceptions
-            self.onException(e)
-
-        finally:
-            if self._scriptResult.result == ScriptResult.PASS:
-                self.onPass()
-            elif self._scriptResult.result == ScriptResult.FAIL:
-                self.onFail()
-            elif self._scriptResult.result == ScriptResult.SKIP:
-                self.onSkip()
-
-            self.tearDown()
-
-            self._runLock.release()
-
-        self._scriptResult.stopTimer()
-
-        return self._scriptResult
+        # self._scriptThread = None
 
     def stop(self):
-        # TODO: How to stop running scripts
-        pass
+        if self.isRunning():
+            self._scriptThread.kill(ScriptStopException)
 
     def setUp(self):
         """
@@ -325,6 +320,10 @@ class ScriptBase(PluginBase):
         if spinUpFailures > 0:
             self.fail("Errors encountered during script setUp", True)
 
+        # Notify that the script is running now
+        self.setProgress(0)
+        self.setStatus('Running')
+
     def tearDown(self):
         """
         Method called after `run` has been called and after `onPass`, `onSkip` or `onFail` have been called, depending
@@ -335,13 +334,16 @@ class ScriptBase(PluginBase):
 
         This method can be overriden to change the behavior.
         """
-        if self._scriptResult.executionTime > 0:
-            self.logger.info("Script Execution Time: %f", self._scriptResult.executionTime)
+        self.setProgress(100)
+        self.setStatus('Finished')
 
-        self.logger.info("Script Result: %s", self._scriptResult.result)
-        if self._scriptResult.result == ScriptResult.FAIL:
-            self.logger.info("Failure Reason: %s", self._scriptResult.reason)
-            self.logger.info("Failure Count: %d", self._scriptResult.failCount)
+        if self.current_test_result.executionTime > 0:
+            self.logger.info("Script Execution Time: %f", self.current_test_result.executionTime)
+
+        self.logger.info("Script Result: %s", self.current_test_result.result)
+        if self.current_test_result.result == ScriptResult.FAIL:
+            self.logger.info("Failure Reason: %s", self.current_test_result.reason)
+            self.logger.info("Failure Count: %d", self.current_test_result.failCount)
 
     def run(self):
         """
@@ -360,10 +362,10 @@ class ScriptBase(PluginBase):
         :param e:   Exception caught
         :type e:    Exception
         """
-        self._scriptResult.result = ScriptResult.FAIL
-        self._scriptResult.addFailure("Unhandled Exception: %s" % type(e))
+        self.current_test_result.result = ScriptResult.FAIL
+        self.current_test_result.addFailure("Unhandled Exception: %s" % type(e))
 
-        self.logger.exception(self._scriptResult.reason)
+        self.logger.exception(self.current_test_result.reason)
 
     def onPass(self):
         """
@@ -424,14 +426,14 @@ class ScriptBase(PluginBase):
         :param stop:            Flag to stop script execution
         :type stop:             bool
         """
-        self._scriptResult.result = ScriptResult.FAIL
-        self._scriptResult.addFailure(reason)
+        self.current_test_result.result = ScriptResult.FAIL
+        self.current_test_result.addFailure(reason)
 
         self.logger.info("FAILURE: %s", reason)
 
         if stop:
             raise ScriptStopException("Script failure, see failure reason")
-        elif self._scriptResult.failCount > self.allowedFailures:
+        elif self.current_test_result.failCount > self.allowedFailures:
             raise ScriptStopException("Failure count exceeded allowed failures")
 
     def skip(self, reason):
@@ -441,8 +443,8 @@ class ScriptBase(PluginBase):
         :param reason:          Reason for script failure
         :type reason:           str
         """
-        self._scriptResult.result = ScriptResult.SKIP
-        self._scriptResult.addFailure(reason)
+        self.current_test_result.result = ScriptResult.SKIP
+        self.current_test_result.addFailure(reason)
 
         raise ScriptStopException("Skipped")
 
@@ -507,6 +509,73 @@ class ScriptBase(PluginBase):
             self.fail(msg, stop)
 
 
+class ScriptThread(threading.Thread):
+    def __init__(self, scriptObj):
+        assert(isinstance(scriptObj, ScriptBase))
+        super(ScriptThread, self).__init__()
+
+        self.__scriptObj = scriptObj
+        self.__scriptResult = ScriptResult()
+
+    @property
+    def script(self):
+        return self.__scriptObj
+
+    @property
+    def result(self):
+        return self.__scriptResult
+
+    def kill(self, exc_type):
+        """
+        Called asyncronously to kill a thread by raising an exception
+
+        :param exc_type:
+        :type exc_type:
+        :return:
+        :rtype:
+        """
+        if self.isAlive():
+            res = ctypes.pythonapi.PyThreadState_SetAsyncExc(self.ident, ctypes.py_object(exc_type))
+
+            if res != 1:
+                ctypes.pythonapi.PyThreadState_SetAsyncExc(self.ident, 0)
+                raise RuntimeError("Unable to kill thread")
+
+    def run(self):
+        self.result.startTimer()
+
+        lockAcq = self.script._runLock.acquire(False)
+        if not lockAcq:
+            raise threading.ThreadError
+
+        try:
+            self.script.setUp()
+
+            self.script.run()
+
+        except ScriptStopException as e:
+            self.script.logger.info("Script Stopped: %s", e.message)
+
+        except Exception as e:
+            # Handle all uncaught exceptions
+            self.script.onException(e)
+
+        finally:
+            if self.result.result == ScriptResult.PASS:
+                self.script.onPass()
+            elif self.result.result == ScriptResult.FAIL:
+                self.script.onFail()
+            elif self.result.result == ScriptResult.SKIP:
+                self.script.onSkip()
+
+            self.script.tearDown()
+
+            self.script._runLock.release()
+
+            self.result.stopTimer()
+            self.script.result = self.result
+
+
 class RequiredResource(object):
     def __init__(self, **kwargs):
         self.search_params = kwargs
@@ -542,6 +611,7 @@ class ScriptResult(object):
     PASS = 'PASS'
     FAIL = 'FAIL'
     SKIP = 'SKIP'
+    STOPPED = 'STOPPED'
 
     def __init__(self):
         self._result = self.PASS
@@ -590,6 +660,14 @@ class ScriptResult(object):
     @property
     def executionTime(self):
         return self._stopTime - self._startTime
+
+    def toDict(self):
+        return {
+            'result': self.result,
+            'reason': self.reason,
+            'failCount': self.failCount,
+            'executionTime': self.executionTime
+        }
 
 
 class ScriptStopException(RuntimeError):
