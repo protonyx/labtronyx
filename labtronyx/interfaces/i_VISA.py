@@ -131,7 +131,7 @@ class i_VISA(labtronyx.InterfaceBase):
                 res_obj.close()
 
                 self.manager.plugin_manager.destroyPluginInstance(res_uuid)
-                self.manager._publishEvent(labtronyx.events.EventCodes.resource.destroyed, res_obj.uuid)
+                self.manager._publishEvent(labtronyx.EventCodes.resource.destroyed, res_obj.uuid)
 
     @property
     def resources(self):
@@ -165,7 +165,7 @@ class i_VISA(labtronyx.InterfaceBase):
                                                                        )
 
             # Signal new resource event
-            self.manager._publishEvent(labtronyx.events.EventCodes.resource.created, res_obj.uuid)
+            self.manager._publishEvent(labtronyx.EventCodes.resource.created, res_obj.uuid)
 
             return res_obj
 

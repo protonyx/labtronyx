@@ -10,6 +10,7 @@ from . import version
 
 from . import bases
 from . import common
+from .common import server
 
 
 class InstrumentManager(object):
@@ -82,7 +83,7 @@ class InstrumentManager(object):
             self.enableInterface(i_fqn)
 
         # Create the flask server app
-        self._server_app = common.server.create_server(self, self.server_port, logger=self.logger)
+        self._server_app = server.create_server(self, self.server_port, logger=self.logger)
         self._server_events = common.events.EventPublisher(self.ZMQ_PORT)
 
         # Start Server

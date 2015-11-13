@@ -24,16 +24,13 @@ except ImportError:
     __version__ = "unknown"
 
 # Import exceptions
-from . import common
-from .common import errors, events, plugin
-from .common.errors import *
+from .common import *
 
 from .manager import InstrumentManager
 from .remote import RemoteManager, RemoteResource
 
 from .bases import *
-
-from .cli import main
+from .bases import script
 
 
 def logConsole(logLevel=logging.DEBUG):
@@ -67,7 +64,7 @@ def runScriptMain():
     logConsole(logging.INFO)
     manager = InstrumentManager()
 
-    plugin_manager = common.plugin.PluginManager()
+    plugin_manager = PluginManager()
     main_plugins = plugin_manager.extractPlugins(sys.modules['__main__'])
 
     main_scripts = [p_cls for p_cls in main_plugins.values() if issubclass(p_cls, ScriptBase) and p_cls != ScriptBase]
@@ -79,7 +76,6 @@ def runScriptMain():
         raise EnvironmentError("More than one script object found, unable to choose")
 
     else:
-        from bases.script import ScriptResult
         script_cls = main_scripts[0]
         script_obj = script_cls(manager, logger=logger)
 

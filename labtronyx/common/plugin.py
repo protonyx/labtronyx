@@ -9,6 +9,8 @@ import logging
 import inspect
 import uuid
 
+__all__ = ['PluginManager', 'PluginBase', 'PluginAttribute']
+
 
 class PluginManager(object):
     """

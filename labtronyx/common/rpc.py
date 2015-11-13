@@ -6,7 +6,7 @@ import requests
 # Local imports
 from . import errors
 
-__all__ = ['RpcClient']
+__all__ = ['RpcClient', 'RpcRequest', 'RpcResponse']
 
 
 class RpcRequest(object):

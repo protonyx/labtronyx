@@ -1,3 +1,10 @@
+__all__ = ['LabtronyxException', 'InvalidResponse', 'DeviceError',
+           'InterfaceUnavailable', 'InterfaceError', 'InterfaceTimeout',
+           'ResourceUnavailable', 'ResourceNotOpen', 'RpcError',
+           # RPC Errors
+           'RpcServerPortInUse', 'RpcServerNotFound', 'RpcServerUnresponsive', 'RpcTimeout', 'RpcServerException',
+           'RpcInvalidPacket', 'RpcMethodNotFound'
+           ]
 
 
 class LabtronyxException(RuntimeError):

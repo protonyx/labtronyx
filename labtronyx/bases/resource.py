@@ -69,6 +69,8 @@ from ..common import events
 from ..common.errors import *
 from ..common.plugin import PluginBase, PluginAttribute
 
+__all__ = ['ResourceBase']
+
 
 class ResourceBase(PluginBase):
     """
