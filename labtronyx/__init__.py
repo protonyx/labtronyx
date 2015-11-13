@@ -30,7 +30,6 @@ from .manager import InstrumentManager
 from .remote import RemoteManager, RemoteResource
 
 from .bases import *
-from .bases import script
 
 
 def logConsole(logLevel=logging.DEBUG):
