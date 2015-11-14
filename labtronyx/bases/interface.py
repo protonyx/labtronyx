@@ -38,7 +38,7 @@ class InterfaceBase(PluginBase):
         """
         return {plug_uuid: plugCls for plug_uuid, plugCls
                 in self.manager.plugin_manager.getPluginInstancesByType('resource').items()
-                if plugCls.interface == self}
+                if plugCls.interfaceName == self.interfaceName}
 
     def getProperties(self):
         """
