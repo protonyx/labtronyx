@@ -9,55 +9,47 @@ import logging
 import inspect
 import uuid
 
-__all__ = ['PluginManager', 'PluginBase', 'PluginAttribute']
+__all__ = ['PluginBase', 'PluginAttribute', 'PluginParameter', 'PluginDependency']
 
 
-class PluginManager(object):
+class _PluginManager(object):
     """
     Plugin Manager to search and categorize plugins
 
     Plugins are objects. They are distributed in modules
     """
-    def __init__(self,
-                 directories=None,
-                 categories=None,
-                 logger=None):
-
-        if directories is None:
-            directories = []
-        self._directories = directories
-
-        if categories is None:
-            categories = {'': PluginBase}
-        self._category_filter = categories
-
-        if logger is None:
-            self.logger = logging
-        else:
-            self.logger = logger
+    def __init__(self):
+        self.__logger = logging
 
         # Instance variables
+        self._search_dirs = []
         self._plugins_classes = {}
         self._plugins_instances = {}
 
     @property
-    def directories(self):
-        return self._directories
+    def logger(self):
+        return self.__logger
+
+    @logger.setter
+    def logger(self, new_value):
+        self.__logger = new_value
 
     @property
-    def categories(self):
-        return self._category_filter
+    def directories(self):
+        return self._search_dirs
 
     @property
     def plugins(self):
         return self._plugins_classes
 
-    def search(self):
+    def search(self, dir):
         """
-        Search all directories for plugins
+        Search for plugins in directory `dir`. If directory has already been searched, it will not be searched again
+        to prevent re-importing modules.
         """
-        for dir in self._directories:
+        if dir not in self._search_dirs:
             self.locatePlugins(dir)
+            self._search_dirs.append(dir)
 
     def locatePlugins(self, plugin_path, recursive=True, prefix=''):
         """
@@ -111,8 +103,6 @@ class PluginManager(object):
                 except Exception as e:
                     self.logger.exception("Exception during plugin load")
 
-
-
     def getAllPlugins(self):
         """
         Get a dictionary of all catalogued plugins
@@ -126,31 +116,17 @@ class PluginManager(object):
         Get a dictionary with the attributes from all cataloged plugins
         :rtype:             dict[str:dict]
         """
-        return {pluginName:pluginCls.getAttributes() for pluginName, pluginCls in self._plugins_classes.items()}
+        return {pluginName:pluginCls.getClassAttributes() for pluginName, pluginCls in self._plugins_classes.items()}
 
     def getPluginsByBaseClass(self, base_class):
         """
         Get a dictionary of plugin classes that subclass the given base class
+
         :param base_class:  Plugin Base Class
         :type base_class:   type(PluginBase)
         :rtype:             dict{str: type(base_class)}
         """
-        return {k: v for k, v in self._plugins_classes.items() if issubclass(v, base_class)}
-
-    def getPluginsByCategory(self, category):
-        """
-        Get a dictionary of catalogued plugins that subclass a category type
-
-        :param category:    Plugin category
-        :type category:     str
-        :rtype:             dict{str: type(PluginBase)}
-        """
-        category_base_class = self._category_filter.get(category)
-
-        if category_base_class is None:
-            return {}
-
-        return self.getPluginsByBaseClass(category_base_class)
+        return {k: v for k, v in self._plugins_classes.items() if issubclass(v, base_class) and v != base_class}
 
     def getPluginsByType(self, plugin_type):
         return {k: v for k, v in self._plugins_classes.items() if v.pluginType == plugin_type}
@@ -202,10 +178,6 @@ class PluginManager(object):
         if not issubclass(plugin_cls, PluginBase):
             return False
 
-        # Check that the class is not one of the base plugin classes
-        if plugin_cls in self._category_filter.values():
-            return False
-
         return True
 
     def extractPlugins(self, plugin_module):
@@ -229,7 +201,7 @@ class PluginManager(object):
         plugin_cls = self.getPlugin(plugin_name)
 
         try:
-            plugin_cls._validateAttributes()
+            plugin_cls._validateClassAttributes()
 
         except AssertionError as e:
             self.logger.error("Plugin %s error: %s", plugin_name, e.message)
@@ -269,6 +241,10 @@ class PluginManager(object):
         else:
             return False
 
+    def destroyAllPluginInstances(self):
+        for plugin_uuid in self._plugins_instances.keys():
+            del self._plugins_instances[plugin_uuid]
+
     def getPluginInstance(self, plugin_uuid):
         """
         Get plugin instance by UUID
@@ -304,18 +280,6 @@ class PluginManager(object):
         """
         return {k: v for k, v in self._plugins_instances.items() if issubclass(type(v), base_class)}
 
-    def getPluginInstancesByCategory(self, category):
-        """
-        Get plugin instances by the plugin category
-
-        :param category:        Plugin category
-        :type category:         str
-        :rtype:                 dict[str:BasePlugin]
-        """
-        category_base_class = self._category_filter.get(category, PluginBase)
-
-        return self.getPluginInstancesByBaseClass(category_base_class)
-
     def getPluginInstancesByType(self, plugin_type):
         """
         Get plugin instances by the plugin attribute `pluginType`
@@ -325,6 +289,31 @@ class PluginManager(object):
         :rtype:                 dict[str:BasePlugin]
         """
         return {k: v for k, v in self._plugins_instances.items() if v.pluginType == plugin_type}
+
+    def searchPluginInstances(self, **search_params):
+        """
+        Search for plugin instances that have attributes, parameters or properties that match the key-value pairs in
+        `search_params`. Iterates through all plugin instances.
+
+        :return: dict of Plugins that match search parameters
+        :rtype: dict{str: PluginBase}
+        """
+        matching_plugins = {}
+
+        for plugin_uuid, pluginObj in self._plugins_instances.items():
+            plug_props = pluginObj.getProperties()
+            plug_props.update(pluginObj.getAttributes())
+
+            match = True
+            for k, v in search_params.items():
+                if plug_props.get(k) != v:
+                    match = False
+                    break
+
+            if match:
+                matching_plugins[plugin_uuid] = pluginObj
+
+        return matching_plugins
 
 
 class PluginAttribute(object):
@@ -346,6 +335,23 @@ class PluginAttribute(object):
                 raise TypeError("must be of type %s" % self.attrType)
 
 
+class PluginParameter(PluginAttribute):
+    def __init__(self, attrType=str, required=False, defaultValue=None, description=''):
+        super(PluginParameter, self).__init__(attrType, required, defaultValue)
+        self.description = description
+
+    def getDict(self):
+        return {
+            'description': self.description,
+            'required':    self.required
+        }
+
+
+class PluginDependency(object):
+    def __init__(self, **kwargs):
+        self.attrs = kwargs
+
+
 class PluginBase(object):
     """
     Base class for plugins
@@ -357,19 +363,17 @@ class PluginBase(object):
     version = PluginAttribute(attrType=str, required=False, defaultValue="Unknown")
     pluginType = PluginAttribute(attrType=str, required=True)
 
-    def __init__(self, **kwargs):
-        # Set all class-level attributes on the new instance. This is mostly to resolve default values
-        attrs = self.getAttributes()
-
-        for attr_name, attr_val in attrs.items():
-            setattr(self, attr_name, attr_val)
-
+    def __init__(self, check_dependencies=True, **kwargs):
         # Assign each plugin instance a universally unique identifier
         self._uuid = str(uuid.uuid4())
         self.logger = kwargs.get('logger', logging)
 
         if self._fqn == '':
             self._fqn = self.__class__.__module__ + '.' + self.__class__.__name__
+
+        self._resolveAttributes(**kwargs)
+
+        self._resolveDependencies(check_dependencies)
 
     @property
     def fqn(self):
@@ -395,41 +399,146 @@ class PluginBase(object):
         return attrs
 
     @classmethod
-    def _getPluginAttributeClasses(cls):
-        return cls._getClassAttributesByBase(PluginAttribute)
+    def _getClassAttributeValue(cls, attr_name):
+        attr_value = getattr(cls, attr_name)
+
+        if issubclass(type(attr_value), PluginAttribute):
+            # Not provided, use the default if not required
+            if attr_value.required:
+                attr_value = None
+            else:
+                attr_value = attr_value.defaultValue
+
+        return attr_value
 
     @classmethod
-    def getAttributes(cls):
-        attrs = cls._getPluginAttributeClasses()
-        attr_vals = {}
+    def _validateClassAttributes(cls):
+        """
+        Validate PluginAttributes defined for the class. Ignores PluginParameter attributes, as they are meant to be
+        defined at plugin instantiation
 
-        for attr_name, attr_obj in attrs.items():
-            attr_value = getattr(cls, attr_name, None)
+        :return:    True if successful
+        :rtype:     bool
+        :raises:    Exception
+        """
+        for attr_name, attr_obj in cls._getClassAttributesByBase(PluginAttribute).items():
+            if not issubclass(type(attr_obj), PluginParameter):
+                # Plugin parameters are validated at the instance level, not the class
+                try:
+                    attr_val = cls._getClassAttributeValue(attr_name)
 
-            if issubclass(type(attr_value), PluginAttribute):
-                # Not provided, use the default if not required
-                if attr_obj.required:
-                    attr_value = None
-                else:
-                    attr_value = attr_obj.defaultValue
+                    attr_obj.validate(attr_val)
 
-            attr_vals[attr_name] = attr_value
+                except Exception as e:
+                    e.message = "Plugin attribute %s: %s" % (attr_name, e.message)
+                    raise e
 
-        return attr_vals
+        return True
 
     @classmethod
-    def _validateAttributes(cls):
-        attr_vals = cls.getAttributes()
+    def getClassAttributes(cls):
+        """
+        Get values for all overridden PluginAttribute object defined at the class level.
 
-        for attr_name, attr_obj in cls._getPluginAttributeClasses().items():
+        :rtype: dict
+        """
+        attrs = cls._getClassAttributesByBase(PluginAttribute)
+        return {attr_name: cls._getClassAttributeValue(attr_name) for attr_name in attrs}
+
+    def _getAttributeValue(self, attr_name):
+        attr_value = getattr(self, attr_name)
+
+        if issubclass(type(attr_value), PluginAttribute):
+            # Not provided, use the default if not required
+            if attr_value.required:
+                attr_value = None
+            else:
+                attr_value = attr_value.defaultValue
+
+        return attr_value
+
+    @property
+    def attributes(self):
+        return self.getAttributes()
+
+    def _getAttributesByBase(self, base_class):
+        attrs = self._getClassAttributesByBase(base_class)
+        return {attr_name: self._getAttributeValue(attr_name) for attr_name in attrs}
+
+    def getAttributes(self):
+        """
+        Get values for all overridden PluginAttribute objects defined at the instance level. PluginParameter
+        attributes are overridden by instance parameters.
+
+        :rtype: dict
+        """
+        return self._getAttributesByBase(PluginAttribute)
+
+    def getParameters(self):
+        """
+        Get values for all overridden PluginParameter objects in the instance.
+
+        :rtype: dict
+        """
+        return self._getAttributesByBase(PluginParameter)
+
+    def _resolveAttributes(self, **kwargs):
+        """
+        Called on plugin instantiation to resolve all PluginAttribute objects on the instance. If an attribute is not
+        overridden, the default value is used.
+        """
+        # Set all class-level attributes on the new instance. This is mostly to resolve default values
+        attrs = self.getAttributes()
+
+        for attr_name, attr_val in attrs.items():
+            if attr_name in kwargs:
+                setattr(self, attr_name, kwargs.get(attr_name))
+            else:
+                setattr(self, attr_name, attr_val)
+
+    def _validateAttributes(self):
+        """
+        Validate PluginAttributes defined for the class.
+
+        :return:    True if successful
+        :rtype:     bool
+        :raises:    Exception
+        """
+        for attr_name, attr_obj in self._getClassAttributesByBase(PluginAttribute).items():
             try:
-                attr_obj.validate(attr_vals.get(attr_name))
+                attr_val = self._getAttributeValue(attr_name)
+
+                attr_obj.validate(attr_val)
 
             except Exception as e:
                 e.message = "Plugin attribute %s: %s" % (attr_name, e.message)
                 raise e
 
         return True
+
+    def _resolveDependencies(self, check_dependencies):
+        """
+        Implements the dependency injection pattern to allow dependencies to be resolved at runtime without needing
+        to pass objects when instantiating plugins
+
+        :param check_dependencies:  Raise RuntimeError if dependency does not resolve to a single object
+        """
+        global plugin_manager
+        assert(isinstance(plugin_manager, _PluginManager))
+
+        for attr_name, dep_obj in self._getClassAttributesByBase(PluginDependency).items():
+            matching_plugs = plugin_manager.searchPluginInstances(**dep_obj.attrs)
+
+            if len(matching_plugs) == 1:
+                setattr(self, attr_name, matching_plugs.values()[0])
+
+            else:
+                if check_dependencies:
+                    raise RuntimeError("Unable to resolve plugin dependency: %s, %d matches found" % (attr_name,
+                                                                                                  len(matching_plugs)))
+
+                else:
+                    setattr(self, attr_name, matching_plugs.values())
 
     @property
     def properties(self):
@@ -446,3 +555,5 @@ class PluginBase(object):
             'fqn': self.fqn,
             'pluginType': self.pluginType
         }
+
+plugin_manager = _PluginManager()

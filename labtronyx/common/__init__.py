@@ -15,5 +15,5 @@ __all__ = [
     # Events
     'EventSubscriber', 'EventMessage', 'EventCodes',
     # Plugins
-    'PluginManager', 'PluginBase', 'PluginAttribute'
+    'PluginBase', 'PluginAttribute', 'PluginParameter', 'PluginDependency'
 ]

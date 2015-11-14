@@ -4,24 +4,6 @@ import time
 import labtronyx
 
 
-def setUpModule():
-    global instr
-    instr = labtronyx.InstrumentManager()
-
-
-def test_plugins():
-    for plugin_fqn, plugCls in instr.plugin_manager.plugins.items():
-        yield check_plugin, plugCls
-
-
-def check_plugin(pluginCls):
-    # Validate plugin
-    assert_true(pluginCls._validateAttributes())
-
-    assert_greater(len(pluginCls._getPluginAttributeClasses()), 0)
-    assert_greater(len(pluginCls.getAttributes()), 0)
-
-
 class InstrumentManager_Tests(unittest.TestCase):
 
     @classmethod
@@ -35,7 +17,7 @@ class InstrumentManager_Tests(unittest.TestCase):
         cls.instr._close()
 
     def test_init_time(self):
-        assert_less_equal(self.init_delta, 1.0, "No RPC Init time must be less than 1.0 second(s)")
+        assert_less_equal(self.init_delta, 2.0, "No RPC Init time must be less than 2.0 second(s)")
 
     def test_get_version(self):
         self.assertIsNotNone(self.instr.getVersion())

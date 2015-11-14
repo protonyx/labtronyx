@@ -86,12 +86,12 @@ class ResourceBase(PluginBase):
     :type logger:           logging.Logger
     """
     pluginType = 'resource'
+    interfaceName = PluginAttribute(attrType=str, required=True)
     
-    def __init__(self, manager, interface, resID, **kwargs):
-        PluginBase.__init__(self, **kwargs)
+    def __init__(self, manager, resID, **kwargs):
+        super(ResourceBase, self).__init__(**kwargs)
 
         self._manager = manager
-        self._interface = interface
         self._resID = resID
 
         # Instance variables
@@ -131,10 +131,6 @@ class ResourceBase(PluginBase):
         return self._manager
 
     @property
-    def interface(self):
-        return self._interface
-
-    @property
     def resID(self):
         return self._resID
 
@@ -152,9 +148,9 @@ class ResourceBase(PluginBase):
 
         :rtype: dict[str:object]
         """
-        res_prop = super(ResourceBase, self).getProperties()
+        res_prop = PluginBase.getProperties(self)
         res_prop.update({
-            'interface': self._interface.interfaceName,
+            'interfaceName': self.interfaceName,
             'resourceID': self._resID
         })
 

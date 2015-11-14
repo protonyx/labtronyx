@@ -17,26 +17,30 @@ def test_interfaces():
 
 
 def check_interface_api(interfaceCls):
-    pass
+    assert_true(interfaceCls._validateClassAttributes())
 
 
 def test_interface_integration():
     manager = labtronyx.InstrumentManager()
 
     # Create a fake interface, imitating the interface API
-    interf = InterfaceBase
-    interf.interfaceName = 'Test'
-    interf.open = mock.Mock(return_value=True)
-    interf.close = mock.Mock(return_value=True)
+    class TestInterface(InterfaceBase):
+        interfaceName = 'Test'
+        open = mock.Mock(return_value=True)
+        close = mock.Mock(return_value=True)
+        enumerate = mock.Mock(return_value=True)
 
     # Inject the fake plugin into the manager instance
-    manager.plugin_manager._plugins_classes[interf.uuid] = interf
+    manager.plugin_manager._plugins_classes['test.Test'] = TestInterface
 
     assert_true(manager.enableInterface('Test'))
-    assert_true(interf.open.called)
-    assert_false(interf.close.called)
+    assert_true(TestInterface.open.called)
+    assert_false(TestInterface.close.called)
+    assert_true(TestInterface.enumerate.called)
     assert_true(manager.disableInterface('Test'))
-    assert_true(interf.open.called)
+    assert_true(TestInterface.open.called)
+
+    manager._close()
 
 
 class VISA_Sim_Tests(unittest.TestCase):
@@ -49,11 +53,16 @@ class VISA_Sim_Tests(unittest.TestCase):
         if 'TRAVIS' in os.environ or cls.manager.interfaces.get('VISA') is None:
             lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'default.yaml')
 
+            cls.manager.disableInterface('VISA')
             cls.manager.enableInterface('VISA', library='%s@sim'%lib_path)
 
         interfaceInstancesByName = {pluginCls.interfaceName: pluginCls for plugin_uuid, pluginCls
                                     in cls.manager.interfaces.items()}
         cls.i_visa = interfaceInstancesByName.get('VISA')
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.manager._close()
 
     def setUp(self):
         if self.i_visa is None:
@@ -66,11 +75,11 @@ class VISA_Sim_Tests(unittest.TestCase):
         self.assertLessEqual(time.clock() - start, 1.0, "VISA refresh time must be less than 1.0 second(s)")
 
     def test_get_resources(self):
-        dev_list = self.manager.findInstruments(interface='VISA')
+        dev_list = self.manager.findInstruments(interfaceName='VISA')
         self.assertGreater(len(dev_list), 0)
 
     def test_resource_api(self):
-        dev_list = self.manager.findInstruments(interface='VISA')
+        dev_list = self.manager.findInstruments(interfaceName='VISA')
         test_res = dev_list[0]
 
         # API Checks
@@ -111,6 +120,10 @@ class VISA_Tests(unittest.TestCase):
 
         cls.i_visa = interfaceInstancesByName.get('VISA')
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.manager._close()
+
     def setUp(self):
         if 'VISA' not in self.manager.listInterfaces():
             self.skipTest('VISA library not installed')
@@ -132,6 +145,10 @@ class Serial_Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.manager = labtronyx.InstrumentManager()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.manager._close()
 
     def setUp(self):
         if 'Serial' not in self.manager.listInterfaces():

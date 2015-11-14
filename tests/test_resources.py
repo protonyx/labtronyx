@@ -15,7 +15,7 @@ def test_resources():
 
 
 def check_resource_api(resCls):
-    pass
+    assert_true(resCls._validateClassAttributes())
 
 
 def test_resource_integration():

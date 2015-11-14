@@ -16,6 +16,7 @@ Install NI-VISA using the instructions and ReadMe file included with the install
 Mac and Linux.
 """
 import labtronyx
+from labtronyx.common import plugin
 
 import time
 
@@ -43,25 +44,21 @@ class i_VISA(labtronyx.InterfaceBase):
         super(i_VISA, self).__init__(manager, **kwargs)
 
         # Instance variables
-        self.resource_manager = None
+        self.__resource_manager = None
 
     def open(self):
         """
-        Initialize the VISA Controller. Instantiates a VISA Resource Manager
-        and starts the controller thread.
+        Initialize the VISA Interface. Instantiates a VISA Resource Manager.
 
         :returns: True if successful, False if an error occurred
         """
         try:
             # Load the VISA Resource Manager
-            self.resource_manager = visa.ResourceManager(self._lib)
+            self.__resource_manager = visa.ResourceManager(self._lib)
 
             # Announce details about the VISA driver
             import pyvisa.util
             self.logger.debug("PyVISA Debug information\n%s", pyvisa.util.get_debug_info(False))
-
-            # Enumerate all of the connected instruments
-            self.enumerate()
 
             return True
 
@@ -74,37 +71,25 @@ class i_VISA(labtronyx.InterfaceBase):
 
         return False
 
-    def close(self):
-        """
-        Stops the VISA Interface. Frees all resources associated with the interface.
-        """
-        for res_uuid, res_obj in self.resources.items():
-            res_obj.close()
-
-            self.manager.plugin_manager.destroyPluginInstance(res_uuid)
-
-        return True
-
     def enumerate(self):
         """
         Identify all devices known to the VISA driver and create resource objects for valid resources
         """
-        if self.resource_manager is None:
+        if self.__resource_manager is None:
             raise labtronyx.InterfaceError("Interface not open")
 
         self.logger.debug("Enumerating VISA interface")
 
         try:
-            res_list = self.resource_manager.list_resources()
+            new_res_list = [res for res in self.__resource_manager.list_resources() if res not in self.resources_by_id]
 
             # Check for new resources
-            for resID in res_list:
-                if resID not in self.resources_by_id:
-                    try:
-                        self.getResource(resID)
+            for resID in new_res_list:
+                try:
+                    self.openResource(resID)
 
-                    except labtronyx.ResourceUnavailable:
-                        pass
+                except labtronyx.ResourceUnavailable:
+                    pass
 
         except visa.VisaIOError as e:
             # Exception thrown when there are no resources
@@ -114,12 +99,12 @@ class i_VISA(labtronyx.InterfaceBase):
         """
         Close any resources that are no longer known to the VISA interface
         """
-        if self.resource_manager is None:
+        if self.__resource_manager is None:
             raise labtronyx.InterfaceError("Interface not open")
 
         try:
             # Get a fresh list of resources
-            res_list = self.resource_manager.list_resources()
+            res_list = self.__resource_manager.list_resources()
         except visa.VisaIOError:
             # Exception thrown when there are no resources
             res_list = []
@@ -141,7 +126,11 @@ class i_VISA(labtronyx.InterfaceBase):
     def resources_by_id(self):
         return {res_obj.resID: res_obj for res_uuid, res_obj in self.resources.items()}
 
-    def getResource(self, resID):
+    @property
+    def resource_manager(self):
+        return self.__resource_manager
+
+    def openResource(self, resID):
         """
         Attempt to open a VISA instrument. If successful, a VISA resource is added to the list of known resources and
         the object is returned.
@@ -150,38 +139,20 @@ class i_VISA(labtronyx.InterfaceBase):
         :raises:        labtronyx.ResourceUnavailable
         :raises:        labtronyx.InterfaceError
         """
-        if resID in self.resources_by_id:
-            raise labtronyx.InterfaceError("Resource instance already exists")
+        # Instantiate the resource object
+        res_obj = self.manager.plugin_manager.createPluginInstance(r_VISA.fqn,
+                                                                   manager=self.manager,
+                                                                   resID=resID,
+                                                                   logger=self.logger
+                                                                   )
 
-        try:
-            instrument = self.resource_manager.open_resource(resID)
+        # Signal new resource event
+        self.manager._publishEvent(labtronyx.EventCodes.resource.created, res_obj.uuid)
 
-            # Instantiate the resource object
-            res_obj = self.manager.plugin_manager.createPluginInstance(r_VISA.fqn, manager=self.manager,
-                                                                       interface=self,
-                                                                       resID=resID,
-                                                                       instrument=instrument,
-                                                                       logger=self.logger
-                                                                       )
+        return res_obj
 
-            # Signal new resource event
-            self.manager._publishEvent(labtronyx.EventCodes.resource.created, res_obj.uuid)
-
-            return res_obj
-
-        except AttributeError:
-            raise labtronyx.ResourceUnavailable('Invalid VISA Resource Identifier: %s' % resID)
-
-        except visa.VisaIOError as e:
-            if e.abbreviation in ["VI_ERROR_RSRC_BUSY",
-                                  "VI_ERROR_RSRC_NFOUND",
-                                  "VI_ERROR_TMO",
-                                  "VI_ERROR_INV_RSRC_NAME"]: # Returned by TekVISA
-
-                raise labtronyx.ResourceUnavailable('VISA Resource Error: %s' % e.abbreviation)
-
-            else:
-                raise labtronyx.InterfaceError('VISA Interface Error: %s' % e.abbreviation)
+    def getResource(self, resID):
+        return self.openResource(resID)
 
 
 class r_VISA(labtronyx.ResourceBase):
@@ -219,27 +190,56 @@ class r_VISA(labtronyx.ResourceBase):
         pyvisa.constants.InterfaceType.firewire: "Firewire"
     }
 
-    def __init__(self, manager, interface, resID, instrument, **kwargs):
-        super(r_VISA, self).__init__(manager, interface, resID, **kwargs)
+    interfaceName = 'VISA'
+    interface = plugin.PluginDependency(pluginType='interface', interfaceName='VISA')
 
-        self.instrument = instrument
+    def __init__(self, manager, resID, **kwargs):
+        assert(isinstance(manager, labtronyx.InstrumentManager))
 
-        self.logger.debug("Created VISA resource: %s", resID)
+        super(r_VISA, self).__init__(manager, resID, **kwargs)
 
-        # Instance variables
-        self._identity = []
-        self._conf = { # Default configuration
-                      'read_termination': '\r',
-                      'write_termination': '\r\n',
-                      'timeout': 2000
-                      }
-        self._resourceType = self.RES_TYPES.get(self.instrument.interface_type, 'VISA')
+        # Ensure dependency was resolved correctly
+        if not isinstance(self.interface, i_VISA):
+            raise labtronyx.InterfaceError("VISA Interface is not enabled")
 
-        # Instrument is created in the open state, but we do not want to lock the VISA instrument
-        self.close()
+        # Ensure resource doesn't already exist
+        if len(manager.plugin_manager.searchPluginInstances(pluginType='resource', interfaceName='VISA',
+                                                            resID=resID)) > 0:
+            raise labtronyx.InterfaceError("Resource already exists")
 
-        # Set a flag to initialize the resource when it is used
-        self.ready = False
+        try:
+            self.instrument = self.interface.resource_manager.open_resource(resID)
+
+            self.logger.debug("Created VISA resource: %s", resID)
+
+            # Instance variables
+            self._identity = []
+            self._conf = { # Default configuration
+                          'read_termination': '\r',
+                          'write_termination': '\r\n',
+                          'timeout': 2000
+                          }
+            self._resourceType = self.RES_TYPES.get(self.instrument.interface_type, 'VISA')
+
+            # Instrument is created in the open state, but we do not want to lock the VISA instrument
+            self.close()
+
+            # Set a flag to initialize the resource when it is used
+            self.ready = False
+
+        # except AttributeError:
+        #     raise labtronyx.ResourceUnavailable('Invalid VISA Resource Identifier: %s' % resID)
+
+        except visa.VisaIOError as e:
+            if e.abbreviation in ["VI_ERROR_RSRC_BUSY",
+                                  "VI_ERROR_RSRC_NFOUND",
+                                  "VI_ERROR_TMO",
+                                  "VI_ERROR_INV_RSRC_NAME"]:  # Returned by TekVISA
+
+                raise labtronyx.ResourceUnavailable('VISA Resource Error: %s' % e.abbreviation)
+
+            else:
+                raise labtronyx.InterfaceError('VISA Interface Error: %s' % e.abbreviation)
 
     def getProperties(self):
         """
@@ -250,7 +250,7 @@ class r_VISA(labtronyx.ResourceBase):
         if not self.ready:
             self.identify()
 
-        def_prop = super(r_VISA, self).getProperties()
+        def_prop = labtronyx.ResourceBase.getProperties(self)
         def_prop.update({
             'resourceType': self._resourceType
         })
@@ -412,7 +412,7 @@ class r_VISA(labtronyx.ResourceBase):
             raise labtronyx.ResourceUnavailable('VISA resource error: %s' % e.abbreviation)
 
         # Call the base resource open function to call driver hooks
-        return super(r_VISA, self).open()
+        return labtronyx.ResourceBase.open(self)
 
     def isOpen(self):
         """
@@ -435,7 +435,7 @@ class r_VISA(labtronyx.ResourceBase):
         """
         if self.isOpen():
             # Close the driver
-            super(r_VISA, self).close()
+            labtronyx.ResourceBase.close(self)
 
             try:
                 # Close the instrument
@@ -741,7 +741,7 @@ class r_VISA(labtronyx.ResourceBase):
 
             # Only auto-load a model if a single model was found
             if len(validDrivers) == 1:
-                super(r_VISA, self).loadDriver(validDrivers[0], force)
+                labtronyx.ResourceBase.loadDriver(self, validDrivers[0], force)
                 return True
 
             else:
@@ -749,4 +749,4 @@ class r_VISA(labtronyx.ResourceBase):
                 return False
 
         else:
-            return super(r_VISA, self).loadDriver(driverName, force)
+            return labtronyx.ResourceBase.loadDriver(self, driverName, force)

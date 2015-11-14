@@ -95,7 +95,7 @@ import threading, ctypes
 # Package relative imports
 from ..common import events
 from ..common.errors import *
-from ..common.plugin import PluginBase, PluginAttribute
+from ..common.plugin import PluginBase, PluginAttribute, PluginParameter, PluginDependency
 
 __all__ = ['ScriptBase', 'ScriptParameter', 'ScriptResult', 'RequiredResource']
 
@@ -119,16 +119,12 @@ class ScriptBase(PluginBase):
     allowedFailures = PluginAttribute(attrType=int, defaultValue=0)
 
     def __init__(self, manager, **kwargs):
-        PluginBase.__init__(self, **kwargs)
+        PluginBase.__init__(self, check_dependencies=False, **kwargs)
 
         self._manager = manager
 
         if not self.continueOnFail:
             self.allowedFailures = 0
-
-        # Resolve all ScriptParameters using keyword arguments
-        # script runner is responsible for passing CLI args as a dict
-        self._resolveParameters(**kwargs)
 
         self._scriptThread = None
         self._runLock = threading.Lock()
@@ -156,69 +152,50 @@ class ScriptBase(PluginBase):
     def current_test_result(self):
         return self._scriptThread.result
 
-    def _collectRequiredResources(self):
-        req_res = self._getClassAttributesByBase(RequiredResource)
-        res = {}
-
-        for attr_name, attr_cls in req_res.items():
-            matching_res = self._manager.findResources(**attr_cls.search_params)
-            res[attr_name] = matching_res
-
-        return res
-
-    def _resolveResources(self):
-        """
-        Iterate through all RequiredResource attributes and replace instance attributes with resource objects.
-        """
-        req_res = self._collectRequiredResources()
-
-        for attr_name, res_list in req_res.items():
-            if len(res_list) == 0 or len(res_list) > 1:
-                setattr(self, attr_name, None)
-            else:
-                setattr(self, attr_name, res_list[0])
-
-    def _validateResources(self):
-        req_res = self._collectRequiredResources()
-        failCount = 0
-
-        for attr_name, res_list in req_res.items():
-            if len(res_list) == 0:
-                self.logger.info("ERROR: Required resource %s could not be found", attr_name)
-                failCount += 1
-
-            elif len(res_list) > 1:
-                self.logger.info("ERROR: Required resource %s ")
-                failCount += 1
-
-        return failCount
-
-    def _resolveParameters(self, **kwargs):
-        params = self._getClassAttributesByBase(ScriptParameter)
-
-        # TODO: Resolve command line parameters as well
-
-        for attr_name, attr_cls in params.items():
-            attr_val = kwargs.get(attr_name)
-
-            if attr_val is None:
-                setattr(self, attr_name, attr_cls.defaultValue)
-            else:
-                setattr(self, attr_name, attr_val)
-
     def _validateParameters(self):
+        """
+        Validate script parameters
+
+        :return: List of failure reasons, if any
+        :rtype: list[str]
+        """
         params = self._getClassAttributesByBase(ScriptParameter)
-        failCount = 0
+        fails = []
 
         for attr_name, attr_cls in params.items():
             try:
                 attr_cls.validate(getattr(self, attr_name))
 
             except Exception as e:
-                self.logger.info("ERROR: Script parameter %s %s", attr_name, e.message)
-                failCount += 1
+                fails.append("ERROR: Script parameter %s %s" % (attr_name, e.message))
 
-        return failCount
+        return fails
+
+    def resolveResources(self):
+        """
+        Attempt to resolve all resource dependencies by iterating through all RequiredResource attributes and finding
+        matching resource objects
+        """
+        self._resolveDependencies(check_dependencies=False)
+
+    def _validateResources(self):
+        """
+        Validate resource dependencies.
+
+        :return: List of failure reasons, if any
+        :rtype: list[str]
+        """
+        req_res = self._getAttributesByBase(RequiredResource)
+        fails = []
+
+        for attr_name, res_list in req_res.items():
+            if len(res_list) == 0:
+                fails.append("ERROR: Required resource %s could not be found" % attr_name)
+
+            elif len(res_list) > 1:
+                fails.append("ERROR: Required resource %s did not resolve" % attr_name)
+
+        return fails
 
     def assignResource(self, res_attribute, res_uuid):
         # TODO: Implement this feature
@@ -236,13 +213,11 @@ class ScriptBase(PluginBase):
         :rtype: dict{str: object}
         """
         param_classes = self._getClassAttributesByBase(ScriptParameter)
+        return {attr_name: self._getAttributeValue(attr_name) for attr_name in param_classes}
 
-        param_vals = {}
-
-        for attr_name, attr_obj in param_classes.items():
-            param_vals[attr_name] = getattr(self, attr_name, None)
-
-        return param_vals
+    def getResourceInfo(self):
+        return {attr_name: [res.uuid for res in res_list] for attr_name, res_list
+                in self._getAttributesByBase(RequiredResource).items()}
 
     def getProperties(self):
         """
@@ -252,14 +227,26 @@ class ScriptBase(PluginBase):
         """
         props = super(ScriptBase, self).getProperties()
         props.update(self.getAttributes())
-        props.update(self.getParameters())
         props.update({
+            'ready': self.isReady(),
             'running': self.isRunning(),
             'status': self._status,
             'progress': self._progress,
-            'results': [result.toDict() for result in self.result]
+            'results': [result.toDict() for result in self.result],
+            'resources': self.getResourceInfo()
         })
         return props
+
+    def isReady(self):
+        """
+        Check if a script is ready to run. In order to run, a script must meet the following conditions:
+
+           * All resource dependencies must be resolved.
+
+        :return: True if ready, False if not ready
+        :rtype: bool
+        """
+        return len(self._validateResources()) == 0
 
     def isRunning(self):
         """
@@ -288,14 +275,15 @@ class ScriptBase(PluginBase):
         self._scriptThread.setDaemon(True)
         self._scriptThread.start()
 
-        # Wait for the script to finish
-        # self._scriptThread.join()
-
-        # self._scriptThread = None
-
     def stop(self):
+        """
+        Stop a script that is running.
+
+        :return: True if script was stopped
+        :rtype: bool
+        """
         if self.isRunning():
-            self._scriptThread.kill(ScriptStopException)
+            return self._scriptThread.kill(ScriptStopException)
 
     def setUp(self):
         """
@@ -309,15 +297,15 @@ class ScriptBase(PluginBase):
         """
         self.logger.info("Running script: %s", self.__class__.__name__)
 
-        for res_uuid, res_dict in self._manager.getProperties().items():
-            self.logger.info("Found resource: %s", res_dict.get('resourceID'))
-
-        spinUpFailures = 0
+        spinUpFailures = []
 
         spinUpFailures += self._validateParameters()
         spinUpFailures += self._validateResources()
 
-        if spinUpFailures > 0:
+        for error_str in spinUpFailures:
+            self.logger.error(error_str)
+
+        if len(spinUpFailures) > 0:
             self.fail("Errors encountered during script setUp", True)
 
         # Notify that the script is running now
@@ -517,6 +505,8 @@ class ScriptThread(threading.Thread):
         self.__scriptObj = scriptObj
         self.__scriptResult = ScriptResult()
 
+        self.setName('ScriptThread-%s' % self.script.uuid)
+
     @property
     def script(self):
         return self.__scriptObj
@@ -527,19 +517,27 @@ class ScriptThread(threading.Thread):
 
     def kill(self, exc_type):
         """
-        Called asyncronously to kill a thread by raising an exception
+        Called asyncronously to kill a thread by raising an exception using the Python API and ctypes.
 
-        :param exc_type:
-        :type exc_type:
-        :return:
-        :rtype:
+        .. note::
+
+           If there is a profiler or debugger attached to the Python interpreter, there is a high chance this will
+           not work.
+
+        :param exc_type: Exception to throw
+        :type exc_type: type(Exception)
+        :returns: True if successful, False otherwise
+        :rtype: bool
         """
         if self.isAlive():
             res = ctypes.pythonapi.PyThreadState_SetAsyncExc(self.ident, ctypes.py_object(exc_type))
 
             if res != 1:
                 ctypes.pythonapi.PyThreadState_SetAsyncExc(self.ident, 0)
-                raise RuntimeError("Unable to kill thread")
+                return False
+
+            else:
+                return True
 
     def run(self):
         self.result.startTimer()
@@ -555,6 +553,8 @@ class ScriptThread(threading.Thread):
 
         except ScriptStopException as e:
             self.script.logger.info("Script Stopped: %s", e.message)
+            self.result.result = ScriptResult.STOPPED
+            self.result.reason = "Script stopped"
 
         except Exception as e:
             # Handle all uncaught exceptions
@@ -576,35 +576,14 @@ class ScriptThread(threading.Thread):
             self.script.result = self.result
 
 
-class RequiredResource(object):
+class RequiredResource(PluginDependency):
     def __init__(self, **kwargs):
-        self.search_params = kwargs
+        kwargs['pluginType'] = 'resource'
+        super(RequiredResource, self).__init__(**kwargs)
 
 
-class ScriptParameter(object):
-    def __init__(self, attrType=str, required=False, defaultValue=None, description=''):
-        self.attrType = attrType
-        self.required = required
-        self.defaultValue = defaultValue
-        self.description = description
-
-    def validate(self, value):
-        if self.required and value is None:
-            raise ValueError("is required")
-
-        if type(value) != self.attrType:
-            # Can we cast?
-            try:
-                self.attrType(value)
-
-            except:
-                raise TypeError("must be of type %s" % self.attrType)
-
-    def getDict(self):
-        return {
-            'description': self.description,
-            'required': self.required
-        }
+class ScriptParameter(PluginParameter):
+    pass
 
 
 class ScriptResult(object):
@@ -627,7 +606,7 @@ class ScriptResult(object):
 
     @result.setter
     def result(self, value):
-        if value in [self.PASS, self.FAIL, self.SKIP]:
+        if value in [self.PASS, self.FAIL, self.SKIP, self.STOPPED]:
             self._result = value
         else:
             raise ValueError("Invalid result type")
@@ -638,7 +617,11 @@ class ScriptResult(object):
             return self._reason
         else:
             # Latest failure
-            return self._failures[-1]
+            if len(self._failures) > 0:
+                return self._failures[-1]
+
+            else:
+                return ''
 
     @reason.setter
     def reason(self, value):

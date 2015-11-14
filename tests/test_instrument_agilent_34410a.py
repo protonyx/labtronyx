@@ -17,6 +17,7 @@ class Agilent_34410A_Functional_Tests(unittest.TestCase):
             # Use sim
             lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'agilent_34410a.yaml')
 
+            self.manager.disableInterface('VISA')
             self.manager.enableInterface('VISA', library='%s@sim'%lib_path)
 
             # Find the instrument by model number

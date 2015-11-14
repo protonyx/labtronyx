@@ -20,6 +20,7 @@ def check_driver_api(driverCls):
 
 
 def check_visa_api(driverCls):
+    assert_true(driverCls._validateClassAttributes())
     assert_true(hasattr(driverCls, 'VISA_validResource'))
     assert_equal(type(driverCls.VISA_validResource(['','','',''])), bool)
 

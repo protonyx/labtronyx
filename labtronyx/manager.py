@@ -36,7 +36,6 @@ class InstrumentManager(object):
     
     def __init__(self, **kwargs):
         # Configurable instance variables
-        self.plugin_dirs = kwargs.get('plugin_dirs', [])
         self.server_port = kwargs.get('server_port', self.SERVER_PORT)
 
         if 'logger' in kwargs:
@@ -55,28 +54,15 @@ class InstrumentManager(object):
         self.logger.info("Version: %s", version.ver_full)
         self.logger.debug("Build Date: %s", version.build_date)
 
-        if len(self.plugin_dirs) > 0:
-            for dir in self.plugin_dirs:
-                self.logger.info("Plugin search directory: %s", dir)
-
         # Library paths to search for plugins
-        dirs = ['drivers', 'interfaces']
-        dirs_res = [os.path.join(self.rootPath, dir) for dir in dirs] + self.plugin_dirs
+        self.plugin_manager = common.plugin.plugin_manager
+        self.plugin_manager.logger = self.logger
 
-        # Categorize plugins by base class
-        cat_filter = {
-            "drivers":      bases.DriverBase,
-            "interfaces":   bases.InterfaceBase,
-            "resources":    bases.ResourceBase,
-            "scripts":      bases.ScriptBase
-        }
-
-        # Load Plugins
-        self.plugin_manager = common.plugin.PluginManager(
-            directories=dirs_res,
-            categories=cat_filter,
-            logger=self.logger)
-        self.plugin_manager.search()
+        dirs = [os.path.join(self.rootPath, dir) for dir in ['drivers', 'interfaces']]
+        dirs += kwargs.get('plugin_dirs', [])
+        for dir in dirs:
+            self.logger.info("Plugin search directory: %s", dir)
+            self.plugin_manager.search(dir)
         
         # Start Interfaces
         for i_fqn, i_cls in self.plugin_manager.getPluginsByBaseClass(bases.InterfaceBase).items():
@@ -106,6 +92,8 @@ class InstrumentManager(object):
         # Disable all interfaces, close all resources
         for inter_uuid, inter_obj in self.interfaces.items():
             self.disableInterface(inter_uuid)
+
+        self.plugin_manager.destroyAllPluginInstances()
 
     #===========================================================================
     # Labtronyx Server
@@ -288,6 +276,9 @@ class InstrumentManager(object):
         :rtype:                 bool
         :raises:                KeyError
         """
+        if interfaceName in self.listInterfaces():
+            raise KeyError("Interface already enabled")
+
         interfaceClasses = self.plugin_manager.getPluginsByBaseClass(bases.InterfaceBase)
         interfacesByName = {v.interfaceName: k for k, v in interfaceClasses.items()}
 
@@ -299,9 +290,6 @@ class InstrumentManager(object):
         else:
             raise KeyError("Interface not found or not available")
 
-        # If the interface is already enabled, disable the existing one
-        self.disableInterface(interfaceName)
-
         if self.plugin_manager.validatePlugin(fqn):
             try:
                 # Instantiate interface
@@ -311,6 +299,9 @@ class InstrumentManager(object):
                 if int_obj.open():
                     self.logger.info("Started Interface: %s", interfaceName)
                     self._publishEvent(common.events.EventCodes.interface.created, int_obj.interfaceName)
+
+                    int_obj.enumerate()
+
                     return True
 
                 else:
@@ -334,19 +325,12 @@ class InstrumentManager(object):
         :type interface:    str
         :rtype:             bool
         """
-        interfacesByName = {plug_obj.interfaceName: plug_obj for plug_uuid, plug_obj
-                            in self.plugin_manager.getPluginInstancesByBaseClass(bases.InterfaceBase).items()}
+        interfaces = {plug_obj.uuid: plug_obj for plug_uuid, plug_obj
+                        in self.plugin_manager.getPluginInstancesByBaseClass(bases.InterfaceBase).items()
+                        if plug_obj.interfaceName == interface or plug_obj.uuid == interface}
 
-        if interface in interfacesByName:
-            inter = interfacesByName.get(interface)
-
-        else:
-            inter = self.interfaces.get(interface)
-
-        if inter is not None:
+        for inter_uuid, inter in interfaces.items():
             try:
-                inter_uuid = inter.uuid
-
                 # Call the plugin hook to close the interface
                 inter.close()
 
@@ -354,14 +338,12 @@ class InstrumentManager(object):
                 self._publishEvent(common.events.EventCodes.interface.destroyed, inter.interfaceName)
 
                 self.plugin_manager.destroyPluginInstance(inter_uuid)
-                return True
 
             except:
                 self.logger.exception("Exception during interface close")
                 return False
 
-        else:
-            return False
+        return True
         
     # ===========================================================================
     # Resource Operations
@@ -446,25 +428,8 @@ class InstrumentManager(object):
         :rtype:                 list[labtronyx.bases.resource.ResourceBase]
         """
         # NON-SERIALIZABLE
-        matching_instruments = []
-        
-        prop = self.getProperties()
-        
-        for uuid, res_dict in prop.items():
-            match = True
-            
-            for key, value in kwargs.items():
-                if res_dict.get(key) != value:
-                    match = False
-                    break
-                
-            if match:
-                try:
-                    matching_instruments.append(self.resources.get(uuid))
-                except KeyError:
-                    pass
-                
-        return matching_instruments
+        matching_instruments = self.plugin_manager.searchPluginInstances(pluginType='resource', **kwargs)
+        return matching_instruments.values()
     
     def findInstruments(self, **kwargs):
         """

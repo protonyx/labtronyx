@@ -16,6 +16,7 @@ class Agilent_B2901_Functional_Tests(unittest.TestCase):
         if len(dev_list) == 0:
             lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'agilent_b2901.yaml')
 
+            self.manager.disableInterface('VISA')
             self.manager.enableInterface('VISA', library='%s@sim'%lib_path)
 
             # Find the instrument by model number

@@ -23,29 +23,6 @@ class i_Serial(labtronyx.InterfaceBase):
     interfaceName = 'Serial'
     enumerable = True
 
-    def open(self):
-        """
-        Open the serial interface and enumerate all system serial ports
-
-        :return:        bool
-        """
-        self.enumerate()
-
-        return True
-    
-    def close(self):
-        """
-        Close all serial resources
-
-        :return:        bool
-        """
-        for res_uuid, res_obj in self.resources.items():
-            res_obj.close()
-
-            self.manager.plugin_manager.destroyPluginInstance(res_uuid)
-
-        return True
-
     def enumerate(self):
         """
         Scans system for new resources and creates resource objects for them.
@@ -85,6 +62,19 @@ class i_Serial(labtronyx.InterfaceBase):
     @property
     def resources_by_id(self):
         return {res_obj.resID: res_obj for res_uuid, res_obj in self.resources.items()}
+
+    def openResource(self, resID):
+        # Instantiate the resource object
+        res_obj = self.manager.plugin_manager.createPluginInstance(r_Serial.fqn,
+                                                                   manager=self.manager,
+                                                                   resID=resID,
+                                                                   logger=self.logger
+                                                                   )
+
+        # Signal new resource event
+        self.manager._publishEvent(labtronyx.EventCodes.resource.created, res_obj.uuid)
+
+        return res_obj
 
     def getResource(self, resID):
         """
@@ -135,20 +125,41 @@ class r_Serial(labtronyx.ResourceBase):
     Resource API is compatible with VISA resources, so any driver written for a VISA resource should also work for
     serial resources in the case that a VISA library is not available.
     """
-    
+    interfaceName = 'Serial'
+
     CR = '\r'
     LF = '\n'
     termination = CR + LF
-        
-    def __init__(self, manager, interface, resID, instrument, **kwargs):
-        super(r_Serial, self).__init__(manager, interface, resID, **kwargs)
-        
-        self.instrument = instrument
-        
-        self.logger.debug("Created Serial resource: %s", resID)
-        
-        # Serial port is immediately opened on object creation
-        self.close()
+
+    def __init__(self, manager, resID, **kwargs):
+        assert (isinstance(manager, labtronyx.InstrumentManager))
+
+        super(r_Serial, self).__init__(manager, resID, **kwargs)
+
+        # Ensure resource doesn't already exist
+        if len(manager.plugin_manager.searchPluginInstances(pluginType='resource', interfaceName='Serial',
+                                                            resID=resID)) > 0:
+            raise labtronyx.InterfaceError("Resource already exists")
+
+        try:
+            self.instrument = serial.Serial(port=resID, timeout=0)
+
+            self.logger.debug("Created Serial resource: %s", resID)
+
+            # Serial port is immediately opened on object creation
+            self.close()
+
+        except (serial.SerialException, OSError) as e:
+            if os.name == 'nt':
+                # Windows implementation of PySerial does not set errno correctly
+                import ctypes
+                e.errno = ctypes.WinError().errno
+
+            if e.errno in [errno.ENOENT, errno.EACCES, errno.EBUSY]:
+                raise labtronyx.ResourceUnavailable('Serial resource error: %s' % resID)
+
+            else:
+                raise labtronyx.InterfaceError('Serial interface error [%i]: %s' % (e.errno, e.message))
 
     def getProperties(self):
         """
@@ -156,7 +167,7 @@ class r_Serial(labtronyx.ResourceBase):
 
         :rtype: dict[str:object]
         """
-        def_prop = super(r_Serial, self).getProperties()
+        def_prop = labtronyx.ResourceBase.getProperties(self)
         def_prop.update({
             'resourceType': 'Serial'
         })
@@ -185,7 +196,7 @@ class r_Serial(labtronyx.ResourceBase):
             raise labtronyx.ResourceUnavailable('Serial resource error: %s' % e.strerror)
 
         # Call the base resource open function to call driver hooks
-        return super(r_Serial, self).open()
+        return labtronyx.ResourceBase.open(self)
         
     def isOpen(self):
         """
@@ -206,7 +217,7 @@ class r_Serial(labtronyx.ResourceBase):
         """
         if self.isOpen():
             # Close the driver
-            super(r_Serial, self).close()
+            labtronyx.ResourceBase.close(self)
 
             try:
                 # Close the instrument

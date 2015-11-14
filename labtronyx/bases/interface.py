@@ -71,9 +71,11 @@ class InterfaceBase(PluginBase):
         
         Make any system driver calls necessary to initialize communication. If any kind of exception occurs that will
         inhibit communication, this function should return False to indicate an error to the InstrumentManager.
+
+        This function is meant to be implemented by subclasses.
         
         :returns: True if ready, False if error occurred
-        :rtype bool:
+        :rtype: bool
         """
         return True
     
@@ -82,9 +84,17 @@ class InterfaceBase(PluginBase):
         Interface clean-up
         
         Make any system driver calls necessary to clean-up interface operations. This function should explicitly free
-        any system resources to prevent locking errors.
+        any system resources to prevent locking errors. Subclasses should be sure to call :func:`InterfaceBase.close` to
+        ensure that instantiated resources are freed.
+
+        :rtype: bool
         """
-        pass
+        for res_uuid, res_obj in self.resources.items():
+            res_obj.close()
+
+            self.manager.plugin_manager.destroyPluginInstance(res_uuid)
+
+        return True
 
     # ===========================================================================
     # Optional Functions
