@@ -208,3 +208,5 @@ class EventCodes:
         created = "script.created"
         changed = "script.changed"
         destroyed = "script.destroyed"
+        finished = "script.finished"
+        log = "script.log"

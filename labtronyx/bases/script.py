@@ -325,6 +325,8 @@ class ScriptBase(PluginBase):
         self.setProgress(100)
         self.setStatus('Finished')
 
+        self.manager._publishEvent(events.EventCodes.script.finished, self.uuid)
+
         if self.current_test_result.executionTime > 0:
             self.logger.info("Script Execution Time: %f", self.current_test_result.executionTime)
 
@@ -641,11 +643,16 @@ class ScriptResult(object):
         self._stopTime = time.time()
 
     @property
+    def startTime(self):
+        return self._startTime
+
+    @property
     def executionTime(self):
         return self._stopTime - self._startTime
 
     def toDict(self):
         return {
+            'time': self.startTime,
             'result': self.result,
             'reason': self.reason,
             'failCount': self.failCount,
