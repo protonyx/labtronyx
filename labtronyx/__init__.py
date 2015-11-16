@@ -5,6 +5,7 @@ Labtronyx Project
 """
 from __future__ import absolute_import
 import logging
+import logging.handlers
 import sys
 
 # Logging
@@ -61,9 +62,9 @@ def runScriptMain():
     `__main__` module.
     """
     logConsole(logging.INFO)
-    manager = InstrumentManager()
+    instr_manager = InstrumentManager()
 
-    plugin_manager = PluginManager()
+    plugin_manager = instr_manager.plugin_manager
     main_plugins = plugin_manager.extractPlugins(sys.modules['__main__'])
 
     main_scripts = [p_cls for p_cls in main_plugins.values() if issubclass(p_cls, ScriptBase) and p_cls != ScriptBase]
@@ -76,7 +77,7 @@ def runScriptMain():
 
     else:
         script_cls = main_scripts[0]
-        script_obj = script_cls(manager, logger=logger)
+        script_obj = script_cls(instr_manager, logger=logger)
 
         script_result = script_obj.start()
         if script_result.result == ScriptResult.PASS:

@@ -89,8 +89,12 @@ execution, but the outcome of the script will be reported as FAIL. If script exe
 condition, the `stop` parameter of the `fail` method can be set, or any of the convenience functions beginning with
 `assert` will cause execution to halt when the condition is met.
 """
+import os
 import time
-import threading, ctypes
+import threading
+import ctypes
+import logging
+from logging.handlers import BufferingHandler
 
 # Package relative imports
 from ..common import events
@@ -117,6 +121,7 @@ class ScriptBase(PluginBase):
     subcategory = PluginAttribute(attrType=str, defaultValue='')
     continueOnFail = PluginAttribute(attrType=bool, defaultValue=False)
     allowedFailures = PluginAttribute(attrType=int, defaultValue=0)
+    logToFile = PluginAttribute(attrType=bool, defaultValue=True)
 
     def __init__(self, manager, **kwargs):
         PluginBase.__init__(self, check_dependencies=False, **kwargs)
@@ -131,6 +136,22 @@ class ScriptBase(PluginBase):
         self._results = []
         self._status = ''
         self._progress = 0
+
+        self.__logger = logging.getLogger('labtronyx.%s' % self.uuid)
+        self._formatter = logging.Formatter('%(asctime)s %(levelname)-8s - %(message)s')
+        # Memory handler
+        self._handler_mem = RotatingMemoryHandler(100)
+        self._handler_mem.setFormatter(self._formatter)
+        self.__logger.addHandler(self._handler_mem)
+        # ZMQ Event handler
+        self._handler_evt = CallbackLogHandler(
+            lambda record: self.manager._publishEvent(events.EventCodes.script.log, self.uuid, record)
+        )
+        self._handler_evt.setFormatter(self._formatter)
+        self.__logger.addHandler(self._handler_evt)
+        # File handler
+        self._handler_file = None
+
 
     @property
     def manager(self):
@@ -149,8 +170,50 @@ class ScriptBase(PluginBase):
             raise TypeError("Result must be a ScriptResult type")
 
     @property
+    def logger(self):
+        return self.__logger
+
+    @property
     def current_test_result(self):
         return self._scriptThread.result
+
+    def createFileLogHandler(self, filename=None):
+        """
+        Create a file log handler to store script logs. Called automatically by the default :func:`setUp` method if
+        logToFile is True. Removes any existing file log handlers.
+
+        :param filename: filename of new log file
+        :type filename: str
+        """
+        if self._handler_file is not None:
+            self.__logger.removeHandler(self._handler_file)
+
+        if filename is None:
+            filename = time.strftime("%Y%m%d-%H%M%S-" + self.fqn + ".log")
+
+            try:
+                import appdirs
+                dirs = appdirs.AppDirs("Labtronyx", roaming=True)
+                log_path = dirs.user_log_dir
+                if not os.path.exists(log_path):
+                    os.makedirs(log_path)
+                filename = os.path.join(log_path, filename)
+
+            except:
+                pass
+
+        self.logger.info("Logging to file: %s", filename)
+        self._handler_file = logging.FileHandler(filename)
+        self._handler_file.setFormatter(self._formatter)
+        self.__logger.addHandler(self._handler_file)
+
+    def getLog(self):
+        """
+        Get the last 100 log entries
+
+        :return: list
+        """
+        return [self._handler_mem.format(record) for record in self._handler_mem.buffer]
 
     def _validateParameters(self):
         """
@@ -295,7 +358,11 @@ class ScriptBase(PluginBase):
 
         This method can be overriden to change the behavior.
         """
-        self.logger.info("Running script: %s", self.__class__.__name__)
+        if self.logToFile:
+            self.createFileLogHandler()
+
+        self._handler_mem.flush()  # Clear log buffer
+        self.logger.info("Running script: %s", self.fqn)
 
         spinUpFailures = []
 
@@ -501,7 +568,7 @@ class ScriptBase(PluginBase):
 
 class ScriptThread(threading.Thread):
     def __init__(self, scriptObj):
-        assert(isinstance(scriptObj, ScriptBase))
+        assert (isinstance(scriptObj, ScriptBase))
         super(ScriptThread, self).__init__()
 
         self.__scriptObj = scriptObj
@@ -662,3 +729,19 @@ class ScriptResult(object):
 
 class ScriptStopException(RuntimeError):
     pass
+
+
+class RotatingMemoryHandler(BufferingHandler):
+    def emit(self, record):
+        self.buffer.append(record)
+        if len(self.buffer) > self.capacity:
+            del self.buffer[0]
+
+
+class CallbackLogHandler(logging.Handler):
+    def __init__(self, callback):
+        logging.Handler.__init__(self)
+        self._callback = callback
+
+    def emit(self, record):
+        self._callback(self.format(record))

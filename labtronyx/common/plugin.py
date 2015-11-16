@@ -366,7 +366,7 @@ class PluginBase(object):
     def __init__(self, check_dependencies=True, **kwargs):
         # Assign each plugin instance a universally unique identifier
         self._uuid = str(uuid.uuid4())
-        self.logger = kwargs.get('logger', logging)
+        self.__logger = kwargs.get('logger', logging)
 
         if self._fqn == '':
             self._fqn = self.__class__.__module__ + '.' + self.__class__.__name__
@@ -386,6 +386,10 @@ class PluginBase(object):
     @property
     def uuid(self):
         return self._uuid
+
+    @property
+    def logger(self):
+        return self.__logger
 
     @classmethod
     def _getClassAttributesByBase(cls, base_class):

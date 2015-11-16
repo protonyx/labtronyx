@@ -66,7 +66,7 @@ def build_package():
 
         # Dependencies
         install_requires=['flask', 'requests', 'pyzmq',
-                          'numpy'],
+                          'numpy', 'appdirs'],
 
         extras_require={
             'VISA': ['pyvisa>=1.6'],
