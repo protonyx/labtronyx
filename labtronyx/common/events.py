@@ -196,6 +196,7 @@ class EventCodes:
     class interface:
         created = "interface.created"
         destroyed = "interface.destroyed"
+        changed = "interface.changed"
 
     class resource:
         created = "resource.created"
