@@ -2,30 +2,26 @@
 Getting started
 ---------------
 
-All resources are subclasses of the :class:`labtronyx.bases.ResourceBase` class. Creating a resource is simple::
+All resources are subclasses of the :class:`labtronyx.ResourceBase` class. Creating a resource is simple::
 
-    from labtronyx.bases import ResourceBase
+    import labtronyx
 
-    class RESOURCE_CLASS_NAME(ResourceBase):
+    class RESOURCE_CLASS_NAME(labtronyx.ResourceBase):
         pass
 
 Attributes
 ----------
 
-Resources have some attributes that should be defined.
+Resources have some attributes that should be defined:
+
+   * `interfaceName` - str that names the interface that owns the resource. Should match the `interfaceName`
+     attribute of the corresponding interface.
 
 Errors
 ------
 
-Labtronyx has a number of build-in exception types that can be raised from resources. To import them::
-
-   from labtronyx.common.errors import *
-
-Packaging
----------
-
-Interfaces and Resources are typically packaged together in a single plugin, as the interface is responsible for
-instantiating and maintaining resource objects.
+Labtronyx has a number of build-in exception types that can be raised from resources. For more information about these
+exceptions and the proper times to raise them, see :doc:`../api/exceptions`
 
 Usage Model
 -----------

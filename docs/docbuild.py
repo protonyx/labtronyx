@@ -1,8 +1,5 @@
 import sys
 import os
-import importlib
-import sets
-import copy
 
 #===============================================================================
 # Configuration
@@ -86,7 +83,7 @@ def build_driver_docs():
     
     # Create RST file for each driver module
     toc_list = []
-    for driver_name, driver_cls in plugin_manager.getPluginsByCategory('drivers').items():
+    for driver_name, driver_cls in plugin_manager.getPluginsByBaseClass(labtronyx.DriverBase).items():
         driver_info = plugin_manager.getPluginInfo(driver_name)
         driver_class = driver_name.split('.')[-1]
         driver_module = driver_name[:-1*(len(driver_class)+1)]
@@ -133,7 +130,7 @@ def build_interface_docs():
 
     # Create RST file for each interface module
     toc_list = []
-    for plugin_name, plugin_cls in plugin_manager.getPluginsByCategory('interfaces').items():
+    for plugin_name, plugin_cls in plugin_manager.getPluginsByBaseClass(labtronyx.InterfaceBase).items():
         plugin_info = plugin_manager.getPluginInfo(plugin_name)
         plugin_class = plugin_name.split('.')[-1]
         plugin_module = plugin_name[:-1*(len(plugin_class)+1)]
@@ -171,7 +168,7 @@ def build_instrument_docs():
     instruments = []
 
     # Iterate drivers and scrape instrument information
-    for driver_name, driver_cls in plugin_manager.getPluginsByCategory('drivers').items():
+    for driver_name, driver_cls in plugin_manager.getPluginsByBaseClass(labtronyx.DriverBase).items():
         driver_info = plugin_manager.getPluginInfo(driver_name)
         # driver_class = driver_name.split('.')[-1]
         # driver_module = driver_name[:-1*(len(driver_class)+1)]

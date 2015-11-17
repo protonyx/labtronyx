@@ -1,6 +1,6 @@
 """
 Getting Started
-===============
+---------------
 
 The typical use case for Labtronyx is as a library that can be imported and used to introduce automation capability
 with external instruments. There are many cases, however, where automation with external instruments is the primary
@@ -16,9 +16,8 @@ To create a Labtronyx script, all you need is a class that extends :class:`Scrip
 instructs the Labtronyx library to run the script::
 
    import labtronyx
-   from labtronyx.script import ScriptBase
 
-   class TestScript(ScriptBase):
+   class TestScript(labtronyx.ScriptBase):
 
        def run(self):
            pass
@@ -59,10 +58,35 @@ declare required resources by defining class attributes that instantiate the :cl
    if __name__ == '__main__':
        labtronyx.runScriptMain()
 
-The parameters for :class:`RequiredResource` are the same parameters passed to `InstrumentManager.FindResources`. These
-parameters are used to locate viable resources using the keys returned by the resource method `getProperties`. If the
-parameters are not specific enough, it could match more than one resource and cause the script to FAIL because each
-required resource must match exactly one resource known to :class:`InstrumentManager`
+The parameters for :class:`RequiredResource` are the same parameters passed to :func:`InstrumentManager.findResources`.
+These parameters are matched against the key-value pairs returned by :func:`getProperties`. If the parameters are not
+specific enough, Labtronyx may not be able to resolve the :class:`RequiredResource` attribute to one resource and cause
+the script to FAIL because each required resource must resolve to exactly one resource. Resources can be force-resolved
+by calling :func:`assignResource` with the attribute name and a UUID.
+
+Parameters
+----------
+
+Scripts can specify parameters that must be provided when the script is opened by defining class attributes that
+instantiate the :class:`ScriptParameter` class.::
+
+   import labtronyx
+   from labtronyx.script import ScriptBase, RequiredResource
+
+   class TestScript(ScriptBase):
+       param = ScriptParameter(attrType=str, required=False, defaultValue='Test')
+
+       def run(self):
+           pass
+
+   if __name__ == '__main__':
+       labtronyx.runScriptMain()
+
+Script parameters are instantiated with the following parameters:
+
+   * `attrType` - Python class type
+   * `required` - True if the parameter is required, if False `defaultValue` can be specified
+   * `defaultValue` - Attribute value if not provided when the script is instantiated
 
 Running Scripts
 ---------------
@@ -236,6 +260,11 @@ class ScriptBase(PluginBase):
 
     @classmethod
     def getParameterInfo(cls):
+        """
+        Get information about ScriptParameter objects.
+
+        :rtype: dict{str: dict}
+        """
         param_classes = cls._getClassAttributesByBase(ScriptParameter)
         return {p_name: p_cls.getDict() for p_name, p_cls in param_classes.items()}
 
@@ -250,6 +279,11 @@ class ScriptBase(PluginBase):
 
     @classmethod
     def getResourceInfo(cls):
+        """
+        Get information about RequiredResource objects.
+
+        :rtype: dict{str: dict}
+        """
         param_classes = cls._getClassAttributesByBase(RequiredResource)
         return {p_name: p_cls.getDict() for p_name, p_cls in param_classes.items()}
 
@@ -322,6 +356,11 @@ class ScriptBase(PluginBase):
 
     @classmethod
     def getClassAttributes(cls):
+        """
+        Get a dictionary of all class attributes
+
+        :rtype: dict{str: object}
+        """
         attr = super(ScriptBase, cls).getClassAttributes()
         attr['resources'] = cls.getResourceInfo()
         attr['parameters'] = cls.getParameterInfo()

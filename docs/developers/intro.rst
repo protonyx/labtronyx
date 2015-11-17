@@ -1,17 +1,29 @@
 Introduction
 ============
 
+This developer guide details all of the plugin types in the Labtronyx framework, their function and basic requirements.
+Developers are encouraged to read the Architecture section to gain an understanding of how the framework is structured
+before developing any plugins.
+
+Version Control
+---------------
+
+The Labtronyx project is hosted on `GitHub <https://github.com/protonyx/labtronyx>`_.
+
 Contributing
 ------------
 
-This project is a work in progress. Due to the nature of lab instruments, 
-drivers must be developed to fully utilize the features unique to each 
-instrument. Therefore, this framework cannot possibly hope to have a 
-comprehensive collection of drivers for every device on the market. This 
-documentation includes everything a developer would need to write drivers for 
-new instruments. 
+This project is a work in progress. Due to the nature of lab instruments, drivers must be developed to fully utilize
+the features unique to each device. Therefore, this framework cannot possibly hope to have a comprehensive collection
+of drivers for every device on the market. This documentation includes everything a developer would need to write
+drivers for new interfaces, devices and instruments.
 
-Developers are encouraged to contribute their drivers to the project.
+Developers wishing to contribute to the project can fork the project on GitHub and create pull requests.
+
+Reporting Bugs
+--------------
+
+All bugs should be reported to the `GitHub issue tracker <https://github.com/protonyx/labtronyx/issues>`_.
 
 Style Guidelines
 ----------------
@@ -39,21 +51,16 @@ Doc Strings
 
 This documentation is generated using `Sphinx <http://sphinx-doc.org/>`_. 
 Prefer Sphinx-style doc-strings over the Google Style Guide.
-	
 
 Architecture
 ------------
 
-The InstrumentManager class uses a slightly modified `Presentation-Abstraction-Control`_ 
-architectural pattern, which separates the low-level system calls for 
-communication from the instrument drivers. By using this design approach, core 
-program functionality is isolated into smaller chunks in order to keep errors 
-from propagating throughout the entire program.
+The InstrumentManager class uses a slightly modified `Presentation-Abstraction-Control`_ architectural pattern, which
+separates the low-level system calls from the high-level command set of each device. By using this design approach,
+there is a clear separation of concerns that allows the framework to be highly modular.
 
 .. _Presentation-Abstraction-Control: http://en.wikipedia.org/wiki/Presentation%E2%80%93abstraction%E2%80%93control
 
-On startup, the InstrumentManager will scan the program directory for valid
-interfaces. For each interface that is found, a scan will be initiated and the
-found resources indexed. Once all resources are indexed, InstrumentManager
-attempts to load drivers for each of them automatically. If a suitable driver
-cannot be found, the user must specify which driver to load. 
+The core of the framework is the :class:`InstrumentManager` class, which is responsible for scanning all provided
+directories for compatible plugins. Each Interface plugin found will be instantiated, which in turn will query the
+system for any available resources.

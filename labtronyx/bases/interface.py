@@ -1,3 +1,27 @@
+"""
+Getting Started
+---------------
+
+Interfaces are responsible for discovering and instantiating resource objects. They may also handle low-level operating
+system interactions. This may include calls to hardware via driver stacks, or calls to other Python libraries.
+Resources do not have an inherent dependency on the interface that instantiates it.
+
+All interfaces are subclasses of :class:`labtronyx.InterfaceBase`::
+
+    import labtronyx
+
+    class INTERFACE_CLASS_NAME(labtronyx.InterfaceBase):
+        pass
+
+Required Attributes
+-------------------
+
+Interfaces require some attributes to be defined
+
+   * `interfaceName` - str that names the interface.
+   * `enumerable` - True if the interface supports resource enumeration. If False, the interface should implement the
+     :func:`openResource` method to manually open a resource given a string identifier.
+"""
 # Package relative imports
 from ..common import events
 from ..common.errors import *
@@ -67,10 +91,7 @@ class InterfaceBase(PluginBase):
 
     def open(self):
         """
-        Interface Initialization
-        
-        Make any system driver calls necessary to initialize communication. If any kind of exception occurs that will
-        inhibit communication, this function should return False to indicate an error to the InstrumentManager.
+        Make any system driver calls necessary to initialize communication. This method must not raise any exceptions.
 
         This function is meant to be implemented by subclasses.
         
@@ -81,12 +102,11 @@ class InterfaceBase(PluginBase):
     
     def close(self):
         """
-        Interface clean-up
-        
-        Make any system driver calls necessary to clean-up interface operations. This function should explicitly free
-        any system resources to prevent locking errors. Subclasses should be sure to call :func:`InterfaceBase.close` to
-        ensure that instantiated resources are freed.
+        Destroy all resource objects owned by the interface.
 
+        May be extended by subclasses if any additional work is necessary to clean-up interface operations.
+
+        :returns: True if successful, False otherwise
         :rtype: bool
         """
         for res_uuid, res_obj in self.resources.items():

@@ -162,7 +162,7 @@ class r_VISA(labtronyx.ResourceBase):
     Wraps PyVISA Resource Class
     
     All VISA compliant devices will adhere to the IEEE 488.2 standard
-    for responses to the '*IDN?' query. The expected format is:
+    for responses to the `*IDN?` query. The expected format is:
     <Manufacturer>,<Model>,<Serial>,<Firmware>
     
     BK Precision has a non-standard format for some of their instruments:
@@ -352,7 +352,7 @@ class r_VISA(labtronyx.ResourceBase):
 
     def trigger(self):
         """
-        Trigger the instrument using the common trigger command (*TRG). Behavior varies by instrument
+        Trigger the instrument using the common trigger command `*TRG`. Behavior varies by instrument
         """
         self.write('*TRG')
 

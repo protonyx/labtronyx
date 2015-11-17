@@ -153,7 +153,7 @@ class _PluginManager(object):
         :type plugin_name:  str
         :rtype:             dict
         """
-        return self._plugins_classes.get(plugin_name).getAttributes()
+        return self._plugins_classes.get(plugin_name).getClassAttributes()
 
     def getPluginPath(self, plugin_name):
         """

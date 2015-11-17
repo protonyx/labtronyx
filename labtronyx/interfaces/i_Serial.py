@@ -250,7 +250,7 @@ class r_Serial(labtronyx.ResourceBase):
         :type baud_rate:            int
         :param data_bits:           Number of bits per frame. Default 8.
         :type data_bits:            int
-        :param parity:              Data frame parity (`N`one, `E`ven, `O`dd, `M`ark or `S`pace)
+        :param parity:              Data frame parity ('N'one, 'E'ven, 'O'dd, 'M'ark or 'S'pace)
         :type parity:               str
         :param stop_bits:           Number of stop bits. Default 1
         :type stop_bits:            int

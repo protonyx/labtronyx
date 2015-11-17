@@ -2,11 +2,11 @@
 Getting Started
 ---------------
 
-All Drivers extend :class:`labtronyx.bases.DriverBase`::
+All Drivers extend :class:`labtronyx.DriverBase`::
 
-    from labtronyx.bases import DriverBase
+    import labtronyx
 
-    class DRIVER_CLASS_NAME(DriverBase):
+    class DRIVER_CLASS_NAME(labtronyx.DriverBase):
         pass
 
 Required Attributes
@@ -15,13 +15,18 @@ Required Attributes
 Drivers require some attributes to be defined in order to specify which resource types and interfaces they are
 compatible with.
 
+   * `deviceType` - str to describe the type or function of the device
+   * `compatibleInterfaces` - list of interface names that the driver is compatible with e.g. ['Serial', 'VISA']
+   * `compatibleInstruments` - dict of vendors and models that the driver is compatible with. The keys to the dictionary
+     are vendors and the values are a list of models e.g. {'Agilent': ['ACME123']}
+
 Properties
 ----------
 
-Like Resources, Drivers can provide auxiliary information about a physical device by returning a dictionary from the
-method :func:`getProperties`. Properties can be useful for application and script development by enabling or disabling
-features according to data contained in the properties. Driver properties can relate information about a device or
-instrument that require specific commands such as:
+Like Resources, Drivers can provide auxiliary information about a physical device by returning a dictionary of
+key-value pairs from the method :func:`getProperties`. Properties can be useful for application and script
+development by enabling or disabling features according to data contained in the properties. Driver properties can
+relate information about a device or instrument that require specific commands such as:
 
    * Serial number
    * Model number
@@ -41,30 +46,17 @@ It is recommended that drivers should provide these properties to assist scripts
 +-----------------+---------------+-------------------------------------+
 | Key             | Default Value | Examples                            |
 +=================+===============+=====================================+
-| 'deviceType'    | 'Generic'     | 'Multimeter', 'Oscilloscope'        |
+| deviceVendor    | 'Generic'     | 'Tektronix', 'Agilent Technologies' |
 +-----------------+---------------+-------------------------------------+
-| 'deviceVendor'  | 'Generic'     | 'Tektronix', 'Agilent Technologies' |
+| deviceModel     | 'Device'      | 'DPO2024', '2831E'                  |
 +-----------------+---------------+-------------------------------------+
-| 'deviceModel'   | 'Device'      | 'DPO2024', '2831E'                  |
+| deviceSerial    | 'Unknown'     | '12345'                             |
 +-----------------+---------------+-------------------------------------+
-| 'deviceSerial   | 'Unknown'     | '12345'                             |
-+-----------------+---------------+-------------------------------------+
-| 'deviceFirmware'| 'Unknown'     | '1.0.0'                             |
+| deviceFirmware  | 'Unknown'     | '1.0.0'                             |
 +-----------------+---------------+-------------------------------------+
 
-Serial number and firmware information should be retrieved from the device.
-
-Example::
-
-	def getProperties(self):
-
-		prop['deviceVendor'] = 'my vendor'
-		prop['deviceModel'] = 'ABC 12345'
-		prop['deviceSerial'] = '0123456789'
-		prop['deviceFirmware'] = '1.0'
-		prop['deviceType'] = 'Widget'
-
-		return prop
+If serial number and firmware information has be retrieved from the device, it should be done during the :func:`open`
+method.
 
 Usage Model
 -----------

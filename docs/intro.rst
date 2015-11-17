@@ -42,7 +42,7 @@ connected to the system for valid instruments::
    dev_list = instr.findInstruments()
    
 Labtronyx may be able to discover additional information about resources that will help identify a specific instrument
-connected to the system. This requires that the instrument has some means to identify itself (like the VISA *IDN?
+connected to the system. This requires that the instrument has some means to identify itself (like the VISA `*IDN?`
 command) and a compatible Labtronyx driver for that instrument. For instruments with this capability, you can use
 the parameters to target specific instruments.
 
@@ -109,6 +109,6 @@ Using Instruments
 -----------------
 
 When a driver is loaded for an instrument, additional methods are made available. For documentation on the available
-methods, see :doc:`Supported Instruments <instruments/index>` for the desired driver. It is also possible to send
+methods, see :doc:`Supported Instruments <instruments>` for the desired driver. It is also possible to send
 commands directly to the instrument using the :doc:`Resource API <api/resources>` for the interface where the instrument
 is connected.
