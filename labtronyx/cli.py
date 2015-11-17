@@ -3,13 +3,16 @@ Console script used to start Labtronyx in Server mode
 """
 import os
 
-def main():
+
+def main(search_dirs=None):
     # Interactive Mode
     import labtronyx
     labtronyx.logConsole()
 
     # Add OS-specific application data folders to search for plugins
-    search_dirs = []
+    if search_dirs is None:
+        search_dirs = []
+
     try:
         import appdirs
         dirs = appdirs.AppDirs("Labtronyx", roaming=True)
@@ -25,9 +28,6 @@ def main():
 
     # Instantiate an InstrumentManager
     man = labtronyx.InstrumentManager(plugin_dirs=search_dirs)
-
-    # Force a refresh
-    man.refresh()
 
     # Start the server in the current thread
     try:
