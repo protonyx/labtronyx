@@ -53,9 +53,6 @@ def build_package():
             "Topic :: Scientific/Engineering :: Interface Engine/Protocol Translator"
         ],
 
-        # Unit tests
-        test_suite="tests.test_suite",
-
         # Packages
         packages=find_packages(exclude=['tests']),
 

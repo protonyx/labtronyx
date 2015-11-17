@@ -28,6 +28,10 @@ class Agilent_B2901_Functional_Tests(unittest.TestCase):
         else:
             self.dev = None
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.manager._close()
+
     def setUp(self):
         if self.dev is None:
             self.fail("Instrument not present")

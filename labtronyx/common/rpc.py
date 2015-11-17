@@ -1,6 +1,7 @@
 import json
 import logging
 import threading
+import time
 
 import requests
 # Local imports
@@ -43,6 +44,7 @@ class RpcClient(object):
     """
 
     DEFAULT_TIMEOUT = 10.0
+    RETRY_ATTEMPTS = 3
     RPC_MAX_PACKET_SIZE = 1048576 # 1MB
 
     def __init__(self, uri, **kwargs):
@@ -106,29 +108,33 @@ class RpcClient(object):
             yield next_id
 
     def __sendRequest(self, rpc_request):
-        try:
-            # Encode the RPC Request
-            data = self.engine.encode([rpc_request], [])
+        for attempt in range(1, self.RETRY_ATTEMPTS + 1):
+            try:
+                # Encode the RPC Request
+                data = self.engine.encode([rpc_request], [])
 
-            headers = {
-                'user-agent': 'Labtronyx-RPC/1.0.0'
-            }
+                headers = {
+                    'user-agent': 'Labtronyx-RPC/1.0.0'
+                }
 
-            # Send the encoded request
-            with self.rpc_lock:
-                resp_data = self._reqSession.post(self.uri, data, headers=headers, timeout=self.timeout)
+                # Send the encoded request
+                with self.rpc_lock:
+                    resp_data = self._reqSession.post(self.uri, data, headers=headers, timeout=self.timeout)
 
-            # Check status code
-            if resp_data.status_code is not 200:
-                raise errors.RpcError("Server returned error code: %d" % resp_data.status_code)
+                # Check status code
+                if resp_data.status_code is not 200:
+                    raise errors.RpcError("Server returned error code: %d" % resp_data.status_code)
 
-            return resp_data.text
+                return resp_data.text
 
-        except requests.ConnectionError:
-            raise errors.RpcServerNotFound()
+            except requests.ConnectionError:
+                if attempt == self.RETRY_ATTEMPTS:
+                    raise errors.RpcServerNotFound()
+                else:
+                    time.sleep(0.5)
 
-        except requests.Timeout:
-            raise errors.RpcTimeout()
+            except requests.Timeout:
+                raise errors.RpcTimeout()
 
     def __decodeResponse(self, data):
         rpc_requests, rpc_responses, rpc_errors = self.engine.decode(data)

@@ -83,7 +83,7 @@ To connect to instruments by resource ID (interface dependent)::
 .. note::
 
    :func:`labtronyx.InstrumentManager.findInstruments` will always return a list of instrument objects, even if only one
-    was found.
+   was found.
 
 Loading and Unloading Drivers
 -----------------------------
