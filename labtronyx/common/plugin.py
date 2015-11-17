@@ -442,12 +442,14 @@ class PluginBase(object):
     @classmethod
     def getClassAttributes(cls):
         """
-        Get values for all overridden PluginAttribute object defined at the class level.
+        Get values for all overridden PluginAttribute object defined at the class level. Excludes PluginParameter
+        objects
 
         :rtype: dict
         """
         attrs = cls._getClassAttributesByBase(PluginAttribute)
-        return {attr_name: cls._getClassAttributeValue(attr_name) for attr_name in attrs}
+        return {attr_name: cls._getClassAttributeValue(attr_name) for attr_name, attr_obj in attrs.items()
+                if not issubclass(type(attr_obj), PluginParameter)}
 
     def _getAttributeValue(self, attr_name):
         attr_value = getattr(self, attr_name)
