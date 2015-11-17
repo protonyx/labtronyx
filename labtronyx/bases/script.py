@@ -100,6 +100,7 @@ from logging.handlers import BufferingHandler
 from ..common import events
 from ..common.errors import *
 from ..common.plugin import PluginBase, PluginAttribute, PluginParameter, PluginDependency
+from .resource import ResourceBase
 
 __all__ = ['ScriptBase', 'ScriptParameter', 'ScriptResult', 'RequiredResource']
 
@@ -151,7 +152,6 @@ class ScriptBase(PluginBase):
         self.__logger.addHandler(self._handler_evt)
         # File handler
         self._handler_file = None
-
 
     @property
     def manager(self):
@@ -234,36 +234,6 @@ class ScriptBase(PluginBase):
 
         return fails
 
-    def resolveResources(self):
-        """
-        Attempt to resolve all resource dependencies by iterating through all RequiredResource attributes and finding
-        matching resource objects
-        """
-        self._resolveDependencies(check_dependencies=False)
-
-    def _validateResources(self):
-        """
-        Validate resource dependencies.
-
-        :return: List of failure reasons, if any
-        :rtype: list[str]
-        """
-        req_res = self._getAttributesByBase(RequiredResource)
-        fails = []
-
-        for attr_name, res_list in req_res.items():
-            if len(res_list) == 0:
-                fails.append("ERROR: Required resource %s could not be found" % attr_name)
-
-            elif len(res_list) > 1:
-                fails.append("ERROR: Required resource %s did not resolve" % attr_name)
-
-        return fails
-
-    def assignResource(self, res_attribute, res_uuid):
-        # TODO: Implement this feature
-        raise NotImplementedError
-
     @classmethod
     def getParameterInfo(cls):
         param_classes = cls._getClassAttributesByBase(ScriptParameter)
@@ -278,9 +248,84 @@ class ScriptBase(PluginBase):
         param_classes = self._getClassAttributesByBase(ScriptParameter)
         return {attr_name: self._getAttributeValue(attr_name) for attr_name in param_classes}
 
-    def getResourceInfo(self):
-        return {attr_name: [res.uuid for res in res_list] for attr_name, res_list
-                in self._getAttributesByBase(RequiredResource).items()}
+    @classmethod
+    def getResourceInfo(cls):
+        param_classes = cls._getClassAttributesByBase(RequiredResource)
+        return {p_name: p_cls.getDict() for p_name, p_cls in param_classes.items()}
+
+    def resolveResources(self):
+        """
+        Attempt to resolve all resource dependencies by iterating through all RequiredResource attributes and finding
+        matching resource objects
+        """
+        self._resolveDependencies(check_dependencies=False)
+
+    def _validateResources(self):
+        """
+        Validate resource dependencies.
+
+        :return: List of failure reasons, if any
+        :rtype: list[str]
+        """
+        req_res = self.getResourceResolutionInfo()
+        fails = []
+
+        for attr_name, res_list in req_res.items():
+            if len(res_list) == 0:
+                fails.append("ERROR: Required resource %s could not resolve to any resource" % attr_name)
+
+            elif len(res_list) > 1:
+                fails.append("ERROR: Required resource %s matches more than one resource" % attr_name)
+
+        return fails
+
+    def assignResource(self, res_attribute, res_uuid):
+        """
+        Assign a resource with a given uuid to the script attribute `res_attribute`. Used if a resource could not be
+        resolved to a single resource.
+
+        :param res_attribute: Script attribute name
+        :param res_uuid: Resource UUID
+        :raises: KeyError if res_attribute is not a valid RequiredResource attribute
+        :raises: ResourceUnavailable if res_uuid is not a valid resource
+        """
+        res_info = self.getResourceResolutionInfo()
+        plug = self.manager.plugin_manager.getPluginInstance(res_uuid)
+
+        if res_attribute not in res_info:
+            raise KeyError("Resource attribute is not valid")
+
+        if plug is None:
+            raise ResourceUnavailable("Resource could not be found")
+
+        setattr(self, res_attribute, plug)
+        self.manager._publishEvent(events.EventCodes.script.changed, self.uuid)
+
+    def getResourceResolutionInfo(self):
+        """
+        Get RequiredResource resolution information. Returns a dict with the attribute names as the keys and a list of
+        resolve Resource UUIDs as the value.
+
+        :rtype: dict{str: list}
+        """
+        res_dict = {}
+
+        for attr_name, resolution in self._getAttributesByBase(RequiredResource).items():
+            if issubclass(type(resolution), ResourceBase):
+                # Resolved correctly
+                res_dict[attr_name] = [resolution.uuid]
+
+            elif type(resolution) in [list, tuple]:
+                res_dict[attr_name] = [res.uuid for res in resolution]
+
+        return res_dict
+
+    @classmethod
+    def getClassAttributes(cls):
+        attr = super(ScriptBase, cls).getClassAttributes()
+        attr['resources'] = cls.getResourceInfo()
+        attr['parameters'] = cls.getParameterInfo()
+        return attr
 
     def getProperties(self):
         """
@@ -296,7 +341,7 @@ class ScriptBase(PluginBase):
             'status': self._status,
             'progress': self._progress,
             'results': [result.toDict() for result in self.result],
-            'resources': self.getResourceInfo()
+            'resources': self.getResourceResolutionInfo()
         })
         return props
 
@@ -649,6 +694,9 @@ class RequiredResource(PluginDependency):
     def __init__(self, **kwargs):
         kwargs['pluginType'] = 'resource'
         super(RequiredResource, self).__init__(**kwargs)
+
+    def getDict(self):
+        return self.attrs
 
 
 class ScriptParameter(PluginParameter):
