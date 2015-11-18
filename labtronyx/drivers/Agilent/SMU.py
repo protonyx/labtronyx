@@ -2,38 +2,24 @@
 .. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
 """
-from labtronyx.bases import Base_Driver
-from labtronyx.common.errors import *
+import labtronyx
 
-info = {
-    # Plugin author
-    'author':               'KKENNEDY',
-    # Plugin version
-    'version':              '1.0',
-    # Last Revision Date
-    'date':                 '2015-10-04',
-}
 
-class d_B29XX(Base_Driver):
+class d_B29XX(labtronyx.DriverBase):
     """
     Driver for Agilent B2901A and B2902A Source Measurement Units
     """
-    
-    info = {
-        # Device Manufacturer
-        'deviceVendor':         'Agilent',
-        # List of compatible device models
-        'deviceModel':          ['B2901A', 'B2902A'],
-        # Device type    
-        'deviceType':           'Source Measurement Unit',      
-        
-        # List of compatible resource types
-        'validResourceTypes':   ['VISA']
+    author = 'KKENNEDY'
+    version = '1.0'
+    deviceType = 'Source Measurement Unit'
+    compatibleInterfaces = ['VISA']
+    compatibleInstruments = {
+        'Agilent': ['B2901A', 'B2902A']
     }
 
     @classmethod
     def VISA_validResource(cls, identity):
-        return identity[0].upper() == 'AGILENT TECHNOLOGIES' and identity[1] in cls.info['deviceModel']
+        return identity[0].upper() == 'AGILENT TECHNOLOGIES' and identity[1] in cls.compatibleInstruments['Agilent']
 
     VALID_SOURCE_OUTPUT_MODES = {
         'Voltage':       'VOLT',
@@ -111,7 +97,8 @@ class d_B29XX(Base_Driver):
 
     def getProperties(self):
         return dict(
-            validModes=self.VALID_MODES,
+            validSourceModes=self.VALID_SOURCE_MODES,
+            validMeasureModes=self.VALID_MEASURE_MODES,
             validTriggerSources=self.VALID_TRIGGER_SOURCES
         )
 

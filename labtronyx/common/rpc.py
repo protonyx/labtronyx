@@ -1,14 +1,32 @@
-import threading
 import json
 import logging
-import requests
+import threading
+import time
 
+import requests
 # Local imports
 from . import errors
-from . import engines
-from . import jsonrpc
 
-__all__ = ['RpcClient']
+__all__ = ['RpcClient', 'RpcRequest', 'RpcResponse']
+
+
+class RpcRequest(object):
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id', None)
+        self.method = kwargs.get('method', '')
+        self.args = kwargs.get('args', [])
+        self.kwargs = kwargs.get('kwargs', {})
+
+    def call(self, target):
+        # Invoke target method with stored arguments
+        # Don't attempt to catch exceptions here, let them bubble up
+        return target(*self.args, **self.kwargs)
+
+
+class RpcResponse(object):
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id', None)
+        self.result = kwargs.get('result', None)
 
 
 class RpcClient(object):
@@ -16,18 +34,23 @@ class RpcClient(object):
     Establishes a TCP connection to the server through which all requests are
     send and responses are received. This is a blocking operation, so only one
     request can be sent at a time.
-    
+
     :param uri:     HTTP URI
     :type uri:      str
+    :param timeout: Request timeout (seconds)
+    :type timeout:  float
+    :param logger:  Logging instance
+    :type logger:   logging.Logger object
     """
-    
-    RPC_TIMEOUT = 10.0
+
+    DEFAULT_TIMEOUT = 10.0
+    RETRY_ATTEMPTS = 3
     RPC_MAX_PACKET_SIZE = 1048576 # 1MB
-    
+
     def __init__(self, uri, **kwargs):
 
         self.uri = uri
-        self.timeout = kwargs.get('timeout', self.RPC_TIMEOUT)
+        self.timeout = kwargs.get('timeout', self.DEFAULT_TIMEOUT)
         self.logger = kwargs.get('logger', logging)
 
         # Decode URI
@@ -41,12 +64,17 @@ class RpcClient(object):
             self.host = host
 
         # Encode/Decode Engine, jsonrpc is the default
+        from . import jsonrpc
         self.engine = jsonrpc
 
+        self._reqSession = requests.session()
+        # Disable proxy settings from the host
+        self._reqSession.trust_env = False
+
         self.rpc_lock = threading.Lock()
-        
+
         self.methods = []
-    
+
     def _handleException(self, exception_object):
         """
         Subclass hook to handle exceptions raised during RPC calls
@@ -80,29 +108,33 @@ class RpcClient(object):
             yield next_id
 
     def __sendRequest(self, rpc_request):
-        try:
-            # Encode the RPC Request
-            data = self.engine.encode([rpc_request], [])
+        for attempt in range(1, self.RETRY_ATTEMPTS + 1):
+            try:
+                # Encode the RPC Request
+                data = self.engine.encode([rpc_request], [])
 
-            headers = {
-                'user-agent': 'Labtronyx-RPC/1.0.0'
-            }
+                headers = {
+                    'user-agent': 'Labtronyx-RPC/1.0.0'
+                }
 
-            # Send the encoded request
-            with self.rpc_lock:
-                resp_data = requests.post(self.uri, data, headers=headers, timeout=self.timeout)
+                # Send the encoded request
+                with self.rpc_lock:
+                    resp_data = self._reqSession.post(self.uri, data, headers=headers, timeout=self.timeout)
 
-            # Check status code
-            if resp_data.status_code is not 200:
-                raise errors.RpcError("Server returned error code: %d" % resp_data.status_code)
+                # Check status code
+                if resp_data.status_code is not 200:
+                    raise errors.RpcError("Server returned error code: %d" % resp_data.status_code)
 
-            return resp_data.text
+                return resp_data.text
 
-        except requests.ConnectionError:
-            raise errors.RpcServerNotFound()
+            except requests.ConnectionError:
+                if attempt == self.RETRY_ATTEMPTS:
+                    raise errors.RpcServerNotFound()
+                else:
+                    time.sleep(0.5)
 
-        except requests.Timeout:
-            raise errors.RpcTimeout()
+            except requests.Timeout:
+                raise errors.RpcTimeout()
 
     def __decodeResponse(self, data):
         rpc_requests, rpc_responses, rpc_errors = self.engine.decode(data)
@@ -126,18 +158,18 @@ class RpcClient(object):
 
         else:
             raise errors.RpcInvalidPacket("An incorrectly formatted packet was received")
-    
+
     def _rpcCall(self, remote_method, *args, **kwargs):
         """
         Calls a function on the remote host with both positional and keyword
         arguments
-            
+
         Exceptions:
         :raises AttributeError: when method not found (same as if a local call)
         :raises RuntimeError: when the remote host sent back a server error
         :raises RpcTimeout: when the request times out
         """
-        req = engines.RpcRequest(method=remote_method, args=args, kwargs=kwargs, id=self.__getNextId().next())
+        req = RpcRequest(method=remote_method, args=args, kwargs=kwargs, id=self.__getNextId().next())
 
         # Decode the returned data
         data = self.__sendRequest(req)
@@ -145,10 +177,10 @@ class RpcClient(object):
         return self.__decodeResponse(data)
 
     def _rpcNotify(self, remote_method, *args, **kwargs):
-        req = engines.RpcRequest(method=remote_method, args=args, kwargs=kwargs)
+        req = RpcRequest(method=remote_method, args=args, kwargs=kwargs)
 
         self.__sendRequest(req)
-    
+
     def __str__(self):
         return '<RPC @ %s>' % (self.uri)
 

@@ -1,27 +1,53 @@
-import logging
+"""
+Getting Started
+---------------
 
-from labtronyx.common.plugin import PluginBase
+Interfaces are responsible for discovering and instantiating resource objects. They may also handle low-level operating
+system interactions. This may include calls to hardware via driver stacks, or calls to other Python libraries.
+Resources do not have an inherent dependency on the interface that instantiates it.
 
-class Base_Interface(PluginBase):
+All interfaces are subclasses of :class:`labtronyx.InterfaceBase`::
+
+    import labtronyx
+
+    class INTERFACE_CLASS_NAME(labtronyx.InterfaceBase):
+        pass
+
+Required Attributes
+-------------------
+
+Interfaces require some attributes to be defined
+
+   * `interfaceName` - str that names the interface.
+   * `enumerable` - True if the interface supports resource enumeration. If False, the interface should implement the
+     :func:`openResource` method to manually open a resource given a string identifier.
+"""
+# Package relative imports
+from ..common import events
+from ..common.errors import *
+from ..common.plugin import PluginBase, PluginAttribute
+
+__all__ = ['InterfaceBase']
+
+
+class InterfaceBase(PluginBase):
     """
     Interface Base Class
-    """
 
-    info = {}
+    :param manager:         InstrumentManager instance
+    :type manager:          labtronyx.manager.InstrumentManager
+    :param logger:          Logger instance
+    :type logger:           logging.Logger
+    """
+    pluginType = 'interface'
+
+    interfaceName = PluginAttribute(attrType=str, required=True)
+    enumerable = PluginAttribute(attrType=bool, defaultValue=False)
     
     def __init__(self, manager, **kwargs):
-        """
-        :param manager: Reference to the InstrumentManager instance
-        :type manager: InstrumentManager object
-        """
-        PluginBase.__init__(self)
+        PluginBase.__init__(self, **kwargs)
 
         self._manager = manager
-
-        self.logger = kwargs.get('logger', logging)
-
-        # Instance variables
-        self._resources = {}
 
     @property
     def manager(self):
@@ -29,34 +55,35 @@ class Base_Interface(PluginBase):
 
     @property
     def resources(self):
-        return self._resources
-
-    @property
-    def name(self):
         """
-        Returns the interface name as defined by the `interfaceName` attribute in the info dictionary
+        Dictionary of resource objects by UUID
 
-        :return: str
+        :rtype: dict{str: labtronyx.bases.resource.ResourceBase}
         """
-        if hasattr(self, 'info'):
-            return self.info.get('interfaceName')
-        else:
-            return self.__class__.__name__
+        return {plug_uuid: plugCls for plug_uuid, plugCls
+                in self.manager.plugin_manager.getPluginInstancesByType('resource').items()
+                if plugCls.interfaceName == self.interfaceName}
+
+    def getProperties(self):
+        """
+        Get the interface properties
+
+        :rtype: dict[str:object]
+        """
+        def_props = super(InterfaceBase, self).getProperties()
+        def_props.update({
+            'interfaceName': self.interfaceName,
+            'resources': self.resources.keys()
+        })
+        return def_props
 
     def refresh(self):
         """
         Macro for interfaces that support enumeration. Calls `enumerate` then `prune` to get an updated list of
         resources available to the interface
         """
-        try:
-            self.enumerate()
-        except NotImplementedError:
-            pass
-
-        try:
-            self.prune()
-        except NotImplementedError:
-            pass
+        self.enumerate()
+        self.prune()
 
     # ==========================================================================
     # Interface Methods
@@ -64,23 +91,30 @@ class Base_Interface(PluginBase):
 
     def open(self):
         """
-        Interface Initialization
-        
-        Make any system driver calls necessary to initialize communication. If any kind of exception occurs that will
-        inhibit communication, this function should return False to indicate an error to the InstrumentManager.
+        Make any system driver calls necessary to initialize communication. This method must not raise any exceptions.
+
+        This function is meant to be implemented by subclasses.
         
         :returns: True if ready, False if error occurred
+        :rtype: bool
         """
-        raise NotImplementedError
+        return True
     
     def close(self):
         """
-        Interface clean-up
-        
-        Make any system driver calls necessary to clean-up interface operations. This function should explicitly free
-        any system resources to prevent locking errors.
+        Destroy all resource objects owned by the interface.
+
+        May be extended by subclasses if any additional work is necessary to clean-up interface operations.
+
+        :returns: True if successful, False otherwise
+        :rtype: bool
         """
-        raise NotImplementedError
+        for res_uuid, res_obj in self.resources.items():
+            res_obj.close()
+
+            self.manager.plugin_manager.destroyPluginInstance(res_uuid)
+
+        return True
 
     # ===========================================================================
     # Optional Functions
@@ -90,13 +124,13 @@ class Base_Interface(PluginBase):
         """
         Refreshes the resource list by enumerating all of the available devices on the interface.
         """
-        raise NotImplementedError
+        pass
 
     def prune(self):
         """
         Clear out any resources that are no longer known to the interface
         """
-        raise NotImplementedError
+        pass
 
     def getResource(self, resID):
         """

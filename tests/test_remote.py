@@ -1,16 +1,14 @@
 import unittest
-from nose.tools import * # PEP8 asserts
 import mock
-import time
 import requests
+from nose.tools import * # PEP8 asserts
+import time
 
 import labtronyx
-from labtronyx.common.rpc import jsonrpc
+from labtronyx.common import jsonrpc
 
 
 class Remote_Tests(unittest.TestCase):
-
-    TEST_URI = 'http://localhost:6780/rpc'
 
     @classmethod
     def setUpClass(cls):
@@ -25,13 +23,24 @@ class Remote_Tests(unittest.TestCase):
         cls.manager.foobar = mock.MagicMock(return_value=None)
         cls.manager.raise_exception = mock.MagicMock(side_effect=RuntimeError)
 
-        cls.client = labtronyx.RemoteManager(address='localhost')
+        try:
+            cls.client = labtronyx.RemoteManager(host=labtronyx.InstrumentManager.getHostname())
+
+            cls.TEST_URI = cls.client.uri
+
+        except labtronyx.RpcServerNotFound:
+            cls.tearDownClass()
 
     @classmethod
     def tearDownClass(cls):
-        cls.manager.server_stop()
-        cls.manager._close()
-        del cls.manager
+        if hasattr(cls, 'manager'):
+            cls.manager.server_stop()
+            cls.manager._close()
+            del cls.manager
+
+    def setUp(self):
+        if not hasattr(self, 'client'):
+            self.fail("Client not present")
 
     def test_jsonrpc_request_call_multi_pos_param(self):
         req = '{"jsonrpc": "2.0", "method": "subtract", "params": [42, 23], "id": 1}'
@@ -256,7 +265,8 @@ class Remote_Tests(unittest.TestCase):
         self.assertEqual(data_out, '')
 
     def test_startup_time(self):
-        assert_less_equal(self.startup_time, 2.0, "RPC Init time must be less than 2.0 second(s)")
+        assert_less_equal(self.startup_time, 5.0, "Remote initialization time: %f was greater than 5.0 seconds" %
+                          self.startup_time)
 
     def test_remote_client_connect(self):
         methods = self.client._getMethods()
@@ -273,7 +283,7 @@ class Remote_Tests(unittest.TestCase):
             client.test_connection()
 
     def test_remote_error_invalid_path(self):
-        resp = requests.post('http://localhost:6780/invalid', data='')
+        resp = requests.post(self.TEST_URI + '/invalid', data='')
         self.assertEqual(resp.status_code, 404)
 
     def test_remote_error_timeout(self):
@@ -316,14 +326,14 @@ class Remote_Tests(unittest.TestCase):
 
         self.time_set = 0.0
 
-        def on_event(self, event, args):
+        def on_event(self, event):
             event.set()
             self.time_set = time.time()
 
         # Create a subscriber
         sub = labtronyx.common.events.EventSubscriber(logger=self.manager.logger)
         sub.connect('localhost')
-        sub.registerCallback('TEST_EVENT', lambda _, args: on_event(self, event, args))
+        sub.registerCallback('TEST_EVENT', lambda _: on_event(self, event))
 
         # Give time for the client to connect
         time.sleep(0.5)

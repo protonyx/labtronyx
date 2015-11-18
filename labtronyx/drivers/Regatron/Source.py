@@ -9,45 +9,26 @@ with the TopCon software. In order to connect to the source with an adapter
 installed, you must install the drivers so that the device appears as a
 local COM port to the operating system.
 """
-from labtronyx.bases import Base_Driver
-from labtronyx.common.errors import *
+import labtronyx
 
 import struct
 
-info = {
-    # Plugin author
-    'author':               'KKENNEDY',
-    # Plugin version
-    'version':              '1.0',
-    # Last Revision Date
-    'date':                 '2015-10-04',
-}
 
-
-class d_TopCon(Base_Driver):
+class d_TopCon(labtronyx.DriverBase):
     """
     Driver for Regatron TopCon compatible Power Supplies
     """
-    
-    info = {
-        # Device Manufacturer
-        'deviceVendor':         'Regatron',
-        # List of compatible device models
-        'deviceModel':          ['GSS'],
-        # Device type    
-        'deviceType':           'Power Supply',      
-        
-        # List of compatible resource types
-        'validResourceTypes':   ['Serial']
+    author = 'KKENNEDY'
+    version = '1.0'
+    deviceType = 'Power Supply'
+    compatibleInterfaces = ['Serial']
+    compatibleInstruments = {
+        'Regatron': ['GSS', 'TopCon']
     }
     
     def open(self):
         # Configure the COM Port
-        self.instr.baudrate = 38400
-        self.instr.timeout = 1.0
-        self.instr.bytesize = 8
-        self.instr.parity = 'N'
-        self.instr.stopbits = 1
+        self.configure(baud_rate=38400, data_bits=8, parity='N', stop_bits=1)
 
         self._serial = self.getSerialNumber()
         self._fw = self.getFirmwareVersion()
@@ -57,8 +38,8 @@ class d_TopCon(Base_Driver):
     
     def getProperties(self):
         return {
-            'deviceVendor':     self.info['deviceVendor'],
-            'deviceModel':      self.info['deviceModel'][0],
+            'deviceVendor':     'Regatron',
+            'deviceModel':      'TopCon Device',
             'deviceSerial':     self._serial,
             'deviceFirmware':   self._fw
         }
@@ -86,8 +67,8 @@ class d_TopCon(Base_Driver):
         
         full = header + frame
         
-        self.instr.write(full)
-        self.instr.flush()
+        self.write(full)
+        self.flush()
         
     def _recvFrame(self):
         """
@@ -98,12 +79,12 @@ class d_TopCon(Base_Driver):
         
         :returns: byte string, payload section of frame
         """
-        header = self.instr.read(3)
+        header = self.read(3)
         
         sync, len, checksum = struct.unpack('BBB', header)
         # TODO Verify checksum?
         
-        payload = self.instr.read(len)
+        payload = self.read(len)
         
         return payload
         
@@ -116,7 +97,7 @@ class d_TopCon(Base_Driver):
         
         :returns: int16
         """
-        frame = struct.pack('BBBB', 0x10, address&0xFF, (address>>8)&0xFF, (address>>16)&0xFF);
+        frame = struct.pack('BBBB', 0x10, address&0xFF, (address>>8)&0xFF, (address>>16)&0xFF)
         
         self._sendFrame(frame)
         
@@ -142,7 +123,7 @@ class d_TopCon(Base_Driver):
         
         :returns: bool, True is successful, False otherwise
         """
-        frame = struct.pack('BBBBBB', 0x11, address&0xFF, (address>>8)&0xFF, (address>>16)&0xFF, data&0xFF, (data>>8)&0xFF);
+        frame = struct.pack('BBBBBB', 0x11, address&0xFF, (address>>8)&0xFF, (address>>16)&0xFF, data&0xFF, (data>>8)&0xFF)
         
         self._sendFrame(frame)
         
@@ -171,7 +152,6 @@ class d_TopCon(Base_Driver):
         self._cmdWriteMemoryWord(0x005089, 0)
         
     def getErrors(self):
-        
         pass
     
     def clearErrors(self):
@@ -304,10 +284,10 @@ class d_TopCon(Base_Driver):
         
         :returns: tuple (minimum, maximum)
         """
-        min = self._cmdReadMemoryWord(0x005112)
-        max = self._cmdReadMemoryWord(0x00510B)
+        min_lvl = self._cmdReadMemoryWord(0x005112)
+        max_lvl = self._cmdReadMemoryWord(0x00510B)
         
-        return (min, max)
+        return min_lvl, max_lvl
     
     def getSystemCurrentRange(self):
         """
@@ -315,12 +295,12 @@ class d_TopCon(Base_Driver):
         
         Units: A
         
-        :returns: type (minimum, maximum)
+        :returns: tuple (minimum, maximum)
         """
-        min = self._cmdReadMemoryWord(0x005113)
-        max = self._cmdReadMemoryWord(0x00510C)
+        min_lvl = self._cmdReadMemoryWord(0x005113)
+        max_lvl = self._cmdReadMemoryWord(0x00510C)
         
-        return (min, max)
+        return min_lvl, max_lvl
     
     def getSystemPowerRange(self):
         """
@@ -328,12 +308,12 @@ class d_TopCon(Base_Driver):
         
         Units: kW
         
-        :returns: type (minimum, maximum)
+        :returns: tuple (minimum, maximum)
         """
-        min = self._cmdReadMemoryWord(0x005114)
-        max = self._cmdReadMemoryWord(0x00510D)
+        min_lvl = self._cmdReadMemoryWord(0x005114)
+        max_lvl = self._cmdReadMemoryWord(0x00510D)
         
-        return (min, max)
+        return min_lvl, max_lvl
         
     def getModuleVoltageRange(self):
         """
@@ -344,10 +324,10 @@ class d_TopCon(Base_Driver):
         
         :returns: tuple (minimum, maximum)
         """
-        min = self._cmdReadMemoryWord(0x00510F)
-        max = self._cmdReadMemoryWord(0x005100)
+        min_lvl = self._cmdReadMemoryWord(0x00510F)
+        max_lvl = self._cmdReadMemoryWord(0x005100)
         
-        return (min, max)
+        return min_lvl, max_lvl
     
     def getModuleCurrentRange(self):
         """
@@ -356,12 +336,12 @@ class d_TopCon(Base_Driver):
         
         Units: A
         
-        :returns: type (minimum, maximum)
+        :returns: tuple (minimum, maximum)
         """
-        min = self._cmdReadMemoryWord(0x005110)
-        max = self._cmdReadMemoryWord(0x005101)
+        min_lvl = self._cmdReadMemoryWord(0x005110)
+        max_lvl = self._cmdReadMemoryWord(0x005101)
         
-        return (min, max)
+        return min_lvl, max_lvl
     
     def getModulePowerRange(self):
         """
@@ -370,12 +350,12 @@ class d_TopCon(Base_Driver):
         
         Units: kW
         
-        :returns: type (minimum, maximum)
+        :returns: tuple (minimum, maximum)
         """
-        min = self._cmdReadMemoryWord(0x005111)
-        max = self._cmdReadMemoryWord(0x005102)
+        min_lvl = self._cmdReadMemoryWord(0x005111)
+        max_lvl = self._cmdReadMemoryWord(0x005102)
         
-        return (min, max)
+        return min_lvl, max_lvl
     
     def setVoltage(self, voltage):
         """
@@ -389,9 +369,9 @@ class d_TopCon(Base_Driver):
         :type voltage: float
         """
         range = self.getSystemVoltageRange()
-        min, max = map(float, range) 
+        min_lvl, max_lvl = map(float, range)
         
-        set_voltage = int((voltage - min) * (4000.0) / (max - min))
+        set_voltage = int((voltage - min_lvl) * (4000.0) / (max_lvl - min_lvl))
         
         self._cmdWriteMemoryWord(0x005080, set_voltage)
         
@@ -403,14 +383,16 @@ class d_TopCon(Base_Driver):
         
            The master unit must be selected using `selectUnit(0)`
            
-        :param voltage: Current setpoint 
-        :type voltage: float
+        :param neg:     Reverse Current setpoint
+        :type neg:      float
+        :param pos:     Forward Current setpoint
+        :type pos:      float
         """
         range = self.getSystemCurrentRange()
-        min, max = map(float, range) 
+        min_lvl, max_lvl = map(float, range)
         
-        set_current_neg = int((neg - min) * (-4000.0) / (0.0 - min) - 4000.0)
-        set_current_pos = int((pos - 0.0) * (4000.0) / (max))
+        set_current_neg = int((neg - min_lvl) * (-4000.0) / (0.0 - min_lvl) - 4000.0)
+        set_current_pos = int((pos - 0.0) * (4000.0) / max_lvl)
         
         self._cmdWriteMemoryWord(0x30251D, set_current_neg)
         self._cmdWriteMemoryWord(0x005081, set_current_pos)
@@ -423,14 +405,16 @@ class d_TopCon(Base_Driver):
         
            The master unit must be selected using `selectUnit(0)`
            
-        :param voltage: Power setpoint 
-        :type voltage: float
+        :param neg:     Reverse Power setpoint
+        :type neg:      float
+        :param pos:     Forward Power setpoint
+        :type pos:      float
         """
         range = self.getSystemPowerRange()
-        min, max = map(float, range) 
+        min_lvl, max_lvl = map(float, range)
         
-        set_power_neg = int((neg - min) * (-4000.0) / (0.0 - min) - 4000.0)
-        set_power_pos = int((pos - 0.0) * (4000.0) / (max))
+        set_power_neg = int((neg - min_lvl) * (-4000.0) / (0.0 - min_lvl) - 4000.0)
+        set_power_pos = int((pos - 0.0) * (4000.0) / (max_lvl))
         
         self._cmdWriteMemoryWord(0x30251E, set_power_neg)
         self._cmdWriteMemoryWord(0x005082, set_power_pos)
@@ -448,9 +432,9 @@ class d_TopCon(Base_Driver):
         voltage = self._cmdReadMemoryWord(0x005084)
         
         range = self.getSystemVoltageRange()
-        min, max = map(float, range)
+        min_lvl, max_lvl = map(float, range)
         
-        return float((voltage) * (max - min) / (4000.0))
+        return float((voltage) * (max_lvl - min_lvl) / (4000.0))
         
     def getTerminalCurrent(self):
         """
@@ -465,9 +449,9 @@ class d_TopCon(Base_Driver):
         current = self._cmdReadMemoryWord(0x005085)
         
         range = self.getSystemCurrentRange()
-        min, max = map(float, range)
+        min_lvl, max_lvl = map(float, range)
         
-        return float((current) * (max - min) / (4000.0))
+        return float((current) * (max_lvl - min_lvl) / (4000.0))
         #=======================================================================
         # # Register Address: 0x005085
         # data = self._cmdReadMemoryWord(0x005085)
@@ -493,6 +477,6 @@ class d_TopCon(Base_Driver):
         power = self._cmdReadMemoryWord(0x005086)
         
         range = self.getSystemPowerRange()
-        min, max = map(float, range)
+        min_lvl, max_lvl = map(float, range)
         
-        return float((power) * (max - min) / (4000.0))
+        return float((power) * (max_lvl - min_lvl) / (4000.0))

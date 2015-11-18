@@ -1,33 +1,34 @@
 import unittest
 from nose.tools import * # PEP8 asserts
-
+import time
 import labtronyx
 
-def test_init_time_no_rpc():
-    import time
-    start = time.clock()
-    instr = labtronyx.InstrumentManager()
-    delta = time.clock() - start
-    assert_less_equal(delta, 1.0, "No RPC Init time must be less than 1.0 second(s)")
 
 class InstrumentManager_Tests(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
-        self.instr = labtronyx.InstrumentManager()
+    def setUpClass(cls):
+        start = time.clock()
+        cls.instr = labtronyx.InstrumentManager()
+        cls.init_delta = time.clock() - start
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.instr._close()
+
+    def test_init_time(self):
+        assert_less_equal(self.init_delta, 2.0, "No RPC Init time must be less than 2.0 second(s)")
 
     def test_get_version(self):
         self.assertIsNotNone(self.instr.getVersion())
-        
+
     def test_get_properties(self):
         resources = self.instr.getProperties()
         self.assertEqual(type(resources), dict)
-        
-        for resID, res in resources.items():
-            if res.get('resID') == 'DEBUG':
-                return True
-            
-        return False
+
+    def test_get_attributes(self):
+        plugins = self.instr.getAttributes()
+        self.assertEqual(type(plugins), dict)
 
     def test_get_hostname(self):
         self.assertIsNotNone(self.instr.getHostname())
@@ -37,9 +38,13 @@ class InstrumentManager_Tests(unittest.TestCase):
 
     def test_refresh(self):
         self.instr.refresh()
-        
-    def test_get_drivers(self):
-        self.assertIsNotNone(self.instr.getDrivers())
 
     def test_get_resource(self):
         self.assertRaises(labtronyx.InterfaceUnavailable, self.instr.getResource, 'INVALID', 'NOPE')
+
+    def test_disable_interface(self):
+        self.instr.disableInterface('Serial')
+        self.assertNotIn('Serial', self.instr.listInterfaces())
+
+        self.instr.enableInterface('Serial')
+        self.assertIn('Serial', self.instr.listInterfaces())

@@ -6,15 +6,17 @@ Call `create_server` to get a flask app
 
 __author__ = 'kkennedy'
 
+import json
 import logging
 
 from flask import Flask, Blueprint, request, current_app, abort, Response
-import json
 
-from .rpc import *
+from .errors import *
+from . import jsonrpc
 
 api_blueprint = Blueprint('api', __name__)
 rpc_blueprint = Blueprint('rpc', __name__)
+
 
 def create_server(manager_instance, port, logger=logging):
     """
@@ -34,15 +36,17 @@ def create_server(manager_instance, port, logger=logging):
 
     return app
 
+
 @api_blueprint.route('/api/resources')
 def list_resources():
     man = current_app.config.get('LABTRONYX_MANAGER')
 
-    data = json.dumps(man.getProperties().keys())
+    data = json.dumps(man.getProperties())
 
     resp = Response(data, status=200, mimetype='application/json')
 
     return resp
+
 
 @api_blueprint.route('/api/resources/<uuid>')
 def resource_properties(uuid):
@@ -56,22 +60,13 @@ def resource_properties(uuid):
     else:
         abort(404)
 
+
 @api_blueprint.route('/api/version')
 def version():
     man = current_app.config.get('LABTRONYX_MANAGER')
 
-    try:
-        return json.dumps({
-            'version': man.version.ver_sem,
-            'version_full': man.version.ver_full,
-            'build_date': man.version.build_date,
-            'git_revision': man.version.git_revision
-        })
+    return json.dumps(man.getVersion())
 
-    except:
-        return json.dumps({
-            'version': man.getVersion()
-        })
 
 @api_blueprint.route('/api/shutdown')
 def shutdown():
@@ -79,6 +74,7 @@ def shutdown():
     if func is not None:
         func()
     return ''
+
 
 @rpc_blueprint.route('/rpc', methods=['GET', 'POST'])
 @rpc_blueprint.route('/rpc/<uuid>', methods=['GET', 'POST'])
@@ -99,7 +95,7 @@ def rpc_process(uuid=None):
 
         else:
             try:
-                res = man._getResource(uuid)
+                res = man.plugin_manager.getPluginInstance(uuid)
                 return json.dumps({
                     'methods': rpc_getMethods(res)
                 })
@@ -120,9 +116,13 @@ def rpc_process(uuid=None):
         man = current_app.config.get('LABTRONYX_MANAGER')
         if uuid is None:
             target = man
+
+            if target is None:
+                abort(404)
+
         else:
             try:
-                target = man._getResource(uuid)
+                target = man.plugin_manager.getPluginInstance(uuid)
             except KeyError:
                 abort(404)
 
@@ -160,7 +160,7 @@ def rpc_process(uuid=None):
                     with lock:
                         # RPC hook for target objects, allows the object to dispatch the request
                         if hasattr(target, '_rpc'):
-                            result = target._rpc(method_name)
+                            result = target._rpc(req)
 
                         elif not method_name.startswith('_') and hasattr(target, method_name):
                             method = getattr(target, method_name)
@@ -172,7 +172,7 @@ def rpc_process(uuid=None):
 
                     # Check if the request was a notification
                     if req_id is not None:
-                        rpc_responses.append(RpcResponse(id=req_id, result=result))
+                        rpc_responses.append(engine.buildResponse(id=req_id, result=result))
 
                 # Catch exceptions during method execution
                 except Exception as e:

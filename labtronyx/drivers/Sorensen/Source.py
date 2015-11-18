@@ -2,40 +2,25 @@
 .. codeauthor:: Kevin Kennedy <protonyx@users.noreply.github.com>
 
 """
-from labtronyx.bases import Base_Driver
-from labtronyx.common.errors import *
+import labtronyx
 
-info = {
-    # Plugin author
-    'author':               'KKENNEDY',
-    # Plugin version
-    'version':              '1.0',
-    # Last Revision Date
-    'date':                 '2015-10-04',
-}
 
-class d_XFR(Base_Driver):
+class d_XFR(labtronyx.DriverBase):
     """
     Driver for Sorensen XFR Series DC Power Supplies
     """
-    
-    info = {
-        # Device Manufacturer
-        'deviceVendor':         'Sorensen',
-        # List of compatible device models
-        'deviceModel':          ['XFR 600-4'],
-        # Device type    
-        'deviceType':           'DC Power Supply',      
-        
-        # List of compatible resource types
-        'validResourceTypes':   ['VISA']
+    author = 'KKENNEDY'
+    version = '1.0'
+    deviceType = 'DC Power Supply'
+    compatibleInterfaces = ['VISA']
+    compatibleInstruments = {
+        'Sorensen': ['XFR 600-4']
     }
 
     @classmethod
     def VISA_validResource(cls, identity):
         vendors = ['Xantrex', 'Sorensen']
-        models = ['XFR 600-4']
-        return identity[0] in vendors and identity[1] in models
+        return identity[0] in vendors and identity[1] in cls.compatibleInstruments['Sorensen']
     
     def open(self):
         self.setRemoteControl()
@@ -146,7 +131,7 @@ class d_XFR(Base_Driver):
         
         :returns: float
         """
-        return float(self.ask("MEAS:VOLT?"))
+        return float(self.query("MEAS:VOLT?"))
     
     def setCurrent(self, current):
         """
@@ -171,7 +156,7 @@ class d_XFR(Base_Driver):
         
         :returns: float
         """
-        return float(self.ask("MEAS:CURR?"))
+        return float(self.query("MEAS:CURR?"))
     
     def getTerminalPower(self):
         """
@@ -179,7 +164,7 @@ class d_XFR(Base_Driver):
         
         :returns: float
         """
-        return float(self.ask("MEAS:POW?"))
+        return float(self.query("MEAS:POW?"))
         
     def setProtection(self, voltage=None, current=None):
         """
@@ -217,4 +202,3 @@ class d_XFR(Base_Driver):
         ocp = int(self.query("SOUR:CURR:PROT:OVER:TRIP?"))
         
         return (ovp, ocp)
-    

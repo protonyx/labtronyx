@@ -1,8 +1,5 @@
 import sys
 import os
-import importlib
-import sets
-import copy
 
 #===============================================================================
 # Configuration
@@ -30,27 +27,8 @@ sys.path.append(rootPath)
 import labtronyx
 
 # Load Plugins
-
-# Directories to search
-dirs = ['drivers', 'interfaces']
-dirs_res = map(lambda dir: os.path.join(libPath, dir), dirs)
-
-# Categorize plugins by base class
-cat_filter = {
-    "drivers": labtronyx.bases.Base_Driver,
-    "interfaces": labtronyx.bases.Base_Interface,
-    "resources": labtronyx.bases.Base_Resource
-}
-
-plugin_manager = labtronyx.common.plugin.PluginManager(directories=dirs_res, categories=cat_filter)
-plugin_manager.search()
-
-# # Load Drivers
-# self._drivers = plugin_manager.getPluginsByCategory('drivers')
-#
-# # Load Interfaces
-# for interface_name in self.plugin_manager.getPluginsByCategory('interfaces'):
-#     self.enableInterface(interface_name)
+instr = labtronyx.InstrumentManager()
+plugin_manager = instr.plugin_manager
 
 #===============================================================================
 # Build Documentation
@@ -105,8 +83,8 @@ def build_driver_docs():
     
     # Create RST file for each driver module
     toc_list = []
-    for driver_name, driver_cls in plugin_manager.getPluginsByCategory('drivers').items():
-        driver_info = driver_cls.info
+    for driver_name, driver_cls in plugin_manager.getPluginsByBaseClass(labtronyx.DriverBase).items():
+        driver_info = plugin_manager.getPluginInfo(driver_name)
         driver_class = driver_name.split('.')[-1]
         driver_module = driver_name[:-1*(len(driver_class)+1)]
 
@@ -117,9 +95,7 @@ def build_driver_docs():
             toc_list.append(driver_module)
         
         print "Processing: {0}".format(driver_module)
-        driver_filename = os.path.join(driver_folder, str(driver_module) + ".rst")
-
-        with file(driver_filename, "w+") as f:
+        with file(os.path.join(driver_folder, str(driver_module) + ".rst"), "w+") as f:
             f.write(gen_sphinx_header(driver_module, "="))
             
             f.write(gen_sphinx_automodule(DRIVER_SRC + '.' + driver_module, ['members']))
@@ -154,8 +130,8 @@ def build_interface_docs():
 
     # Create RST file for each interface module
     toc_list = []
-    for plugin_name, plugin_cls in plugin_manager.getPluginsByCategory('interfaces').items():
-        plugin_info = plugin_cls.info
+    for plugin_name, plugin_cls in plugin_manager.getPluginsByBaseClass(labtronyx.InterfaceBase).items():
+        plugin_info = plugin_manager.getPluginInfo(plugin_name)
         plugin_class = plugin_name.split('.')[-1]
         plugin_module = plugin_name[:-1*(len(plugin_class)+1)]
 
@@ -192,14 +168,15 @@ def build_instrument_docs():
     instruments = []
 
     # Iterate drivers and scrape instrument information
-    for driver_name, driver_cls in plugin_manager.getPluginsByCategory('drivers').items():
-        driver_info = driver_cls.info
+    for driver_name, driver_cls in plugin_manager.getPluginsByBaseClass(labtronyx.DriverBase).items():
+        driver_info = plugin_manager.getPluginInfo(driver_name)
         # driver_class = driver_name.split('.')[-1]
         # driver_module = driver_name[:-1*(len(driver_class)+1)]
 
-        for driver_model in driver_info.get('deviceModel'):
-            entry = (driver_info.get('deviceVendor'), driver_info.get('deviceType'), driver_model, driver_name)
-            instruments.append(entry)
+        for driver_vendor, vendor_models in driver_info.get('compatibleInstruments').items():
+            for driver_model in vendor_models:
+                entry = (driver_vendor, driver_info.get('deviceType'), driver_model, driver_name)
+                instruments.append(entry)
 
     # Sort by model, vendor
     instruments.sort(key=lambda x: x[2])

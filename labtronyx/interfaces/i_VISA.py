@@ -15,8 +15,9 @@ The latest version of NI-VISA can be downloaded from `nivisa`_ .
 Install NI-VISA using the instructions and ReadMe file included with the installer. NI-VISA is compatible with Windows,
 Mac and Linux.
 """
+import labtronyx
+from labtronyx.common import plugin
 
-from traceback import format_exc
 import time
 
 import visa
@@ -24,190 +25,144 @@ import pyvisa
 import pyvisa.constants
 import pyvisa.resources
 
-from labtronyx.bases import Base_Interface, Base_Resource
-from labtronyx.common.errors import *
-import labtronyx.common as common
 
-info = {
-    # Interface Author
-    'author':               'KKENNEDY',
-    # Interface Version
-    'version':              '1.0',
-    # Revision date
-    'date':                 '2015-10-05'
-}
-
-
-class i_VISA(Base_Interface):
+class i_VISA(labtronyx.InterfaceBase):
     """
     VISA Controller
     
     Wraps PyVISA. Requires a VISA driver to be installed on the system.
     """
-
-    info = {
-        # Interface Name
-        'interfaceName':    'VISA'
-    }
+    author = 'KKENNEDY'
+    version = '1.0'
+    interfaceName = 'VISA'
+    enumerable = True
 
     def __init__(self, manager, **kwargs):
         # Allow the use of a custom library for testing
         self._lib = kwargs.pop('library', '')
 
-        Base_Interface.__init__(self, manager, **kwargs)
+        super(i_VISA, self).__init__(manager, **kwargs)
 
         # Instance variables
-        self.resource_manager = None
+        self.__resource_manager = None
 
     def open(self):
         """
-        Initialize the VISA Controller. Instantiates a VISA Resource Manager
-        and starts the controller thread.
+        Initialize the VISA Interface. Instantiates a VISA Resource Manager.
 
         :returns: True if successful, False if an error occurred
         """
         try:
             # Load the VISA Resource Manager
-            self.resource_manager = visa.ResourceManager(self._lib)
+            self.__resource_manager = visa.ResourceManager(self._lib)
 
             # Announce details about the VISA driver
             import pyvisa.util
             self.logger.debug("PyVISA Debug information\n%s", pyvisa.util.get_debug_info(False))
-
-            # Enumerate all of the connected instruments
-            self.enumerate()
 
             return True
 
         except OSError as e:
             # No VISA library on the computer
             self.logger.error("No VISA Library found on the computer")
-            return False
 
         except Exception as e:
             self.logger.exception("Failed to initialize VISA Interface")
-            return False
 
-    def close(self):
-        """
-        Stops the VISA Interface. Frees all resources associated with the interface.
-        """
-        for resID, res in self._resources.items():
-            try:
-                if res.isOpen():
-                    res.close()
-
-            except:
-                pass
-
-        self._resources.clear()
-
-        return True
+        return False
 
     def enumerate(self):
         """
         Identify all devices known to the VISA driver and create resource objects for valid resources
         """
-        if self.resource_manager is not None:
-            try:
-                res_list = self.resource_manager.list_resources()
+        if self.__resource_manager is None:
+            raise labtronyx.InterfaceError("Interface not open")
 
-                # Check for new resources
-                for res in res_list:
-                    if res not in self._resources.keys():
-                        try:
-                            self.getResource(res)
+        self.logger.debug("Enumerating VISA interface")
 
-                        except ResourceUnavailable:
-                            pass
+        try:
+            new_res_list = [res for res in self.__resource_manager.list_resources() if res not in self.resources_by_id]
 
-            except visa.VisaIOError as e:
-                # Exception thrown when there are no resources
-                self.logger.exception('VISA Exception during enumeration')
+            # Check for new resources
+            for resID in new_res_list:
+                try:
+                    self.openResource(resID)
+
+                except labtronyx.ResourceUnavailable:
+                    pass
+
+        except visa.VisaIOError as e:
+            # Exception thrown when there are no resources
+            self.logger.exception('VISA Exception during enumeration')
 
     def prune(self):
         """
         Close any resources that are no longer known to the VISA interface
         """
-        to_remove = []
+        if self.__resource_manager is None:
+            raise labtronyx.InterfaceError("Interface not open")
 
-        if self.resource_manager is not None:
-            try:
-                # Get a fresh list of resources
-                res_list = self.resource_manager.list_resources()
+        try:
+            # Get a fresh list of resources
+            res_list = self.__resource_manager.list_resources()
+        except visa.VisaIOError:
+            # Exception thrown when there are no resources
+            res_list = []
 
-                for resID in self._resources:
-                    if resID not in res_list:
-                        # Close this resource and remove from the list
-                        resource = self._resources.get(resID)
-                        to_remove.append(resID)
+        for res_uuid, res_obj in self.resources.items():
+            resID = res_obj.resID
 
-                        try:
-                            # Resource is gone, so this will probably error
-                            resource.close()
-                        except:
-                            pass
+            if resID not in res_list:
+                res_obj.close()
 
-            except visa.VisaIOError:
-                # Exception thrown when there are no resources
-                pass
+                self.manager.plugin_manager.destroyPluginInstance(res_uuid)
+                self.manager._publishEvent(labtronyx.EventCodes.resource.destroyed, res_obj.uuid)
 
-            except:
-                self.logger.exception("Unhandled VISA Exception while pruning resources")
-                raise
+    @property
+    def resources(self):
+        return self.manager.plugin_manager.getPluginInstancesByBaseClass(r_VISA)
 
-            for resID in to_remove:
-                del self._resources[resID]
+    @property
+    def resources_by_id(self):
+        return {res_obj.resID: res_obj for res_uuid, res_obj in self.resources.items()}
 
-    def getResource(self, resID):
+    @property
+    def resource_manager(self):
+        return self.__resource_manager
+
+    def openResource(self, resID):
         """
         Attempt to open a VISA instrument. If successful, a VISA resource is added to the list of known resources and
         the object is returned.
 
         :return:        object
-        :raises:        ResourceUnavailable
-        :raises:        InterfaceError
+        :raises:        labtronyx.ResourceUnavailable
+        :raises:        labtronyx.InterfaceError
         """
-        try:
-            instrument = self.resource_manager.open_resource(resID)
+        # Instantiate the resource object
+        res_obj = self.manager.plugin_manager.createPluginInstance(r_VISA.fqn,
+                                                                   manager=self.manager,
+                                                                   resID=resID,
+                                                                   logger=self.logger
+                                                                   )
 
-            # Instantiate the resource object
-            new_resource = r_VISA(manager=self.manager,
-                                  interface=self,
-                                  resID=resID,
-                                  visa_instrument=instrument,
-                                  logger=self.logger)
+        # Signal new resource event
+        self.manager._publishEvent(labtronyx.EventCodes.resource.created, res_obj.uuid)
 
-            self._resources[resID] = new_resource
+        return res_obj
 
-            # Signal new resource event
-            self.manager._publishEvent(common.events.ResourceEvents.created)
-
-            return new_resource
-
-        except AttributeError:
-            raise ResourceUnavailable('Invalid VISA Resource Identifier: %s' % resID)
-
-        except visa.VisaIOError as e:
-            if e.abbreviation in ["VI_ERROR_RSRC_BUSY",
-                                  "VI_ERROR_RSRC_NFOUND",
-                                  "VI_ERROR_TMO",
-                                  "VI_ERROR_INV_RSRC_NAME"]: # Returned by TekVISA
-
-                raise ResourceUnavailable('VISA Resource Error: %s' % e.abbreviation)
-
-            else:
-                raise InterfaceError('VISA Interface Error: %s' % e.abbreviation)
+    def getResource(self, resID):
+        return self.openResource(resID)
 
 
-class r_VISA(Base_Resource):
+class r_VISA(labtronyx.ResourceBase):
     """
     VISA Resource Base class.
     
     Wraps PyVISA Resource Class
     
-    All VISA complient devices will adhere to the IEEE 488.2 standard
-    for responses to the '*IDN?' query. The expected format is:
+    All VISA compliant devices will adhere to the IEEE 488.2 standard
+    for responses to the `*IDN?` query. The expected format is:
     <Manufacturer>,<Model>,<Serial>,<Firmware>
     
     BK Precision has a non-standard format for some of their instruments:
@@ -222,54 +177,91 @@ class r_VISA(Base_Resource):
        * deviceSerial
        * deviceFirmware
     """
-
-    resourceType = "VISA"
-
     CONFIG_KEYS = ['timeout', 'chunk_size', 'encoding', 'query_delay', 'read_termination', 'write_termination',
         'baud_rate', 'break_length', 'data_bits', 'discard_null', 'parity', 'stop_bits', 'allow_dma', 'send_end']
 
-    def __init__(self, manager, interface, resID, **kwargs):
-        self.instrument = kwargs.pop('visa_instrument')
+    RES_TYPES = {
+        pyvisa.constants.InterfaceType.gpib:    "GPIB",
+        pyvisa.constants.InterfaceType.vxi:     "VXI",
+        pyvisa.constants.InterfaceType.asrl:    "Serial",
+        pyvisa.constants.InterfaceType.pxi:     "PXI",
+        pyvisa.constants.InterfaceType.tcpip:   "TCPIP",
+        pyvisa.constants.InterfaceType.usb:     "USB",
+        pyvisa.constants.InterfaceType.firewire: "Firewire"
+    }
 
-        Base_Resource.__init__(self, manager, interface, resID, **kwargs)
+    interfaceName = 'VISA'
+    interface = plugin.PluginDependency(pluginType='interface', interfaceName='VISA')
 
-        # Instance variables
-        self._identity = []
-        self._conf = { # Default configuration
-                      'read_termination': '\r',
-                      'write_termination': '\r\n',
-                      'timeout': 2000
-                      }
+    def __init__(self, manager, resID, **kwargs):
+        assert(isinstance(manager, labtronyx.InstrumentManager))
 
-        # Instrument is created in the open state, but we do not want to lock the VISA instrument
-        self.close()
+        super(r_VISA, self).__init__(manager, resID, **kwargs)
 
-        # Set a flag to initialize the resource when it is used
-        self.ready = False
+        # Ensure dependency was resolved correctly
+        if not isinstance(self.interface, i_VISA):
+            raise labtronyx.InterfaceError("VISA Interface is not enabled")
+
+        # Ensure resource doesn't already exist
+        if len(manager.plugin_manager.searchPluginInstances(pluginType='resource', interfaceName='VISA',
+                                                            resID=resID)) > 0:
+            raise labtronyx.InterfaceError("Resource already exists")
+
+        try:
+            self.instrument = self.interface.resource_manager.open_resource(resID)
+
+            self.logger.debug("Created VISA resource: %s", resID)
+
+            # Instance variables
+            self._identity = []
+            self._conf = { # Default configuration
+                          'read_termination': '\r',
+                          'write_termination': '\r\n',
+                          'timeout': 2000
+                          }
+            self._resourceType = self.RES_TYPES.get(self.instrument.interface_type, 'VISA')
+
+            # Instrument is created in the open state, but we do not want to lock the VISA instrument
+            self.close()
+
+            # Set a flag to initialize the resource when it is used
+            self.ready = False
+
+        # except AttributeError:
+        #     raise labtronyx.ResourceUnavailable('Invalid VISA Resource Identifier: %s' % resID)
+
+        except visa.VisaIOError as e:
+            if e.abbreviation in ["VI_ERROR_RSRC_BUSY",
+                                  "VI_ERROR_RSRC_NFOUND",
+                                  "VI_ERROR_TMO",
+                                  "VI_ERROR_INV_RSRC_NAME"]:  # Returned by TekVISA
+
+                raise labtronyx.ResourceUnavailable('VISA Resource Error: %s' % e.abbreviation)
+
+            else:
+                raise labtronyx.InterfaceError('VISA Interface Error: %s' % e.abbreviation)
 
     def getProperties(self):
+        """
+        Get the property dictionary for the VISA resource.
+
+        :rtype: dict[str:object]
+        """
         if not self.ready:
             self.identify()
 
-        def_prop = Base_Resource.getProperties(self)
+        def_prop = labtronyx.ResourceBase.getProperties(self)
+        def_prop.update({
+            'resourceType': self._resourceType
+        })
 
-        def_prop.setdefault('deviceVendor', self.getVISA_vendor())
-        def_prop.setdefault('deviceModel', self.getVISA_model())
-        def_prop.setdefault('deviceSerial', self.getVISA_serial())
-        def_prop.setdefault('deviceFirmware', self.getVISA_firmware())
+        # Set some default search parameters if driver has not already defined
+        def_prop.setdefault('deviceVendor', self._VISA_vendor)
+        def_prop.setdefault('deviceModel', self._VISA_model)
+        def_prop.setdefault('deviceSerial', self._VISA_serial)
+        def_prop.setdefault('deviceFirmware', self._VISA_firmware)
 
         return def_prop
-
-    def refresh(self):
-        """
-        Refresh the resource. Attempts to re-identify the instrument and load a driver. If a driver is already loaded,
-        it will not be unloaded.
-        """
-        self.identify()
-
-        if self._driver is None:
-            # Attempt to automatically load a driver
-            self.loadDriver()
 
     #===========================================================================
     # VISA Specific
@@ -288,6 +280,10 @@ class r_VISA(Base_Resource):
 
         # Reset identity data
         self._identity = []
+        self._VISA_vendor = ''
+        self._VISA_model = ''
+        self._VISA_firmware = ''
+        self._VISA_serial = ''
 
         try:
             # Set the timeout really low
@@ -301,39 +297,23 @@ class r_VISA(Base_Resource):
             # Set the timeout back to what it was
             self.instrument.timeout = start_timeout
 
-        except InterfaceTimeout:
+            if len(self._identity) >= 4:
+                self._VISA_vendor = self._identity[0].strip()
+                self._VISA_model = self._identity[1].strip()
+                self._VISA_serial = self._identity[2].strip()
+                self._VISA_firmware = self._identity[3].strip()
+
+                self.logger.debug("Identified VISA Resource: %s", self.resID)
+                self.logger.debug("Vendor: %s", self._VISA_vendor)
+                self.logger.debug("Model:  %s", self._VISA_model)
+                self.logger.debug("Serial: %s", self._VISA_serial)
+                self.logger.debug("F/W:    %s", self._VISA_firmware)
+
+            else:
+                self.logger.debug("VISA Resource responded to identify in non-standard way: %s", scpi_ident)
+
+        except labtronyx.InterfaceTimeout:
             self.logger.debug("Resource did not respond to Identify: %s", self.resID)
-
-
-        if len(self._identity) >= 4:
-            self.VID = self._identity[0].strip()
-            self.PID = self._identity[1].strip()
-            self.serial = self._identity[2].strip()
-            self.firmware = self._identity[3].strip()
-
-            self.logger.debug("Identified VISA Resource: %s", self.resID)
-            self.logger.debug("Vendor: %s", self.VID)
-            self.logger.debug("Model:  %s", self.PID)
-            self.logger.debug("Serial: %s", self.serial)
-            self.logger.debug("F/W:    %s", self.firmware)
-
-        elif len(self._identity) == 3:
-            # Resource provided a non-standard identify response
-            # Screw you BK Precision for making me do this
-            self.VID = ''
-            self.PID, self.firmware, self.serial = self._identity
-
-            self.logger.debug("Identified VISA Resource: %s", self.resID)
-            self.logger.debug("Model:  %s", self.PID)
-            self.logger.debug("Serial: %s", self.serial)
-            self.logger.debug("F/W:    %s", self.firmware)
-
-        else:
-            self.VID = ''
-            self.PID = ''
-            self.firmware = ''
-            self.serial = ''
-
 
         # Attempt to find a suitable driver if one is not already loaded
         if self._driver is None:
@@ -344,37 +324,23 @@ class r_VISA(Base_Resource):
 
         self.ready = True
 
-    def getIdentity(self):
+    def getIdentity(self, section=None):
         """
         Get the comma-delimited identity string returned from `*IDN?` command on resource enumeration
 
-        :return:    str
+        :param section: Section of comma-split identity
+        :type section:  int
+        :rtype:         str
         """
-        return self._identity
-
-    def getVISA_vendor(self):
         if not self.ready:
             self.identify()
 
-        return self.VID
-
-    def getVISA_model(self):
-        if not self.ready:
-            self.identify()
-
-        return self.PID
-
-    def getVISA_serial(self):
-        if not self.ready:
-            self.identify()
-
-        return self.serial
-
-    def getVISA_firmware(self):
-        if not self.ready:
-            self.identify()
-
-        return self.firmware
+        if section is None:
+            return self._identity
+        elif len(self._identity) > section:
+            return self._identity[section]
+        else:
+            return ''
 
     def getStatusByte(self):
         """
@@ -386,7 +352,7 @@ class r_VISA(Base_Resource):
 
     def trigger(self):
         """
-        Trigger the instrument using the common trigger command (*TRG). Behavior varies by instrument
+        Trigger the instrument using the common trigger command `*TRG`. Behavior varies by instrument
         """
         self.write('*TRG')
 
@@ -434,7 +400,7 @@ class r_VISA(Base_Resource):
         Open the resource and prepare to receive commands. If a driver is loaded, the driver will also be opened
 
         :returns:       True if successful, False otherwise
-        :raises:        ResourceUnavailable
+        :raises:        labtronyx.ResourceUnavailable
         """
         try:
             self.instrument.open()
@@ -443,10 +409,10 @@ class r_VISA(Base_Resource):
             self.configure()
 
         except visa.VisaIOError as e:
-            raise ResourceUnavailable('VISA resource error: %s' % e.abbreviation)
+            raise labtronyx.ResourceUnavailable('VISA resource error: %s' % e.abbreviation)
 
         # Call the base resource open function to call driver hooks
-        return Base_Resource.open(self)
+        return labtronyx.ResourceBase.open(self)
 
     def isOpen(self):
         """
@@ -468,20 +434,21 @@ class r_VISA(Base_Resource):
         :returns: True if successful, False otherwise
         """
         if self.isOpen():
-            try:
-                # Close the driver
-                Base_Resource.close(self)
+            # Close the driver
+            labtronyx.ResourceBase.close(self)
 
+            try:
                 # Close the instrument
                 self.instrument.close()
 
-                return True
+            except visa.VisaIOError as e:
+                self.logger.exception('VISA resource error on close: %s', e.abbreviation)
+                return False
 
             except:
                 return False
 
-        else:
-            return True
+        return True
 
     def lock(self):
         self.instrument.lock()
@@ -599,8 +566,8 @@ class r_VISA(Base_Resource):
         
         :param data:        Data to send
         :type data:         str
-        :raises:            ResourceNotOpen
-        :raises:            InterfaceError
+        :raises:            labtronyx.ResourceNotOpen
+        :raises:            labtronyx.InterfaceError
         """
         try:
             self.instrument.write(data)
@@ -608,10 +575,10 @@ class r_VISA(Base_Resource):
             self.logger.debug("VISA Write: %s", data)
 
         except visa.InvalidSession:
-            raise ResourceNotOpen()
+            raise labtronyx.ResourceNotOpen()
 
         except visa.VisaIOError as e:
-            raise InterfaceError(e.description)
+            raise labtronyx.InterfaceError(e.description)
 
     def write_raw(self, data):
         """
@@ -619,17 +586,19 @@ class r_VISA(Base_Resource):
         
         :param data:        Data to send
         :type data:         str
-        :raises:            ResourceNotOpen
-        :raises:            InterfaceError
+        :raises:            labtronyx.ResourceNotOpen
+        :raises:            labtronyx.InterfaceError
         """
         try:
             self.instrument.write_raw(data)
 
+            self.logger.debug("VISA Write: %s", data)
+
         except visa.InvalidSession:
-            raise ResourceNotOpen()
+            raise labtronyx.ResourceNotOpen()
 
         except visa.VisaIOError as e:
-            raise InterfaceError(e.description)
+            raise labtronyx.InterfaceError(e.description)
 
     def read(self, termination=None, encoding=None):
         """
@@ -643,9 +612,9 @@ class r_VISA(Base_Resource):
         :param encoding:    Encoding
         :type encoding:     str
         :return:            str
-        :raises:            ResourceNotOpen
-        :raises:            InterfaceTimeout
-        :raises:            InterfaceError
+        :raises:            labtronyx.ResourceNotOpen
+        :raises:            labtronyx.InterfaceTimeout
+        :raises:            labtronyx.InterfaceError
         """
         try:
             data = self.instrument.read(termination, encoding)
@@ -655,13 +624,13 @@ class r_VISA(Base_Resource):
             return data
 
         except visa.InvalidSession:
-            raise ResourceNotOpen()
+            raise labtronyx.ResourceNotOpen()
 
         except visa.VisaIOError as e:
             if e.abbreviation in ["VI_ERROR_TMO"]:
-                raise InterfaceTimeout(e.description)
+                raise labtronyx.InterfaceTimeout(e.description)
             else:
-                raise InterfaceError(e.description)
+                raise labtronyx.InterfaceError(e.description)
 
     def read_raw(self, size=None):
         """
@@ -669,9 +638,9 @@ class r_VISA(Base_Resource):
         
         :param size:        Number of bytes to read
         :type size:         int
-        :raises:            ResourceNotOpen
-        :raises:            InterfaceTimeout
-        :raises:            InterfaceError
+        :raises:            labtronyx.ResourceNotOpen
+        :raises:            labtronyx.InterfaceTimeout
+        :raises:            labtronyx.InterfaceError
         """
         ret = bytes()
 
@@ -695,13 +664,13 @@ class r_VISA(Base_Resource):
                 return self.instrument.read_raw()
 
         except visa.InvalidSession:
-            raise ResourceNotOpen
+            raise labtronyx.ResourceNotOpen
 
         except visa.VisaIOError as e:
             if e.abbreviation in ["VI_ERROR_TMO"]:
-                raise InterfaceTimeout(e.description)
+                raise labtronyx.InterfaceTimeout(e.description)
             else:
-                raise InterfaceError(e.description)
+                raise labtronyx.InterfaceError(e.description)
 
     def query(self, data, delay=None):
         """
@@ -714,26 +683,25 @@ class r_VISA(Base_Resource):
         :param delay:       delay (in seconds) between write and read operations.
         :type delay:        float
         :returns:           str
-        :raises:            ResourceNotOpen
-        :raises:            InterfaceTimeout
-        :raises:            InterfaceError
+        :raises:            labtronyx.ResourceNotOpen
+        :raises:            labtronyx.InterfaceTimeout
+        :raises:            labtronyx.InterfaceError
         """
         try:
             ret_data = self.instrument.query(data)
 
-            self.logger.debug("VISA Write: %s", data)
-            self.logger.debug("VISA Read: %s", ret_data)
+            self.logger.debug("VISA Query: %s returned: %s", data, ret_data)
 
             return ret_data
 
         except visa.InvalidSession:
-            raise ResourceNotOpen
+            raise labtronyx.ResourceNotOpen
 
         except visa.VisaIOError as e:
             if e.abbreviation in ["VI_ERROR_TMO"]:
-                raise InterfaceTimeout(e.description)
+                raise labtronyx.InterfaceTimeout(e.description)
             else:
-                raise InterfaceError(e.description)
+                raise labtronyx.InterfaceError(e.description)
 
     # ===========================================================================
     # Drivers
@@ -759,26 +727,26 @@ class r_VISA(Base_Resource):
             self.logger.debug("Searching for suitable drivers")
 
             # Search for a compatible model
-            validModels = []
+            driverClasses = self.manager.plugin_manager.getPluginsByType('driver')
+            validDrivers = []
 
             # Iterate through all driver classes to find compatible driver
-            for driver, driverCls in self.manager.drivers.items():
-                if hasattr(driverCls, 'VISA_validResource'):
-                    try:
-                        if driverCls.VISA_validResource(self._identity):
-                            validModels.append(driver)
-                            self.logger.debug("Found match: %s", driver)
-                    except:
-                        pass
+            for driver_fqn, driverCls in driverClasses.items():
+                try:
+                    if driverCls.VISA_validResource(self._identity):
+                        validDrivers.append(driver_fqn)
+                        self.logger.debug("Found match: %s", driver_fqn)
+                except:
+                    pass
 
             # Only auto-load a model if a single model was found
-            if len(validModels) == 1:
-                Base_Resource.loadDriver(self, validModels[0], force)
-
+            if len(validDrivers) == 1:
+                labtronyx.ResourceBase.loadDriver(self, validDrivers[0], force)
                 return True
 
-            self.logger.debug("Unable to load driver, more than one match found")
-            return False
+            else:
+                self.logger.debug("Unable to load driver, more than one match found")
+                return False
 
         else:
-            return Base_Resource.loadDriver(self, driverName, force)
+            return labtronyx.ResourceBase.loadDriver(self, driverName, force)

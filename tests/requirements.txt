@@ -1,2 +1,4 @@
 mock
+pyvisa>=1.6
 pyvisa-sim
+pyserial>=2.7

@@ -8,41 +8,22 @@ These loads feature a Ethernet connection that hosts a web-based interface from
 which you can control the load much like you would if you were sitting in front
 of it.
 """
-from labtronyx.bases import Base_Driver
-from labtronyx.common.errors import *
-
-info = {
-    # Plugin author
-    'author':               'KKENNEDY',
-    # Plugin version
-    'version':              '1.0',
-    # Last Revision Date
-    'date':                 '2015-10-04',
-}
+import labtronyx
 
 
-class d_XBL(Base_Driver):
+class d_XBL(labtronyx.DriverBase):
     """
     Driver for TDI XBL Series DC Electronic Loads
     """
-    
-    info = {
-        # Device Manufacturer
-        'deviceVendor':         'TDI',
-        # List of compatible device models
-        'deviceModel':          ['XBL-50-150-800', 'XBL-100-120-800',
-                                 'XBL-400-120-800', 'XBL-600-40-800',
-                                 'XBL-50-400-2000', 'XBL-100-300-2000',
-                                 'XBL-400-300-2000', 'XBL-600-100-2000',
-                                 'XBL-50-1000-4000', 'XBL-100-600-4000',
-                                 'XBL-400-600-4000', 'XBL-600-200-4000',
-                                 'XBL-100-600-6000', 'XBL-400-600-6000',
-                                 'XBL-600-200-6000'],
-        # Device type    
-        'deviceType':           'DC Electronic Load',      
-        
-        # List of compatible resource types
-        'validResourceTypes':   ['Serial']
+    author = 'KKENNEDY'
+    version = '1.0'
+    deviceType = 'DC Electronic Load'
+    compatibleInterfaces = ['Serial']
+    compatibleInstruments = {
+        'TDI': ['XBL-50-150-800', 'XBL-100-120-800', 'XBL-400-120-800', 'XBL-600-40-800',
+                 'XBL-50-400-2000', 'XBL-100-300-2000', 'XBL-400-300-2000', 'XBL-600-100-2000',
+                 'XBL-50-1000-4000', 'XBL-100-600-4000', 'XBL-400-600-4000', 'XBL-600-200-4000',
+                 'XBL-100-600-6000', 'XBL-400-600-6000', 'XBL-600-200-6000']
     }
     
     modes = {
@@ -67,7 +48,7 @@ class d_XBL(Base_Driver):
         
     def getProperties(self):
         return {
-            'deviceVendor':     self.info['deviceVendor'],
+            'deviceVendor':     'TDI',
             'deviceModel':      self._model,
             'deviceSerial':     self._serial,
             'deviceFirmware':   self._fw

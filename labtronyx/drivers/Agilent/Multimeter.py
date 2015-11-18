@@ -3,41 +3,27 @@
 
 
 """
-from labtronyx.bases import Base_Driver
-from labtronyx.common.errors import *
+import labtronyx
 
 import time
 import re
 
-info = {
-    # Plugin author
-    'author':               'KKENNEDY',
-    # Plugin version
-    'version':              '1.0',
-    # Last Revision Date
-    'date':                 '2015-10-04',
-}
 
-class d_3441XA(Base_Driver):
+class d_3441XA(labtronyx.DriverBase):
     """
     Driver for Agilent 34410A and 34411A Digital Multimeter
     """
-    
-    info = {
-        # Device Manufacturer
-        'deviceVendor':         'Agilent',
-        # List of compatible device models
-        'deviceModel':          ['34410A', '34411A', 'L4411A'],
-        # Device type    
-        'deviceType':           'Multimeter',      
-        
-        # List of compatible resource types
-        'validResourceTypes':   ['VISA']
+    author = 'KKENNEDY'
+    version = '1.0'
+    deviceType = 'Multimeter'
+    compatibleInterfaces = ['VISA']
+    compatibleInstruments = {
+        'Agilent': ['34410A', '34411A', 'L4411A']
     }
 
     @classmethod
     def VISA_validResource(cls, identity):
-        return identity[0].upper() == 'AGILENT TECHNOLOGIES' and identity[1] in cls.info['deviceModel']
+        return identity[0].upper() == 'AGILENT TECHNOLOGIES' and identity[1] in cls.compatibleInstruments['Agilent']
     
     VALID_MODES = {
         'Capacitance': 'CAP',
@@ -122,6 +108,7 @@ class d_3441XA(Base_Driver):
         """
         # TODO: Expand docstring
         return dict(
+            deviceVendor='Agilent Technologies',
             validModes=self.VALID_MODES,
             validTriggerSources=self.VALID_TRIGGER_SOURCES,
             errorCodes=self.ERROR_CODES
@@ -189,9 +176,9 @@ class d_3441XA(Base_Driver):
 
         if len(errors) == 1:
             code, msg = errors[0]
-            raise DeviceError(msg.strip('"'))
+            raise labtronyx.DeviceError(msg.strip('"'))
         elif len(errors) > 1:
-            raise DeviceError("Multiple errors")
+            raise labtronyx.DeviceError("Multiple errors")
 
     def getError(self):
         """
@@ -305,7 +292,6 @@ class d_3441XA(Base_Driver):
 
         # Returns mode and a series of comma-separated fields indicating the preset function, range and resolution
         # We are only interested in the mode at the beginning. Use a regex to get the mode out of the string
-        import re
         re_mode = re.compile(r'([A-Z:]+)\s?([A-Z0-9,+\-.]*)')
         re_srch = re.search(re_mode, mode)
 

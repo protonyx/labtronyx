@@ -53,9 +53,6 @@ def build_package():
             "Topic :: Scientific/Engineering :: Interface Engine/Protocol Translator"
         ],
 
-        # Unit tests
-        test_suite="tests.test_suite",
-
         # Packages
         packages=find_packages(exclude=['tests']),
 
@@ -66,7 +63,7 @@ def build_package():
 
         # Dependencies
         install_requires=['flask', 'requests', 'pyzmq',
-                          'numpy'],
+                          'numpy', 'appdirs'],
 
         extras_require={
             'VISA': ['pyvisa>=1.6'],

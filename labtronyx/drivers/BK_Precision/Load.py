@@ -25,38 +25,21 @@ BK Precision provides a device for communicating with this class of DC load:
 `IT-132 USB-to-Serial Adapter`. The driver for this device can be found
 `here <https://bkpmedia.s3.amazonaws.com/downloads/software/ITE132_driver.zip>`_
 """
-from labtronyx.bases import Base_Driver
-from labtronyx.common.errors import *
-
-info = {
-    # Plugin author
-    'author':               'KKENNEDY',
-    # Plugin version
-    'version':              '1.0',
-    # Last Revision Date
-    'date':                 '2015-10-04',
-}
+import labtronyx
 
 
-class d_85XX(Base_Driver):
+class d_85XX(labtronyx.DriverBase):
     """
     Driver for BK Precision 8500 Series DC Loads
 
     Adapted from reference code provided by BK Precision
     """
-    
-    info = {
-        # Device Manufacturer
-        'deviceVendor':         'BK Precision',
-        # List of compatible device models
-        'deviceModel':          ['8500', '8502', 
-                                 '8510', '8512', '8514', '8518', 
-                                 '8520', '8522', '8524', '8526'],
-        # Device type    
-        'deviceType':           'DC Electronic Load',      
-        
-        # List of compatible resource types
-        'validResourceTypes':   ['Serial']
+    author = 'KKENNEDY'
+    version = '1.0'
+    deviceType = 'DC Electronic Load'
+    compatibleInterfaces = ['Serial']
+    compatibleInstruments = {
+        'BK Precision': ['8500', '8502', '8510', '8512', '8514', '8518', '8520', '8522', '8524', '8526']
     }
 
     address = 0
@@ -109,16 +92,22 @@ class d_85XX(Base_Driver):
         self.setLocalControl()
         
     def getProperties(self):
-        return {
-            'deviceVendor':        self.info.get('deviceVendor'),
-            'deviceModel':         self.prodInfo[0],
-            'deviceSerial':        self.prodInfo[1],
-            'deviceFirmware':      self.prodInfo[2],
+        ret = {
+            'deviceVendor':        'BK Precision',
             'validModes':          self.modes,
             'validTriggerSources': self.trigger_sources,
             'controlModes':        ['Voltage', 'Current', 'Power', 'Resistance'],
             'terminalSense':       ['Voltage', 'Current', 'Power']
         }
+
+        if self.isOpen():
+            ret.update({
+                'deviceModel':         self.prodInfo[0],
+                'deviceSerial':        self.prodInfo[1],
+                'deviceFirmware':      self.prodInfo[2],
+            })
+
+        return ret
     
     def _CommandProperlyFormed(self, cmd):
         """
@@ -178,8 +167,8 @@ class d_85XX(Base_Driver):
         '''
         assert(len(command) == self.length_packet)
         
-        self.instr.write_raw(command)
-        response = self.instr.read_raw(self.length_packet)
+        self.write_raw(command)
+        response = self.read_raw(self.length_packet)
         
         if self.debug:
             print "command:"
@@ -192,7 +181,7 @@ class d_85XX(Base_Driver):
             self.last_status = ord(response[3])
         
         else:
-            raise InvalidResponse
+            raise labtronyx.InvalidResponse("Invalid response received")
         
         return response
     

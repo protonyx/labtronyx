@@ -5,50 +5,42 @@ import os
 import mock
 
 import labtronyx
-from labtronyx.bases import Base_Resource, Base_Interface
+from labtronyx.bases import ResourceBase, InterfaceBase
+
 
 def test_interfaces():
     # Nose test generator to run unittests on discovered interfaces
     instr = labtronyx.InstrumentManager()
 
-    for interName, interCls in instr.plugin_manager.getPluginsByCategory('interfaces').items():
+    for interName, interCls in instr.plugin_manager.getPluginsByBaseClass(InterfaceBase).items():
         yield check_interface_api, interCls
 
+
 def check_interface_api(interfaceCls):
-    assert_true(hasattr(interfaceCls, 'info'))
+    assert_true(interfaceCls._validateClassAttributes())
 
 
-class Interface_Integration_Tests(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        self.manager = labtronyx.InstrumentManager()
+def test_interface_integration():
+    manager = labtronyx.InstrumentManager()
 
-        # Create a fake interface, imitating the interface API
-        self.interf = Base_Interface(manager=self.manager)
-        self.interf.open = mock.Mock(return_value=True)
-        self.interf.close = mock.Mock(return_value=True)
+    # Create a fake interface, imitating the interface API
+    class TestInterface(InterfaceBase):
+        interfaceName = 'Test'
+        open = mock.Mock(return_value=True)
+        close = mock.Mock(return_value=True)
+        enumerate = mock.Mock(return_value=True)
 
-        # Create a fake resource
-        self.res = Base_Resource(manager=self.manager,
-                                 interface=self.interf,
-                                 resID='DEBUG')
-        self.res.getProperties = mock.Mock(return_value=dict(resourceID= 'DEBUG'))
+    # Inject the fake plugin into the manager instance
+    manager.plugin_manager._plugins_classes['test.Test'] = TestInterface
 
-        # Inject the resource into the fake interface
-        self.interf._resources = {'DEBUG': self.res}
+    assert_true(manager.enableInterface('Test'))
+    assert_true(TestInterface.open.called)
+    assert_false(TestInterface.close.called)
+    assert_true(TestInterface.enumerate.called)
+    assert_true(manager.disableInterface('Test'))
+    assert_true(TestInterface.open.called)
 
-        # Inject the fake interface into the manager instance
-        self.manager._interfaces['interfaces.i_Debug'] = self.interf
-        
-    def test_resource(self):
-        self.dev = self.manager.findInstruments(resourceID='DEBUG')
-        self.assertEqual(type(self.dev), list)
-        self.assertEqual(len(self.dev), 1)
-
-        self.dev = self.dev[0]
-
-    def test_interface_get_properties(self):
-        self.manager.getProperties()
+    manager._close()
 
 
 class VISA_Sim_Tests(unittest.TestCase):
@@ -58,32 +50,64 @@ class VISA_Sim_Tests(unittest.TestCase):
         # Setup a mock manager
         cls.manager = labtronyx.InstrumentManager()
 
-        if 'TRAVIS' in os.environ or cls.manager._getInterface('VISA') is None:
+        if 'TRAVIS' in os.environ or cls.manager.interfaces.get('VISA') is None:
             lib_path = os.path.join(os.path.dirname(__file__), 'sim', 'default.yaml')
 
+            cls.manager.disableInterface('VISA')
             cls.manager.enableInterface('VISA', library='%s@sim'%lib_path)
 
-        cls.i_visa = cls.manager._getInterface('VISA')
+        interfaceInstancesByName = {pluginCls.interfaceName: pluginCls for plugin_uuid, pluginCls
+                                    in cls.manager.interfaces.items()}
+        cls.i_visa = interfaceInstancesByName.get('VISA')
 
-    def test_interface_visa_enumerate_time(self):
+    @classmethod
+    def tearDownClass(cls):
+        cls.manager._close()
+
+    def setUp(self):
+        if self.i_visa is None:
+            self.fail("VISA Interface not enabled")
+
+    def test_enumerate_time(self):
         import time
         start = time.clock()
         self.i_visa.enumerate()
         self.assertLessEqual(time.clock() - start, 1.0, "VISA refresh time must be less than 1.0 second(s)")
 
-    def test_interface_open(self):
-        self.assertIsNotNone(self.manager._getInterface('VISA'))
-
-    def test_interface_visa_get_resources(self):
-        ret = self.i_visa.resources
-        self.assertEqual(type(ret), dict)
-
-        with self.assertRaises(labtronyx.ResourceUnavailable):
-            self.manager.getResource('VISA', 'INVALID')
-
-    def test_interface_find_instruments(self):
-        dev_list = self.manager.findInstruments(interface='VISA')
+    def test_get_resources(self):
+        dev_list = self.manager.findInstruments(interfaceName='VISA')
         self.assertGreater(len(dev_list), 0)
+
+    def test_resource_api(self):
+        dev_list = self.manager.findInstruments(interfaceName='VISA')
+        test_res = dev_list[0]
+
+        # API Checks
+        self.check_get_configuration(test_res)
+        self.check_ops_error_while_closed(test_res)
+
+    def check_get_configuration(self, test_res):
+        # Get configuration
+        res_conf = test_res.getConfiguration()
+        self.assertEqual(type(res_conf), dict)
+
+    def check_ops_error_while_closed(self, test_res):
+        test_res.close()
+
+        with self.assertRaises(labtronyx.ResourceNotOpen):
+            test_res.write('BAD')
+
+        with self.assertRaises(labtronyx.ResourceNotOpen):
+            test_res.write_raw('BAD')
+
+        with self.assertRaises(labtronyx.ResourceNotOpen):
+            test_res.read()
+
+        with self.assertRaises(labtronyx.ResourceNotOpen):
+            test_res.read_raw(1)
+
+        with self.assertRaises(labtronyx.ResourceNotOpen):
+            test_res.query('BAD?')
 
 
 class VISA_Tests(unittest.TestCase):
@@ -91,24 +115,28 @@ class VISA_Tests(unittest.TestCase):
     def setUpClass(cls):
         cls.manager = labtronyx.InstrumentManager()
 
+        interfaceInstancesByName = {pluginCls.interfaceName: pluginCls for plugin_uuid, pluginCls
+                                    in cls.manager.interfaces.items()}
+
+        cls.i_visa = interfaceInstancesByName.get('VISA')
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.manager._close()
+
     def setUp(self):
-        if self.manager._getInterface('VISA') is None:
+        if 'VISA' not in self.manager.listInterfaces():
             self.skipTest('VISA library not installed')
 
-    def test_interface_visa_enumerate_time(self):
+    def test_enumerate_time(self):
         import time
         start = time.clock()
+        self.i_visa.enumerate()
+        end = time.clock()
 
-        i_visa = self.manager._getInterface('VISA')
-        i_visa.enumerate()
+        self.assertLessEqual(end - start, 1.0, "VISA refresh time must be less than 1.0 second(s)")
 
-        self.assertLessEqual(time.clock() - start, 1.0, "VISA refresh time must be less than 1.0 second(s)")
-
-    def test_interface_visa_get_resources(self):
-        i_visa = self.manager._getInterface('VISA')
-        ret = i_visa.resources
-        self.assertEqual(type(ret), dict)
-
+    def test_get_resource_invalid(self):
         with self.assertRaises(labtronyx.ResourceUnavailable):
             self.manager.getResource('VISA', 'INVALID')
 
@@ -118,9 +146,13 @@ class Serial_Tests(unittest.TestCase):
     def setUpClass(cls):
         cls.manager = labtronyx.InstrumentManager()
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.manager._close()
+
     def setUp(self):
-        if self.manager._getInterface('Serial') is None:
-            self.skipTest('Serial library not installed')
+        if 'Serial' not in self.manager.listInterfaces():
+            self.skipTest('Serial library not enabled')
 
     def test_get_resources(self):
         with self.assertRaises(labtronyx.ResourceUnavailable):

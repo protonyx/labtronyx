@@ -1,11 +1,30 @@
 Getting Started
 ===============
 
-This guide assumes a basic understanding of Python. It will guide the user 
-through the steps needed to connect to and control instruments.
+Introduction
+------------
 
-Creating an Instrument Manager
-------------------------------
+This guide assumes a basic understanding of Python. It will guide the user through the steps needed to connect to and
+control instruments.
+
+Use Cases
+---------
+
+There are a few ways to use Labtronyx for instrument automation:
+
+   * As a Python library
+
+     The primary use case for Labtronyx is as a Python library. This way, it can be imported into an existing script,
+     framework or application to enable automation with ease.
+
+
+   * Subclassing the Labtronyx Script class
+
+     If instrument automation is the primary purpose for your script or application, you can subclass the Labtronyx
+     script class.
+
+Labtronyx Python library
+------------------------
 
 The Instrument Manager is the core of the Labtronyx framework. It connects to
 all of the compatible interfaces and discovers connected instruments. To load
@@ -14,8 +33,8 @@ the Instrument Manager::
    import labtronyx
    instr = labtronyx.InstrumentManager()
 
-Connecting to Instruments
--------------------------
+Finding Instruments
+-------------------
 
 The command :func:`findInstruments` can be used to return a list of instruments. This will search all resources
 connected to the system for valid instruments::
@@ -23,7 +42,7 @@ connected to the system for valid instruments::
    dev_list = instr.findInstruments()
    
 Labtronyx may be able to discover additional information about resources that will help identify a specific instrument
-connected to the system. This requires that the instrument has some means to identify itself (like the VISA *IDN?
+connected to the system. This requires that the instrument has some means to identify itself (like the VISA `*IDN?`
 command) and a compatible Labtronyx driver for that instrument. For instruments with this capability, you can use
 the parameters to target specific instruments.
 
@@ -46,28 +65,25 @@ the system::
 
 Other parameters you can use to identify devices:
 
+   * resourceID
+   * interface
+   * driver
    * deviceVendor
    * deviceModel
    * deviceSerial
    * deviceFirmware
 
-Interfaces or drivers may specify additional parameters that can be used to identify instruments. See the driver
-documentation for your instrument to find out what else may be available.
-
-If the instrument does not have any means to identify itself, you must find the instrument using information about how
-the resource is connected to the system, such as:
-
-   * Interface (VISA, Serial, etc.)
-   * Location (COM Port, IP Address, etc.)
+Resources or drivers may specify additional properties that can be used to identify instruments. See the resource
+or driver documentation for your instrument to find out what else may be available.
 
 To connect to instruments by resource ID (interface dependent)::
 
    device = instr.findInstruments(resourceID='COM16')   # Serial
-   device = instr.findInstruments(resourceID='ASRL::9') # VISA
 
-Note::
+.. note::
 
-   `findInstruments` will always return a list of instrument objects, even if only one was found.
+   :func:`labtronyx.InstrumentManager.findInstruments` will always return a list of instrument objects, even if only one
+   was found.
 
 Loading and Unloading Drivers
 -----------------------------
@@ -93,6 +109,6 @@ Using Instruments
 -----------------
 
 When a driver is loaded for an instrument, additional methods are made available. For documentation on the available
-methods, see :doc:`Supported Instruments <instruments/index>` for the desired driver. It is also possible to send
+methods, see :doc:`Supported Instruments <instruments>` for the desired driver. It is also possible to send
 commands directly to the instrument using the :doc:`Resource API <api/resources>` for the interface where the instrument
 is connected.

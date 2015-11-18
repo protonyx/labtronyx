@@ -4,65 +4,53 @@ from nose.tools import * # PEP8 asserts
 import mock
 
 import labtronyx
-from labtronyx.bases import Base_Resource, Base_Driver, Base_Interface
+from labtronyx.bases import ResourceBase, DriverBase, InterfaceBase
 
-def setUpModule():
-    global instr
-    instr = labtronyx.InstrumentManager()
 
-def test_driver_api():
-    global instr
-    for driverName, driverCls in instr.drivers.items():
+def test_drivers():
+    manager = labtronyx.InstrumentManager()
+
+    for driver_uuid, driverCls in manager.plugin_manager.getPluginsByBaseClass(DriverBase).items():
         yield check_driver_api, driverCls
 
+
 def check_driver_api(driverCls):
-    assert_true(hasattr(driverCls, 'info'))
-    assert_in('deviceVendor', driverCls.info)
-    assert_in('deviceModel', driverCls.info)
-    assert_in('deviceType', driverCls.info)
-    assert_in('validResourceTypes', driverCls.info)
-
-    # Regression test
-    assert_false(hasattr(driverCls, '_onLoad'))
-    assert_false(hasattr(driverCls, '_onUnload'))
-
-    if 'VISA' in driverCls.info['validResourceTypes']:
+    if 'VISA' in driverCls.compatibleInterfaces:
         check_visa_api(driverCls)
 
+
 def check_visa_api(driverCls):
+    assert_true(driverCls._validateClassAttributes())
     assert_true(hasattr(driverCls, 'VISA_validResource'))
     assert_equal(type(driverCls.VISA_validResource(['','','',''])), bool)
 
+
 def test_driver_integration():
-    instr = labtronyx.InstrumentManager()
+    manager = labtronyx.InstrumentManager()
 
     # Create a fake interface, imitating the interface API
-    interf = Base_Interface(manager=instr)
+    interf = InterfaceBase(manager=manager)
     interf.info = dict(instrumentName='Debug')
     interf.open = mock.Mock(return_value=True)
     interf.close = mock.Mock(return_value=True)
 
     # Create a fake resource
-    res = Base_Resource(manager=instr,
-                             interface=interf,
-                             resID='DEBUG')
+    res = ResourceBase(manager=manager, interface=interf, resID='DEBUG')
     res.open = mock.Mock(return_value=True)
     res.isOpen = mock.Mock(return_value=True)
     res.close = mock.Mock(return_value=True)
 
     # Create a fake driver
-    driver = Base_Driver
+    driver = DriverBase
     driver.open = mock.Mock(return_value=True)
     driver.close = mock.Mock(return_value=True)
 
     # Inject the fake resource into the fake interface
     interf._resources = {'DEBUG': res}
 
-    # Inject the fake interface into the manager instance
-    instr._interfaces['interfaces.i_Debug'] = interf
-
-    # Inject the fake driver into the driver dict
-    instr._drivers['drivers.Debug'] = driver
+    # Inject the fake plugins into the manager
+    manager.plugin_manager._plugins_instances[interf.uuid] = interf
+    manager.plugin_manager._plugins_classes['drivers.Debug'] = driver
 
     # Load the driver
     res.loadDriver('drivers.Debug')

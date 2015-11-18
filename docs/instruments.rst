@@ -68,6 +68,7 @@ Regatron
 --------
 
   * :class:`GSS Power Supply <labtronyx.drivers.Regatron.Source.d_TopCon>`
+  * :class:`TopCon Power Supply <labtronyx.drivers.Regatron.Source.d_TopCon>`
 
 Sorensen
 --------

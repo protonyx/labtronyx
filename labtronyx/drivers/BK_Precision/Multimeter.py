@@ -21,34 +21,19 @@ with a baudrate of `9600`. This must be done on the instrument following the
 directions given in the
 `user's guide <https://bkpmedia.s3.amazonaws.com/downloads/manuals/en-us/2831Eand5491B_manual.pdf>`_
 """
-from labtronyx.bases import Base_Driver
-from labtronyx.common.errors import *
-
-info = {
-    # Plugin author
-    'author':               'KKENNEDY',
-    # Plugin version
-    'version':              '1.0',
-    # Last Revision Date
-    'date':                 '2015-10-04',
-}
+import labtronyx
 
 
-class d_2831(Base_Driver):
+class d_2831(labtronyx.DriverBase):
     """
     Driver for BK Precision 2831E and 5491B Digital Multimeters
     """
-    
-    info = {
-        # Device Manufacturer
-        'deviceVendor':         'BK Precision',
-        # List of compatible device models
-        'deviceModel':          ['2831E', '5491B', '5492B', '5492BGPIB'],
-        # Device type    
-        'deviceType':           'Multimeter',      
-        
-        # List of compatible resource types
-        'validResourceTypes':   ['VISA']
+    author = 'KKENNEDY'
+    version = '1.0'
+    deviceType = 'Multimeter'
+    compatibleInterfaces = ['VISA']
+    compatibleInstruments = {
+        'BK Precision': ['2831E', '5491B', '5492B', '5492BGPIB']
     }
 
     @classmethod
@@ -80,10 +65,16 @@ class d_2831(Base_Driver):
         pass
         
     def getProperties(self):
+        id_model = self.resource.getIdentity(0).split(' ')
+        if len(id_model) > 0:
+            model = id_model[0]
+        else:
+            model = 'Unknown'
+
         return {
             # Override VISA defaults, this device is different
-            'deviceVendor':        self.info.get('deviceVendor'),
-            'deviceModel':         self.getIdentity()[0].split(' ')[0],
+            'deviceVendor':        'BK Precision',
+            'deviceModel':         model,
 
             'validModes':          self.modes,
             'validTriggerSources': self.trigger_sources
@@ -343,5 +334,3 @@ class d_2831(Base_Driver):
             except ValueError:
                 # Try again
                 pass
-        
-        

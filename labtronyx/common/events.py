@@ -1,15 +1,74 @@
 import threading
 import zmq
 import logging
+import time
+import socket
+
+__all__ = ['EventPublisher', 'EventSubscriber', 'EventMessage', 'EventCodes']
+
+
+class EventPublisher(object):
+    """
+    Event broadcast class for Labtronyx
+
+    :param port:        Port to bind for event notifications
+    :type port:         int
+    """
+    HEARTBEAT_FREQ = 60.0 # Send heartbeat once per minute
+
+    def __init__(self, port):
+        self.port = port
+        self._zmq_context = zmq.Context()
+        self._zmq_socket = None
+
+        self._server_alive = threading.Event()
+        self._server_alive.clear()
+
+    def start(self):
+        # Start ZMQ Event publisher
+        self._zmq_socket = self._zmq_context.socket(zmq.PUB)
+        self._zmq_socket.bind("tcp://*:{}".format(self.port))
+
+        # Start heartbeat server
+        heartbeat_srv = threading.Thread(name='Labtronyx-Heartbeat-Server', target=self._heartbeat_server)
+        heartbeat_srv.setDaemon(True)
+        heartbeat_srv.start()
+
+    def _heartbeat_server(self):
+        last_heartbeat = 0.0
+        self._server_alive.set()
+
+        while self._server_alive.isSet():
+            if time.time() - last_heartbeat > self.HEARTBEAT_FREQ:
+                self.publishEvent(EventCodes.manager.heartbeat)
+                last_heartbeat = time.time()
+            time.sleep(0.5) # Low sleep time to ensure we shutdown in a timely manor
+
+    def stop(self):
+        # Stop heartbeat server
+        self._server_alive.clear()
+
+        # Close ZMQ socket
+        if self._zmq_socket is not None:
+            self._zmq_socket.close()
+            self._zmq_socket = None
+
+    def publishEvent(self, event, *args, **kwargs):
+        if self._zmq_socket is not None:
+            self._zmq_socket.send_json({
+                'labtronyx-event': '1.0',
+                'hostname': socket.gethostname(),
+                'event': str(event),
+                'args': args,
+                'params': kwargs
+            })
 
 
 class EventSubscriber(object):
     """
     Subscribe to events broadcast by the Labtronyx Server. Run asynchronously in a separate thread to prevent the need
-    for continuous polling.
-
-    :param host:        Hostname or IP address to connect to
-    :type host:         str
+    for continuous polling. Use `connect` to listen for notifications from a remote server. A single `EventSubscriber`
+    object can listen to multiple servers.
     """
     ZMQ_PORT = 6781
     POLL_TIME = 100 # ms
@@ -45,12 +104,11 @@ class EventSubscriber(object):
                 for idx in range(in_waiting):
                     msg = self._socket.recv_json()
 
-                    event = msg.get('event')
-                    args = msg.get('args')
+                    msg_obj = EventMessage(msg)
 
-                    self.logger.debug("Received event: %s", event)
+                    self.logger.debug("Received event: %s", msg_obj.event)
 
-                    self.handleMsg(event, args)
+                    self.handleMsg(msg_obj)
 
         self._socket.close()
 
@@ -74,22 +132,22 @@ class EventSubscriber(object):
         uri = "tcp://{}:{}".format(host, self.ZMQ_PORT)
         self._socket.disconnect(uri)
 
-    def handleMsg(self, event, args):
+    def handleMsg(self, event):
         """
         Default message handler. Dispatches events to registered callbacks. Overload in subclasses to change how
         messages are dispatched.
 
         :param event:       Event
-        :type event:        str
-        :param args:        Arguments
-        :type args:         dict
+        :type event:        EventMessage object
         """
-        if event in self._callbacks:
-            self._callbacks.get(event)(event, args)
+        code = event.event
+
+        if code in self._callbacks:
+            self._callbacks.get(code)(event)
 
         else:
             if '' in self._callbacks:
-                self._callbacks.get('')(event, args)
+                self._callbacks.get('')(event)
 
     def registerCallback(self, event, cb_func):
         """
@@ -110,21 +168,46 @@ class EventSubscriber(object):
         self._client_alive.clear()
 
 
-class ManagerEvents(object):
+class EventMessage(object):
+    def __init__(self, json_msg):
+        self.version = json_msg.get('labtronyx-event')
 
-    shutdown = "MANAGER_SHUTDOWN"
+        self.hostname = json_msg.get('hostname')
+        self.event = json_msg.get('event')
 
-    heartbeat = "MANAGER_HEARTBEAT"
+        self.args = json_msg.get('args', [])
+        self.params = json_msg.get('params', {})
+
+    def __len__(self):
+        return len(self.args)
+
+    def __getitem__(self, item):
+        return self.args[item]
+
+    def __getattr__(self, item):
+        return self.params.get(item)
 
 
-class ResourceEvents(object):
+class EventCodes:
+    class manager:
+        shutdown = "manager.shutdown"
+        heartbeat = "manager.heartbeat"
 
-    created = "RESOURCE_CREATED"
+    class interface:
+        created = "interface.created"
+        destroyed = "interface.destroyed"
+        changed = "interface.changed"
 
-    destroyed = "RESOURCE_DESTROYED"
+    class resource:
+        created = "resource.created"
+        destroyed = "resource.destroyed"
+        changed = "resource.changed"
+        driver_loaded = "resource.driver.loaded"
+        driver_unloaded = "resource.driver.unloaded"
 
-    status_changed = "RESOURCE_STATUS"
-
-    driver_load = "DRIVER_LOADED"
-
-    driver_unload = "DRIVER_UNLOADED"
+    class script:
+        created = "script.created"
+        changed = "script.changed"
+        destroyed = "script.destroyed"
+        finished = "script.finished"
+        log = "script.log"

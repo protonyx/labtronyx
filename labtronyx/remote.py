@@ -2,7 +2,8 @@
 
 # Local Imports
 from . import common
-from .common.rpc import RpcClient, RpcServerException
+from .common.rpc import RpcClient
+from .common.errors import RpcServerException
 
 __all__ = ['RemoteManager', 'RemoteResource']
 
@@ -35,8 +36,12 @@ class RemoteManager(LabtronyxRpcClient):
 
     Optional Parameters:
 
-    :param port:        TCP port to connect to
-    :type port:         int
+    :param port:           TCP port to connect to
+    :type port:            int
+    :param timeout:        Request timeout (seconds)
+    :type timeout:         float
+    :param logger:         Logger
+    :type logger:          logging.Logger
     """
     RPC_PORT = 6780
 
@@ -52,46 +57,56 @@ class RemoteManager(LabtronyxRpcClient):
 
         super(RemoteManager, self).__init__(uri, **kwargs)
 
-        self._resources = {}
-        
+        self._remote_clients = {}
+        self._properties = {}
+
+        # Test the connection
+        self._version = self._rpcCall('getVersion')
+
     def refresh(self):
         """
         Query the InstrumentManager resources and create RemoteResource objects
         for new resources
         """
-        self._rpcNotify('refresh')
+        self._rpcCall('refresh')
 
-        prop = self._rpcCall('getProperties')
+        self._properties = self._rpcCall('getProperties')
+
+        REMOTE_PLUGIN_MAP = {
+            'resource':  RemoteResource,
+            'interface': LabtronyxRpcClient,
+            'script':    LabtronyxRpcClient
+        }
         
-        for res_uuid, res_dict in prop.items():
-            if res_uuid not in self._resources:
-                uri = "http://{0}:{1}/rpc/{2}".format(self.host, self.port, res_uuid)
-
-                instr = RemoteResource(uri, timeout=self.timeout, logger=self.logger)
-                self._resources[res_uuid] = instr
+        for plug_uuid, plug_props in self._properties.items():
+            if plug_uuid not in self._remote_clients:
+                uri = "http://{0}:{1}/rpc/{2}".format(self.host, self.port, plug_uuid)
+                remote_class = REMOTE_PLUGIN_MAP.get(plug_props.get('pluginType'), LabtronyxRpcClient)
+                self._remote_clients[plug_uuid] = remote_class(uri, timeout=self.timeout, logger=self.logger)
         
         # Purge resources that are no longer in remote
-        for res_uuid in self._resources.keys():
-            if res_uuid not in prop:
-                self._resources.pop(res_uuid)
+        for plug_uuid in self._remote_clients.keys():
+            if plug_uuid not in self._properties:
+                del self._remote_clients[plug_uuid]
 
-    def _getResource(self, res_uuid):
-        """
-        Returns a resource object given the Resource UUID
-                
-        :param res_uuid: Unique Resource Identifier (UUID)
-        :type res_uuid: str
-        :returns: RemoteResource object
-        """
-        if res_uuid in self._resources:
-            return self._resources.get(res_uuid)
-        
-        else:
-            self.refresh()
-            return self._resources.get(res_uuid)
+    def _clients_by_type(self, pluginType):
+        return {uuid: self._remote_clients.get(uuid) for uuid, props in self._properties.items()
+                if props.get('pluginType') == pluginType}
+
+    @property
+    def scripts(self):
+        return self._clients_by_type('script')
+
+    @property
+    def interfaces(self):
+        return self._clients_by_type('interface')
+
+    @property
+    def resources(self):
+        return self._clients_by_type('resource')
     
     def getResource(self, interface, resID, driverName=None):
-        self._rpcNotify(interface, resID, driverName)
+        self._rpcNotify('getResource', interface, resID, driverName)
 
         res_list = self.findResources(interface=interface, resID=resID)
 
@@ -113,10 +128,12 @@ class RemoteManager(LabtronyxRpcClient):
         :returns: list
         """
         matching_instruments = []
+        props = self._rpcCall('getProperties')
+
+        # Force resource plugin types
+        kwargs['pluginType'] = 'resource'
         
-        prop = self._rpcCall('getProperties')
-        
-        for uuid, res_dict in prop.items():
+        for res_uuid, res_dict in props.items():
             match = True
             
             for key, value in kwargs.items():
@@ -125,7 +142,8 @@ class RemoteManager(LabtronyxRpcClient):
                     break
                 
             if match:
-                matching_instruments.append(self._getResource(uuid))
+                if res_uuid in self.resources:
+                    matching_instruments.append(self.resources.get(res_uuid))
                 
         return matching_instruments
     
@@ -137,4 +155,27 @@ class RemoteManager(LabtronyxRpcClient):
 
 
 class RemoteResource(LabtronyxRpcClient):
-    pass
+    """
+    Labtronyx Remote Resource
+
+    Provides convenience properties `uuid`, `resID` and `driver` similar to BaseResource API.
+    """
+
+    def __init__(self, uri, **kwargs):
+        LabtronyxRpcClient.__init__(self, uri, **kwargs)
+
+    @property
+    def properties(self):
+        return self.getProperties()
+
+    @property
+    def uuid(self):
+        return self.properties.get('uuid')
+
+    @property
+    def resID(self):
+        return self.properties.get('resourceID')
+
+    @property
+    def driver(self):
+        return self.properties.get('driver')
