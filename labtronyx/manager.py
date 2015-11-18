@@ -222,6 +222,25 @@ class InstrumentManager(object):
     # Plugin Operations
     ############################################################################
 
+    def addPluginSearchDirectory(self, path):
+        """
+        Add a search path for plugins. Directory will be searched immediately and all discovered plugins will be
+        cataloged. If a search path has already been searched, it will not be searched again. Interfaces will not be
+        started automatically. Use :func:`enableInterface` to start the interface once it has been discovered.
+
+        :param path: Search directory
+        :type path: str
+        """
+        self.plugin_manager.search(path)
+
+    def getPluginSearchDirectories(self):
+        """
+        Get a list of all the searched paths for plugins.
+
+        :rtype: list
+        """
+        return self.plugin_manager.directories
+
     def getAttributes(self):
         """
         Get the class attributes for all loaded plugins. Dictionary keys are the Fully Qualified Names (FQN) of the
