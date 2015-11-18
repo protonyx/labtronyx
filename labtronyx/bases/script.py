@@ -118,9 +118,9 @@ import time
 import threading
 import ctypes
 import logging
-from logging.handlers import BufferingHandler
 
 # Package relative imports
+from ..common.log import RotatingMemoryHandler, CallbackLogHandler
 from ..common import events
 from ..common.errors import *
 from ..common.plugin import PluginBase, PluginAttribute, PluginParameter, PluginDependency
@@ -237,7 +237,7 @@ class ScriptBase(PluginBase):
 
         :return: list
         """
-        return [self._handler_mem.format(record) for record in self._handler_mem.buffer]
+        return self._handler_mem.getBuffer()
 
     def _validateParameters(self):
         """
@@ -816,19 +816,3 @@ class ScriptResult(object):
 
 class ScriptStopException(RuntimeError):
     pass
-
-
-class RotatingMemoryHandler(BufferingHandler):
-    def emit(self, record):
-        self.buffer.append(record)
-        if len(self.buffer) > self.capacity:
-            del self.buffer[0]
-
-
-class CallbackLogHandler(logging.Handler):
-    def __init__(self, callback):
-        logging.Handler.__init__(self)
-        self._callback = callback
-
-    def emit(self, record):
-        self._callback(self.format(record))

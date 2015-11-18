@@ -11,6 +11,8 @@ from . import version
 from . import bases
 from . import common
 from .common import server
+from .common.log import RotatingMemoryHandler
+from . import log_formatter
 
 
 class InstrumentManager(object):
@@ -43,6 +45,11 @@ class InstrumentManager(object):
 
         else:
             self.logger = logging.getLogger('labtronyx')
+
+        # Memory logger
+        self._handler_mem = RotatingMemoryHandler(100)
+        self._handler_mem.setFormatter(log_formatter)
+        self.logger.addHandler(self._handler_mem)
 
         # Initialize PYTHONPATH
         self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.curdir)))
@@ -94,6 +101,14 @@ class InstrumentManager(object):
             self.disableInterface(inter_uuid)
 
         self.plugin_manager.destroyAllPluginInstances()
+
+    def getLog(self):
+        """
+        Get the last 100 log entries
+
+        :return: list
+        """
+        return self._handler_mem.getBuffer()
 
     #===========================================================================
     # Labtronyx Server
