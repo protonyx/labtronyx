@@ -76,10 +76,29 @@ def runScriptMain():
         raise EnvironmentError("More than one script object found, unable to choose")
 
     else:
-        script_cls = main_scripts[0]
-        script_obj = script_cls(instr_manager, logger=logger)
+        import argparse
 
-        script_result = script_obj.start()
+        script_cls = main_scripts[0]
+        script_attrs = script_cls.getClassAttributes()
+        script_params = script_cls.getParameterInfo()
+
+        # Build CLI argument parser
+        parser = argparse.ArgumentParser(description=script_attrs.get('description'))
+        for param_attr, param_info in script_params.items():
+            parser.add_argument("--" + param_attr,
+                required=param_info.get('required', False),
+                help=param_info.get('description')
+            )
+        args = parser.parse_args()
+
+        cli_params = {p_attr: getattr(args, p_attr) for p_attr in script_params}
+
+        script_obj = script_cls(instr_manager, logger=logger, **cli_params)
+        script_obj.start()
+        script_obj.join()
+
+        script_result = script_obj.current_test_result
+
         if script_result.result == ScriptResult.PASS:
             sys.exit(0)
         else:
