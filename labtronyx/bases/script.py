@@ -432,6 +432,16 @@ class ScriptBase(PluginBase):
         if self.isRunning():
             return self._scriptThread.kill(ScriptStopException)
 
+    def join(self, timeout=None):
+        """
+        Wait until the script thread has completed and is no longer alive.
+
+        :param timeout: timeout before returning
+        :type timeout: float
+        """
+        if isinstance(self._scriptThread, ScriptThread) and self._scriptThread.isAlive():
+            self._scriptThread.join(timeout)
+
     def setUp(self):
         """
         Method called to prepare the script for execution. `setUp` is called immediately before `run`. Any exception
@@ -683,6 +693,7 @@ class ScriptThread(threading.Thread):
         :rtype: bool
         """
         if self.isAlive():
+            self.result.result = ScriptResult.STOPPED
             res = ctypes.pythonapi.PyThreadState_SetAsyncExc(self.ident, ctypes.py_object(exc_type))
 
             if res != 1:
@@ -706,7 +717,6 @@ class ScriptThread(threading.Thread):
 
         except ScriptStopException as e:
             self.script.logger.info("Script Stopped: %s", e.message)
-            self.result.result = ScriptResult.STOPPED
             self.result.reason = "Script stopped"
 
         except Exception as e:

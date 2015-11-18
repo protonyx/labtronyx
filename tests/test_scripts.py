@@ -18,12 +18,7 @@ def test_scripts():
 
     assert(scr.isReady())
     scr.start()
-
-    time.sleep(0.1)  # test spin-up
-
-    # wait until done
-    while scr.isRunning():
-        pass
+    scr.join()
 
     props = scr.getProperties()
 
