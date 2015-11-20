@@ -2,29 +2,33 @@
 Console script used to start Labtronyx in Server mode
 """
 import os
+import argparse
+import appdirs
+
+import labtronyx
+labtronyx.logConsole()
 
 
 def main(search_dirs=None):
-    # Interactive Mode
-    import labtronyx
-    labtronyx.logConsole()
+    parse = argparse.ArgumentParser(description="Labtronyx Automation Framework")
+    parse.add_argument('-d', dest='dirs', nargs='*', help='plugin search directory')
+    args = parse.parse_args()
 
     # Add OS-specific application data folders to search for plugins
     if search_dirs is None:
         search_dirs = []
 
-    try:
-        import appdirs
-        dirs = appdirs.AppDirs("Labtronyx", roaming=True)
-        if not os.path.exists(dirs.site_data_dir):
-            os.makedirs(dirs.site_data_dir)
-        search_dirs.append(dirs.site_data_dir)
+    dirs = appdirs.AppDirs("Labtronyx", roaming=True)
+    if not os.path.exists(dirs.site_data_dir):
+        os.makedirs(dirs.site_data_dir)
+    search_dirs.append(dirs.site_data_dir)
 
-        if not os.path.exists(dirs.user_data_dir):
-            os.makedirs(dirs.user_data_dir)
-        search_dirs.append(dirs.user_data_dir)
-    except:
-        pass
+    if not os.path.exists(dirs.user_data_dir):
+        os.makedirs(dirs.user_data_dir)
+    search_dirs.append(dirs.user_data_dir)
+
+    if args.dirs is not None:
+        search_dirs += args.dirs
 
     # Instantiate an InstrumentManager
     man = labtronyx.InstrumentManager(plugin_dirs=search_dirs)
