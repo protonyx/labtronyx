@@ -1,9 +1,12 @@
 import logging
+import os
 
 
 class BaseController(object):
     def __init__(self):
         self._views = []
+
+        self.rootPath = os.path.dirname(os.path.realpath(os.path.join(__file__, os.pardir)))
 
         self.__logger = logging.getLogger('labtronyx-gui')
 

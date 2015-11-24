@@ -12,9 +12,14 @@ labtronyx.logConsole()
 
 def main(search_dirs=None):
     parse = argparse.ArgumentParser(description="Labtronyx Automation Framework")
+    parse.add_argument('-g', dest='gui', action='store_const', const=True)
     parse.add_argument('-d', dest='dirs', nargs='*', help='plugin search directory')
     args = parse.parse_args()
 
+    if args.gui:
+        launch_gui()
+        return
+    
     # Add OS-specific application data folders to search for plugins
     if search_dirs is None:
         search_dirs = []

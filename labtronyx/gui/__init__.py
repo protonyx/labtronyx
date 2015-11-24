@@ -3,4 +3,9 @@ Labtronyx GUI Package
 """
 
 from . import controllers
-from . import wx_views
+
+try:
+    from . import wx_views
+
+except ImportError:
+    pass

@@ -2,6 +2,7 @@ __author__ = 'kkennedy'
 
 # System Imports
 import sys
+import os
 import logging
 import traceback
 
@@ -134,9 +135,12 @@ class MainView(FrameViewBase):
         # Build image list
         isz = (16, 16)
         self.il = wx.ImageList(*isz)
-        self.art_resource = self.il.Add(wx.Image("images/hard-drive-2x.png", wx.BITMAP_TYPE_PNG).ConvertToBitmap())
-        self.art_interface = self.il.Add(wx.Image("images/fork-2x.png", wx.BITMAP_TYPE_PNG).ConvertToBitmap())
-        self.art_script = self.il.Add(wx.Image("images/file-2x.png", wx.BITMAP_TYPE_PNG).ConvertToBitmap())
+        self.art_resource = self.il.Add(wx.Image(
+            os.path.join(self.controller.rootPath, "images", "hard-drive-2x.png"), wx.BITMAP_TYPE_PNG).ConvertToBitmap())
+        self.art_interface = self.il.Add(wx.Image(
+            os.path.join(self.controller.rootPath, "images", "fork-2x.png"), wx.BITMAP_TYPE_PNG).ConvertToBitmap())
+        self.art_script = self.il.Add(wx.Image(
+            os.path.join(self.controller.rootPath, "images", "file-2x.png"), wx.BITMAP_TYPE_PNG).ConvertToBitmap())
 
         self.tree.SetImageList(self.il)
 
