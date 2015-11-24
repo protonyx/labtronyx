@@ -39,6 +39,13 @@ def main(search_dirs=None):
     except KeyboardInterrupt:
         man.server_stop()
 
+
+def launch_gui():
+    controller = labtronyx.gui.controllers.MainApplicationController()
+    labtronyx.gui.wx_views.wx_main.main(controller)
+    controller._stop()
+
+
 if __name__ == "__main__":
     main()
 

@@ -67,13 +67,17 @@ def build_package():
 
         extras_require={
             'VISA': ['pyvisa>=1.6'],
-            'Serial': ['pyserial>=2.7']
+            'Serial': ['pyserial>=2.7'],
+            'gui': ['wx']
         },
 
         # Script entry points
         entry_points={
             'console_scripts': [
                 'labtronyx = labtronyx.cli:main',
+            ],
+            'gui_scripts': [
+                'labtronyx-gui = labtronyx.cli:launch_gui'
             ]
         },
 
