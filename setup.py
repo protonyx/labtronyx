@@ -63,6 +63,7 @@ def build_package():
 
         # Dependencies
         install_requires=['flask', 'requests', 'pyzmq',
+                          'python-dateutil',
                           'numpy', 'appdirs'],
 
         extras_require={

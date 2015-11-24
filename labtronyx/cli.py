@@ -6,6 +6,7 @@ import argparse
 import appdirs
 
 import labtronyx
+import labtronyx.gui
 labtronyx.logConsole()
 
 
