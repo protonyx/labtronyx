@@ -123,6 +123,8 @@ class MainView(FrameViewBase):
 
         # File
         self.menu_file = wx.Menu()
+        item = self.menu_file.Append(-1, "C&onnect to Host")
+        self.Bind(wx.EVT_MENU, self.e_MenuConnect, item)
         item = self.menu_file.Append(-1, "E&xit\tCtrl-Q", "Exit")
         self.Bind(wx.EVT_MENU, self.e_MenuExit, item)
 
@@ -217,6 +219,20 @@ class MainView(FrameViewBase):
 
         self.tree.SortChildren(self.pnode_resources)
         self.tree.Expand(self.pnode_resources)
+
+    def e_MenuConnect(self, event):
+        diag = ManagerAddDialog(self, self.controller)
+        ret_code = diag.ShowModal()
+
+        if ret_code != wx.ID_OK:
+            return
+
+        host = diag.getHostname()
+        port = int(diag.getPort())
+
+        ret = self.controller.add_host(host, port)
+
+        self.updateHostSelector()
 
     def e_MenuExit(self, event):
         self.Close(True)
@@ -350,3 +366,46 @@ class WxLogHandler(logging.Handler):
 
     def wx_emit(self, record):
         self.control.AppendText('\n' + self.format(record))
+
+
+class ManagerAddDialog(DialogViewBase):
+    def __init__(self, parent, controller):
+        assert (isinstance(controller, MainApplicationController))
+        super(ManagerAddDialog, self).__init__(parent, controller, id=wx.ID_ANY, title="Connect to Host")
+
+        lbl = wx.StaticText(self, -1, "Connect to Host")
+        lbl.SetFont(wx.Font(12, wx.SWISS, wx.NORMAL, wx.BOLD))
+
+        contentSizer = wx.FlexGridSizer(cols=2, hgap=5, vgap=5)
+        contentSizer.Add(wx.StaticText(self, -1, "Hostname"), 0, wx.ALIGN_RIGHT | wx.RIGHT, 5)
+        self.txtHostname = wx.TextCtrl(self, -1, size=(150, -1))
+        contentSizer.Add(self.txtHostname, 1, wx.ALIGN_LEFT | wx.EXPAND)
+
+        contentSizer.Add(wx.StaticText(self, -1, "Port"), 0, wx.ALIGN_RIGHT | wx.RIGHT, 5)
+        self.txtPort = wx.TextCtrl(self, -1, size=(150, -1))
+        contentSizer.Add(self.txtPort, 1, wx.ALIGN_LEFT | wx.EXPAND)
+
+        btnOk = wx.Button(self, wx.ID_OK, "&Ok")
+        btnOk.SetDefault()
+        btnCancel = wx.Button(self, wx.ID_CANCEL, "&Cancel")
+
+        btnSizer = wx.StdDialogButtonSizer()
+        btnSizer.AddButton(btnOk)
+        btnSizer.AddButton(btnCancel)
+        btnSizer.Realize()
+
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(lbl, 0, wx.EXPAND | wx.ALL, border=5)
+        mainSizer.Add(wx.StaticLine(self), 0, wx.EXPAND | wx.ALL, border=5)
+        mainSizer.Add(contentSizer, 0, wx.EXPAND | wx.ALL, border=5)
+        mainSizer.Add(wx.StaticLine(self), 0, wx.EXPAND | wx.ALL, border=5)
+        mainSizer.Add(btnSizer, 0, wx.ALL | wx.ALIGN_RIGHT, border=5)
+
+        self.SetSizer(mainSizer)
+        mainSizer.Fit(self)
+
+    def getHostname(self):
+        return self.txtHostname.GetValue()
+
+    def getPort(self):
+        return self.txtPort.GetValue()
