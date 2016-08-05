@@ -47,6 +47,10 @@ class RpcClient(object):
     RETRY_ATTEMPTS = 3
     RPC_MAX_PACKET_SIZE = 1048576 # 1MB
 
+    CLIENT_HEADERS = {
+        'user-agent': 'Labtronyx-RPC/1.0.0'
+    }
+
     def __init__(self, uri, **kwargs):
 
         self.uri = uri
@@ -95,9 +99,9 @@ class RpcClient(object):
             raise exception_object
 
     def _getMethods(self):
-        resp_data = requests.get(self.uri)
+        resp_data = self.__sendGetRequest()
 
-        return json.loads(resp_data.text).get('methods')
+        return json.loads(resp_data).get('methods')
 
     @staticmethod
     def __getNextId():
@@ -107,19 +111,20 @@ class RpcClient(object):
             next_id += 1
             yield next_id
 
-    def __sendRequest(self, rpc_request):
+    def __sendGetRequest(self):
+        resp_data = self._reqSession.get(self.uri, headers=self.CLIENT_HEADERS, timeout=self.timeout)
+
+        return resp_data.text
+
+    def __sendPostRequest(self, rpc_request):
         for attempt in range(1, self.RETRY_ATTEMPTS + 1):
             try:
                 # Encode the RPC Request
                 data = self.engine.encode([rpc_request], [])
 
-                headers = {
-                    'user-agent': 'Labtronyx-RPC/1.0.0'
-                }
-
                 # Send the encoded request
                 with self.rpc_lock:
-                    resp_data = self._reqSession.post(self.uri, data, headers=headers, timeout=self.timeout)
+                    resp_data = self._reqSession.post(self.uri, data, headers=self.CLIENT_HEADERS, timeout=self.timeout)
 
                 # Check status code
                 if resp_data.status_code is not 200:
@@ -172,14 +177,14 @@ class RpcClient(object):
         req = RpcRequest(method=remote_method, args=args, kwargs=kwargs, id=self.__getNextId().next())
 
         # Decode the returned data
-        data = self.__sendRequest(req)
+        data = self.__sendPostRequest(req)
 
         return self.__decodeResponse(data)
 
     def _rpcNotify(self, remote_method, *args, **kwargs):
         req = RpcRequest(method=remote_method, args=args, kwargs=kwargs)
 
-        self.__sendRequest(req)
+        self.__sendPostRequest(req)
 
     def __str__(self):
         return '<RPC @ %s>' % (self.uri)

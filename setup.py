@@ -63,17 +63,22 @@ def build_package():
 
         # Dependencies
         install_requires=['flask', 'requests', 'pyzmq',
+                          'python-dateutil',
                           'numpy', 'appdirs'],
 
         extras_require={
             'VISA': ['pyvisa>=1.6'],
-            'Serial': ['pyserial>=2.7']
+            'Serial': ['pyserial>=2.7'],
+            'gui': ['wx']
         },
 
         # Script entry points
         entry_points={
             'console_scripts': [
                 'labtronyx = labtronyx.cli:main',
+            ],
+            'gui_scripts': [
+                'labtronyx-gui = labtronyx.cli:launch_gui'
             ]
         },
 
