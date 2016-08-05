@@ -1,7 +1,7 @@
 Resources
 =========
 
-General information about resources can be found at :doc:`../api/resources`
+All resources must implement the Resource API:
 
 .. automodule:: labtronyx.bases.resource
    :members:

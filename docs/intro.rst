@@ -4,47 +4,83 @@ Getting Started
 Introduction
 ------------
 
-This guide assumes a basic understanding of Python. It will guide the user through the steps needed to connect to and
-control instruments.
+The primary use case for Labtronyx is as a Python library. This way, it can be imported into an existing script,
+framework or application to enable automation with ease. Once Labtronyx is installed, it can be imported and used as
+a module::
 
-Use Cases
----------
-
-There are a few ways to use Labtronyx for instrument automation:
-
-   * As a Python library
-
-     The primary use case for Labtronyx is as a Python library. This way, it can be imported into an existing script,
-     framework or application to enable automation with ease.
-
-
-   * Subclassing the Labtronyx Script class
-
-     If instrument automation is the primary purpose for your script or application, you can subclass the Labtronyx
-     script class.
-
-Labtronyx Python library
-------------------------
-
-The Instrument Manager is the core of the Labtronyx framework. It connects to
-all of the compatible interfaces and discovers connected instruments. To load
-the Instrument Manager::
-   
    import labtronyx
    instr = labtronyx.InstrumentManager()
+
+The Instrument Manager is the core of the Labtronyx framework. It connects to all of the compatible interfaces and
+discovers connected instruments. The command :func:`findInstruments` can be used to return a list of connected
+instruments.::
+
+   dev_list = instr.findInstruments()
+
+.. note::
+
+   :func:`labtronyx.InstrumentManager.findInstruments` will always return a list of instrument objects, even if only one
+   was found.
+
+To find a specific instrument connected to a specific port, you can specify the resourceID parameter to pinpoint which
+instrument you would like. This requires some knowledge of how the instrument is connected to the system::
+
+   device = instr.findInstruments(resourceID='COM16')   # Serial
+   device = instr.findInstruments(resourceID='ASRL::16') # VISA
+
+Additional :class:`labtronyx.InstrumentManager` methods can be found here: :doc:`InstrumentManager API <api/manager>`.
+
+Using Instruments
+-----------------
+
+Instruments are objects that allow you to control a physical device connected to the system. Instruments interact with
+the physical device through a `Resource` object which is managed by an interface connector (such as VISA, Serial, USB,
+etc). Before you can do anything with an instrument, it must be opened. Opening an instrument allows Labtronyx to
+communicate with the physical device and also acquires a lock to prevent other software on your computer from
+controlling this device as well.::
+
+   device.open()
+
+By default, instruments contain only a small set of methods to interact with a device
+(see :doc:`Resource API <api/resources>`). These methods allow you to read and write to the device, but it has no
+knowledge of the capabilities of the device or the commands required to interact with that particular device.::
+
+   device.write('*IDN?')
+   identity = device.read()
+
+In order to access the full capabilities of a device, you must load a `Driver`. When a driver is loaded for an
+instrument, additional methods are made available that may allow you to interact with the device without having to know
+all of the commands a device supports. Some interfaces, such as VISA, support automatically loading a `Driver` by using
+a discovery process supported by a majority of commercially available devices. For devices that do not support
+discovery, you will need to load a driver manually.::
+
+   device_list = instr.findInstruments(resourceID='ASRL::9')
+
+   if len(device_list) > 0:
+       instrument = device_list[0]
+
+       instrument.loadDriver('drivers.BK_Precision.Load.m_85XX')
+
+Similarly, to unload a driver::
+
+   instrument.unloadDriver()
+
+Once a driver is loaded, you can interact with the device using methods specific to that device. For documentation on
+the supported instruments and available commands for those instruments, see :doc:`Supported Instruments <instruments>`.
 
 Finding Instruments
 -------------------
 
-The command :func:`findInstruments` can be used to return a list of instruments. This will search all resources
-connected to the system for valid instruments::
+If a driver is loaded for a particular instrument, you may be able to find instruments based on device metadata:
 
-   dev_list = instr.findInstruments()
-   
-Labtronyx may be able to discover additional information about resources that will help identify a specific instrument
-connected to the system. This requires that the instrument has some means to identify itself (like the VISA `*IDN?`
-command) and a compatible Labtronyx driver for that instrument. For instruments with this capability, you can use
-the parameters to target specific instruments.
+   * Manufacturer
+   * Device Type
+   * Serial Number
+   * Model Number
+
+To find devices by Manufacturer::
+
+   dev = instr.findInstruments(deviceVendor='Tektronix')
 
 To connect to instruments by type::
 
@@ -74,41 +110,46 @@ Other parameters you can use to identify devices:
    * deviceFirmware
 
 Resources or drivers may specify additional properties that can be used to identify instruments. See the resource
-or driver documentation for your instrument to find out what else may be available.
+or driver documentation for your instrument to find out what else may be available. See
+:doc:`Supported Instruments <instruments>`.
 
-To connect to instruments by resource ID (interface dependent)::
+Instrument Metadata (Properties)
+--------------------------------
 
-   device = instr.findInstruments(resourceID='COM16')   # Serial
+Instrument objects provide additional metadata about the physical device it is connected to. It could include
+information such as:
 
-.. note::
+   * Manufacturer
+   * Model number(s)
+   * Firmware Revision
+   * Serial Numbers
+   * Capabilities
+   * Channels/Probes
+   * etc.
 
-   :func:`labtronyx.InstrumentManager.findInstruments` will always return a list of instrument objects, even if only one
-   was found.
+This metadata is retrieved by calling :func:`getProperties` and returned as a dictionary. All instruments provide the
+following keys, with additional keys optionally added by the driver:
 
-Loading and Unloading Drivers
------------------------------
-
-Drivers are code modules that contain the commands needed to communicate with a specific instrument. Labtronyx will
-try to automatically identify a suitable driver to load, but it is sometimes necessary to load a specific driver.
-
-To load a driver for an instrument, call the :func:`loadDriver` method of the resource where the instrument is
-connected.::
-
-   device_list = instr.findInstruments(address='localhost', resourceID='ASRL::9')
-
-   if len(device_list) > 0:
-       instrument = device_list[0]
-	
-       instrument.loadDriver('drivers.BK_Precision.Load.m_85XX')
-	
-Similarly, to unload a driver::
-
-   instrument.unloadModel()
-
-Using Instruments
------------------
-
-When a driver is loaded for an instrument, additional methods are made available. For documentation on the available
-methods, see :doc:`Supported Instruments <instruments>` for the desired driver. It is also possible to send
-commands directly to the instrument using the :doc:`Resource API <api/resources>` for the interface where the instrument
-is connected.
++---------------+-------------------------------------------------+
+| Key           | Description                                     |
++===============+=================================================+
+| uuid          | Resource UUID                                   |
++---------------+-------------------------------------------------+
+| fqn           | Fully Qualified Name of resource class          |
++---------------+-------------------------------------------------+
+| interfaceName | The name of the associated interface            |
++---------------+-------------------------------------------------+
+| resourceID    | Resource ID specific for that interface         |
++---------------+-------------------------------------------------+
+| driver        | Driver name                                     |
++---------------+-------------------------------------------------+
+| deviceType    | Device type                                     |
++---------------+-------------------------------------------------+
+| deviceVendor  | Device vendor or manufacturer                   |
++---------------+-------------------------------------------------+
+| deviceModel   | Device model number                             |
++---------------+-------------------------------------------------+
+| deviceSerial  | Device serial number                            |
++---------------+-------------------------------------------------+
+| deviceFirmware| Device firmware revision number                 |
++---------------+-------------------------------------------------+

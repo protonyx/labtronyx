@@ -32,9 +32,6 @@ User Guide
     | :doc:`intro`
     | First steps to connecting to and controlling instruments
     |
-    | :doc:`remote`
-    | Controlling instruments on other computers
-    |
     | :doc:`instruments`
     | See which instruments are currently supported
     |

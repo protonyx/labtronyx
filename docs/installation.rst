@@ -12,10 +12,24 @@ Additional instructions and help can be found at http://python.org
 Installing Labtronyx
 --------------------
 
+From PIP
+^^^^^^^^
+
+Labtronyx is released as a package to the Python Package Index, and can be installed using pip:
+
+.. code-block:: console
+
+   pip install labtronyx
+
+This will also install all of the necessary dependencies automatically. If you are running an earlier version of python,
+you will need to install Pip before you will be able to install Labtronyx.
+
+   * `Pip install instructions <http://pip.readthedocs.org/en/stable/installing/>`_
+
 From Source
 ^^^^^^^^^^^
 
-1. Unzip the archive file.
+1. Clone the Labtronyx repository or unzip the source archive file.
 
 2. Open a terminal window and browse to the location of the extracted files.
 
@@ -26,9 +40,6 @@ From Source
    python setup.py install
 
 The proper dependent packages will also be installed.
-
-Notes
------
 
 Numpy on Windows
 ^^^^^^^^^^^^^^^^
@@ -42,13 +53,22 @@ correctly. This is only necessary when the installation above fails. There are t
 
    e.g. numpy-1.9.2-win32-superpack-python2.7.exe
 
-2. Download the `Microsoft Visual C++ Compiler for Python 2.7 <http://aka.ms/vcpython27>`_.
+2. Download the `Microsoft Visual C++ Compiler for Python 2.7 <http://aka.ms/vcpython27>`_. Install the package from
+   pip: pip install numpy
 
-Pip
-^^^
+Interface Dependencies
+----------------------
 
-Pip is a Python Package manager that is included with Python beginning with version 2.7.9 and all version of Python 3.
-If you are running an earlier version of python, you will need to install Pip before you will be able to install
-Labtronyx.
+Below are instructions to install dependent programs to enable to use of certain `Interfaces`.
 
-   * `Pip install instructions <http://pip.readthedocs.org/en/stable/installing/>`_
+VISA
+^^^^
+
+Using the VISA Interface requires a VISA server to be installed before Labtronyx can use any VISA resource. Any VISA
+compatible server should work fine, but NI-VISA was found to be the most stable during development. The latest version
+of NI-VISA can be downloaded from `nivisa`_ .
+
+.. _nivisa: http://www.ni.com/visa
+
+Install NI-VISA using the instructions and ReadMe file included with the installer. NI-VISA is compatible with Windows,
+Mac and Linux.
