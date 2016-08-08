@@ -61,7 +61,6 @@ Indices and tables
    
    installation
    intro
-   remote
    instruments
    examples
    api/index
